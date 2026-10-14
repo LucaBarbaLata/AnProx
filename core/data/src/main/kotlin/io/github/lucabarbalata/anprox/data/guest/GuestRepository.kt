@@ -1,6 +1,7 @@
 package io.github.lucabarbalata.anprox.data.guest
 
 import io.github.lucabarbalata.anprox.data.hub.ServerHub
+import io.github.lucabarbalata.anprox.model.pve.GuestNic
 import io.github.lucabarbalata.anprox.model.pve.GuestSnapshot
 import io.github.lucabarbalata.anprox.model.pve.GuestStatus
 import io.github.lucabarbalata.anprox.model.pve.GuestType
@@ -9,6 +10,8 @@ import io.github.lucabarbalata.anprox.model.pve.PowerAction
 import io.github.lucabarbalata.anprox.model.pve.TaskLogLine
 import io.github.lucabarbalata.anprox.model.pve.TaskStatus
 import io.github.lucabarbalata.anprox.network.ApiException
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -19,6 +22,16 @@ data class GuestRef(val serverId: String, val node: String, val type: GuestType,
 /** Result of polling something: the latest value and/or the latest error. */
 data class Polled<T>(val value: T?, val error: ApiException?)
 
+/**
+ * What a running guest reports about itself: OS and IP addresses. VMs need the QEMU guest agent
+ * ([agentProblem] says why it can't answer); containers report their interfaces directly.
+ */
+data class GuestNetworkInfo(
+    val os: String? = null,
+    val nics: List<GuestNic> = emptyList(),
+    val agentProblem: String? = null,
+)
+
 /** Guest-level operations (questionnaire Q18/Q19 grow this over the milestones). */
 class GuestRepository(private val hub: ServerHub) {
 
@@ -28,6 +41,51 @@ class GuestRepository(private val hub: ServerHub) {
 
     fun observeNode(serverId: String, node: String, intervalMillis: Long = 3_000): Flow<Polled<NodeStatus>> =
         poll(intervalMillis) { hub.use(serverId) { it.pve { nodeStatus(node) } } }
+
+    /**
+     * OS and IP addresses of a running guest, refreshed every [intervalMillis]. Emits `null` first
+     * (loading) so the guest screen never waits for a slow guest agent.
+     */
+    fun observeNetwork(ref: GuestRef, intervalMillis: Long = 30_000): Flow<GuestNetworkInfo?> = flow {
+        emit(null)
+        while (true) {
+            emit(
+                try {
+                    networkInfo(ref)
+                } catch (e: ApiException) {
+                    GuestNetworkInfo(agentProblem = e.message)
+                },
+            )
+            delay(intervalMillis)
+        }
+    }
+
+    /** One-shot [observeNetwork]. Agent failures become [GuestNetworkInfo.agentProblem]; others throw. */
+    suspend fun networkInfo(ref: GuestRef): GuestNetworkInfo = when (ref.type) {
+        GuestType.QEMU -> try {
+            coroutineScope {
+                val nics = async { hub.use(ref.serverId) { it.pve { agentInterfaces(ref.node, ref.vmid) } }.result.orEmpty() }
+                // Some agents (old Windows builds) can't report the OS; that shouldn't hide the IPs.
+                val os = async {
+                    try {
+                        hub.use(ref.serverId) { it.pve { agentOsInfo(ref.node, ref.vmid) } }.result?.displayName
+                    } catch (e: ApiException) {
+                        null
+                    }
+                }
+                GuestNetworkInfo(os = os.await(), nics = GuestNic.fromAgent(nics.await()))
+            }
+        } catch (e: ApiException) {
+            if (e is ApiException.Unauthorized || e is ApiException.Unreachable) throw e
+            GuestNetworkInfo(agentProblem = e.message)
+        }
+        GuestType.LXC -> try {
+            GuestNetworkInfo(nics = GuestNic.fromLxc(hub.use(ref.serverId) { it.pve { lxcInterfaces(ref.node, ref.vmid) } }))
+        } catch (e: ApiException) {
+            if (e is ApiException.Unauthorized || e is ApiException.Unreachable) throw e
+            GuestNetworkInfo(agentProblem = e.message)
+        }
+    }
 
     /** Starts [action] and returns the task UPID. */
     suspend fun power(ref: GuestRef, action: PowerAction): String {

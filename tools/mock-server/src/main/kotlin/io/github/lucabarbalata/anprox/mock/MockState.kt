@@ -4,6 +4,9 @@ import io.github.lucabarbalata.anprox.model.ProxmoxProduct
 import io.github.lucabarbalata.anprox.model.auth.Realm
 import io.github.lucabarbalata.anprox.model.pbs.DatastoreInfo
 import io.github.lucabarbalata.anprox.model.pbs.DatastoreUsage
+import io.github.lucabarbalata.anprox.model.pve.AgentInterface
+import io.github.lucabarbalata.anprox.model.pve.AgentIpAddress
+import io.github.lucabarbalata.anprox.model.pve.AgentOsInfo
 import io.github.lucabarbalata.anprox.model.pve.BackupVerification
 import io.github.lucabarbalata.anprox.model.pve.ClusterResource
 import io.github.lucabarbalata.anprox.model.pve.ClusterStatusEntry
@@ -12,6 +15,7 @@ import io.github.lucabarbalata.anprox.model.pve.FsUsage
 import io.github.lucabarbalata.anprox.model.pve.GuestSnapshot
 import io.github.lucabarbalata.anprox.model.pve.GuestStatus
 import io.github.lucabarbalata.anprox.model.pve.HaStatus
+import io.github.lucabarbalata.anprox.model.pve.LxcInterface
 import io.github.lucabarbalata.anprox.model.pve.MemoryUsage
 import io.github.lucabarbalata.anprox.model.pve.NodeStatus
 import io.github.lucabarbalata.anprox.model.pve.NodeStorage
@@ -554,6 +558,56 @@ class MockState(
             if (snapHead[g.vmid] == name) snapHead[g.vmid] = snap.parent
         }
         Result.success(upid)
+    }
+
+    // ------------------------------------------------------------------ guest agent
+
+    private val agentOs = mapOf(
+        100 to AgentOsInfo("Debian GNU/Linux", "Debian GNU/Linux 12 (bookworm)", "12", "6.1.0-25-amd64", "debian"),
+        101 to AgentOsInfo("Ubuntu", "Ubuntu 24.04.1 LTS", "24.04.1 LTS (Noble Numbat)", "6.8.0-45-generic", "ubuntu"),
+        103 to AgentOsInfo("Ubuntu", "Ubuntu 24.04.1 LTS", "24.04.1 LTS (Noble Numbat)", "6.8.0-45-generic", "ubuntu"),
+    )
+
+    /** Like Proxmox: an error message (500) when the agent can't answer. */
+    private fun agentProblem(g: Guest): String? = when {
+        !g.agent -> "No QEMU guest agent configured"
+        g.status != "running" -> "VM ${g.vmid} is not running"
+        else -> null
+    }
+
+    fun agentInterfaces(g: Guest): Result<List<AgentInterface>> = synchronized(lock) {
+        settleTasks()
+        agentProblem(g)?.let { return Result.failure(IllegalStateException(it)) }
+        Result.success(
+            listOf(
+                AgentInterface("lo", "00:00:00:00:00:00", listOf(AgentIpAddress("127.0.0.1", "ipv4", 8), AgentIpAddress("::1", "ipv6", 128))),
+                AgentInterface(
+                    "ens18", "bc:24:11:00:%02x:%02x".format(g.vmid / 256, g.vmid % 256),
+                    listOf(
+                        AgentIpAddress("10.0.0.${g.vmid % 256}", "ipv4", 24),
+                        AgentIpAddress("2001:db8::${g.vmid}", "ipv6", 64),
+                        AgentIpAddress("fe80::be24:11ff:fe00:${g.vmid}", "ipv6", 64),
+                    ),
+                ),
+            ),
+        )
+    }
+
+    fun agentOsInfo(g: Guest): Result<AgentOsInfo> = synchronized(lock) {
+        settleTasks()
+        agentProblem(g)?.let { return Result.failure(IllegalStateException(it)) }
+        Result.success(agentOs[g.vmid] ?: AgentOsInfo("Debian GNU/Linux", "Debian GNU/Linux 12 (bookworm)", "12", id = "debian"))
+    }
+
+    fun lxcInterfaces(g: Guest): Result<List<LxcInterface>> = synchronized(lock) {
+        settleTasks()
+        if (g.status != "running") return Result.failure(IllegalStateException("CT ${g.vmid} not running"))
+        Result.success(
+            listOf(
+                LxcInterface("lo", "00:00:00:00:00:00", "127.0.0.1/8", "::1/128"),
+                LxcInterface("eth0", "bc:24:11:01:00:%02x".format(g.vmid % 256), "10.0.1.${g.vmid - 190}/24", "fe80::1/64"),
+            ),
+        )
     }
 
     // ------------------------------------------------------------------ backups

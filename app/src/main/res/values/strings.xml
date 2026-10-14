@@ -190,6 +190,14 @@
     <string name="guest_details">Details</string>
     <string name="guest_more_tools">Tools</string>
     <string name="guest_coming_later">Coming later</string>
+    <string name="guest_network">Network</string>
+    <string name="guest_network_loading">Asking the guest for its addresses…</string>
+    <string name="guest_os">Operating system</string>
+    <string name="guest_agent_missing">Install the QEMU guest agent in this VM (qemu-guest-agent) and enable it under Options → QEMU Guest Agent to see its IP addresses.</string>
+    <string name="guest_agent_problem">Proxmox says: %1$s</string>
+    <string name="guest_no_addresses">No IP addresses reported yet.</string>
+    <string name="guest_copy_address">Copy %1$s</string>
+    <string name="guest_copied">Copied %1$s</string>
     <string name="guest_node">Node</string>
     <string name="guest_vmid">ID</string>
     <string name="guest_cpus">CPUs</string>

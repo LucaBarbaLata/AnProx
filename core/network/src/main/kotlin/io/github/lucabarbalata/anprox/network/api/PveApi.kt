@@ -1,10 +1,14 @@
 package io.github.lucabarbalata.anprox.network.api
 
 import io.github.lucabarbalata.anprox.model.ApiEnvelope
+import io.github.lucabarbalata.anprox.model.pve.AgentInterface
+import io.github.lucabarbalata.anprox.model.pve.AgentOsInfo
+import io.github.lucabarbalata.anprox.model.pve.AgentResult
 import io.github.lucabarbalata.anprox.model.pve.ClusterResource
 import io.github.lucabarbalata.anprox.model.pve.ClusterStatusEntry
 import io.github.lucabarbalata.anprox.model.pve.GuestSnapshot
 import io.github.lucabarbalata.anprox.model.pve.GuestStatus
+import io.github.lucabarbalata.anprox.model.pve.LxcInterface
 import io.github.lucabarbalata.anprox.model.pve.NodeStatus
 import io.github.lucabarbalata.anprox.model.pve.NodeStorage
 import io.github.lucabarbalata.anprox.model.pve.RrdPoint
@@ -75,6 +79,19 @@ interface PveApi {
         @Query("timeframe") timeframe: String,
         @Query("cf") cf: String,
     ): ApiEnvelope<List<RrdPoint>>
+
+    // ------------------------------------------------------------------ guest agent (Q18)
+
+    /** Fails with 500 when the agent isn't configured or not running. */
+    @GET("nodes/{node}/qemu/{vmid}/agent/network-get-interfaces")
+    suspend fun agentInterfaces(@Path("node") node: String, @Path("vmid") vmid: Int): ApiEnvelope<AgentResult<List<AgentInterface>>>
+
+    @GET("nodes/{node}/qemu/{vmid}/agent/get-osinfo")
+    suspend fun agentOsInfo(@Path("node") node: String, @Path("vmid") vmid: Int): ApiEnvelope<AgentResult<AgentOsInfo>>
+
+    /** A running container's interfaces (PVE 7.2+); no agent needed. */
+    @GET("nodes/{node}/lxc/{vmid}/interfaces")
+    suspend fun lxcInterfaces(@Path("node") node: String, @Path("vmid") vmid: Int): ApiEnvelope<List<LxcInterface>>
 
     // ------------------------------------------------------------------ backups (Q20)
 

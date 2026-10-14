@@ -114,7 +114,7 @@ so no test code is compiled into the app. `scripts/e2e/run.sh` starts the mock s
 2. Add a Proxmox VE server (bare host, insecure certificate) → sign in → dashboard shows the cluster and the offline node.
 3. Add a Proxmox Backup Server (default port 8007 added automatically) → sign in → datastores on the dashboard.
 4. Resources list across both servers.
-5. A running VM's **Performance** charts → **Week** → the Disk I/O chart shows values.
+5. A running VM's **Performance** charts → **Week** → the Disk I/O chart shows values; its **Network** card shows the guest agent's IP and OS.
 6. Open a stopped VM → **Start** → "finished" snackbar → **View log** shows `TASK OK` → the VM now offers **Shut down**.
 7. Snapshots of the now-running VM → **Take snapshot** with RAM → "VM snapshot finished" → the new snapshot is listed.
 8. Backups of the `pihole` container → **Back up now** to the Backup Server → "Backup finished" → **Restore** the new backup as a new container (ID 105) → "CT restore finished".
@@ -181,6 +181,11 @@ Run this before closing a milestone. Note the PVE/PBS versions you tested agains
 - [ ] Touching or dragging across a chart shows the time and values; tapping the same spot again returns to the latest values.
 - [ ] Node charts: CPU with IO wait, load average, memory, network.
 - [ ] TalkBack reads each chart as a summary (now, average, peak).
+
+**Network card (guest agent)**
+- [ ] A running VM with qemu-guest-agent installed and enabled shows its OS and IP addresses (no 127.x/fe80 noise).
+- [ ] Tapping an address copies it ("Copied …").
+- [ ] A VM without the agent explains how to enable it; a running container shows its IPs without an agent.
 
 **Backups** (use a test VM)
 - [ ] Guest → Backups lists the same backups as the web UI's Backup tab (all storages), newest first; protected and verified badges match.

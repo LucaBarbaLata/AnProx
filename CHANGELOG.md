@@ -34,6 +34,10 @@ All notable changes to AnProx are documented here. The format follows
   check when the app lock is on). A storage that can't be read is reported without hiding the
   others.
 
+- **Network card** on running guests: the operating system and IP addresses reported by the QEMU
+  guest agent (VMs) or by the container itself. Tap an address to copy it. Without the agent, the
+  card explains how to enable it.
+
 ### Changed
 - The guest screen's tools section lists what works now; everything else is under "Coming later".
 - Backup storages in the Resources list open their backups.

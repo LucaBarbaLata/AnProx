@@ -4,6 +4,7 @@ import io.github.lucabarbalata.anprox.model.ApiEnvelope
 import io.github.lucabarbalata.anprox.model.ProxmoxProduct
 import io.github.lucabarbalata.anprox.model.auth.TicketResponse
 import io.github.lucabarbalata.anprox.model.json.ProxmoxJson
+import io.github.lucabarbalata.anprox.model.pve.AgentResult
 import io.github.lucabarbalata.anprox.model.pve.SnapshotName
 import io.github.lucabarbalata.anprox.model.pve.VersionInfo
 import io.ktor.http.ContentType
@@ -168,6 +169,26 @@ class MockProxmoxServer(
             val node = state.node(call.parameters["node"]!!) ?: return@get call.fail(404, "no such node")
             if (!node.online) return@get call.fail(595, "Connection refused")
             call.ok(state.nodeStatus(node))
+        }
+        get("nodes/{node}/qemu/{vmid}/agent/{command}") {
+            call.authed() ?: return@get
+            val g = call.guest("qemu") ?: return@get
+            when (call.parameters["command"]) {
+                "network-get-interfaces" -> state.agentInterfaces(g).fold(
+                    onSuccess = { call.ok(AgentResult(it)) },
+                    onFailure = { call.fail(500, it.message ?: "error") },
+                )
+                "get-osinfo" -> state.agentOsInfo(g).fold(
+                    onSuccess = { call.ok(AgentResult(it)) },
+                    onFailure = { call.fail(500, it.message ?: "error") },
+                )
+                else -> call.fail(501, "the mock server doesn't implement this agent command")
+            }
+        }
+        get("nodes/{node}/lxc/{vmid}/interfaces") {
+            call.authed() ?: return@get
+            val g = call.guest("lxc") ?: return@get
+            state.lxcInterfaces(g).fold(onSuccess = { call.ok(it) }, onFailure = { call.fail(500, it.message ?: "error") })
         }
         get("nodes/{node}/storage") {
             call.authed() ?: return@get
@@ -336,11 +357,13 @@ class MockProxmoxServer(
         )
     }
 
-    private suspend fun ApplicationCall.guest(): MockState.Guest? {
+    /** The guest named by the path; [type] for routes with a literal `qemu`/`lxc` segment. */
+    private suspend fun ApplicationCall.guest(type: String? = null): MockState.Guest? {
         val vmid = parameters["vmid"]?.toIntOrNull()
+        val wanted = type ?: parameters["type"]
         val g = vmid?.let { state.guest(it) }
-        if (g == null || g.type != parameters["type"] || g.node != parameters["node"]) {
-            fail(500, "Configuration file 'nodes/${parameters["node"]}/${parameters["type"]}/$vmid.conf' does not exist")
+        if (g == null || g.type != wanted || g.node != parameters["node"]) {
+            fail(500, "Configuration file 'nodes/${parameters["node"]}/$wanted/$vmid.conf' does not exist")
             return null
         }
         return g

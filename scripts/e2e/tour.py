@@ -371,7 +371,7 @@ def resources():
     screenshot("04-resources")
 
 
-@step("Performance charts of a running VM")
+@step("Performance charts and guest agent info of a running VM")
 def performance():
     tap_node(scroll_to("k8s-master"))
     tap_node(scroll_to("Week"))            # timeframe picker
@@ -383,6 +383,8 @@ def performance():
         save_dump(root, "charts-without-data")
         raise AssertionError(f"Disk I/O chart shows no values: {readouts}\n{describe(root)}")
     screenshot("05-performance")
+    scroll_to("10.0.0.103")                # IP address reported by the guest agent (Network card)
+    find("Ubuntu 24.04.1 LTS", timeout=10)
     back()
     find("Resources", timeout=20)
 
@@ -417,8 +419,8 @@ def snapshots():
     find("snap-", timeout=20)              # the suggested name, now in the list
     screenshot("11-snapshot-taken")
     back()
-    # Back on the guest screen, which keeps its scroll position at the Tools section.
-    find("Save this state and roll back to it later", timeout=30)
+    # Back on the guest screen, which keeps its scroll position.
+    scroll_to("Save this state and roll back to it later")
     back()
 
 
@@ -440,7 +442,7 @@ def backups():
     find("CT restore finished", timeout=60)
     screenshot("11d-restored")
     back()
-    find("Back up now and restore", timeout=30)
+    scroll_to("Back up now and restore")   # back on the guest screen (it keeps its scroll position)
     back()
 
 

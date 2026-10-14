@@ -3,6 +3,7 @@ package io.github.lucabarbalata.anprox.ui.guest
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.github.lucabarbalata.anprox.R
+import io.github.lucabarbalata.anprox.data.guest.GuestNetworkInfo
 import io.github.lucabarbalata.anprox.data.guest.GuestRef
 import io.github.lucabarbalata.anprox.data.guest.GuestRepository
 import io.github.lucabarbalata.anprox.data.guest.Polled
@@ -29,6 +30,8 @@ data class GuestState(
     val ref: GuestRef,
     val serverName: String = "",
     val status: GuestStatus? = null,
+    /** OS and IP addresses from the guest agent / container; null while loading. */
+    val network: GuestNetworkInfo? = null,
     val error: UiText? = null,
     /** The action currently running (button shows a spinner). */
     val running: PowerAction? = null,
@@ -62,8 +65,8 @@ class GuestViewModel(
 
     private val ui = MutableStateFlow(GuestState(ref, serverName = hub.server(ref.serverId)?.profile?.name.orEmpty()))
 
-    val state: StateFlow<GuestState> = combine(guests.observeStatus(ref), ui) { polled: Polled<GuestStatus>, s ->
-        s.copy(status = polled.value ?: s.status, error = polled.error?.toUiText())
+    val state: StateFlow<GuestState> = combine(guests.observeStatus(ref), guests.observeNetwork(ref), ui) { polled: Polled<GuestStatus>, network, s ->
+        s.copy(status = polled.value ?: s.status, network = network, error = polled.error?.toUiText())
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ui.value)
 
     /** Tiered confirmation (questionnaire Q12): SAFE actions run immediately. */

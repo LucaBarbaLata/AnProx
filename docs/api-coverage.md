@@ -95,7 +95,8 @@ Code: `core/network/src/main/kotlin/.../network/api/` (`AccessApi`, `PveApi`, `P
 | `POST …/snapshot/{snap}/rollback` | Roll back | ✅ |
 | `DELETE …/snapshot/{snap}` | Delete a snapshot | ✅ |
 | `GET/PUT …/snapshot/{snap}/config` | Edit a snapshot's description | 🗓 M1 |
-| `/qemu/{vmid}/agent/*` | Guest agent: IPs, OS info, fs-freeze, set password, exec | 🗓 M1 |
+| `/qemu/{vmid}/agent/*` | Guest agent: IPs, OS info, fs-freeze, set password, exec | 🔸 `network-get-interfaces`, `get-osinfo` ✅; the rest later |
+| `GET /lxc/{vmid}/interfaces` | A running container's IP addresses (PVE 7.2+) | ✅ |
 | `GET/POST/PUT …/config`, `GET …/pending` | Hardware & options | 🗓 M2 (common), M9 (advanced: passthrough, NUMA, CPU flags) |
 | `PUT …/resize`, `POST …/move_disk` / `move_volume`, `POST …/unlink` | Disks | 🗓 M2 |
 | `POST …/clone`, `POST …/template` | Clone / template | 🗓 M2 |

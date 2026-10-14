@@ -1,5 +1,6 @@
 package io.github.lucabarbalata.anprox.ui.guest
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -30,8 +31,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -46,6 +50,8 @@ import io.github.lucabarbalata.anprox.core.designsystem.component.StatusPill
 import io.github.lucabarbalata.anprox.core.designsystem.component.TagChip
 import io.github.lucabarbalata.anprox.core.designsystem.component.UsageRing
 import io.github.lucabarbalata.anprox.core.designsystem.theme.AnProxTheme
+import io.github.lucabarbalata.anprox.core.designsystem.theme.MonoStyle
+import io.github.lucabarbalata.anprox.data.guest.GuestNetworkInfo
 import io.github.lucabarbalata.anprox.data.guest.GuestRef
 import io.github.lucabarbalata.anprox.data.metrics.MetricsSource
 import io.github.lucabarbalata.anprox.model.format.Formatters
@@ -62,6 +68,7 @@ import io.github.lucabarbalata.anprox.ui.common.contentPadding
 import io.github.lucabarbalata.anprox.ui.common.formatDuration
 import io.github.lucabarbalata.anprox.ui.common.statusAppearance
 import io.github.lucabarbalata.anprox.ui.metrics.PerformanceSection
+import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 
@@ -94,6 +101,8 @@ fun GuestDetail(
     val viewModel: GuestViewModel = koinViewModel(key = key) { parametersOf(ref) }
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val copiedLabel = stringResource(R.string.guest_copied)
     TaskResultSnackbar(state.result, snackbar, ref.serverId, ref.node, onTask, viewModel::consumeResult)
 
     val typeLabel = stringResource(if (ref.type == GuestType.QEMU) R.string.guest_type_vm else R.string.guest_type_ct)
@@ -116,6 +125,10 @@ fun GuestDetail(
                 if (state.availableActions.isNotEmpty()) {
                     item { SectionHeader(stringResource(R.string.guest_power)) }
                     item { PowerActions(state.availableActions, state.running, viewModel::request) }
+                }
+                if (status.isRunning) {
+                    item { SectionHeader(stringResource(R.string.guest_network)) }
+                    item { NetworkCard(ref.type, state.network, onCopied = { text -> scope.launch { snackbar.showSnackbar(copiedLabel.format(text)) } }) }
                 }
                 // Templates never run, so they have no history.
                 if (!status.template) {
@@ -215,6 +228,55 @@ private fun PowerActions(actions: List<PowerAction>, running: PowerAction?, onAc
                     )
                 }
                 if (row.size == 1) Spacer(Modifier.weight(1f))
+            }
+        }
+    }
+}
+
+/**
+ * OS and IP addresses (questionnaire Q18). VMs need the QEMU guest agent; without it, explain how
+ * to get the addresses. Tapping an address copies it.
+ */
+@Composable
+private fun NetworkCard(type: GuestType, network: GuestNetworkInfo?, onCopied: (String) -> Unit) {
+    val c = AnProxTheme.colors
+    val clipboard = LocalClipboardManager.current
+    GlassCard {
+        when {
+            network == null -> Text(stringResource(R.string.guest_network_loading), style = MaterialTheme.typography.bodySmall, color = c.textSecondary)
+            network.nics.isEmpty() -> {
+                val hint = if (type == GuestType.QEMU) R.string.guest_agent_missing else R.string.guest_no_addresses
+                Text(stringResource(hint), style = MaterialTheme.typography.bodySmall, color = c.textSecondary)
+                network.agentProblem?.let {
+                    Spacer(Modifier.height(4.dp))
+                    Text(stringResource(R.string.guest_agent_problem, it.trim()), style = MaterialTheme.typography.bodySmall, color = c.textTertiary)
+                }
+            }
+            else -> {
+                network.os?.let { InfoRow(stringResource(R.string.guest_os), it) }
+                network.nics.forEach { nic ->
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        listOfNotNull(nic.name, nic.mac).joinToString(" · "),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = c.textTertiary,
+                    )
+                    (nic.ipv4 + nic.ipv6).forEach { address ->
+                        val copyLabel = stringResource(R.string.guest_copy_address, address)
+                        Text(
+                            address,
+                            style = MonoStyle,
+                            color = c.textPrimary,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable(onClickLabel = copyLabel) {
+                                    clipboard.setText(AnnotatedString(address))
+                                    onCopied(address)
+                                }
+                                .padding(vertical = 6.dp),
+                        )
+                    }
+                }
             }
         }
     }
