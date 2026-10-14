@@ -68,9 +68,9 @@ Legend: ✅ = chosen option. Options not chosen are kept so the reasoning stays 
 - ✅ **Two-factor** — TOTP, recovery keys, WebAuthn/YubiKey where Android allows.
 - ✅ **OpenID Connect SSO** — via browser redirect.
 
-> Note: API tokens were deliberately **not** selected. The network layer keeps an
-> `Authenticator` abstraction so tokens could be added later at low cost, but no UI or
-> storage for them will be built unless the owner asks.
+> Note: API tokens were deliberately **not** selected. Authentication headers are added in a
+> single place (`AuthInterceptor` in `:core:network`), so token support would be a small change
+> later, but no UI or storage for tokens will be built unless the owner asks.
 
 ### Q10. How should self-signed certificates be handled?
 - Pin on first use + optional custom CA

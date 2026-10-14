@@ -1,0 +1,115 @@
+# Roadmap
+
+"Every function, in an easy and beautiful GUI" is reached in phases (Q7): each milestone ships a
+usable app and adds a coherent slice of the Proxmox API. Milestones are ordered by everyday
+value for the main audience, pro sysadmins and MSPs (Q8).
+
+Status legend: ✅ done · 🚧 in progress · 🗓 planned
+
+| Milestone | Theme | Status |
+|---|---|---|
+| [M0](#m0--foundation) | Foundation: servers, login, dashboard, resources, power, tasks | ✅ (this release) |
+| [M1](#m1--daily-driver) | Daily driver: app lock, SSO, snapshots, backups, charts, notifications | 🗓 |
+| [M2](#m2--consoles--guest-configuration) | Consoles and guest configuration | 🗓 |
+| [M3](#m3--alerts--android-integration) | Alerts and Android integration | 🗓 |
+| [M4](#m4--datacenter) | Datacenter: storage, backup jobs, HA, replication, firewall | 🗓 |
+| [M5](#m5--node-administration) | Node administration | 🗓 |
+| [M6](#m6--ceph--sdn) | Ceph and SDN | 🗓 |
+| [M7](#m7--access-control) | Users, groups, roles, ACLs, realms, tokens, TFA | 🗓 |
+| [M8](#m8--backup-server-complete) | Proxmox Backup Server complete | 🗓 |
+| [M9](#m9--parity--10) | Parity sweep, polish, translations → 1.0 | 🗓 |
+
+Exit criteria for every milestone:
+1. CI is green (tests, lint, debug and release builds).
+2. New endpoints are covered by mock-server integration tests.
+3. [api-coverage.md](api-coverage.md), [CHANGELOG.md](../CHANGELOG.md) and this file are updated.
+4. The owner has run the [manual checklist](testing.md#manual-test-checklist-real-hardware) on real hardware.
+
+---
+
+## M0 — Foundation
+*Status: ✅ code complete, awaiting the owner's real-hardware test.*
+
+| Area | Delivered | Questionnaire |
+|---|---|---|
+| Project | Kotlin + Compose, min API 26, multi-module, version catalog, CI, Dependabot, GPL-3.0 | Q1, Q2, Q33, Q38 |
+| Servers | Unlimited PVE and PBS servers; several addresses each with ordered failover; per-address custom headers; reverse-proxy sub-paths; per-server "allow insecure certificate" | Q4, Q6, Q10, Q13, Q14 |
+| Login | Password with realm picker (PAM/PVE/PBS/LDAP/AD); TOTP, recovery key and Yubico second factor; remember password (Keystore-encrypted); automatic ticket renewal and silent re-login | Q9 |
+| Dashboard | Combined totals, an attention list (quorum, offline nodes, storage ≥ 85 %, expired sessions), cluster cards with CPU/RAM gauges and node rows, PBS datastore usage with "full in" estimates | Q6, Q25 (basic) |
+| Resources | Search and filters across all servers; list/detail split on tablets | Q3 |
+| Guests | Live status; start, shut down, reboot, stop, pause, resume, reset; tiered confirmation; task follow-up | Q12 |
+| Nodes | Live usage, hardware and kernel info, guests on the node | — |
+| Tasks | Merged timeline across servers, filters, live task log | — |
+| Design | Midnight Glass design system; light, dark and AMOLED; bottom bar and side rail | Q29–Q31, Q37 |
+| Privacy | Zero telemetry; translation-ready strings | Q16, Q36 |
+
+## M1 — Daily driver
+- **App lock** (Q11): optional biometric/PIN on launch, and biometric re-authentication before
+  `TYPE_TO_CONFIRM` actions.
+- **OpenID Connect** sign-in (Q9) through a browser tab or WebView, plus **WebAuthn** second factor.
+- **Snapshots** (Q18): list and tree, create (with RAM), roll back, delete.
+- **Backup now and restore** (Q20): run vzdump on demand, restore to the same or a new VMID, browse backups per storage.
+- **Interactive charts** (Q25): RRD data for nodes, guests and storage with hour/day/week/month/year
+  ranges, pinch-zoom and scrubbing.
+- **Guest agent** (Q18): IP addresses, OS info, fs-freeze/thaw, set user password.
+- **Bulk actions** on the resource list (multi-select start, shut down, stop).
+- **Live task notifications** (Q28) for long operations started from the app.
+- **Favourites** pinned to the top of the dashboard.
+
+## M2 — Consoles & guest configuration
+- **noVNC console** for VMs, **xterm.js terminal** for nodes and containers, in a WebView with
+  an extra key row (Q15).
+- **SPICE handoff**: download the `.vv` file and open it in aSPICE or another SPICE viewer (Q15).
+- **Built-in SSH client** with key management (Q15).
+- **Hardware editing**, common settings first (Q19): CPU, memory/balloon, disks
+  (add/resize/move), network devices, CD-ROM, boot order. Container resources and mount points.
+- **Options**: name, start at boot, start order, protection, tags, description, QEMU agent.
+- **Clone, templates and cloud-init** (Q18): full and linked clones, convert to template, cloud-init user/keys/IP.
+- **Creation wizard** for VMs and containers (Q17): a simple flow with an "Advanced" toggle.
+- **Migration**: live or offline, with progress.
+
+## M3 — Alerts & Android integration
+- **Background polling** with WorkManager (Q26) for the alert types in Q27: node or guest down,
+  quorum lost, failed tasks and backups, CPU/RAM/storage thresholds, Ceph health.
+- **Real-time push** (Q26): a setup guide for PVE notification webhooks → ntfy/Gotify →
+  UnifiedPush, with no Google services.
+- **Home-screen widgets** (Glance): cluster health, favourite guests with power buttons, storage (Q28).
+- **Quick Settings tiles** and **app shortcuts/deep links** (Q28).
+
+## M4 — Datacenter
+- Storage: add/edit/remove every storage type, content browser, upload ISO/templates, download from URL.
+- **Backup jobs** (Q20): create/edit schedules, retention, notes templates, job details.
+- **High Availability** (Q21): resources, node affinity rules/groups, CRM/LRM status, maintenance mode.
+- **Storage replication** (Q21): jobs, schedule, status, run now.
+- **Firewall, full management** (Q24): datacenter/node/guest rules, security groups, IP sets, aliases, options, log.
+- Resource pools and tags.
+- Encrypted export/import of server profiles (move to a new phone without retyping everything).
+
+## M5 — Node administration
+- **Updates and repositories** (Q22): refresh, upgradable list with changelogs, upgrade in a terminal, repository management.
+- **Disks** (Q22): SMART, wipe, initialise GPT, create ZFS/LVM/LVM-thin/directory storage.
+- **Network interfaces** (Q22): bridges, bonds, VLANs, a pending-changes diff, apply/revert.
+- Services, syslog/journal, DNS/hosts/time, power (reboot/shutdown node), subscription status.
+
+## M6 — Ceph & SDN
+- **Ceph** (Q21): health and status, OSDs (in/out, up/down, create/destroy), pools, monitors,
+  managers, CephFS, configuration, crush map, log.
+- **SDN** (Q21): zones, VNets, subnets, IPAM, DHCP, controllers, fabrics, pending changes and apply.
+
+## M7 — Access control
+- **Full permissions management** (Q23): users, groups, roles, ACLs, realms (incl. sync),
+  API tokens, TFA management for any user, password changes.
+
+## M8 — Backup Server complete
+- **Datastores** (Q20): create, configure, maintenance mode, usage history.
+- **Content**: snapshots per namespace, notes, protection, verify state; **file-level restore** (browse
+  and download single files) (Q20).
+- **Jobs**: garbage collection, prune, verify, sync (push/pull), tape (basic); namespaces; remotes.
+- PBS node administration (shares the M5 components).
+
+## M9 — Parity & 1.0
+- Remaining endpoints from [api-coverage.md](api-coverage.md): ACME/certificates, metric servers,
+  notification targets and matchers, PCI/USB/directory mappings, advanced hardware (passthrough,
+  NUMA, CPU flags), guest config history, cluster join/create.
+- Accessibility audit (WCAG 2.1 AA), performance pass, translation platform (community translations).
+- Release engineering: signed releases on GitHub, F-Droid/IzzyOnDroid metadata (Q34), donation links (Q35).
