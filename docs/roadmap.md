@@ -8,7 +8,7 @@ Status legend: ✅ done · 🚧 in progress · 🗓 planned
 
 | Milestone | Theme | Status |
 |---|---|---|
-| [M0](#m0--foundation) | Foundation: servers, login, dashboard, resources, power, tasks | ✅ (this release) |
+| [M0](#m0--foundation) | Foundation: servers, login, dashboard, resources, power, tasks | ✅ → shipping as **0.1.0-beta.1** |
 | [M1](#m1--daily-driver) | Daily driver: app lock, SSO, snapshots, backups, charts, notifications | 🗓 |
 | [M2](#m2--consoles--guest-configuration) | Consoles and guest configuration | 🗓 |
 | [M3](#m3--alerts--android-integration) | Alerts and Android integration | 🗓 |
@@ -42,6 +42,16 @@ Exit criteria for every milestone:
 | Tasks | Merged timeline across servers, filters, live task log | — |
 | Design | Midnight Glass design system; light, dark and AMOLED; bottom bar and side rail | Q29–Q31, Q37 |
 | Privacy | Zero telemetry; translation-ready strings | Q16, Q36 |
+
+### Beta 0.1.0-beta.1 (M0 release)
+Release engineering is in place ([releasing.md](releasing.md)). Remaining gates:
+- [x] Release workflow with dry run, signature/version verification and GitHub pre-releases
+- [x] End-to-end tour of the minified release APK on Android 8.0 and 14 emulators (CI)
+- [x] Local crash reports, "Report a bug", issue templates, [beta testing guide](beta-testing.md)
+- [x] Store metadata (Fastlane) for IzzyOnDroid/F-Droid
+- [ ] Owner: create the release key and add the four repository secrets
+- [ ] Owner: run the manual checklist on real PVE/PBS hardware
+- [ ] Owner: run the Release workflow (dry run, then publish)
 
 ## M1 — Daily driver
 - **App lock** (Q11): optional biometric/PIN on launch, and biometric re-authentication before

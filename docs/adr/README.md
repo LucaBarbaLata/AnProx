@@ -16,6 +16,7 @@ consequences. ADRs are never rewritten. If a decision changes, a new ADR superse
 | [0009](0009-foss-no-telemetry.md) | GPL-3.0, no telemetry, no Google services | Accepted |
 | [0010](0010-bespoke-design.md) | Bespoke "Midnight Glass" design instead of Material You | Accepted |
 | [0011](0011-polling-while-visible.md) | Poll only while a screen is visible | Accepted |
+| [0012](0012-release-pipeline.md) | Release pipeline: owner-held key, GitHub pre-releases, emulator gate | Accepted |
 
 Template for new ADRs:
 

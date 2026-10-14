@@ -12,6 +12,7 @@ testing debug builds on **real hardware**.
 | Integration: multi-server hub, sessions, snapshots, guest actions | `core/data/src/test` | JVM | 9 |
 | Android lint | `:app:lintDebug` | CI | — |
 | Build: debug and R8-minified release | `:app:assemble*` | CI | — |
+| **End-to-end tour** of the minified release APK on emulators against the mock server | `scripts/e2e/tour.py` | CI (Android 8.0 + 14), Release workflow | 7 steps |
 | UI / screenshot tests | planned (M1) | — | — |
 | Manual on real hardware | [checklist below](#manual-test-checklist-real-hardware) | owner | — |
 
@@ -94,6 +95,34 @@ server.stop()
 
 `MockProxmoxServer(pathPrefix = "/pve")` imitates a reverse proxy on a sub-path.
 
+## End-to-end tour (emulator)
+
+`scripts/e2e/tour.py` drives the **real, R8-minified release APK** with `adb` and `uiautomator`,
+so no test code is compiled into the app. `scripts/e2e/run.sh` starts the mock servers on the host
+(reachable from the emulator as `10.0.2.2`) and runs the tour:
+
+1. Launch → the welcome screen appears.
+2. Add a Proxmox VE server (bare host, insecure certificate) → sign in → dashboard shows the cluster and the offline node.
+3. Add a Proxmox Backup Server (default port 8007 added automatically) → sign in → datastores on the dashboard.
+4. Resources list across both servers.
+5. Open a stopped VM → **Start** → "finished" snackbar → **View log** shows `TASK OK` → the VM now offers **Shut down**.
+6. Tasks tab shows the new task.
+7. Settings → Light theme → dashboard in light mode.
+
+After every step the script checks that the app process is alive and that logcat has no
+`FATAL EXCEPTION` for the app. Screenshots of each step, plus UI dumps and logcat on failure,
+are uploaded as the `e2e-api-<level>` artifact. Run it locally against an emulator or a USB device:
+
+```bash
+./gradlew :app:assembleRelease :tools:mock-server:installDist -Panprox.signWithDebugKey=true
+scripts/e2e/run.sh app/build/outputs/apk/release/app-release.apk
+```
+
+(On a physical phone, set `ANPROX_MOCK_HOST` to your computer's LAN IP.)
+
+> The tour finds elements by their visible English text. If you rename a string that it uses,
+> update `tour.py` in the same change.
+
 ## Continuous integration
 
 `.github/workflows/ci.yml` runs on every push and pull request:
@@ -102,6 +131,7 @@ server.stop()
 2. `./gradlew :app:lintDebug`: Android lint (errors fail the build).
 3. `./gradlew :app:assembleDebug :app:assembleRelease`: catches R8/minification problems.
 4. Uploads the **debug APK** (`anprox-debug-apk`) and all test/lint reports as artifacts.
+5. `e2e` jobs (Android 8.0 and 14): the end-to-end tour above, on the release APK signed with the debug key.
 
 ## Manual test checklist (real hardware)
 

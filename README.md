@@ -15,7 +15,7 @@ The goal is every function of the web UI in a fast, beautiful, native app.
 | Design | "Midnight Glass", a bespoke dark-first design with light, dark and AMOLED themes |
 | Privacy | No analytics, no ads, no Google services. The app only talks to your own servers. |
 | License | [GPL-3.0](LICENSE) |
-| Status | **Milestone M0 (foundation)**. See the [roadmap](docs/roadmap.md). |
+| Status | **Beta**: 0.1.0-beta.1 (milestone M0, foundation). See the [roadmap](docs/roadmap.md). |
 
 ## What works today (M0)
 
@@ -41,11 +41,19 @@ widgets, is planned in milestones. See the [roadmap](docs/roadmap.md) and the
 
 ## Try it
 
-### Install a build
+### Install the beta
 
-Every push builds a debug APK in GitHub Actions. Open the latest successful
+Download `AnProx-<version>.apk` from the latest pre-release on the
+[Releases page](https://github.com/LucaBarbaLata/AnProx/releases) and open it on your phone.
+For automatic updates, add this repository to [Obtainium](https://github.com/ImranR98/Obtainium)
+with *Include prereleases* enabled. The [beta testing guide](docs/beta-testing.md) explains what to
+try and how to report problems. (Until the first release is published, use the CI builds below.)
+
+### Install a development build
+
+Every push builds a debug APK ("AnProx Debug") in GitHub Actions. Open the latest successful
 [CI run](https://github.com/LucaBarbaLata/AnProx/actions), download the `anprox-debug-apk`
-artifact, unzip it and install the APK on your phone. You need to allow "install unknown apps".
+artifact, unzip it and install the APK. It installs alongside the release version.
 
 ### Try it without a Proxmox server
 
@@ -84,7 +92,9 @@ All documentation lives in [`docs/`](docs/README.md):
 | [Roadmap](docs/roadmap.md) | Milestones M0 to M9 on the way to full web-UI parity |
 | [API coverage](docs/api-coverage.md) | Every Proxmox API area and its implementation status |
 | [Security](docs/security.md) | Threat model, credential storage, the TLS switch |
-| [Testing](docs/testing.md) | Test strategy, the mock server, the manual test checklist |
+| [Testing](docs/testing.md) | Test strategy, the mock server, the emulator end-to-end tour, the manual test checklist |
+| [Beta testing](docs/beta-testing.md) | Installing the beta, what to try, reporting bugs |
+| [Releasing](docs/releasing.md) | Signing key setup, version numbers, the Release workflow, F-Droid/IzzyOnDroid |
 | [Getting started](docs/getting-started.md) | Set up, build and run, step by step |
 | [Glossary](docs/glossary.md) | Proxmox and Android terms explained |
 | [Decision records](docs/adr/README.md) | Why each major technical choice was made |

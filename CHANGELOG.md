@@ -4,7 +4,7 @@ All notable changes to AnProx are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/).
 
-## [Unreleased] — 0.1.0 (milestone M0, "Foundation")
+## [0.1.0-beta.1] — not yet released (milestone M0, "Foundation")
 
 ### Added
 - **Servers:** unlimited Proxmox VE and Proxmox Backup Server profiles; multiple addresses per
@@ -28,5 +28,12 @@ All notable changes to AnProx are documented here. The format follows
   mode; floating bottom bar on phones, side rail on tablets; bundled Inter and JetBrains Mono fonts;
   original launcher icon with a themed (monochrome) layer.
 - **Settings:** theme, pure black, live refresh interval. About screen with license and privacy notes.
+- **Beta feedback:** if the app crashes, a report is saved on the device only and offered for
+  sharing on the next start; **More → About → Report a bug** opens a GitHub issue form; a "Beta"
+  badge on the About screen.
 - **Developer:** pure-Kotlin core modules, a Ktor mock Proxmox server, 45 automated tests,
   GitHub Actions CI with downloadable debug APKs, Dependabot, and full documentation in `docs/`.
+- **Release engineering:** version scheme with ordered pre-release codes, release signing from
+  repository secrets, a Release workflow (dry run, verification, GitHub pre-releases), an emulator
+  end-to-end tour of the minified release APK on Android 8.0 and 14, store metadata for
+  IzzyOnDroid/F-Droid, and a separate "AnProx Debug" launcher name for debug builds.

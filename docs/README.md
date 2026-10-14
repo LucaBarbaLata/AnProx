@@ -11,13 +11,15 @@ back to one of its 40 answers, cited as **Q1–Q40**.
 - [API coverage](api-coverage.md): which Proxmox VE / Backup Server features are implemented
 - [Security](security.md): how credentials are stored, the TLS switch, the threat model
 - [Glossary](glossary.md): Proxmox and Android vocabulary
+- [Beta testing](beta-testing.md): install the beta, what to try, how to report problems
 
 ## For developers (and people learning Android)
 
 - [Getting started](getting-started.md): install the tools, build, run, debug
 - [Architecture](architecture.md): modules, layers, data flow, and a step-by-step recipe for new features
 - [Design system](design-system.md): Midnight Glass tokens, components, motion and accessibility
-- [Testing](testing.md): unit and integration tests, the mock server, the manual checklist
+- [Testing](testing.md): unit and integration tests, the mock server, the emulator end-to-end tour, the manual checklist
+- [Releasing](releasing.md): signing key setup, version numbers, the Release workflow, distribution channels
 - [Decision records (ADRs)](adr/README.md): the reasoning behind each major technical choice
 - [Dev log](devlog.md): what happened in each development session, including problems and workarounds
 - [Third-party licenses](third-party/)

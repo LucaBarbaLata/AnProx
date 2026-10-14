@@ -5,6 +5,29 @@ solved. Newest first.
 
 ---
 
+## 2026-10-14 — Session 2: preparing the first beta (0.1.0-beta.1)
+
+The owner asked: "can you make a release version? or let's prepare for a beta package".
+
+**What a beta needed, and what was done:**
+| Need | Done |
+|---|---|
+| A signing key that stays the same forever | Can't be created by an AI session: the key is the app's identity and must stay with the owner. Signing now reads repository secrets or a git-ignored `keystore.properties` ([releasing.md](releasing.md)). |
+| Ordered version numbers | `0.1.0-beta.1` → versionCode 10021; the final 0.1.0 → 10099 (`app/build.gradle.kts`). |
+| Proof the minified release APK actually runs | New `e2e` CI job: release APK on Android 8.0 + 14 emulators, driven by `scripts/e2e/tour.py` against the mock server. |
+| A way to publish | `release.yml`: dry run → verify → e2e → notes from CHANGELOG → GitHub pre-release. |
+| Feedback without telemetry | Local crash reports with a share dialog; About → Report a bug; issue templates. |
+| Store presence | Fastlane metadata, icon and feature graphic (rendered with headless Chromium from `docs/brand/`). |
+| Tester guidance | [beta-testing.md](beta-testing.md). |
+
+**Gotchas:**
+- `java.util.Properties()` in `app/build.gradle.kts` → "Unresolved reference: util", because `java`
+  is the Java extension in Gradle Kotlin scripts. Fixed with an import, and noted in CLAUDE.md.
+- New-headless Chromium screenshots have a shorter viewport than the window. The headless shell
+  binary renders exact sizes.
+
+---
+
 ## 2026-10-14 — Session 1: kick-off and milestone M0
 
 ### 1. Questionnaire

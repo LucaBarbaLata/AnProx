@@ -20,7 +20,12 @@ as the source of truth, and record changes in its "Amendments" section.
 ./gradlew -Panprox.jvmOnly=true test    # when the Android SDK / Google Maven is unreachable
 ./gradlew :app:lintDebug :app:assembleDebug :app:assembleRelease
 ./gradlew :tools:mock-server:run        # fake PVE :8006 + PBS :8007 (root@pam / anprox)
+# e2e tour of the release APK on a connected emulator (CI does this on API 26 + 34):
+./gradlew :app:assembleRelease :tools:mock-server:installDist -Panprox.signWithDebugKey=true
+scripts/e2e/run.sh app/build/outputs/apk/release/app-release.apk
 ```
+Releases: `docs/releasing.md` (Release workflow, dry run first). Never create or commit signing keys.
+UI text used by `scripts/e2e/tour.py` must stay in sync with `strings.xml`.
 If the container can't reach `dl.google.com`, Android code is verified only by GitHub Actions
 (`.github/workflows/ci.yml`). Push small and check the run.
 

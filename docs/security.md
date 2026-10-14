@@ -83,6 +83,20 @@ certificate's SHA-256 fingerprint on first use, and warn if it changes.
 - Failover order and safety rules: [ADR 0006](adr/0006-endpoint-failover.md).
 - `User-Agent: AnProx/<version>` identifies the app in Proxmox's access logs.
 
+## Crash reports
+
+If the app crashes, the stack trace, app version, Android version and device model are written to
+a private file on the device. **Nothing is sent.** On the next start the app shows the report and
+offers **Share report** through the Android share sheet, or **Discard**. Exception messages can
+include server host names, so the dialog asks the user to review it before sharing.
+(`app/.../diagnostics/CrashReporter.kt`)
+
+## Release signing
+
+Release APKs are signed with a key that only the owner holds, provided to CI through repository
+secrets ([releasing.md](releasing.md), [ADR 0012](adr/0012-release-pipeline.md)). The
+certificate's SHA-256 fingerprint is printed in every release's notes so users can verify updates.
+
 ## Privacy (Q36)
 
 - No analytics, no crash reporting SDKs, no ads, no Firebase, no Google Play Services.

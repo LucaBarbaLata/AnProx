@@ -37,6 +37,10 @@ Thanks for helping! Bug reports, docs fixes and code are all welcome.
 - Pull requests: describe the change, link the roadmap item, and add screenshots for UI changes
   (light and dark).
 
+## Releases
+
+Maintainers: see [docs/releasing.md](docs/releasing.md).
+
 ## Translations
 
 Translation-ready from day one (Q16). To add a language, copy
