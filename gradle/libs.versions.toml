@@ -12,7 +12,7 @@ retrofit = "3.0.0"
 ktor = "3.6.0"
 koin = "4.1.1"
 junit = "5.10.1"
-slf4j = "2.0.17"
+slf4j = "2.0.20"
 
 # AndroidX (Google Maven)
 composeBom = "2025.06.00"
