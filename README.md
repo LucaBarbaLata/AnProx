@@ -15,7 +15,7 @@ The goal is every function of the web UI in a fast, beautiful, native app.
 | Design | "Midnight Glass", a bespoke dark-first design with light, dark and AMOLED themes |
 | Privacy | No analytics, no ads, no Google services. The app only talks to your own servers. |
 | License | [GPL-3.0](LICENSE) |
-| Status | **Beta**: 0.1.0-beta.1 (milestone M0, foundation). See the [roadmap](docs/roadmap.md). |
+| Status | **Beta**: [0.1.0-beta.1](https://github.com/LucaBarbaLata/AnProx/releases/tag/v0.1.0-beta.1) (milestone M0, foundation). M1 is in progress. See the [roadmap](docs/roadmap.md). |
 
 ## What works today (M0)
 
@@ -49,7 +49,16 @@ Download `AnProx-<version>.apk` from the latest pre-release on the
 [Releases page](https://github.com/LucaBarbaLata/AnProx/releases) and open it on your phone.
 For automatic updates, add this repository to [Obtainium](https://github.com/ImranR98/Obtainium)
 with *Include prereleases* enabled. The [beta testing guide](docs/beta-testing.md) explains what to
-try and how to report problems. (Until the first release is published, use the CI builds below.)
+try and how to report problems.
+
+Every official AnProx APK is signed with the same key. Its certificate SHA-256 fingerprint is:
+
+```
+4A:9A:C7:8A:3D:51:75:C1:1B:3D:0B:12:6E:A3:ED:22:01:B0:DE:EE:12:0D:17:EE:64:60:11:42:B2:67:49:65
+```
+
+[AppVerifier](https://github.com/soupslurpr/AppVerifier) can check it on your phone. If an APK
+claiming to be AnProx has a different fingerprint, don't install it.
 
 ### Install a development build
 

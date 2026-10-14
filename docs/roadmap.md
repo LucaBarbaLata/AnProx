@@ -8,7 +8,7 @@ Status legend: ✅ done · 🚧 in progress · 🗓 planned
 
 | Milestone | Theme | Status |
 |---|---|---|
-| [M0](#m0--foundation) | Foundation: servers, login, dashboard, resources, power, tasks | ✅ → shipping as **0.1.0-beta.1** |
+| [M0](#m0--foundation) | Foundation: servers, login, dashboard, resources, power, tasks | ✅ released as **0.1.0-beta.1** |
 | [M1](#m1--daily-driver) | Daily driver: app lock, SSO, snapshots, backups, charts, notifications | 🚧 snapshots done |
 | [M2](#m2--consoles--guest-configuration) | Consoles and guest configuration | 🗓 |
 | [M3](#m3--alerts--android-integration) | Alerts and Android integration | 🗓 |
@@ -43,15 +43,15 @@ Exit criteria for every milestone:
 | Design | Midnight Glass design system; light, dark and AMOLED; bottom bar and side rail | Q29–Q31, Q37 |
 | Privacy | Zero telemetry; translation-ready strings | Q16, Q36 |
 
-### Beta 0.1.0-beta.1 (M0 release)
-Release engineering is in place ([releasing.md](releasing.md)). Remaining gates:
+### Beta 0.1.0-beta.1 (M0 release): ✅ released
+Release engineering is in place ([releasing.md](releasing.md)). Gates:
 - [x] Release workflow with dry run, signature/version verification and GitHub pre-releases
 - [x] End-to-end tour of the minified release APK on Android 8.0 and 14 emulators (CI)
 - [x] Local crash reports, "Report a bug", issue templates, [beta testing guide](beta-testing.md)
 - [x] Store metadata (Fastlane) for IzzyOnDroid/F-Droid
-- [ ] Owner: create the release key and add the four repository secrets
+- [x] Owner: create the release key and add the four repository secrets
 - [x] Owner: run the manual checklist on real PVE/PBS hardware (2026-10-14: all good)
-- [ ] Owner: run the Release workflow (dry run, then publish)
+- [x] Owner: run the Release workflow (dry run, then publish): [released 2026-10-14](https://github.com/LucaBarbaLata/AnProx/releases/tag/v0.1.0-beta.1)
 
 ## M1 — Daily driver
 *Status: 🚧 in progress. Done items are marked ✅ and ship in 0.1.0-beta.2.*

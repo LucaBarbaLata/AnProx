@@ -16,6 +16,10 @@ All notable changes to AnProx are documented here. The format follows
 ### Changed
 - The guest screen's tools section lists what works now; everything else is under "Coming later".
 
+### Fixed
+- Release notes now show the real signing certificate fingerprint. 0.1.0-beta.1's notes showed a
+  placeholder; the correct value is in the README.
+
 ## [0.1.0-beta.1] — 2026-10-14 (milestone M0, "Foundation")
 
 ### Added

@@ -114,7 +114,10 @@ jobs:
           "$BUILD_TOOLS/apksigner" verify --verbose --print-certs "$APK" | tee signing.txt
           "$BUILD_TOOLS/aapt2" dump badging "$APK" | head -1 | tee badging.txt
           grep -q "versionName='$VERSION'" badging.txt || { echo "::error::APK versionName is not $VERSION"; exit 1; }
-          CERT="$(grep -m1 'certificate SHA-256 digest' signing.txt | awk -F': ' '{print $2}')"
+          # apksigner prints "Signer #1 certificate SHA-256 digest: <hex>" (older) or
+          # "V2 Signer: certificate SHA-256 digest: <hex>" (newer): take the 64 hex digits.
+          CERT="$(grep -m1 'certificate SHA-256 digest' signing.txt | grep -oE '[0-9a-f]{64}' | head -1)"
+          [ -n "$CERT" ] || { echo "::error::Could not read the signing certificate SHA-256 from apksigner"; exit 1; }
           mkdir -p dist
           cp "$APK" "dist/AnProx-$VERSION.apk"
           (cd dist && sha256sum "AnProx-$VERSION.apk" > "AnProx-$VERSION.apk.sha256")

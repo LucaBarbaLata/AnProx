@@ -7,11 +7,17 @@ solved. Newest first.
 
 ## 2026-10-14 — Session 3: M1 starts with snapshots
 
-**Beta 0.1.0-beta.1:** the owner tested the app on **Proxmox VE 8** ("everything works great").
-They have no Backup Server, so PBS support is still only tested against the mock. A Proxmox VE 9
-test will follow later. The beta is pinned to commit `e38c64b`: it is published by pushing the
-tag `v0.1.0-beta.1` on that commit, so the M1 work below doesn't end up in it.
-`anprox.versionName` is now `0.1.0-beta.2`.
+**Beta 0.1.0-beta.1 released.** The owner tested the app on **Proxmox VE 8** ("everything works
+great"). They have no Backup Server, so PBS support is still only tested against the mock. A
+Proxmox VE 9 test will follow later. The owner created the release key, added the secrets and
+published with the Release workflow (run 2) from commit `e38c64b`, before the M1 work below was
+pushed. `anprox.versionName` is now `0.1.0-beta.2`.
+
+- **Bug found in the release notes:** the "Signing certificate SHA-256" line showed the text
+  `certificate SHA-256 digest` instead of the hash. Newer `apksigner` versions print
+  `V2 Signer: certificate SHA-256 digest: <hex>`, and splitting at the first `": "` took the
+  wrong field. The workflow now takes the 64 hex digits and fails if it can't find them. The
+  real fingerprint (from the release log) is in the README.
 
 **Snapshots (first M1 feature),** built along the architecture recipe:
 | Layer | What |

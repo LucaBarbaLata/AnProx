@@ -95,7 +95,8 @@ include server host names, so the dialog asks the user to review it before shari
 
 Release APKs are signed with a key that only the owner holds, provided to CI through repository
 secrets ([releasing.md](releasing.md), [ADR 0012](adr/0012-release-pipeline.md)). The
-certificate's SHA-256 fingerprint is printed in every release's notes so users can verify updates.
+certificate's SHA-256 fingerprint is printed in every release's notes and in the
+[README](../README.md#install-the-beta), so users can verify updates.
 
 ## Privacy (Q36)
 
