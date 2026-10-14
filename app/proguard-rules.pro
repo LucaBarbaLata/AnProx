@@ -15,3 +15,14 @@
 
 # Navigation routes are @Serializable classes.
 -keep class io.github.lucabarbalata.anprox.ui.navigation.** { *; }
+
+# Enum names are persisted (e.g. the theme setting) and compared by name; keep them stable.
+-keepclassmembers enum io.github.lucabarbalata.anprox.** {
+    <fields>;
+    public static **[] values();
+    public static ** valueOf(java.lang.String);
+}
+
+# Keep line numbers in crash reports (the source file name is hidden).
+-keepattributes SourceFile,LineNumberTable
+-renamesourcefileattribute SourceFile

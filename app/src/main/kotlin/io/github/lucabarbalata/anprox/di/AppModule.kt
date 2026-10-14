@@ -7,6 +7,7 @@ import io.github.lucabarbalata.anprox.data.hub.ServerHub
 import io.github.lucabarbalata.anprox.data.snapshot.SnapshotRepository
 import io.github.lucabarbalata.anprox.data.store.ProfileStore
 import io.github.lucabarbalata.anprox.data.store.SecretStore
+import io.github.lucabarbalata.anprox.diagnostics.CrashReporter
 import io.github.lucabarbalata.anprox.network.ProxmoxConnection
 import io.github.lucabarbalata.anprox.storage.DataStoreProfileStore
 import io.github.lucabarbalata.anprox.storage.KeystoreSecretStore
@@ -42,6 +43,7 @@ val appModule = module {
     single<ProfileStore> { DataStoreProfileStore(androidContext()) }
     single<SecretStore> { KeystoreSecretStore(androidContext()) }
     single { SettingsRepository(androidContext()) }
+    single { CrashReporter(androidContext()) }
 
     // Networking: one shared OkHttp pool for all servers.
     single { OkHttpClient() }

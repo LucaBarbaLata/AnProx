@@ -5,6 +5,7 @@ import android.net.ConnectivityManager
 import android.net.Network
 import io.github.lucabarbalata.anprox.data.hub.ServerHub
 import io.github.lucabarbalata.anprox.di.appModule
+import io.github.lucabarbalata.anprox.diagnostics.CrashReporter
 import org.koin.android.ext.android.inject
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
@@ -12,6 +13,7 @@ import org.koin.core.context.startKoin
 class AnProxApplication : Application() {
 
     private val hub: ServerHub by inject()
+    private val crashReporter: CrashReporter by inject()
 
     override fun onCreate() {
         super.onCreate()
@@ -19,6 +21,7 @@ class AnProxApplication : Application() {
             androidContext(this@AnProxApplication)
             modules(appModule)
         }
+        crashReporter.install()
         watchNetwork()
     }
 

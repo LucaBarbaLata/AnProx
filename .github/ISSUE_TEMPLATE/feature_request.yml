@@ -1,0 +1,23 @@
+name: Feature request
+description: Suggest something AnProx should do
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Many Proxmox features are already planned — please check [docs/roadmap.md](../blob/HEAD/docs/roadmap.md) and [docs/api-coverage.md](../blob/HEAD/docs/api-coverage.md) first.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What do you want to do from your phone?
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: How could AnProx help?
+  - type: input
+    id: web-ui
+    attributes:
+      label: Where is this in the Proxmox web UI? (if anywhere)
+      placeholder: Datacenter → Backup → Add

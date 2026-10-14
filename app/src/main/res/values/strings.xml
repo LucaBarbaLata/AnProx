@@ -282,5 +282,16 @@
     <string name="about_donate_body">AnProx is free. Donations keep it going.</string>
     <string name="about_privacy_title">Privacy</string>
     <string name="about_privacy_body">AnProx has no analytics, no ads and no tracking. It only ever talks to the servers you add.</string>
+    <string name="about_prerelease">Beta: expect rough edges</string>
+    <string name="about_report_bug">Report a bug</string>
+    <string name="about_report_bug_body">Opens an issue form on GitHub</string>
+
+    <!-- Crash reports (local only, shared by the user, see CrashReporter) -->
+    <string name="crash_title">AnProx closed unexpectedly</string>
+    <string name="crash_body">A crash report was saved on this device. Nothing has been sent. Sharing it helps fix the problem. Please check it doesn’t contain anything private (it can include server host names).</string>
+    <string name="crash_share">Share report</string>
+    <string name="crash_discard">Discard</string>
+    <string name="crash_share_subject">AnProx crash report</string>
+
     <string name="about_disclaimer">AnProx is an independent project and is not affiliated with or endorsed by Proxmox Server Solutions GmbH. Proxmox is a registered trademark of Proxmox Server Solutions GmbH.</string>
 </resources>

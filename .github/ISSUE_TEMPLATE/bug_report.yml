@@ -1,0 +1,71 @@
+name: Bug report
+description: Something in AnProx doesn't work as expected
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for testing AnProx! Please **remove passwords, tickets, tokens and public IPs/host names** you don't want to share before submitting.
+  - type: input
+    id: app-version
+    attributes:
+      label: AnProx version
+      description: More → About (e.g. 0.1.0-beta.1)
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Device and Android version
+      placeholder: Pixel 8, Android 16
+    validations:
+      required: true
+  - type: dropdown
+    id: server
+    attributes:
+      label: Server product
+      options:
+        - Proxmox VE 9.x
+        - Proxmox VE 8.x
+        - Proxmox Backup Server 4.x
+        - Proxmox Backup Server 3.x
+        - Mock server (from this repository)
+        - Other / not server related
+    validations:
+      required: true
+  - type: input
+    id: server-version
+    attributes:
+      label: Exact server version
+      placeholder: pve-manager 9.0.10
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: And what did you expect instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Add a server with …
+        2. Tap …
+        3. See …
+  - type: dropdown
+    id: connection
+    attributes:
+      label: How does the phone reach the server?
+      multiple: true
+      options:
+        - Local network
+        - VPN (WireGuard / Tailscale / …)
+        - Reverse proxy / public domain
+        - Self-signed certificate ("Allow insecure certificate" on)
+  - type: textarea
+    id: crash-report
+    attributes:
+      label: Crash report (if the app crashed)
+      description: After a crash AnProx offers "Share report" on the next start; paste it here.
+      render: text

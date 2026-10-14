@@ -33,6 +33,7 @@ import io.github.lucabarbalata.anprox.R
 import io.github.lucabarbalata.anprox.core.designsystem.component.AdaptiveNavScaffold
 import io.github.lucabarbalata.anprox.core.designsystem.component.NavItem
 import io.github.lucabarbalata.anprox.data.guest.GuestRef
+import io.github.lucabarbalata.anprox.diagnostics.CrashReportDialog
 import io.github.lucabarbalata.anprox.model.pve.GuestType
 import io.github.lucabarbalata.anprox.ui.dashboard.DashboardScreen
 import io.github.lucabarbalata.anprox.ui.guest.GuestScreen
@@ -175,4 +176,7 @@ fun AnProxApp() {
             composable<AboutRoute> { AboutScreen(onBack = back) }
         }
     }
+
+    // Offers to share the report if the previous run crashed (privacy-preserving, see CrashReporter).
+    CrashReportDialog()
 }
