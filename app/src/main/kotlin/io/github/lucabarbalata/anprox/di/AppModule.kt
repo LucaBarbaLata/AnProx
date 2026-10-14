@@ -85,7 +85,7 @@ val appModule = module {
     viewModel { (serverId: String) -> ServerEditorViewModel(serverId.ifEmpty { null }, get()) }
     viewModel { (serverId: String) -> LoginViewModel(serverId, get()) }
     viewModel { DashboardViewModel(get(), get(), get()) }
-    viewModel { ResourcesViewModel(get(), get(), get()) }
+    viewModel { ResourcesViewModel(get(), get(), get(), get()) }
     viewModel { (ref: GuestRef) -> GuestViewModel(ref, get(), get(), get()) }
     viewModel { (ref: GuestRef) -> OptionsViewModel(ref, get()) }
     viewModel { (ref: GuestRef, name: String) -> CloneViewModel(ref, name, get()) }

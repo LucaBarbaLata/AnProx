@@ -151,6 +151,13 @@ def tap_node(node):
     time.sleep(1.0)
 
 
+def long_press(node):
+    x, y = center(node)
+    print(f"    long-press {(labels(node) or [node.get('class')])[0]!r} at ({x}, {y})", flush=True)
+    adb("shell", "input", "swipe", str(x), str(y), str(x), str(y), "900")
+    time.sleep(1.0)
+
+
 def tap(text, timeout=30, pick="first"):
     tap_node(find(text, timeout, pick))
 
@@ -478,6 +485,19 @@ def console():
     back()
 
 
+@step("Select two guests on the list and start the stopped one")
+def bulk():
+    long_press(scroll_to("backup-client"))  # stopped container: starts the selection
+    find("1 selected", timeout=10)
+    tap_node(scroll_to("nginx-proxy"))       # running: selected too, but only stopped guests start
+    find("2 selected", timeout=10)
+    tap("Start")                             # top bar action
+    find("Start these guests?", timeout=10)
+    screenshot("11g-bulk")
+    tap("Start", pick="lowest")              # the dialog's button
+    find("Started 1 of 1 guests", timeout=60)
+
+
 @step("Clone the template, then migrate the clone to another node")
 def clone_migrate():
     tap_node(scroll_to("ubuntu-2404-template"))
@@ -485,7 +505,7 @@ def clone_migrate():
     find("Linked clone", timeout=30)       # templates clone linked by default
     tap_node(scroll_to("Create clone"))
     find("Open it", timeout=60)            # the clone task finished
-    screenshot("11g-cloned")
+    screenshot("11h-cloned")
     tap_node(scroll_to("Open it"))
     find("ubuntu-2404-template-clone", timeout=30)
     tap_node(scroll_to("Migrate"))
@@ -493,7 +513,7 @@ def clone_migrate():
     tap_node(scroll_to("Start migration"))
     tap("Start migration", pick="lowest")  # the confirmation dialog's button
     find("· pve2 ·", timeout=60)           # the guest screen again, now on pve2
-    screenshot("11h-migrated")
+    screenshot("11i-migrated")
     back()                                 # to the clone screen
     back()                                 # to the template
     scroll_to("Create new guests from this template")

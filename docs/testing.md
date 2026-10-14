@@ -12,7 +12,7 @@ testing debug builds on **real hardware**.
 | Integration: multi-server hub, sessions, dashboard snapshots, guest actions, guest snapshots, performance history, app lock rules, backup and restore, guest network info, guest options, clone/template/migrate, console sessions, node power | `core/data/src/test` | JVM | 48 |
 | Android lint | `:app:lintDebug` | CI | — |
 | Build: debug and R8-minified release | `:app:assemble*` | CI | — |
-| **End-to-end tour** of the minified release APK on emulators against the mock server | `scripts/e2e/tour.py` | CI (Android 8.0 + 14), Release workflow | 13 steps |
+| **End-to-end tour** of the minified release APK on emulators against the mock server | `scripts/e2e/tour.py` | CI (Android 8.0 + 14), Release workflow | 14 steps |
 | UI / screenshot tests | planned (M1) | — | — |
 | Manual on real hardware | [checklist below](#manual-test-checklist-real-hardware) | owner | — |
 
@@ -120,9 +120,10 @@ so no test code is compiled into the app. `scripts/e2e/run.sh` starts the mock s
 8. Backups of the `pihole` container → **Back up now** to the Backup Server → "Backup finished" → **Restore** the new backup as a new container (ID 105) → "CT restore finished".
 9. Options of the `nginx-proxy` container → turn on **Start at boot** → **Save** → "Options saved".
 10. **Console** of `nginx-proxy` → the mock's console page reports "(signed in)" (the session cookie works through the self-signed certificate) → **Esc** on the key row reaches the page's terminal input.
-11. **Clone** the Ubuntu template (linked by default) → **Open it** → **Migrate** the clone to `pve2` → the guest screen now says `pve2`.
-12. Tasks tab shows the newest task ("VM migrate").
-13. Settings → Light theme; turning on the app lock explains that the emulator has no screen lock → dashboard in light mode, with the starred VM under Favourites.
+11. Long-press `backup-client`, tap `nginx-proxy` → "2 selected" → **Start** → the confirmation lists only the stopped one → "Started 1 of 1 guests".
+12. **Clone** the Ubuntu template (linked by default) → **Open it** → **Migrate** the clone to `pve2` → the guest screen now says `pve2`.
+13. Tasks tab shows the newest task ("VM migrate").
+14. Settings → Light theme; turning on the app lock explains that the emulator has no screen lock → dashboard in light mode, with the starred VM under Favourites.
 
 After every step the script checks that the app process is alive and that logcat has no
 `FATAL EXCEPTION` for the app. Screenshots of each step, plus UI dumps and logcat on failure,
@@ -205,6 +206,12 @@ Run this before closing a milestone. Note the PVE/PBS versions you tested agains
 - [ ] Node → Shell opens a root shell (as root@pam).
 - [ ] With "Allow insecure certificate" off on a self-signed server, the console explains the certificate problem instead of loading.
 - [ ] Leave a console open for over an hour, then Reconnect: it opens again without signing in.
+
+**Bulk actions** (use test guests)
+- [ ] Long-press a guest in Resources: "1 selected"; taps add/remove guests; Back or the arrow ends the selection.
+- [ ] Select two stopped guests → Start: both start; the summary says "Started 2 of 2 guests".
+- [ ] Select running and stopped guests → Shut down lists only the running ones.
+- [ ] Templates and nodes can't be selected.
 
 **Favourites**
 - [ ] The star on a guest's screen adds it to Overview → Favourites; its state and CPU update there; tapping it opens the guest.

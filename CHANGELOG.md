@@ -48,6 +48,10 @@ All notable changes to AnProx are documented here. The format follows
   session. Terminals get a row of keys phone keyboards lack: Esc, Tab, Ctrl+C, Ctrl+D and the
   arrows. Self-signed certificates are accepted only for servers with "Allow insecure certificate".
 
+- **Bulk actions** (Resources): long-press a guest to start selecting, tap more, then Start, Shut
+  down or Stop them all from the top bar. Only the guests the action fits are included (Start skips
+  running ones), the confirmation lists them, and a summary says how many succeeded.
+
 - **Favourites:** the star on a guest's screen pins it to the dashboard, with its live state. A
   favourite follows the guest when it moves to another node.
 

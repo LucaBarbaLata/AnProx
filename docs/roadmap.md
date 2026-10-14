@@ -9,7 +9,7 @@ Status legend: ✅ done · 🚧 in progress · 🗓 planned
 | Milestone | Theme | Status |
 |---|---|---|
 | [M0](#m0--foundation) | Foundation: servers, login, dashboard, resources, power, tasks | ✅ released as **0.1.0-beta.1** |
-| [M1](#m1--daily-driver) | Daily driver: app lock, SSO, snapshots, backups, charts, notifications | 🚧 snapshots, charts, app lock, backups, guest IPs done |
+| [M1](#m1--daily-driver) | Daily driver: app lock, SSO, snapshots, backups, charts, notifications | 🚧 snapshots, charts, app lock, backups, guest IPs, bulk actions, favourites done |
 | [M2](#m2--consoles--guest-configuration) | Consoles and guest configuration | 🚧 consoles, options, clone, templates, migration done |
 | [M3](#m3--alerts--android-integration) | Alerts and Android integration | 🗓 |
 | [M4](#m4--datacenter) | Datacenter: storage, backup jobs, HA, replication, firewall | 🗓 |
@@ -67,7 +67,7 @@ Release engineering is in place ([releasing.md](releasing.md)). Gates:
   ranges and touch scrubbing. (Storage charts and pinch-zoom are still to do.)
 - 🔸 **Guest agent** (Q18): ✅ IP addresses (tap to copy) and OS info for VMs, IP addresses for containers;
   fs-freeze/thaw and set user password are still to do.
-- **Bulk actions** on the resource list (multi-select start, shut down, stop).
+- ✅ **Bulk actions** on the resource list (long-press to select; start, shut down, stop).
 - **Live task notifications** (Q28) for long operations started from the app.
 - ✅ **Favourites** pinned to the top of the dashboard (star on the guest screen).
 

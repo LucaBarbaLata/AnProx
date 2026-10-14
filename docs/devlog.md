@@ -98,6 +98,12 @@ cookie was accepted and which key codes arrived, both in its title; the app show
 under the screen title, which gives the tour something native to check. Node reboot/shutdown is
 `POST /nodes/{node}/status`, type-to-confirm. +6 tests (107 in total).
 
+**Favourites and bulk actions.** Favourites are a DataStore string set keyed by server, type and
+VMID (not node, so they survive migrations); the dashboard matches them against the cluster
+snapshot it already polls. Bulk actions keep the selection in `ResourcesViewModel`, filter it per
+action (Start only takes stopped guests, Shut down only running ones), run four power calls at a
+time and wait for every task before summarising. `GlassCard` got an optional long-click.
+
 Gotchas: one new data test ended in `assertNotNull(...)`, which returns a value, so JUnit silently
 skipped it (the CLAUDE.md pitfall again, caught because the test count was one short). The tour's
 `scroll_to` now turns around at the end of a list, since the guest screen got longer. Chart touch

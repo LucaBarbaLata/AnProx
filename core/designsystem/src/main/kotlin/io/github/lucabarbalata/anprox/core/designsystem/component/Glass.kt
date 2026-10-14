@@ -1,8 +1,10 @@
 package io.github.lucabarbalata.anprox.core.designsystem.component
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
@@ -53,11 +55,14 @@ fun GlassBackground(modifier: Modifier = Modifier, content: @Composable BoxScope
  * A frosted-glass card: translucent fill, a faint highlight on the top edge and a 1dp hairline.
  * Pass [onClick] to make the whole card a button.
  */
+// combinedClickable was experimental in older Compose versions; harmless where it is stable.
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun GlassCard(
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
     onClickLabel: String? = null,
+    onLongClick: (() -> Unit)? = null,
     shape: Shape = RoundedCornerShape(24.dp),
     strong: Boolean = false,
     contentPadding: PaddingValues = PaddingValues(16.dp),
@@ -69,6 +74,10 @@ fun GlassCard(
         .background(if (strong) c.glassStrong else c.glass)
         .background(Brush.verticalGradient(0f to c.highlight, 0.35f to Color.Transparent))
         .border(1.dp, c.hairline, shape)
-    if (onClick != null) m = m.clickable(onClickLabel = onClickLabel, role = Role.Button, onClick = onClick)
+    if (onLongClick != null) {
+        m = m.combinedClickable(onClickLabel = onClickLabel, role = Role.Button, onLongClick = onLongClick, onClick = onClick ?: {})
+    } else if (onClick != null) {
+        m = m.clickable(onClickLabel = onClickLabel, role = Role.Button, onClick = onClick)
+    }
     Column(m.padding(contentPadding), content = content)
 }

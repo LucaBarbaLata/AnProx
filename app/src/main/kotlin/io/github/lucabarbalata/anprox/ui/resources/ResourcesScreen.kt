@@ -1,5 +1,6 @@
 package io.github.lucabarbalata.anprox.ui.resources
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,11 +20,15 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Computer
 import androidx.compose.material.icons.outlined.Dns
 import androidx.compose.material.icons.outlined.Inventory2
+import androidx.compose.material.icons.outlined.PlayArrow
+import androidx.compose.material.icons.outlined.PowerSettingsNew
 import androidx.compose.material.icons.outlined.SearchOff
+import androidx.compose.material.icons.outlined.StopCircle
 import androidx.compose.material.icons.outlined.Storage
 import androidx.compose.material.icons.outlined.TouchApp
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -32,15 +37,19 @@ import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -58,13 +67,19 @@ import io.github.lucabarbalata.anprox.core.designsystem.theme.MonoStyle
 import io.github.lucabarbalata.anprox.data.guest.GuestRef
 import io.github.lucabarbalata.anprox.model.format.Formatters
 import io.github.lucabarbalata.anprox.model.pve.ClusterResource
+import io.github.lucabarbalata.anprox.model.pve.DangerLevel
 import io.github.lucabarbalata.anprox.model.pve.GuestType
+import io.github.lucabarbalata.anprox.model.pve.PowerAction
 import io.github.lucabarbalata.anprox.model.pve.ResourceType
 import io.github.lucabarbalata.anprox.ui.common.AnProxScaffold
+import io.github.lucabarbalata.anprox.ui.common.BusyCard
+import io.github.lucabarbalata.anprox.ui.common.ConfirmActionDialog
+import io.github.lucabarbalata.anprox.ui.common.asString
 import io.github.lucabarbalata.anprox.ui.common.contentPadding
 import io.github.lucabarbalata.anprox.ui.common.statusAppearance
 import io.github.lucabarbalata.anprox.ui.guest.GuestDetail
 import io.github.lucabarbalata.anprox.ui.guest.GuestTool
+import io.github.lucabarbalata.anprox.ui.guest.actionLabel
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
@@ -81,7 +96,17 @@ fun ResourcesScreen(
     viewModel: ResourcesViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val bulk by viewModel.bulk.collectAsStateWithLifecycle()
     val wide = isWideLayout()
+    val snackbar = remember { SnackbarHostState() }
+    val bulkResult = bulk.result?.asString()
+    LaunchedEffect(bulk.result) {
+        if (bulkResult != null) {
+            viewModel.consumeBulkResult()
+            snackbar.showSnackbar(bulkResult)
+        }
+    }
+    BackHandler(enabled = bulk.active) { viewModel.clearSelection() }
     var selected by rememberSaveable { mutableStateOf<String?>(null) }
     // A selected guest that moved to another node (migration, HA) is followed there.
     LaunchedEffect(state.items) {
@@ -92,7 +117,23 @@ fun ResourcesScreen(
         if (node != null && node != ref.node) selected = refKey(ref.copy(node = node))
     }
 
-    AnProxScaffold(title = stringResource(R.string.resources_title), subtitle = stringResource(R.string.resources_subtitle, state.items.size)) { inner ->
+    AnProxScaffold(
+        title = if (bulk.active) {
+            pluralStringResource(R.plurals.resources_selected, bulk.selected.size, bulk.selected.size)
+        } else {
+            stringResource(R.string.resources_title)
+        },
+        subtitle = if (bulk.active) stringResource(R.string.resources_selected_hint) else stringResource(R.string.resources_subtitle, state.items.size),
+        onBack = if (bulk.active) viewModel::clearSelection else null,
+        snackbarHostState = snackbar,
+        actions = {
+            if (bulk.active) {
+                BulkAction(PowerAction.START, Icons.Outlined.PlayArrow, bulk, viewModel::requestBulk)
+                BulkAction(PowerAction.SHUTDOWN, Icons.Outlined.PowerSettingsNew, bulk, viewModel::requestBulk)
+                BulkAction(PowerAction.STOP, Icons.Outlined.StopCircle, bulk, viewModel::requestBulk)
+            }
+        },
+    ) { inner ->
         val list = @Composable { modifier: Modifier ->
             ResourceList(
                 state = state,
@@ -102,10 +143,16 @@ fun ResourcesScreen(
                 onFilter = viewModel::setFilter,
                 onRunningOnly = viewModel::setRunningOnly,
                 selectedKey = if (wide) selected else null,
+                checkedKeys = bulk.selected.keys,
+                busyText = bulk.busy?.let { bulk.targets(it).size.let { n -> pluralStringResource(R.plurals.bulk_busy, n, n) } },
+                onLongClick = viewModel::toggleSelected,
                 onClick = { item ->
                     val r = item.resource
                     val type = GuestType.fromApi(r.type)
-                    if (type != null && r.vmid != null && r.node != null) {
+                    if (bulk.active) {
+                        // While selecting, a tap adds or removes the guest.
+                        viewModel.toggleSelected(item)
+                    } else if (type != null && r.vmid != null && r.node != null) {
                         val ref = GuestRef(item.serverId, r.node!!, type, r.vmid!!)
                         if (wide) {
                             selected = refKey(ref)
@@ -146,6 +193,36 @@ fun ResourcesScreen(
             list(Modifier.fillMaxSize())
         }
     }
+
+    BulkConfirm(bulk, onConfirm = viewModel::runBulk, onDismiss = viewModel::dismissBulk)
+}
+
+@Composable
+private fun BulkAction(action: PowerAction, icon: ImageVector, bulk: BulkState, onRequest: (PowerAction) -> Unit) {
+    IconButton(onClick = { onRequest(action) }, enabled = bulk.busy == null && bulk.targets(action).isNotEmpty()) {
+        Icon(icon, contentDescription = actionLabel(action))
+    }
+}
+
+@Composable
+private fun BulkConfirm(bulk: BulkState, onConfirm: () -> Unit, onDismiss: () -> Unit) {
+    val action = bulk.confirm ?: return
+    val targets = bulk.targets(action)
+    val names = targets.joinToString("\n") { "• " + (it.resource.name ?: it.resource.vmid.toString()) }
+    ConfirmActionDialog(
+        title = stringResource(
+            when (action) {
+                PowerAction.START -> R.string.bulk_confirm_start
+                PowerAction.SHUTDOWN -> R.string.bulk_confirm_shutdown
+                else -> R.string.bulk_confirm_stop
+            },
+        ),
+        message = if (action == PowerAction.STOP) stringResource(R.string.bulk_confirm_stop_body, names) else names,
+        confirmLabel = actionLabel(action),
+        danger = DangerLevel.CONFIRM,
+        onConfirm = onConfirm,
+        onDismiss = onDismiss,
+    )
 }
 
 private fun refKey(ref: GuestRef) = listOf(ref.serverId, ref.node, ref.type.apiName, ref.vmid).joinToString("|")
@@ -166,9 +243,13 @@ private fun ResourceList(
     onFilter: (ResourceFilter) -> Unit,
     onRunningOnly: (Boolean) -> Unit,
     selectedKey: String?,
+    checkedKeys: Set<String>,
+    busyText: String?,
+    onLongClick: (ResourceItem) -> Unit,
     onClick: (ResourceItem) -> Unit,
 ) {
     LazyColumn(modifier, contentPadding = padding, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        busyText?.let { text -> item { BusyCard(text) } }
         item {
             GlassTextField(
                 value = state.query,
@@ -201,7 +282,17 @@ private fun ResourceList(
             val type = GuestType.fromApi(r.type)
             val isSelected = selectedKey != null && type != null && r.vmid != null && r.node != null &&
                 selectedKey == refKey(GuestRef(item.serverId, r.node!!, type, r.vmid!!))
-            ResourceRow(item, state.showServerNames, isSelected) { onClick(item) }
+            ResourceRow(
+                item,
+                state.showServerNames,
+                selected = isSelected,
+                checked = item.key in checkedKeys,
+                onLongClick = if (item.selectable) {
+                    { onLongClick(item) }
+                } else {
+                    null
+                },
+            ) { onClick(item) }
         }
     }
 }
@@ -253,28 +344,40 @@ private fun filterLabel(f: ResourceFilter): String = stringResource(
 )
 
 @Composable
-private fun ResourceRow(item: ResourceItem, showServer: Boolean, selected: Boolean, onClick: () -> Unit) {
+private fun ResourceRow(
+    item: ResourceItem,
+    showServer: Boolean,
+    selected: Boolean,
+    checked: Boolean,
+    onLongClick: (() -> Unit)?,
+    onClick: () -> Unit,
+) {
     val c = AnProxTheme.colors
     val r = item.resource
     val appearance = statusAppearance(r.status)
     val clickable = r.isGuest || r.resourceType == ResourceType.NODE || r.holdsBackups
     GlassCard(
         onClick = if (clickable) onClick else null,
-        strong = selected,
+        onLongClick = onLongClick,
+        strong = selected || checked,
         contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(
-                when (r.resourceType) {
-                    ResourceType.QEMU -> Icons.Outlined.Computer
-                    ResourceType.LXC -> Icons.Outlined.Inventory2
-                    ResourceType.NODE -> Icons.Outlined.Dns
-                    else -> Icons.Outlined.Storage
-                },
-                contentDescription = null,
-                tint = if (r.template) c.textTertiary else c.textSecondary,
-                modifier = Modifier.size(22.dp),
-            )
+            if (checked) {
+                Icon(Icons.Filled.CheckCircle, contentDescription = stringResource(R.string.resources_checked), tint = c.accent, modifier = Modifier.size(22.dp))
+            } else {
+                Icon(
+                    when (r.resourceType) {
+                        ResourceType.QEMU -> Icons.Outlined.Computer
+                        ResourceType.LXC -> Icons.Outlined.Inventory2
+                        ResourceType.NODE -> Icons.Outlined.Dns
+                        else -> Icons.Outlined.Storage
+                    },
+                    contentDescription = null,
+                    tint = if (r.template) c.textTertiary else c.textSecondary,
+                    modifier = Modifier.size(22.dp),
+                )
+            }
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {

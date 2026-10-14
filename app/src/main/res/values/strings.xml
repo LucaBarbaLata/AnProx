@@ -249,6 +249,25 @@
     <string name="options_discard_body">Your edits to this guest haven\'t been saved.</string>
     <string name="options_discard">Discard</string>
 
+    <!-- Bulk actions on the Resources list -->
+    <plurals name="resources_selected">
+        <item quantity="one">%1$d selected</item>
+        <item quantity="other">%1$d selected</item>
+    </plurals>
+    <string name="resources_selected_hint">Tap guests to add or remove them</string>
+    <string name="resources_checked">Selected</string>
+    <plurals name="bulk_busy">
+        <item quantity="one">Working on %1$d guest…</item>
+        <item quantity="other">Working on %1$d guests…</item>
+    </plurals>
+    <string name="bulk_confirm_start">Start these guests?</string>
+    <string name="bulk_confirm_shutdown">Shut down these guests?</string>
+    <string name="bulk_confirm_stop">Stop these guests?</string>
+    <string name="bulk_confirm_stop_body">Stopping is like pulling the power plug: unsaved work in them is lost.\n\n%1$s</string>
+    <string name="bulk_done_start">Started %1$d of %2$d guests</string>
+    <string name="bulk_done_shutdown">Shut down %1$d of %2$d guests</string>
+    <string name="bulk_done_stop">Stopped %1$d of %2$d guests</string>
+
     <!-- Favourites -->
     <string name="dashboard_favourites">Favourites</string>
     <string name="favourite_add">Add to favourites</string>
