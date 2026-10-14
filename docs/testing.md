@@ -121,7 +121,9 @@ scripts/e2e/run.sh app/build/outputs/apk/release/app-release.apk
 (On a physical phone, set `ANPROX_MOCK_HOST` to your computer's LAN IP.)
 
 > The tour finds elements by their visible English text. If you rename a string that it uses,
-> update `tour.py` in the same change.
+> update `tour.py` in the same change. Tap anything inside a scrolling list via
+> `tap_node(scroll_to(...))`: it brings the item to mid-screen first, because edge-to-edge
+> content under the system navigation bar can't be tapped (the bar takes the touch).
 
 ## Continuous integration
 

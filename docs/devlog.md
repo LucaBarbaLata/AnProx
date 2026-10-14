@@ -31,6 +31,14 @@ The owner asked: "can you make a release version? or let's prepare for a beta pa
   *requests* a keyboard, so "press BACK if the keyboard is shown" closed the server editor instead.
   The tour never presses BACK to hide the keyboard any more. With that, the full tour passed on
   Android 8.0.
+- On Android 14 (emulator in three-button navigation mode) the tour still ended up back on the
+  welcome screen. The app draws edge to edge, so a list item can be *visible* under the system
+  navigation bar. The tour tapped "Allow insecure certificate" while it sat there and pressed the
+  bar's Back button instead. `scroll_to()` now moves the target towards mid-screen and waits for
+  it to stop moving before any list tap. Failures print the focused window, the app process and
+  any crash, and every tap logs its coordinates. After that, the full tour passed on both
+  Android 8.0 and 14 (CI run 33). This isn't an app bug: edge-to-edge apps always show content
+  under translucent system bars, and the bars take the touches there.
 
 ---
 
