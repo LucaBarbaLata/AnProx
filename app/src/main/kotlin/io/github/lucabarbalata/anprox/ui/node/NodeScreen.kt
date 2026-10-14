@@ -1,6 +1,19 @@
 package io.github.lucabarbalata.anprox.ui.node
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.PowerSettingsNew
+import androidx.compose.material.icons.outlined.RestartAlt
+import androidx.compose.material.icons.outlined.Terminal
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import io.github.lucabarbalata.anprox.core.designsystem.component.AnProxButton
+import io.github.lucabarbalata.anprox.core.designsystem.component.ButtonStyle
+import io.github.lucabarbalata.anprox.model.pve.NodePowerAction
+import io.github.lucabarbalata.anprox.security.LocalDangerousActionGuard
+import io.github.lucabarbalata.anprox.ui.common.ConfirmActionDialog
+import io.github.lucabarbalata.anprox.ui.common.MenuRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -47,15 +60,32 @@ fun NodeScreen(
     node: String,
     onBack: () -> Unit,
     onGuest: (GuestRef) -> Unit,
+    onShell: () -> Unit,
     viewModel: NodeViewModel = koinViewModel(key = "node-$serverId-$node") { parametersOf(serverId, node) },
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    AnProxScaffold(title = node, subtitle = stringResource(R.string.node_subtitle), onBack = onBack) { inner ->
+    val snackbar = remember { SnackbarHostState() }
+    val message = state.message?.asString()
+    LaunchedEffect(state.message) {
+        if (message != null) {
+            viewModel.consumeMessage()
+            snackbar.showSnackbar(message)
+        }
+    }
+    AnProxScaffold(title = node, subtitle = stringResource(R.string.node_subtitle), onBack = onBack, snackbarHostState = snackbar) { inner ->
         LazyColumn(contentPadding = contentPadding(inner), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             if (!state.online) item { ErrorBanner(stringResource(R.string.node_offline)) }
             state.error?.let { e -> if (state.online) item { ErrorBanner(e.asString()) } }
             state.status?.let { s ->
                 item { Gauges(s) }
+                if (state.online) {
+                    item { SectionHeader(stringResource(R.string.node_tools)) }
+                    item {
+                        GlassCard(contentPadding = PaddingValues(vertical = 6.dp)) {
+                            MenuRow(Icons.Outlined.Terminal, stringResource(R.string.node_shell), stringResource(R.string.node_shell_body), onShell)
+                        }
+                    }
+                }
                 if (state.online) {
                     item { SectionHeader(stringResource(R.string.perf_title)) }
                     item { PerformanceSection(MetricsSource.Node(serverId, node)) }
@@ -94,7 +124,47 @@ fun NodeScreen(
                     }
                 }
             }
+            if (state.online && state.status != null) {
+                item { SectionHeader(stringResource(R.string.node_power)) }
+                item {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        AnProxButton(
+                            text = stringResource(R.string.node_reboot),
+                            onClick = { viewModel.requestPower(NodePowerAction.REBOOT) },
+                            style = ButtonStyle.SECONDARY,
+                            icon = Icons.Outlined.RestartAlt,
+                            enabled = state.busy == null,
+                            loading = state.busy == NodePowerAction.REBOOT,
+                            modifier = Modifier.weight(1f),
+                        )
+                        AnProxButton(
+                            text = stringResource(R.string.node_shutdown),
+                            onClick = { viewModel.requestPower(NodePowerAction.SHUTDOWN) },
+                            style = ButtonStyle.DANGER,
+                            icon = Icons.Outlined.PowerSettingsNew,
+                            enabled = state.busy == null,
+                            loading = state.busy == NodePowerAction.SHUTDOWN,
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                }
+            }
         }
+    }
+
+    state.confirm?.let { action ->
+        val guard = LocalDangerousActionGuard.current
+        val reboot = action == NodePowerAction.REBOOT
+        val title = stringResource(if (reboot) R.string.node_reboot_title else R.string.node_shutdown_title, node)
+        ConfirmActionDialog(
+            title = title,
+            message = stringResource(if (reboot) R.string.node_reboot_body else R.string.node_shutdown_body),
+            confirmLabel = stringResource(if (reboot) R.string.node_reboot else R.string.node_shutdown),
+            danger = action.danger,
+            confirmText = node,
+            onConfirm = { guard.confirm(title, viewModel::power) },
+            onDismiss = viewModel::dismissPower,
+        )
     }
 }
 

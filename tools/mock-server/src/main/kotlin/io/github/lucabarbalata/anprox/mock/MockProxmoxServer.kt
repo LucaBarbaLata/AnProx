@@ -115,6 +115,7 @@ class MockProxmoxServer(
     private fun Application.routes() {
         install(createApplicationPlugin("HeaderRecorder") { onCall { lastRequestHeaders = it.request.headers } })
         routing {
+            if (product == ProxmoxProduct.PVE) get("$pathPrefix/") { call.consolePage() }
             route("$pathPrefix/api2/json") {
                 access()
                 when (product) {
@@ -171,6 +172,18 @@ class MockProxmoxServer(
             val node = state.node(call.parameters["node"]!!) ?: return@get call.fail(404, "no such node")
             if (!node.online) return@get call.fail(595, "Connection refused")
             call.ok(state.nodeStatus(node))
+        }
+        post("nodes/{node}/status") {
+            val s = call.authed() ?: return@post
+            val node = state.node(call.parameters["node"]!!) ?: return@post call.fail(404, "no such node")
+            val command = call.receiveParameters()["command"]
+            if (command !in listOf("reboot", "shutdown")) {
+                return@post call.fail(400, "Parameter verification failed.", mapOf("command" to "value '$command' does not have a value in the enumeration 'reboot, shutdown'"))
+            }
+            if (!node.online) return@post call.fail(595, "Connection refused")
+            if (state.isReadOnly(s.user)) return@post call.fail(403, "Permission check failed (/nodes/${node.name}, Sys.PowerMgmt)")
+            state.nodePowerRequests += node.name to command!!
+            call.ok(JsonNull)
         }
         get("nodes/{node}/{type}/{vmid}/config") {
             call.authed() ?: return@get
@@ -406,6 +419,37 @@ class MockProxmoxServer(
             onFailure = { fail(500, it.message ?: "error") },
         )
     }
+
+    /**
+     * Stand-in for Proxmox's console page (`/?console=kvm|lxc|shell…`). The title says whether the
+     * session cookie was accepted; terminals get xterm.js's input element and report the key codes
+     * they receive in the title, so the app's extra key row can be tested.
+     */
+    private suspend fun ApplicationCall.consolePage() {
+        val q = request.queryParameters
+        val kind = q["console"] ?: return respondText("<!DOCTYPE html><title>Proxmox Virtual Environment</title>", ContentType.Text.Html)
+        val signedIn = state.session(request.cookies.rawCookies[product.cookieName]) != null
+        val what = listOfNotNull(kind, q["vmid"], q["node"]?.let { "on $it" }).joinToString(" ")
+        val title = "Mock console: $what (${if (signedIn) "signed in" else "not signed in"})"
+        val terminal = q["xtermjs"] == "1"
+        val html = buildString {
+            append("<!DOCTYPE html><html><head><meta name=\"viewport\" content=\"width=device-width\"><title>")
+            append(title.escapeHtml())
+            append("</title></head><body style=\"background:#000;color:#0f0;font-family:monospace\"><p>")
+            append(title.escapeHtml())
+            append("</p>")
+            if (terminal) {
+                append("<textarea class=\"xterm-helper-textarea\"></textarea><script>")
+                append("var keys=[];document.querySelector('.xterm-helper-textarea').addEventListener('keydown',function(e){")
+                append("keys.push((e.ctrlKey?'Ctrl+':'')+e.keyCode);document.title='Keys: '+keys.join(' ');});")
+                append("</script>")
+            }
+            append("</body></html>")
+        }
+        respondText(html, ContentType.Text.Html)
+    }
+
+    private fun String.escapeHtml() = replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
     /** The guest named by the path; [type] for routes with a literal `qemu`/`lxc` segment. */
     private suspend fun ApplicationCall.guest(type: String? = null): MockState.Guest? {

@@ -34,7 +34,10 @@ import io.github.lucabarbalata.anprox.core.designsystem.component.AdaptiveNavSca
 import io.github.lucabarbalata.anprox.core.designsystem.component.NavItem
 import io.github.lucabarbalata.anprox.data.guest.GuestRef
 import io.github.lucabarbalata.anprox.diagnostics.CrashReportDialog
+import io.github.lucabarbalata.anprox.model.pve.ConsoleKind
+import io.github.lucabarbalata.anprox.model.pve.ConsoleTarget
 import io.github.lucabarbalata.anprox.model.pve.GuestType
+import io.github.lucabarbalata.anprox.ui.console.ConsoleScreen
 import io.github.lucabarbalata.anprox.ui.dashboard.DashboardScreen
 import io.github.lucabarbalata.anprox.ui.guest.CloneScreen
 import io.github.lucabarbalata.anprox.ui.guest.GuestScreen
@@ -48,6 +51,7 @@ import io.github.lucabarbalata.anprox.ui.navigation.AboutRoute
 import io.github.lucabarbalata.anprox.ui.navigation.BackupsRoute
 import io.github.lucabarbalata.anprox.ui.navigation.DashboardRoute
 import io.github.lucabarbalata.anprox.ui.navigation.CloneRoute
+import io.github.lucabarbalata.anprox.ui.navigation.ConsoleRoute
 import io.github.lucabarbalata.anprox.ui.navigation.GuestRoute
 import io.github.lucabarbalata.anprox.ui.navigation.LoginRoute
 import io.github.lucabarbalata.anprox.ui.navigation.MoreRoute
@@ -124,6 +128,10 @@ fun AnProxApp() {
             GuestTool.SNAPSHOTS -> nav.navigate(SnapshotsRoute(ref.serverId, ref.node, type, ref.vmid, name))
             GuestTool.BACKUPS -> nav.navigate(BackupsRoute(ref.serverId, ref.node, type, ref.vmid, name))
             GuestTool.OPTIONS -> nav.navigate(OptionsRoute(ref.serverId, ref.node, type, ref.vmid, name))
+            GuestTool.CONSOLE -> {
+                val kind = if (ref.type == GuestType.QEMU) ConsoleKind.VM else ConsoleKind.CONTAINER
+                nav.navigate(ConsoleRoute(ref.serverId, ref.node, kind.name, ref.vmid, name))
+            }
             GuestTool.CLONE -> nav.navigate(CloneRoute(ref.serverId, ref.node, type, ref.vmid, name))
             GuestTool.MIGRATE -> nav.navigate(MigrateRoute(ref.serverId, ref.node, type, ref.vmid, name))
         }
@@ -231,6 +239,12 @@ fun AnProxApp() {
                 val ref = GuestRef(r.serverId, r.node, GuestType.fromApi(r.type) ?: GuestType.QEMU, r.vmid)
                 MigrateScreen(ref, guestName = r.name, onBack = back, onTask = openTask, onMigrated = onMigrated)
             }
+            composable<ConsoleRoute> { entry ->
+                val r = entry.toRoute<ConsoleRoute>()
+                val kind = ConsoleKind.valueOf(r.kind)
+                val target = ConsoleTarget(kind, r.node, r.vmid.takeIf { kind != ConsoleKind.NODE }, r.name)
+                ConsoleScreen(r.serverId, target, onBack = back)
+            }
             composable<StorageRoute> { entry ->
                 val r = entry.toRoute<StorageRoute>()
                 BackupsScreen(BackupScope.Storage(r.serverId, r.node, r.storage), onBack = back, onTask = openTask)
@@ -246,7 +260,13 @@ fun AnProxApp() {
             }
             composable<NodeRoute> { entry ->
                 val r = entry.toRoute<NodeRoute>()
-                NodeScreen(serverId = r.serverId, node = r.node, onBack = back, onGuest = openGuest)
+                NodeScreen(
+                    serverId = r.serverId,
+                    node = r.node,
+                    onBack = back,
+                    onGuest = openGuest,
+                    onShell = { nav.navigate(ConsoleRoute(r.serverId, r.node, ConsoleKind.NODE.name, 0, r.node)) },
+                )
             }
             composable<TaskLogRoute> { entry ->
                 val r = entry.toRoute<TaskLogRoute>()

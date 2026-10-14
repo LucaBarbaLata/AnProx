@@ -87,6 +87,17 @@ The emulator tour broke on the long guest screen: the Network card sits above th
 checking it after the charts needed more than 16 swipes (down to the end, then back up). The step
 now checks it first, and `scroll_to` allows 24 swipes.
 
+**Consoles and node power.** Rather than re-implementing noVNC and the terminal protocol, the
+console screen loads Proxmox's own console page (`/?console=kvm|lxc|shell&novnc|xtermjs=1…`) in a
+WebView after putting the session ticket into the `PVEAuthCookie` cookie for the server's origin;
+Proxmox then embeds the CSRF token itself. Certificate errors are accepted only for that host and
+only if the server allows an insecure certificate, the same rule as the API client. The extra key
+row sends synthetic `keydown` events to xterm.js's input (`keyCode` has to be overridden, since the
+`KeyboardEvent` constructor leaves it 0). The mock serves a stand-in page that reports whether the
+cookie was accepted and which key codes arrived, both in its title; the app shows the page title
+under the screen title, which gives the tour something native to check. Node reboot/shutdown is
+`POST /nodes/{node}/status`, type-to-confirm. +6 tests (107 in total).
+
 Gotchas: one new data test ended in `assertNotNull(...)`, which returns a value, so JUnit silently
 skipped it (the CLAUDE.md pitfall again, caught because the test count was one short). The tour's
 `scroll_to` now turns around at the end of a list, since the guest screen got longer. Chart touch

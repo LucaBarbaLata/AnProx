@@ -220,7 +220,7 @@
     <string name="power_reset">Reset</string>
     <string name="power_pause">Pause</string>
     <string name="power_resume">Resume</string>
-    <string name="tool_console">Console (noVNC, terminal, SPICE)</string>
+    <string name="tool_console">SPICE viewer and built-in SSH</string>
     <string name="tool_hardware">Hardware (CPU, memory, disks, network)</string>
     <string name="tool_cloudinit">Cloud-init (user, SSH keys, IP)</string>
     <string name="coming_in">Coming in %1$s</string>
@@ -248,6 +248,30 @@
     <string name="options_discard_title">Discard changes?</string>
     <string name="options_discard_body">Your edits to this guest haven\'t been saved.</string>
     <string name="options_discard">Discard</string>
+
+    <!-- Consoles (Q15) -->
+    <string name="console_title">Console</string>
+    <string name="console_open_body_vm">The VM\'s screen (noVNC)</string>
+    <string name="console_open_body_ct">The container\'s terminal</string>
+    <string name="console_kind_vm">VM screen</string>
+    <string name="console_kind_ct">Container console</string>
+    <string name="console_kind_node">Node shell</string>
+    <string name="console_reconnect">Reconnect</string>
+    <string name="console_ssl_refused">The server\'s certificate isn\'t trusted. Turn on “Allow insecure certificate” for this server (More → Servers) to open consoles.</string>
+
+    <!-- Node tools and power (Q12) -->
+    <string name="node_tools">Tools</string>
+    <string name="node_shell">Shell</string>
+    <string name="node_shell_body">A root terminal on this node (needs the Sys.Console permission)</string>
+    <string name="node_power">Power</string>
+    <string name="node_reboot">Reboot</string>
+    <string name="node_shutdown">Shut down</string>
+    <string name="node_reboot_title">Reboot %1$s?</string>
+    <string name="node_shutdown_title">Shut down %1$s?</string>
+    <string name="node_reboot_body">Its guests are shut down (HA moves the ones it manages) and the node restarts. If AnProx connects through this node, the server is unreachable for a few minutes.</string>
+    <string name="node_shutdown_body">Its guests are shut down and the node powers off. Starting it again needs physical access or IPMI.</string>
+    <string name="node_reboot_sent">Reboot of %1$s requested</string>
+    <string name="node_shutdown_sent">Shutdown of %1$s requested</string>
 
     <!-- Clone and templates (Q18) -->
     <string name="clone_title">Clone</string>

@@ -21,6 +21,7 @@ import androidx.compose.material.icons.outlined.PowerSettingsNew
 import androidx.compose.material.icons.outlined.RestartAlt
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.StopCircle
+import androidx.compose.material.icons.outlined.Terminal
 import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.SwapHoriz
@@ -141,6 +142,14 @@ fun GuestDetail(
                 item { SectionHeader(stringResource(R.string.guest_more_tools)) }
                 item {
                     GlassCard(contentPadding = PaddingValues(vertical = 6.dp)) {
+                        // Templates never run, so there is nothing to show.
+                        if (!status.template) {
+                            MenuRow(
+                                Icons.Outlined.Terminal,
+                                stringResource(R.string.console_title),
+                                stringResource(if (ref.type == GuestType.QEMU) R.string.console_open_body_vm else R.string.console_open_body_ct),
+                            ) { onTool(GuestTool.CONSOLE, ref, state.title) }
+                        }
                         // Templates can't have snapshots in Proxmox.
                         if (!status.template) {
                             MenuRow(

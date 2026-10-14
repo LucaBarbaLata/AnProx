@@ -20,6 +20,7 @@ import io.github.lucabarbalata.anprox.model.pve.TaskSummary
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import retrofit2.http.DELETE
+import retrofit2.http.Field
 import retrofit2.http.FieldMap
 import retrofit2.http.FormUrlEncoded
 import retrofit2.http.GET
@@ -46,6 +47,11 @@ interface PveApi {
 
     @GET("nodes/{node}/status")
     suspend fun nodeStatus(@Path("node") node: String): ApiEnvelope<NodeStatus>
+
+    /** Reboots or shuts down a node ([command]: `reboot`, `shutdown`). Answers `null`; use with `pveNoData`. */
+    @FormUrlEncoded
+    @POST("nodes/{node}/status")
+    suspend fun nodePower(@Path("node") node: String, @Field("command") command: String): ApiEnvelope<JsonElement>
 
     /** [type] is `qemu` or `lxc`. */
     @GET("nodes/{node}/{type}/{vmid}/status/current")

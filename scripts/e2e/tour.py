@@ -461,6 +461,21 @@ def options():
     back()
 
 
+@step("Container console in a WebView, with the extra keys")
+def console():
+    tap_node(scroll_to("nginx-proxy"))
+    tap_node(scroll_to("Console"))
+    # The mock's console page puts "(signed in)" in its title when the session cookie works;
+    # the app shows the page title under the screen title.
+    find("(signed in)", timeout=45)
+    tap("Esc")                             # extra key row → keydown in the page's xterm input
+    find("Keys: 27", timeout=15)
+    screenshot("11f-console")
+    back()
+    scroll_to("The container's terminal")  # back on the guest screen
+    back()
+
+
 @step("Clone the template, then migrate the clone to another node")
 def clone_migrate():
     tap_node(scroll_to("ubuntu-2404-template"))
@@ -468,7 +483,7 @@ def clone_migrate():
     find("Linked clone", timeout=30)       # templates clone linked by default
     tap_node(scroll_to("Create clone"))
     find("Open it", timeout=60)            # the clone task finished
-    screenshot("11f-cloned")
+    screenshot("11g-cloned")
     tap_node(scroll_to("Open it"))
     find("ubuntu-2404-template-clone", timeout=30)
     tap_node(scroll_to("Migrate"))
@@ -476,7 +491,7 @@ def clone_migrate():
     tap_node(scroll_to("Start migration"))
     tap("Start migration", pick="lowest")  # the confirmation dialog's button
     find("· pve2 ·", timeout=60)           # the guest screen again, now on pve2
-    screenshot("11g-migrated")
+    screenshot("11h-migrated")
     back()                                 # to the clone screen
     back()                                 # to the template
     scroll_to("Create new guests from this template")

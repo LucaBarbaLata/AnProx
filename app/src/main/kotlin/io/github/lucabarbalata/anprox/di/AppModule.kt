@@ -2,6 +2,7 @@ package io.github.lucabarbalata.anprox.di
 
 import io.github.lucabarbalata.anprox.BuildConfig
 import io.github.lucabarbalata.anprox.data.backup.BackupRepository
+import io.github.lucabarbalata.anprox.data.console.ConsoleRepository
 import io.github.lucabarbalata.anprox.data.guest.GuestRef
 import io.github.lucabarbalata.anprox.data.guest.GuestRepository
 import io.github.lucabarbalata.anprox.data.hub.ServerHub
@@ -12,10 +13,12 @@ import io.github.lucabarbalata.anprox.data.snapshot.SnapshotRepository
 import io.github.lucabarbalata.anprox.data.store.ProfileStore
 import io.github.lucabarbalata.anprox.data.store.SecretStore
 import io.github.lucabarbalata.anprox.diagnostics.CrashReporter
+import io.github.lucabarbalata.anprox.model.pve.ConsoleTarget
 import io.github.lucabarbalata.anprox.network.ProxmoxConnection
 import io.github.lucabarbalata.anprox.storage.DataStoreProfileStore
 import io.github.lucabarbalata.anprox.storage.KeystoreSecretStore
 import io.github.lucabarbalata.anprox.storage.SettingsRepository
+import io.github.lucabarbalata.anprox.ui.console.ConsoleViewModel
 import io.github.lucabarbalata.anprox.ui.backups.BackupScope
 import io.github.lucabarbalata.anprox.ui.backups.BackupsViewModel
 import io.github.lucabarbalata.anprox.ui.dashboard.DashboardViewModel
@@ -74,6 +77,7 @@ val appModule = module {
     single { GuestRepository(get()) }
     single { MetricsRepository(get()) }
     single { BackupRepository(get()) }
+    single { ConsoleRepository(get()) }
 
     // Screens
     viewModel { ServersViewModel(get()) }
@@ -85,6 +89,7 @@ val appModule = module {
     viewModel { (ref: GuestRef) -> GuestViewModel(ref, get(), get()) }
     viewModel { (ref: GuestRef) -> OptionsViewModel(ref, get()) }
     viewModel { (ref: GuestRef, name: String) -> CloneViewModel(ref, name, get()) }
+    viewModel { (serverId: String, target: ConsoleTarget) -> ConsoleViewModel(serverId, target, get()) }
     viewModel { (ref: GuestRef, name: String) -> MigrateViewModel(ref, name, get()) }
     viewModel { (ref: GuestRef, name: String) -> SnapshotsViewModel(ref, name, get()) }
     viewModel { (source: MetricsSource) -> PerformanceViewModel(source, get()) }

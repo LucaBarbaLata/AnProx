@@ -43,6 +43,14 @@ All notable changes to AnProx are documented here. The format follows
   together with Proxmox's config checksum, so an edit made meanwhile in the web UI is refused
   instead of overwritten. Leaving with unsaved changes asks first.
 
+- **Consoles** (Guest → Tools → Console, Node → Shell): the VM's screen (noVNC) or a terminal for
+  containers and nodes (xterm.js), using Proxmox's own console pages signed in with the app's
+  session. Terminals get a row of keys phone keyboards lack: Esc, Tab, Ctrl+C, Ctrl+D and the
+  arrows. Self-signed certificates are accepted only for servers with "Allow insecure certificate".
+
+- **Node reboot and shut down** (Node → Power): type the node's name to confirm, plus the app lock
+  check when it is on.
+
 - **Clone** (Guest → Tools → Clone): a full or linked clone (linked needs a template) with the
   next free ID, a name, the target node and the target storage. When it's done, **Open it** jumps
   to the new guest. **Convert to template** (stopped guests; type the name to confirm).

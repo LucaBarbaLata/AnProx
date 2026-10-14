@@ -9,6 +9,7 @@ import io.github.lucabarbalata.anprox.model.pve.GuestStatus
 import io.github.lucabarbalata.anprox.model.pve.GuestType
 import io.github.lucabarbalata.anprox.model.pve.MigrationCheck
 import io.github.lucabarbalata.anprox.model.pve.MigrationPlan
+import io.github.lucabarbalata.anprox.model.pve.NodePowerAction
 import io.github.lucabarbalata.anprox.model.pve.NodeStatus
 import io.github.lucabarbalata.anprox.model.pve.NodeStorage
 import io.github.lucabarbalata.anprox.model.pve.PowerAction
@@ -45,6 +46,11 @@ class GuestRepository(private val hub: ServerHub) {
 
     suspend fun status(ref: GuestRef): GuestStatus =
         hub.use(ref.serverId) { it.pve { guestStatus(ref.node, ref.type.apiName, ref.vmid) } }
+
+    /** Asks [node] to reboot or shut down; Proxmox answers at once and does the rest in the background. */
+    suspend fun nodePower(serverId: String, node: String, action: NodePowerAction) {
+        hub.use(serverId) { it.pveNoData { nodePower(node, action.apiName) } }
+    }
 
     fun observeNode(serverId: String, node: String, intervalMillis: Long = 3_000): Flow<Polled<NodeStatus>> =
         poll(intervalMillis) { hub.use(serverId) { it.pve { nodeStatus(node) } } }

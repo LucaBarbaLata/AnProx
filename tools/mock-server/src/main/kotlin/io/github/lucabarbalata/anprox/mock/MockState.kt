@@ -206,6 +206,9 @@ class MockState(
         )
     }
 
+    /** Accepted `POST /nodes/{node}/status` calls (node, command); the mock nodes keep running. */
+    val nodePowerRequests: MutableList<Pair<String, String>> = java.util.Collections.synchronizedList(mutableListOf())
+
     fun guest(vmid: Int): Guest? = synchronized(lock) { guests.firstOrNull { it.vmid == vmid } }
     fun node(name: String): Node? = nodes.firstOrNull { it.name == name }
 
