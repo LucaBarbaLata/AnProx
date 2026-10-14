@@ -103,7 +103,25 @@ def describe(root):
     for n in root.iter("node"):
         for value in labels(n):
             seen.append(f"{value!r}@{n.get('bounds')}")
-    return f"keyboard requested: {ime_requested()}\nOn screen: " + ", ".join(seen)
+    return (f"keyboard requested: {ime_requested()}\n"
+            f"focused window: {focused_window()}\n"
+            f"app process: {adb('shell', 'pidof', PKG, check=False).strip() or 'not running'}\n"
+            f"{crash_excerpt() or 'no crash in logcat'}\n"
+            "On screen: " + ", ".join(seen))
+
+
+def focused_window():
+    out = adb("shell", "dumpsys", "window", check=False)
+    m = re.search(r"mCurrentFocus=(.*)", out)
+    return m.group(1).strip() if m else "unknown"
+
+
+def crash_excerpt():
+    log = adb("logcat", "-d", check=False)
+    crash = re.search(r"FATAL EXCEPTION.*?(?=\n\S|\Z)", log, re.S)
+    if crash and PKG in log[crash.start():crash.start() + 4000]:
+        return "App crashed:\n" + log[crash.start():crash.start() + 4000]
+    return None
 
 
 def visible(text):
@@ -113,6 +131,7 @@ def visible(text):
 
 def tap_node(node):
     x, y = center(node)
+    print(f"    tap {(labels(node) or [node.get('class')])[0]!r} at ({x}, {y})", flush=True)
     adb("shell", "input", "tap", str(x), str(y))
     time.sleep(1.0)
 
@@ -128,14 +147,52 @@ def scroll_down():
     time.sleep(1.0)
 
 
-def scroll_to(text, attempts=10):
+def nudge(dy):
+    """Scrolls the content up by about [dy] pixels (down if negative), swiping mid-screen only."""
+    w, h = screen_size()
+    dy = max(-int(h * 0.45), min(int(h * 0.45), dy))
+    start = int(h * 0.70) if dy > 0 else int(h * 0.25)
+    adb("shell", "input", "swipe", str(w // 2), str(start), str(w // 2), str(start - dy), "900")
+    time.sleep(1.0)
+
+
+def first_match(root, text, pick="first"):
+    found = matches(root, text, exact=True) or matches(root, text, exact=False)
+    if not found:
+        return None
+    return max(found, key=lambda n: center(n)[1]) if pick == "lowest" else found[0]
+
+
+def scroll_to(text, attempts=12, pick="first"):
+    """
+    Scrolls until [text] is on screen, then brings it towards mid-screen and waits until it
+    stops moving. Use this for anything inside a scrolling list before tapping it.
+
+    Why: the app draws edge to edge, so list items are also visible *under* the system
+    navigation bar and the app's top and bottom bars. A tap there lands on the bar instead (on
+    Android 14 the tour pressed the navigation bar's Back button this way and closed the server
+    editor). At the very start or end of a list the item can't move further, but the list's
+    content padding then keeps it clear of the bars.
+    """
+    w, h = screen_size()
+    previous_y = None
     for _ in range(attempts):
-        root = dump()
-        found = matches(root, text, exact=True) or matches(root, text, exact=False)
-        if found:
-            return found[0]
-        scroll_down()
-    return find(text, timeout=5)
+        node = first_match(dump(), text, pick)
+        if node is None:
+            scroll_down()
+            previous_y = None
+            continue
+        y = center(node)[1]
+        if h * 0.2 <= y <= h * 0.7 or (previous_y is not None and abs(y - previous_y) < 12):
+            time.sleep(0.5)
+            settled = first_match(dump(), text, pick)
+            if settled is not None and abs(center(settled)[1] - y) < 4:
+                return settled
+            previous_y = None   # still moving (fling): look again
+            continue
+        nudge(y - int(h * 0.45))
+        previous_y = y
+    return find(text, timeout=5, pick=pick)
 
 
 def ime_requested():
@@ -201,10 +258,9 @@ def slug(text):
 
 def assert_alive():
     pid = adb("shell", "pidof", PKG, check=False).strip()
-    log = adb("logcat", "-d", check=False)
-    crash = re.search(r"FATAL EXCEPTION.*?(?=\n\S|\Z)", log, re.S)
-    if crash and PKG in log[crash.start():crash.start() + 4000]:
-        raise AssertionError("App crashed:\n" + log[crash.start():crash.start() + 4000])
+    crash = crash_excerpt()
+    if crash:
+        raise AssertionError(crash)
     if not pid:
         raise AssertionError("App process is not running")
 
@@ -236,7 +292,12 @@ def add_server(product_label, name, host_value):
 def sign_in(password="anprox"):
     find("Remember password", timeout=30)
     fill("Password", password, password=True)
-    tap("Sign in", pick="lowest")
+    # "Sign in" is both the screen title and the button below the form: make sure both show.
+    for _ in range(4):
+        if len(matches(dump(), "Sign in", exact=True)) >= 2:
+            break
+        scroll_down()
+    tap_node(scroll_to("Sign in", pick="lowest"))
 
 
 @step("Launch shows the welcome screen")
@@ -279,7 +340,7 @@ def guest_start():
     tap_node(scroll_to("win11"))
     find("Start", timeout=30)
     screenshot("05-guest-stopped")
-    tap("Start")
+    tap_node(scroll_to("Start"))
     find("finished", timeout=60)       # snackbar "VM start finished"
     screenshot("06-task-finished")
     tap("View log")
@@ -320,6 +381,10 @@ def main():
     adb("install", "-r", apk, timeout=300)
     adb("logcat", "-c", check=False)
     disable_soft_keyboards()
+    w, h = screen_size()
+    print(f"Screen {w}x{h}, {adb('shell', 'wm', 'density', check=False).strip().splitlines()[-1]}, "
+          f"navigation mode {adb('shell', 'settings', 'get', 'secure', 'navigation_mode', check=False).strip()} "
+          "(0 = three buttons, 2 = gestures)", flush=True)
     print("Tour:", flush=True)
     ok = False
     try:
