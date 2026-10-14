@@ -1,0 +1,71 @@
+package io.github.lucabarbalata.anprox.model.format
+
+/**
+ * Proxmox task types are terse (`qmstart`, `vzdump`). This maps the common ones to readable
+ * English. Unknown types fall back to the raw string. (A localised table can replace this
+ * when translations arrive — it is only used for display.)
+ */
+object TaskTypes {
+    private val names = mapOf(
+        "qmstart" to "VM start",
+        "qmstop" to "VM stop",
+        "qmshutdown" to "VM shutdown",
+        "qmreboot" to "VM reboot",
+        "qmreset" to "VM reset",
+        "qmsuspend" to "VM suspend",
+        "qmpause" to "VM pause",
+        "qmresume" to "VM resume",
+        "qmcreate" to "VM create",
+        "qmclone" to "VM clone",
+        "qmdestroy" to "VM destroy",
+        "qmmigrate" to "VM migrate",
+        "qmrollback" to "VM rollback",
+        "qmsnapshot" to "VM snapshot",
+        "qmdelsnapshot" to "VM delete snapshot",
+        "qmconfig" to "VM configure",
+        "qmmove" to "VM move disk",
+        "qmrestore" to "VM restore",
+        "qmtemplate" to "Convert to template",
+        "vzstart" to "CT start",
+        "vzstop" to "CT stop",
+        "vzshutdown" to "CT shutdown",
+        "vzreboot" to "CT reboot",
+        "vzsuspend" to "CT suspend",
+        "vzresume" to "CT resume",
+        "vzcreate" to "CT create",
+        "vzclone" to "CT clone",
+        "vzdestroy" to "CT destroy",
+        "vzmigrate" to "CT migrate",
+        "vzrollback" to "CT rollback",
+        "vzsnapshot" to "CT snapshot",
+        "vzdelsnapshot" to "CT delete snapshot",
+        "vzrestore" to "CT restore",
+        "vzdump" to "Backup",
+        "vncproxy" to "VNC console",
+        "vncshell" to "Shell",
+        "termproxy" to "Terminal",
+        "spiceproxy" to "SPICE console",
+        "startall" to "Start all guests",
+        "stopall" to "Stop all guests",
+        "migrateall" to "Migrate all guests",
+        "aptupdate" to "Update package database",
+        "imgcopy" to "Copy disk image",
+        "download" to "Download",
+        "srvreload" to "Reload service",
+        "srvrestart" to "Restart service",
+        "zfscreate" to "Create ZFS pool",
+        "lvmcreate" to "Create LVM",
+        "dircreate" to "Create directory storage",
+        "cephcreateosd" to "Create Ceph OSD",
+        "ha-manager" to "HA",
+        "garbage_collection" to "Garbage collection",
+        "prune" to "Prune",
+        "verify" to "Verify",
+        "verificationjob" to "Verification job",
+        "syncjob" to "Sync job",
+        "backup" to "Backup",
+        "reader" to "Restore / read",
+    )
+
+    fun label(type: String): String = names[type] ?: type
+}
