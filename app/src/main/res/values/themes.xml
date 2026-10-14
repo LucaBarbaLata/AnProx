@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Window theme. Compose draws everything; this only sets the colour shown before the first frame. -->
+    <style name="Theme.AnProx" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/mist_50</item>
+    </style>
+
+    <!-- Splash screen (androidx.core:core-splashscreen), shown while the app starts. -->
+    <style name="Theme.AnProx.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/ink_900</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="postSplashScreenTheme">@style/Theme.AnProx</item>
+    </style>
+</resources>

@@ -67,6 +67,13 @@ class ProxmoxConnection(
     var session: AuthSession? = null
         private set
 
+    /**
+     * Called whenever the session changes (login, renewal, logout) so the app can persist it
+     * (encrypted) and survive restarts without asking for the password again.
+     */
+    @Volatile
+    var onSessionChanged: ((AuthSession?) -> Unit)? = null
+
     private val renewLock = Mutex()
 
     val httpClient: OkHttpClient = baseClient.newBuilder()
@@ -125,8 +132,10 @@ class ProxmoxConnection(
         session = saved?.takeUnless { it.isExpired(clock()) }
     }
 
+    /** Forgets the session locally. (Proxmox tickets cannot be revoked server-side.) */
     fun logout() {
         session = null
+        onSessionChanged?.invoke(null)
     }
 
     /**
@@ -162,7 +171,10 @@ class ProxmoxConnection(
             csrfToken = csrf,
             issuedAtEpochSeconds = clock(),
             clusterName = response.clusterName,
-        ).also { session = it }
+        ).also {
+            session = it
+            onSessionChanged?.invoke(it)
+        }
     }
 
     // ---------------------------------------------------------------- API access

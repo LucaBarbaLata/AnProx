@@ -8,7 +8,6 @@ import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import java.net.URLDecoder
-import java.nio.charset.StandardCharsets
 
 /**
  * What second factors the server will accept, decoded from a partial ("!tfa!") ticket.
@@ -54,7 +53,7 @@ data class TfaChallenge(
             val json = if (rest.startsWith("{")) {
                 rest.substring(0, matchingBraceEnd(rest) + 1)
             } else {
-                URLDecoder.decode(rest.substringBefore(':'), StandardCharsets.UTF_8)
+                URLDecoder.decode(rest.substringBefore(':'), "UTF-8")
             }
             return fromJson(ProxmoxJson.parseToJsonElement(json))
         }

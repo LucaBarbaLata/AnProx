@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    AnProx launcher icon — foreground: an "A" drawn as a glowing indigo→violet peak with a teal
+    status LED where the crossbar would be (a server that is up). Kept inside the 66dp safe zone.
+    Original artwork (GPL-3.0); deliberately unrelated to the Proxmox logo.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- glow under the peak -->
+    <path
+        android:pathData="M35,72 L54,35 L73,72"
+        android:strokeWidth="16"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:strokeColor="#267C9CFF" />
+    <path
+        android:pathData="M35,72 L54,35 L73,72"
+        android:strokeWidth="9"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round">
+        <aapt:attr name="android:strokeColor">
+            <gradient
+                android:startX="35"
+                android:startY="35"
+                android:endX="73"
+                android:endY="72"
+                android:type="linear">
+                <item android:offset="0" android:color="#FF7C9CFF" />
+                <item android:offset="1" android:color="#FFA78BFA" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <!-- status LED -->
+    <path
+        android:fillColor="#332DD4BF"
+        android:pathData="M54,61m-8,0a8,8 0,1 1,16 0a8,8 0,1 1,-16 0" />
+    <path
+        android:fillColor="#FF2DD4BF"
+        android:pathData="M54,61m-4.5,0a4.5,4.5 0,1 1,9 0a4.5,4.5 0,1 1,-9 0" />
+</vector>
