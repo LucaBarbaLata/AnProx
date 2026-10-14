@@ -1,4 +1,286 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    All user-visible English text (questionnaire Q16: translation-ready from day one).
+    To translate, copy this file to values-<lang>/strings.xml and translate the values.
+    Typographic apostrophes (’) are used on purpose: a plain ' must be escaped in Android resources.
+-->
 <resources>
     <string name="app_name">AnProx</string>
+
+    <!-- Navigation -->
+    <string name="tab_dashboard">Overview</string>
+    <string name="tab_resources">Resources</string>
+    <string name="tab_tasks">Tasks</string>
+    <string name="tab_more">More</string>
+
+    <!-- Common actions -->
+    <string name="action_back">Back</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_clear">Clear</string>
+    <string name="action_close">Close</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_edit">Edit</string>
+    <string name="action_more">More options</string>
+    <string name="action_retry">Try again</string>
+    <string name="action_save">Save</string>
+    <string name="action_sign_in">Sign in</string>
+    <string name="action_sign_out">Sign out</string>
+    <string name="action_view_log">View log</string>
+    <string name="common_yes">Yes</string>
+    <string name="common_no">No</string>
+
+    <!-- Units (duration suffixes, e.g. 3d 4h) -->
+    <string name="unit_days_short">d</string>
+    <string name="unit_hours_short">h</string>
+    <string name="unit_minutes_short">m</string>
+    <string name="unit_seconds_short">s</string>
+
+    <!-- Status -->
+    <string name="status_running">Running</string>
+    <string name="status_stopped">Stopped</string>
+    <string name="status_paused">Paused</string>
+    <string name="status_online">Online</string>
+    <string name="status_offline">Offline</string>
+    <string name="status_available">Available</string>
+    <string name="status_unknown">Unknown</string>
+    <string name="status_quorate">Quorate</string>
+    <string name="status_no_quorum">No quorum</string>
+    <string name="status_standalone">Standalone</string>
+    <string name="auth_signed_in">Signed in</string>
+    <string name="auth_signed_out">Signed out</string>
+    <string name="auth_expired">Session expired</string>
+
+    <!-- Metrics -->
+    <string name="metric_cpu">CPU</string>
+    <string name="metric_ram">RAM</string>
+    <string name="metric_disk">Disk</string>
+    <string name="metric_root">Root</string>
+
+    <!-- Errors -->
+    <string name="error_unreachable">Can’t reach the server. Tried:\n%1$s</string>
+    <string name="error_untrusted_certificate">The server’s certificate isn’t trusted. Proxmox uses a self-signed certificate by default. If you trust this network, allow the insecure certificate for this server.</string>
+    <string name="error_unauthorized">Wrong user name or password, or your session has expired.</string>
+    <string name="error_forbidden">Permission denied: %1$s</string>
+    <string name="error_not_found">Not found: %1$s</string>
+    <string name="error_server">The server reported an error (%1$d): %2$s</string>
+    <string name="error_protocol">The server sent an answer AnProx doesn’t understand. Is this really a Proxmox server?</string>
+
+    <!-- Confirmations (tiered, questionnaire Q12) -->
+    <string name="confirm_type_to_confirm">Type “%1$s” to confirm</string>
+    <string name="confirm_generic">Are you sure?</string>
+    <string name="confirm_shutdown">Asks the guest operating system to shut down cleanly.</string>
+    <string name="confirm_reboot">Asks the guest operating system to restart.</string>
+    <string name="confirm_stop">Stops the guest immediately, like pulling the power cable. Unsaved data inside the guest is lost.</string>
+    <string name="confirm_reset">Resets the VM immediately, like pressing the reset button. Unsaved data inside the guest is lost.</string>
+    <string name="confirm_pause">Freezes the VM in memory. Resume it to continue where it left off.</string>
+
+    <!-- Servers -->
+    <string name="servers_title">Servers</string>
+    <string name="servers_add">Add server</string>
+    <string name="servers_add_first">Add your first server</string>
+    <string name="servers_empty_title">No servers yet</string>
+    <string name="servers_empty_body">Add a Proxmox VE cluster or a Proxmox Backup Server to get started.</string>
+    <string name="servers_delete_title">Remove %1$s?</string>
+    <string name="servers_delete_message">This removes the server and its saved password from this device. Nothing changes on the server itself.</string>
+
+    <!-- Server editor -->
+    <string name="editor_title_add">Add server</string>
+    <string name="editor_title_edit">Edit server</string>
+    <string name="editor_section_server">Server</string>
+    <string name="editor_section_addresses">Addresses</string>
+    <string name="editor_section_account">Account</string>
+    <string name="editor_section_security">Security</string>
+    <string name="editor_name">Name</string>
+    <string name="editor_name_placeholder">Homelab, Customer A, …</string>
+    <string name="editor_addresses_help">AnProx tries these addresses in order and remembers the one that works, so put the LAN address first and the VPN or public address after it. Without a port, %1$d is used.</string>
+    <string name="editor_address_primary">Address %1$d · primary</string>
+    <string name="editor_address_fallback">Address %1$d · fallback</string>
+    <string name="editor_url">Host or URL</string>
+    <string name="editor_label">Label (optional)</string>
+    <string name="editor_label_placeholder">LAN, VPN, Public…</string>
+    <string name="editor_headers">Custom headers</string>
+    <string name="editor_headers_help">One per line, e.g. X-Auth-Token: secret. Sent only to this address.</string>
+    <string name="editor_add_headers">Add custom headers</string>
+    <string name="editor_add_address">Add fallback address</string>
+    <string name="editor_move_up">Try earlier</string>
+    <string name="editor_remove_address">Remove address</string>
+    <string name="editor_url_error_empty">Enter a host name, IP address or URL.</string>
+    <string name="editor_url_error_scheme">Only https:// is supported. Proxmox always serves HTTPS.</string>
+    <string name="editor_url_error_host">That host name doesn’t look right.</string>
+    <string name="editor_url_error_port">The port must be between 1 and 65535.</string>
+    <string name="editor_url_error_malformed">That address can’t be understood.</string>
+    <string name="editor_user">User</string>
+    <string name="editor_user_help">Including the realm, e.g. root@pam or admin@pve.</string>
+    <string name="editor_user_error">Enter a user name, e.g. root@pam.</string>
+    <string name="editor_insecure_title">Allow insecure certificate</string>
+    <string name="editor_insecure_description">Accept self-signed or mismatched TLS certificates for this server only.</string>
+    <string name="editor_insecure_warning">Traffic stays encrypted, but AnProx can’t verify it’s really talking to your server. Only use this on networks you trust.</string>
+    <string name="editor_save_and_sign_in">Save and sign in</string>
+
+    <!-- Login -->
+    <string name="login_title">Sign in</string>
+    <string name="login_username">User name</string>
+    <string name="login_realm">Realm</string>
+    <string name="login_choose_realm">Choose realm</string>
+    <string name="login_password">Password</string>
+    <string name="login_show_password">Show password</string>
+    <string name="login_hide_password">Hide password</string>
+    <string name="login_remember">Remember password</string>
+    <string name="login_remember_description">Stored encrypted on this device so expired sessions renew automatically.</string>
+    <string name="login_allow_insecure">Allow</string>
+    <string name="login_tfa_title">Two-factor authentication</string>
+    <string name="login_tfa_body">Your account needs a second factor to finish signing in.</string>
+    <string name="login_tfa_totp">Authenticator code</string>
+    <string name="login_tfa_recovery">Recovery key</string>
+    <string name="login_tfa_yubico">YubiKey OTP</string>
+    <string name="login_tfa_webauthn">Security key</string>
+    <string name="login_recovery_left">%1$d recovery keys left</string>
+    <string name="login_verify">Verify</string>
+    <string name="login_code_rejected">That code was rejected. Sign in again and use a fresh code.</string>
+    <string name="login_openid_soon">Single sign-on (OpenID Connect) realms are coming in milestone M1. Pick another realm for now.</string>
+    <string name="login_webauthn_soon">This account only has security keys (WebAuthn), which arrive in milestone M1. Add a TOTP or recovery key in the web UI to sign in now.</string>
+
+    <!-- Dashboard -->
+    <string name="dashboard_title">Overview</string>
+    <string name="dashboard_subtitle">%1$d servers · live every %2$d s</string>
+    <string name="dashboard_welcome_title">Welcome to AnProx</string>
+    <string name="dashboard_welcome_body">Manage your Proxmox VE clusters and Backup Servers from your pocket. Start by adding a server.</string>
+    <string name="dashboard_vms_running">VMs running</string>
+    <string name="dashboard_cts_running">Containers running</string>
+    <string name="dashboard_nodes_online">Nodes online</string>
+    <string name="dashboard_attention">Needs attention</string>
+    <string name="dashboard_servers">Servers</string>
+    <string name="dashboard_connecting">Connecting…</string>
+    <string name="dashboard_stale">Showing data from %1$s. The latest refresh failed.</string>
+    <string name="dashboard_vms_line">VMs %1$d / %2$d running</string>
+    <string name="dashboard_cts_line">Containers %1$d / %2$d running</string>
+    <string name="dashboard_full_in">full %1$s</string>
+    <string name="dashboard_failed_tasks">%1$d recent tasks failed</string>
+    <string name="alert_signed_out">Not signed in. Tap to sign in.</string>
+    <string name="alert_session_expired">Session expired. Tap to sign in again.</string>
+    <string name="alert_no_quorum">Cluster has lost quorum</string>
+    <string name="alert_node_offline">Node %1$s is offline</string>
+    <string name="alert_storage_full">Storage %1$s is %2$s full</string>
+
+    <!-- Resources -->
+    <string name="resources_title">Resources</string>
+    <string name="resources_subtitle">%1$d shown</string>
+    <string name="resources_search">Search</string>
+    <string name="resources_search_hint">Name, ID, node, tag…</string>
+    <string name="resources_running_only">Running</string>
+    <string name="resources_empty_title">Nothing here</string>
+    <string name="resources_empty_body">No resources match. Try another filter, or sign in to more servers.</string>
+    <string name="resources_pick_title">Pick a guest</string>
+    <string name="resources_pick_body">Select a VM or container on the left to see its details here.</string>
+    <string name="resources_template">Template</string>
+    <string name="resources_shared">Shared</string>
+    <string name="resources_vcpus">%1$d vCPU</string>
+    <string name="resources_cores">%1$d cores</string>
+    <string name="filter_all">All</string>
+    <string name="filter_vms">VMs</string>
+    <string name="filter_containers">Containers</string>
+    <string name="filter_nodes">Nodes</string>
+    <string name="filter_storage">Storage</string>
+
+    <!-- Guest -->
+    <string name="guest_type_vm">VM</string>
+    <string name="guest_type_ct">CT</string>
+    <string name="guest_power">Power</string>
+    <string name="guest_details">Details</string>
+    <string name="guest_more_tools">More tools</string>
+    <string name="guest_node">Node</string>
+    <string name="guest_vmid">ID</string>
+    <string name="guest_cpus">CPUs</string>
+    <string name="guest_memory">Memory</string>
+    <string name="guest_boot_disk">Disk size</string>
+    <string name="guest_network">Network (total)</string>
+    <string name="guest_disk_io">Disk I/O (total)</string>
+    <string name="guest_ha">Managed by HA</string>
+    <string name="guest_agent">Guest agent</string>
+    <string name="guest_qemu">QEMU version</string>
+    <string name="guest_machine">Machine</string>
+    <string name="guest_lock">Lock</string>
+    <string name="guest_confirm_title">%1$s %2$s?</string>
+    <string name="guest_task_ok">%1$s finished</string>
+    <string name="guest_task_failed">%1$s failed: %2$s</string>
+    <string name="power_start">Start</string>
+    <string name="power_shutdown">Shut down</string>
+    <string name="power_reboot">Reboot</string>
+    <string name="power_stop">Stop</string>
+    <string name="power_reset">Reset</string>
+    <string name="power_pause">Pause</string>
+    <string name="power_resume">Resume</string>
+    <string name="tool_console">Console (noVNC, terminal, SPICE)</string>
+    <string name="tool_snapshots">Snapshots</string>
+    <string name="tool_backups">Backup and restore</string>
+    <string name="tool_hardware">Hardware and options</string>
+    <string name="tool_clone">Clone, templates, cloud-init</string>
+    <string name="tool_migrate">Migrate</string>
+    <string name="tool_charts">Performance charts</string>
+    <string name="coming_in">Coming in %1$s</string>
+
+    <!-- Node -->
+    <string name="node_subtitle">Node</string>
+    <string name="node_offline">This node is offline. Showing what the cluster last knew.</string>
+    <string name="node_system">System</string>
+    <string name="node_guests">Guests on this node (%1$d)</string>
+    <string name="node_cpu_model">CPU</string>
+    <string name="node_cpu_topology">Topology</string>
+    <string name="node_cpu_topology_value">%1$d socket(s) · %2$d cores · %3$d threads</string>
+    <string name="node_memory">Memory</string>
+    <string name="node_swap">Swap</string>
+    <string name="node_rootfs">Root disk</string>
+    <string name="node_load">Load average</string>
+    <string name="node_io_wait">IO wait</string>
+    <string name="node_uptime">Uptime</string>
+    <string name="node_pve_version">Proxmox VE</string>
+    <string name="node_kernel">Kernel</string>
+    <string name="node_boot_mode">Boot mode</string>
+
+    <!-- Tasks -->
+    <string name="tasks_title">Tasks</string>
+    <string name="tasks_filter_all">All</string>
+    <string name="tasks_filter_running">Running · %1$d</string>
+    <string name="tasks_filter_failed">Failed · %1$d</string>
+    <string name="tasks_empty_title">No tasks</string>
+    <string name="tasks_empty_body">Backups, migrations and other jobs show up here while they run and after they finish.</string>
+    <string name="task_running">Running</string>
+    <string name="task_ok">Finished</string>
+    <string name="task_failed">Failed</string>
+    <string name="task_target">Target</string>
+    <string name="task_user">Started by</string>
+    <string name="task_exit">Result</string>
+    <string name="task_log_empty">No output yet.</string>
+
+    <!-- More / settings / about -->
+    <string name="more_title">More</string>
+    <string name="more_servers_body">Add, edit and sign in to servers</string>
+    <string name="more_settings_body">Theme, refresh rate, security</string>
+    <string name="more_about_body">Version, license, privacy</string>
+    <string name="settings_title">Settings</string>
+    <string name="settings_appearance">Appearance</string>
+    <string name="settings_theme">Theme</string>
+    <string name="settings_theme_system">System</string>
+    <string name="settings_theme_light">Light</string>
+    <string name="settings_theme_dark">Dark</string>
+    <string name="settings_pure_black">Pure black</string>
+    <string name="settings_pure_black_description">Use a true black background in dark mode. Saves power on OLED screens.</string>
+    <string name="settings_data">Data</string>
+    <string name="settings_refresh">Live refresh</string>
+    <string name="settings_refresh_description">How often open screens ask your servers for fresh data.</string>
+    <string name="settings_refresh_seconds">%1$d s</string>
+    <string name="settings_security">Security</string>
+    <string name="settings_app_lock">App lock</string>
+    <string name="settings_app_lock_soon">Biometric or PIN lock, plus a fingerprint check before destructive actions, arrives in milestone M1.</string>
+    <string name="about_title">About</string>
+    <string name="about_version">Version %1$s</string>
+    <string name="about_tagline">A free, open-source Proxmox client for Android.</string>
+    <string name="about_source">Source code</string>
+    <string name="about_license">License</string>
+    <string name="about_license_body">GNU General Public License v3.0</string>
+    <string name="about_donate">Support the project</string>
+    <string name="about_donate_body">AnProx is free. Donations keep it going.</string>
+    <string name="about_privacy_title">Privacy</string>
+    <string name="about_privacy_body">AnProx has no analytics, no ads and no tracking. It only ever talks to the servers you add.</string>
+    <string name="about_disclaimer">AnProx is an independent project and is not affiliated with or endorsed by Proxmox Server Solutions GmbH. Proxmox is a registered trademark of Proxmox Server Solutions GmbH.</string>
 </resources>

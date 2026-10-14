@@ -59,6 +59,9 @@ class ServerHub(
     private val syncLock = Mutex()
     private val loaded = MutableStateFlow(false)
 
+    /** False until the saved profiles have been read once (avoids flashing an empty state). */
+    val isLoaded: StateFlow<Boolean> = loaded
+
     /** Saved servers in display order, with their auth state. */
     val servers: StateFlow<List<ServerState>> = runtimes
         .map { map ->
