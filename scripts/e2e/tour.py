@@ -365,7 +365,8 @@ def snapshots():
     find("snap-", timeout=20)              # the suggested name, now in the list
     screenshot("10-snapshot-taken")
     back()
-    find("Shut down", timeout=30)
+    # Back on the guest screen, which keeps its scroll position at the Tools section.
+    find("Save this state and roll back to it later", timeout=30)
     back()
 
 

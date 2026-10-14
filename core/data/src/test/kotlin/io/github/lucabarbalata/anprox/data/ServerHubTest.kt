@@ -136,6 +136,9 @@ class ServerHubTest {
     fun `logged in servers report loading before their first snapshot`() = runBlocking {
         val hub = hubWith(pveProfile())
         hub.login("pve", "anprox", remember = false)
+        // `servers` is derived on the hub's own coroutine, so the login reaches it a moment later.
+        // Collecting before that would see the logged-out state (found as a CI flake).
+        withTimeout(5_000) { hub.servers.first { it.single().auth == AuthState.LOGGED_IN } }
         val first = withTimeout(5_000) { SnapshotRepository(hub).snapshots(intervalMillis = 60_000).first { it.isNotEmpty() } }.single()
         assertTrue(first.isLoading)
         Unit
