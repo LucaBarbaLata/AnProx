@@ -1,0 +1,38 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+@font-face{font-family:Inter;src:url(../../core/designsystem/src/main/res/font/inter_variable.ttf);font-weight:100 900}
+html,body{margin:0;width:1024px;height:500px;overflow:hidden}
+body{font-family:Inter;color:#E6EAF2;background:
+  radial-gradient(600px 420px at 120px 40px, rgba(124,156,255,.28), transparent 70%),
+  radial-gradient(520px 380px at 980px 470px, rgba(45,212,191,.14), transparent 70%),
+  linear-gradient(#0B0F1A,#111827);display:flex;align-items:center;gap:56px;padding:0 84px;box-sizing:border-box}
+.icon{width:220px;height:220px;border-radius:56px;overflow:hidden;flex:none;
+  box-shadow:0 0 0 1px rgba(255,255,255,.10),0 30px 80px rgba(124,156,255,.25)}
+.icon svg{width:220px;height:220px;display:block}
+h1{font-size:96px;font-weight:650;letter-spacing:-.03em;margin:0 0 10px;
+  background:linear-gradient(90deg,#E6EAF2,#C7D2FE);-webkit-background-clip:text;color:transparent}
+p{font-size:30px;line-height:1.35;color:#9AA4B8;margin:0;font-weight:450}
+.pill{display:inline-block;margin-top:26px;padding:8px 18px;border-radius:999px;font-size:20px;font-weight:550;
+  color:#7C9CFF;background:rgba(124,156,255,.14);border:1px solid rgba(124,156,255,.25)}
+</style></head><body>
+<div class="icon"><svg xmlns="http://www.w3.org/2000/svg"  viewBox="13 13 82 82">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="108" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0B0F1A"/><stop offset="1" stop-color="#161D2E"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="40" cy="30" r="70" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#7C9CFF" stop-opacity="0.25"/><stop offset="1" stop-color="#7C9CFF" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="peak" x1="35" y1="35" x2="73" y2="72" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#7C9CFF"/><stop offset="1" stop-color="#A78BFA"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="108" height="108" fill="url(#bg)"/>
+  <rect x="0" y="0" width="108" height="108" fill="url(#glow)"/>
+  <path d="M35,72 L54,35 L73,72" fill="none" stroke="#7C9CFF" stroke-opacity="0.15" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M35,72 L54,35 L73,72" fill="none" stroke="url(#peak)" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="54" cy="61" r="8" fill="#2DD4BF" fill-opacity="0.2"/>
+  <circle cx="54" cy="61" r="4.5" fill="#2DD4BF"/>
+</svg>
+</div>
+<div><h1>AnProx</h1><p>Proxmox VE &amp; Backup Server,<br>beautifully in your pocket.</p><span class="pill">Free · Open source · No tracking</span></div>
+</body></html>

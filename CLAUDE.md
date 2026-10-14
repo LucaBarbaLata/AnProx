@@ -32,4 +32,6 @@ If the container can't reach `dl.google.com`, Android code is verified only by G
 - JUnit skips `@Test` functions that don't return `Unit`. End `= runBlocking { … }` tests with `Unit`.
 - ViewModel functions referenced as callbacks should return `Unit` (block body), not `Job`.
 - Non-composable lambdas (e.g. `SegmentedPicker(label = …)`) can't call `stringResource`; precompute labels.
+- In `*.gradle.kts`, `java.util.X` fails ("Unresolved reference: util") because `java` is the Java
+  extension there. Import the class instead.
 - Update docs (api-coverage, roadmap, CHANGELOG, devlog) in the same change as the code.

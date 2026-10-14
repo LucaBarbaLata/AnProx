@@ -1,0 +1,1 @@
+First beta: multi-server dashboard for Proxmox VE and Backup Server, sign-in with two-factor, endpoint failover, resource search, guest power actions, node details, task timeline with live logs, light/dark/AMOLED themes, and local crash reports you can choose to share.

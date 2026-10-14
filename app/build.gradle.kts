@@ -1,6 +1,7 @@
 // :app — the Android application: screens, ViewModels, navigation, dependency injection
 // (Koin) and the Android implementations of the storage interfaces from :core:data.
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import java.util.Properties
 
 plugins {
     alias(libs.plugins.android.application)
@@ -42,7 +43,7 @@ fun versionCodeFor(name: String): Int {
 //   storeFile=/path/to/anprox-release.jks   storePassword=…   keyAlias=anprox   keyPassword=…
 // -Panprox.signWithDebugKey=true signs release builds with the debug key instead, so CI can
 // install and test the real minified APK without access to the release key.
-val keystoreProperties = java.util.Properties().apply {
+val keystoreProperties = Properties().apply {
     providers.fileContents(rootProject.layout.projectDirectory.file("keystore.properties"))
         .asText.orNull?.let { load(it.reader()) }
 }

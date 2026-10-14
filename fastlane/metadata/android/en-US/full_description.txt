@@ -1,0 +1,27 @@
+<p><b>AnProx</b> is a free, open-source client for <b>Proxmox VE</b> and <b>Proxmox Backup Server</b>, built for sysadmins and MSPs who run more than one cluster. Every function of the web UI is the goal, in a fast, native and beautiful app.</p>
+
+<p><b>Many servers, one overview</b></p>
+<ul>
+<li>Add any number of PVE clusters and Backup Servers. One dashboard totals guests and nodes and flags what needs attention: lost quorum, offline nodes, nearly full storage, expired sessions.</li>
+<li>Several addresses per server (LAN, VPN, public or reverse-proxy sub-path) with automatic failover, plus custom HTTP headers per address.</li>
+</ul>
+
+<p><b>Secure sign-in</b></p>
+<ul>
+<li>PAM, PVE/PBS, LDAP and Active Directory realms.</li>
+<li>Two-factor authentication: TOTP, recovery keys, Yubico OTP.</li>
+<li>Passwords and session tickets are encrypted with a hardware-backed Android Keystore key. A per-server switch allows self-signed certificates.</li>
+</ul>
+
+<p><b>Manage</b></p>
+<ul>
+<li>Search and filter every VM, container, node and storage. Side-by-side detail on tablets.</li>
+<li>Live CPU, RAM and disk gauges. Start, shut down, reboot, stop, pause, resume and reset, with confirmation for dangerous actions.</li>
+<li>A merged task timeline across servers with live logs.</li>
+</ul>
+
+<p><b>Private by design</b>: no analytics, no ads, no Google services. AnProx only talks to the servers you add.</p>
+
+<p>Consoles, snapshots, backups, charts, Ceph, SDN, firewall, permissions, widgets and more are on the roadmap: https://github.com/LucaBarbaLata/AnProx/blob/HEAD/docs/roadmap.md</p>
+
+<p>AnProx is independent and not affiliated with or endorsed by Proxmox Server Solutions GmbH. Proxmox is a registered trademark of Proxmox Server Solutions GmbH.</p>
