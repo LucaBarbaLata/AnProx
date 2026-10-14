@@ -4,6 +4,8 @@ import io.github.lucabarbalata.anprox.BuildConfig
 import io.github.lucabarbalata.anprox.data.guest.GuestRef
 import io.github.lucabarbalata.anprox.data.guest.GuestRepository
 import io.github.lucabarbalata.anprox.data.hub.ServerHub
+import io.github.lucabarbalata.anprox.data.metrics.MetricsRepository
+import io.github.lucabarbalata.anprox.data.metrics.MetricsSource
 import io.github.lucabarbalata.anprox.data.snapshot.SnapshotRepository
 import io.github.lucabarbalata.anprox.data.store.ProfileStore
 import io.github.lucabarbalata.anprox.data.store.SecretStore
@@ -15,6 +17,7 @@ import io.github.lucabarbalata.anprox.storage.SettingsRepository
 import io.github.lucabarbalata.anprox.ui.dashboard.DashboardViewModel
 import io.github.lucabarbalata.anprox.ui.guest.GuestViewModel
 import io.github.lucabarbalata.anprox.ui.login.LoginViewModel
+import io.github.lucabarbalata.anprox.ui.metrics.PerformanceViewModel
 import io.github.lucabarbalata.anprox.ui.node.NodeViewModel
 import io.github.lucabarbalata.anprox.ui.resources.ResourcesViewModel
 import io.github.lucabarbalata.anprox.ui.servers.ServerEditorViewModel
@@ -61,6 +64,7 @@ val appModule = module {
     }
     single { SnapshotRepository(get()) }
     single { GuestRepository(get()) }
+    single { MetricsRepository(get()) }
 
     // Screens
     viewModel { ServersViewModel(get()) }
@@ -71,6 +75,7 @@ val appModule = module {
     viewModel { ResourcesViewModel(get(), get(), get()) }
     viewModel { (ref: GuestRef) -> GuestViewModel(ref, get(), get()) }
     viewModel { (ref: GuestRef, name: String) -> SnapshotsViewModel(ref, name, get()) }
+    viewModel { (source: MetricsSource) -> PerformanceViewModel(source, get()) }
     viewModel { (serverId: String, node: String) -> NodeViewModel(serverId, node, get(), get()) }
     viewModel { TasksViewModel(get()) }
     viewModel { (serverId: String, node: String, upid: String) -> TaskLogViewModel(serverId, node, upid, get()) }

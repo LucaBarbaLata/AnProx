@@ -169,6 +169,22 @@ class MockProxmoxServer(
             if (!node.online) return@get call.fail(595, "Connection refused")
             call.ok(state.nodeStatus(node))
         }
+        get("nodes/{node}/rrddata") {
+            call.authed() ?: return@get
+            val node = state.node(call.parameters["node"]!!) ?: return@get call.fail(404, "no such node")
+            if (!node.online) return@get call.fail(595, "Connection refused")
+            val data = state.nodeRrd(node, call.request.queryParameters["timeframe"].orEmpty())
+                ?: return@get call.fail(400, "Parameter verification failed.", mapOf("timeframe" to "value must be one of hour, day, week, month, year"))
+            call.ok(data)
+        }
+        get("nodes/{node}/{type}/{vmid}/rrddata") {
+            call.authed() ?: return@get
+            val g = call.guest() ?: return@get
+            if (state.node(g.node)?.online != true) return@get call.fail(595, "Connection refused")
+            val data = state.guestRrd(g, call.request.queryParameters["timeframe"].orEmpty())
+                ?: return@get call.fail(400, "Parameter verification failed.", mapOf("timeframe" to "value must be one of hour, day, week, month, year"))
+            call.ok(data)
+        }
         get("nodes/{node}/{type}/{vmid}/status/current") {
             call.authed() ?: return@get
             val g = call.guest() ?: return@get

@@ -6,6 +6,7 @@ import io.github.lucabarbalata.anprox.model.pve.ClusterStatusEntry
 import io.github.lucabarbalata.anprox.model.pve.GuestSnapshot
 import io.github.lucabarbalata.anprox.model.pve.GuestStatus
 import io.github.lucabarbalata.anprox.model.pve.NodeStatus
+import io.github.lucabarbalata.anprox.model.pve.RrdPoint
 import io.github.lucabarbalata.anprox.model.pve.TaskLogLine
 import io.github.lucabarbalata.anprox.model.pve.TaskStatus
 import io.github.lucabarbalata.anprox.model.pve.TaskSummary
@@ -54,6 +55,24 @@ interface PveApi {
         @Path("action") action: String,
         @FieldMap params: Map<String, String>,
     ): ApiEnvelope<String>
+
+    /** Performance history. [timeframe]: `hour` … `year`; [cf]: `AVERAGE` or `MAX`. */
+    @GET("nodes/{node}/rrddata")
+    suspend fun nodeRrd(
+        @Path("node") node: String,
+        @Query("timeframe") timeframe: String,
+        @Query("cf") cf: String,
+    ): ApiEnvelope<List<RrdPoint>>
+
+    /** Performance history of a VM or container. */
+    @GET("nodes/{node}/{type}/{vmid}/rrddata")
+    suspend fun guestRrd(
+        @Path("node") node: String,
+        @Path("type") type: String,
+        @Path("vmid") vmid: Int,
+        @Query("timeframe") timeframe: String,
+        @Query("cf") cf: String,
+    ): ApiEnvelope<List<RrdPoint>>
 
     /** Snapshots, including the `current` pseudo-entry. [type] is `qemu` or `lxc`. */
     @GET("nodes/{node}/{type}/{vmid}/snapshot")

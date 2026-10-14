@@ -28,6 +28,7 @@ import io.github.lucabarbalata.anprox.core.designsystem.component.UsageRing
 import io.github.lucabarbalata.anprox.core.designsystem.theme.AnProxTheme
 import io.github.lucabarbalata.anprox.core.designsystem.theme.MonoStyle
 import io.github.lucabarbalata.anprox.data.guest.GuestRef
+import io.github.lucabarbalata.anprox.data.metrics.MetricsSource
 import io.github.lucabarbalata.anprox.model.format.Formatters
 import io.github.lucabarbalata.anprox.model.pve.GuestType
 import io.github.lucabarbalata.anprox.model.pve.NodeStatus
@@ -36,6 +37,7 @@ import io.github.lucabarbalata.anprox.ui.common.asString
 import io.github.lucabarbalata.anprox.ui.common.contentPadding
 import io.github.lucabarbalata.anprox.ui.common.formatDuration
 import io.github.lucabarbalata.anprox.ui.common.statusAppearance
+import io.github.lucabarbalata.anprox.ui.metrics.PerformanceSection
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 
@@ -54,6 +56,10 @@ fun NodeScreen(
             state.error?.let { e -> if (state.online) item { ErrorBanner(e.asString()) } }
             state.status?.let { s ->
                 item { Gauges(s) }
+                if (state.online) {
+                    item { SectionHeader(stringResource(R.string.perf_title)) }
+                    item { PerformanceSection(MetricsSource.Node(serverId, node)) }
+                }
                 item { SectionHeader(stringResource(R.string.node_system)) }
                 item { SystemInfo(s) }
             }

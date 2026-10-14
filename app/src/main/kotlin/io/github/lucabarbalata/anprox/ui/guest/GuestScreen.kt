@@ -46,6 +46,7 @@ import io.github.lucabarbalata.anprox.core.designsystem.component.TagChip
 import io.github.lucabarbalata.anprox.core.designsystem.component.UsageRing
 import io.github.lucabarbalata.anprox.core.designsystem.theme.AnProxTheme
 import io.github.lucabarbalata.anprox.data.guest.GuestRef
+import io.github.lucabarbalata.anprox.data.metrics.MetricsSource
 import io.github.lucabarbalata.anprox.model.format.Formatters
 import io.github.lucabarbalata.anprox.model.pve.DangerLevel
 import io.github.lucabarbalata.anprox.model.pve.GuestStatus
@@ -59,6 +60,7 @@ import io.github.lucabarbalata.anprox.ui.common.asString
 import io.github.lucabarbalata.anprox.ui.common.contentPadding
 import io.github.lucabarbalata.anprox.ui.common.formatDuration
 import io.github.lucabarbalata.anprox.ui.common.statusAppearance
+import io.github.lucabarbalata.anprox.ui.metrics.PerformanceSection
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 
@@ -111,6 +113,11 @@ fun GuestDetail(
                 if (state.availableActions.isNotEmpty()) {
                     item { SectionHeader(stringResource(R.string.guest_power)) }
                     item { PowerActions(state.availableActions, state.running, viewModel::request) }
+                }
+                // Templates never run, so they have no history.
+                if (!status.template) {
+                    item { SectionHeader(stringResource(R.string.perf_title)) }
+                    item { PerformanceSection(MetricsSource.Guest(ref)) }
                 }
                 item { SectionHeader(stringResource(R.string.guest_details)) }
                 item { Details(ref, status) }
@@ -237,7 +244,6 @@ private fun ComingSoon() {
         R.string.tool_hardware to "M2",
         R.string.tool_clone to "M2",
         R.string.tool_migrate to "M2",
-        R.string.tool_charts to "M1",
     )
     GlassCard(contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)) {
         items.forEach { (label, milestone) ->

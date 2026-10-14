@@ -61,7 +61,7 @@ Code: `core/network/src/main/kotlin/.../network/api/` (`AccessApi`, `PveApi`, `P
 | `GET /nodes/{node}/tasks/{upid}/log` | Task log | ✅ |
 | `DELETE /nodes/{node}/tasks/{upid}` | Stop a running task | 🗓 M1 |
 | `GET /nodes/{node}/tasks` | Node task history with filters | 🗓 M1 |
-| `GET /nodes/{node}/rrddata` | Performance history (charts) | 🗓 M1 |
+| `GET /nodes/{node}/rrddata` | Performance history (charts) | ✅ |
 | `POST /nodes/{node}/vzdump` | Backup now | 🗓 M1 |
 | `/nodes/{node}/{startall,stopall,migrateall}` | Bulk actions | 🗓 M4 |
 | `/nodes/{node}/{termproxy,vncshell,vncwebsocket}` | Node shell | 🗓 M2 |
@@ -90,7 +90,7 @@ Code: `core/network/src/main/kotlin/.../network/api/` (`AccessApi`, `PveApi`, `P
 | `POST …/status/{start,shutdown,reboot,stop}` | Power | ✅ |
 | `POST …/status/{suspend,resume}` | Pause / resume (VM) | ✅ (container suspend ➖: experimental in Proxmox) |
 | `POST /qemu/{vmid}/status/reset` | Hard reset (VM) | ✅ |
-| `GET …/rrddata` | Charts | 🗓 M1 |
+| `GET …/rrddata` | Charts | ✅ |
 | `GET/POST …/snapshot` | List (tree) and take snapshots, with RAM for VMs | ✅ |
 | `POST …/snapshot/{snap}/rollback` | Roll back | ✅ |
 | `DELETE …/snapshot/{snap}` | Delete a snapshot | ✅ |

@@ -32,6 +32,23 @@ pushed. `anprox.versionName` is now `0.1.0-beta.2`.
 Small refactors on the way: `MenuRow` moved to `ui/common`, and the task-result snackbar was
 extracted to `ui/common/TaskResult.kt` (used by the guest and snapshot screens).
 
+**Performance charts (second M1 feature):**
+| Layer | What |
+|---|---|
+| Model | `RrdPoint` (every field optional: Proxmox leaves out what it has no data for), `RrdTimeframe`, `ChartScale` (round axis tops, binary for bytes), `SeriesStats` (now/average/peak, skipping gaps) |
+| API | `PveApi.nodeRrd` / `guestRrd` (`cf=AVERAGE`) |
+| Mock | 70 samples per timeframe; gaps for stopped guests; 595 for the offline node |
+| Data | `MetricsRepository` + `MetricsSource` (guest or node) |
+| Design system | `ChartCard`: Canvas line chart with gradient fills, gap handling, axis labels, tap/drag scrubbing, TalkBack summary |
+| UI | `ui/metrics/PerformanceSection` on the guest and node screens, with a timeframe picker; polls only while visible |
+| Tests | +8 JVM tests (65 in total); a tour step checks the Disk I/O chart has values after switching to Week |
+
+Gotchas: one new data test ended in `assertNotNull(...)`, which returns a value, so JUnit silently
+skipped it (the CLAUDE.md pitfall again, caught because the test count was one short). The tour's
+`scroll_to` now turns around at the end of a list, since the guest screen got longer. Chart touch
+handlers read the selection through `rememberUpdatedState`, because `pointerInput` blocks outlive
+recompositions.
+
 ---
 
 ## 2026-10-14 — Session 2: preparing the first beta (0.1.0-beta.1)

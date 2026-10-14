@@ -13,6 +13,8 @@ import io.github.lucabarbalata.anprox.model.pve.GuestStatus
 import io.github.lucabarbalata.anprox.model.pve.HaStatus
 import io.github.lucabarbalata.anprox.model.pve.MemoryUsage
 import io.github.lucabarbalata.anprox.model.pve.NodeStatus
+import io.github.lucabarbalata.anprox.model.pve.RrdPoint
+import io.github.lucabarbalata.anprox.model.pve.RrdTimeframe
 import io.github.lucabarbalata.anprox.model.pve.SnapshotName
 import io.github.lucabarbalata.anprox.model.pve.TaskLogLine
 import io.github.lucabarbalata.anprox.model.pve.TaskStatus
@@ -275,6 +277,65 @@ class MockState(
         )
     }
 
+    // ------------------------------------------------------------------ performance history
+
+    /** A smooth, repeatable 0..1 curve over time, different per [seed]. */
+    private fun history(seed: Int, t: Long, period: Double): Double {
+        val slow = sin(t / period + seed)
+        val fast = sin(t / (period / 7.3) + seed * 2.1)
+        return (0.5 + 0.35 * slow + 0.15 * fast).coerceIn(0.0, 1.0)
+    }
+
+    /** Sample times ending now, oldest first, like Proxmox (70 samples per timeframe). */
+    private fun sampleTimes(timeframe: RrdTimeframe): List<Long> {
+        val end = clockMillis() / 1000 / timeframe.stepSeconds * timeframe.stepSeconds
+        return (RRD_SAMPLES - 1 downTo 0).map { end - it * timeframe.stepSeconds }
+    }
+
+    /** `null` when [timeframe] is unknown. An offline node only has data from before it went down. */
+    fun nodeRrd(n: Node, timeframe: String): List<RrdPoint>? {
+        val tf = RrdTimeframe.entries.firstOrNull { it.apiName == timeframe } ?: return null
+        val i = nodes.indexOf(n)
+        val period = tf.stepSeconds * 9.0
+        return sampleTimes(tf).mapIndexed { index, t ->
+            if (!n.online && index >= RRD_SAMPLES / 2) return@mapIndexed RrdPoint(time = t, maxcpu = n.cpus.toDouble())
+            val cpu = 0.06 + 0.4 * history(i, t, period)
+            RrdPoint(
+                time = t, cpu = cpu, maxcpu = n.cpus.toDouble(),
+                iowait = 0.002 + 0.03 * history(i + 5, t, period),
+                loadavg = n.cpus * cpu * 1.1,
+                memtotal = n.memory.toDouble(), memused = n.memory * (0.4 + 0.2 * history(i + 9, t, period)),
+                swaptotal = 8.0 * GIB, swapused = 0.0,
+                roottotal = n.rootfs.toDouble(), rootused = n.rootfs / 4.0,
+                netin = 40_000 + 2_500_000 * history(i + 13, t, period),
+                netout = 25_000 + 1_200_000 * history(i + 17, t, period),
+            )
+        }
+    }
+
+    /** Running guests have data throughout; stopped ones only for the older part (they ran back then). */
+    fun guestRrd(g: Guest, timeframe: String): List<RrdPoint>? = synchronized(lock) {
+        settleTasks()
+        val tf = RrdTimeframe.entries.firstOrNull { it.apiName == timeframe } ?: return null
+        val period = tf.stepSeconds * 9.0
+        sampleTimes(tf).mapIndexed { index, t ->
+            val ran = !g.template && (g.status == "running" || index < RRD_SAMPLES * 2 / 5)
+            val base = RrdPoint(
+                time = t, maxcpu = g.cpus.toDouble(), maxmem = g.maxmem.toDouble(), maxdisk = g.maxdisk.toDouble(),
+                disk = if (g.type == "lxc") g.maxdisk / 3.0 else 0.0,
+            )
+            if (!ran) return@mapIndexed base
+            base.copy(
+                cpu = 0.02 + 0.5 * history(g.vmid, t, period),
+                mem = g.maxmem * (0.3 + 0.45 * history(g.vmid + 3, t, period)),
+                netin = 5_000 + 900_000 * history(g.vmid + 7, t, period),
+                netout = 3_000 + 400_000 * history(g.vmid + 11, t, period),
+                diskread = 20_000 * history(g.vmid + 19, t, period),
+                diskwrite = 150_000 * history(g.vmid + 23, t, period),
+            )
+        }
+    }
+
     // ------------------------------------------------------------------ tasks
 
     data class Task(
@@ -505,6 +566,7 @@ class MockState(
 
     companion object {
         const val PASSWORD = "anprox"
+        const val RRD_SAMPLES = 70
         const val MIB = 1024L * 1024
         const val GIB = 1024L * MIB
         const val MINUTE = 60_000L

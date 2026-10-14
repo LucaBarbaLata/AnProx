@@ -217,8 +217,29 @@
     <string name="tool_hardware">Hardware and options</string>
     <string name="tool_clone">Clone, templates, cloud-init</string>
     <string name="tool_migrate">Migrate</string>
-    <string name="tool_charts">Performance charts</string>
     <string name="coming_in">Coming in %1$s</string>
+
+    <!-- Performance charts (M1) -->
+    <string name="perf_title">Performance</string>
+    <string name="perf_hour">Hour</string>
+    <string name="perf_day">Day</string>
+    <string name="perf_week">Week</string>
+    <string name="perf_month">Month</string>
+    <string name="perf_year">Year</string>
+    <string name="chart_usage">Usage</string>
+    <string name="chart_iowait">IO wait</string>
+    <string name="chart_load">Load average</string>
+    <string name="chart_load_line">Load</string>
+    <string name="chart_memory">Memory</string>
+    <string name="chart_used">Used</string>
+    <string name="chart_network">Network</string>
+    <string name="chart_in">In</string>
+    <string name="chart_out">Out</string>
+    <string name="chart_disk_io">Disk I/O</string>
+    <string name="chart_read">Read</string>
+    <string name="chart_write">Write</string>
+    <string name="chart_no_data">No data for this period</string>
+    <string name="chart_description">%1$s, %2$s: now %3$s, average %4$s, peak %5$s</string>
 
     <!-- Snapshots (M1) -->
     <string name="snapshots_title">Snapshots</string>

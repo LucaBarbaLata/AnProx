@@ -7,12 +7,12 @@ testing debug builds on **real hardware**.
 
 | Layer | Where | Runs on | Count |
 |---|---|---|---|
-| Unit: parsing, formatting, URL rules, UPID/TFA parsing, snapshot tree and names | `core/model/src/test` | JVM | 25 |
+| Unit: parsing, formatting, URL rules, UPID/TFA parsing, snapshot tree and names, chart scales | `core/model/src/test` | JVM | 29 |
 | Integration: HTTP client ↔ mock server over real HTTPS (auth, TFA, failover, TLS, errors, renewal, PBS) | `core/network/src/test` | JVM | 16 |
-| Integration: multi-server hub, sessions, dashboard snapshots, guest actions, guest snapshots | `core/data/src/test` | JVM | 16 |
+| Integration: multi-server hub, sessions, dashboard snapshots, guest actions, guest snapshots, performance history | `core/data/src/test` | JVM | 20 |
 | Android lint | `:app:lintDebug` | CI | — |
 | Build: debug and R8-minified release | `:app:assemble*` | CI | — |
-| **End-to-end tour** of the minified release APK on emulators against the mock server | `scripts/e2e/tour.py` | CI (Android 8.0 + 14), Release workflow | 8 steps |
+| **End-to-end tour** of the minified release APK on emulators against the mock server | `scripts/e2e/tour.py` | CI (Android 8.0 + 14), Release workflow | 9 steps |
 | UI / screenshot tests | planned (M1) | — | — |
 | Manual on real hardware | [checklist below](#manual-test-checklist-real-hardware) | owner | — |
 
@@ -45,6 +45,9 @@ status line, asynchronous tasks with UPIDs and logs, and a self-signed certifica
 | pve3 | **offline** | VM 104 `lab-vm` |
 
 Storage: `local`, `local-zfs` (pve1 at **92 %** to trigger the dashboard warning), shared `nas-nfs` and `pbs`.
+Performance history: 70 samples per timeframe, like Proxmox, as smooth repeatable curves. Stopped
+guests only have data for the older part of each timeframe (gaps), templates have none, and the
+offline node `pve3` answers 595 like a real unreachable node.
 Snapshots: `web` has a small tree (`before-upgrade` with RAM → `after-upgrade` → now, plus a
 `kernel-test` branch), `win11` has `fresh-install`, and `pihole` has `pre-update`.
 Task history includes a failed migration and a backup with warnings.
@@ -107,10 +110,11 @@ so no test code is compiled into the app. `scripts/e2e/run.sh` starts the mock s
 2. Add a Proxmox VE server (bare host, insecure certificate) → sign in → dashboard shows the cluster and the offline node.
 3. Add a Proxmox Backup Server (default port 8007 added automatically) → sign in → datastores on the dashboard.
 4. Resources list across both servers.
-5. Open a stopped VM → **Start** → "finished" snackbar → **View log** shows `TASK OK` → the VM now offers **Shut down**.
-6. Snapshots of the now-running VM → **Take snapshot** with RAM → "VM snapshot finished" → the new snapshot is listed.
-7. Tasks tab shows the new task.
-8. Settings → Light theme → dashboard in light mode.
+5. A running VM's **Performance** charts → **Week** → the Disk I/O chart shows values.
+6. Open a stopped VM → **Start** → "finished" snackbar → **View log** shows `TASK OK` → the VM now offers **Shut down**.
+7. Snapshots of the now-running VM → **Take snapshot** with RAM → "VM snapshot finished" → the new snapshot is listed.
+8. Tasks tab shows the new task.
+9. Settings → Light theme → dashboard in light mode.
 
 After every step the script checks that the app process is alive and that logcat has no
 `FATAL EXCEPTION` for the app. Screenshots of each step, plus UI dumps and logcat on failure,
@@ -165,6 +169,13 @@ Run this before closing a milestone. Note the PVE/PBS versions you tested agains
 - [ ] Stop asks for confirmation; Reset (VM only) asks for confirmation.
 - [ ] Read-only user: power action shows "Permission denied …".
 - [ ] Node screen: gauges, CPU model, kernel, guests list.
+
+**Performance charts**
+- [ ] A running VM's CPU and memory charts roughly match the web UI's Summary graphs for the same timeframe.
+- [ ] Hour/Day/Week/Month/Year all load; a VM that was off for a while shows gaps, not zeros.
+- [ ] Touching or dragging across a chart shows the time and values; tapping the same spot again returns to the latest values.
+- [ ] Node charts: CPU with IO wait, load average, memory, network.
+- [ ] TalkBack reads each chart as a summary (now, average, peak).
 
 **Snapshots** (use a test VM)
 - [ ] Guest → Snapshots shows the same tree as the web UI (Snapshots tab), with "Now" in the right place.

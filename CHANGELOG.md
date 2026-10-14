@@ -13,6 +13,12 @@ All notable changes to AnProx are documented here. The format follows
   **Roll back** asks you to type the snapshot name. **Delete** asks for confirmation. Each
   operation follows its task and offers **View log**.
 
+- **Performance charts** on every VM, container and node screen: CPU, memory, network and disk
+  I/O for guests; CPU with IO wait, load average, memory and network for nodes. Pick the last
+  hour, day, week, month or year. Touch or drag across a chart to read the values at that
+  moment. Stopped periods show as gaps. Charts refresh while visible: every minute for the hour
+  view, every five minutes otherwise.
+
 ### Changed
 - The guest screen's tools section lists what works now; everything else is under "Coming later".
 

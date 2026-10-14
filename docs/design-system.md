@@ -111,6 +111,7 @@ jitter as they change.
 | `GlassBackground` | `Glass.kt` | Page backdrop. Put it once at the root (`MainActivity`). |
 | `GlassCard` | `Glass.kt` | `onClick` makes the whole card a button. `strong = true` marks selection. |
 | `UsageRing` | `Gauges.kt` | Circular gauge with glow. Includes a TalkBack description and progress semantics. |
+| `ChartCard`, `ChartLine` | `Charts.kt` | Glass card with a line chart: gridlines labelled at 0, half and the top; a gradient fill under each line; gaps where data is missing; tap or drag to read a moment (tap again for the latest values). The readout above the chart doubles as the legend (colour dot + label). TalkBack reads a summary (now, average, peak) instead of the drawing. Callers pick round axis tops with `ChartScale` (`:core:model`). |
 | `UsageBar` | `Gauges.kt` | Thin gradient bar. |
 | `StatusDot`, `StatusPill`, `TagChip` | `Status.kt` | Status always has a text label nearby. |
 | `MetricTile` | `Common.kt` | Big value plus caption, optional icon and click. |

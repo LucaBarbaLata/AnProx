@@ -6,7 +6,7 @@ It drives the real app through adb + uiautomator (no test framework inside the A
 exercises exactly what users install — including the R8-minified release build:
 
   welcome → add a PVE server → sign in → dashboard → add a PBS → combined dashboard →
-  resources → guest detail → start a VM → task finished → task log → snapshots → take a
+  resources → performance charts → guest detail → start a VM → task finished → task log → snapshots → take a
   snapshot → tasks tab → light theme → no crash
 
 Screenshots, UI dumps and logcat go to $ANPROX_E2E_OUT (default: e2e-output/).
@@ -147,6 +147,17 @@ def scroll_down():
     time.sleep(1.0)
 
 
+def scroll_up():
+    w, h = screen_size()
+    adb("shell", "input", "swipe", str(w // 2), str(int(h * 0.25)), str(w // 2), str(int(h * 0.62)), "400")
+    time.sleep(1.0)
+
+
+def signature(root):
+    """What is on screen, to notice when a swipe no longer moves anything."""
+    return tuple((tuple(labels(n)), n.get("bounds")) for n in root.iter("node") if labels(n))
+
+
 def nudge(dy):
     """Scrolls the content up by about [dy] pixels (down if negative), swiping mid-screen only."""
     w, h = screen_size()
@@ -163,7 +174,7 @@ def first_match(root, text, pick="first"):
     return max(found, key=lambda n: center(n)[1]) if pick == "lowest" else found[0]
 
 
-def scroll_to(text, attempts=12, pick="first"):
+def scroll_to(text, attempts=16, pick="first"):
     """
     Scrolls until [text] is on screen, then brings it towards mid-screen and waits until it
     stops moving. Use this for anything inside a scrolling list before tapping it.
@@ -173,13 +184,23 @@ def scroll_to(text, attempts=12, pick="first"):
     Android 14 the tour pressed the navigation bar's Back button this way and closed the server
     editor). At the very start or end of a list the item can't move further, but the list's
     content padding then keeps it clear of the bars.
+
+    Scrolls down first; once the screen stops changing (end of the list) it scrolls up instead,
+    so targets above the current scroll position are found too.
     """
     w, h = screen_size()
     previous_y = None
+    upwards = False
+    last_seen = None
     for _ in range(attempts):
-        node = first_match(dump(), text, pick)
+        root = dump()
+        node = first_match(root, text, pick)
         if node is None:
-            scroll_down()
+            seen = signature(root)
+            if seen and seen == last_seen and not upwards:
+                upwards = True          # the swipe changed nothing: end of the list, turn around once
+            last_seen = seen
+            scroll_up() if upwards else scroll_down()
             previous_y = None
             continue
         y = center(node)[1]
@@ -335,17 +356,33 @@ def resources():
     screenshot("04-resources")
 
 
+@step("Performance charts of a running VM")
+def performance():
+    tap_node(scroll_to("k8s-master"))
+    tap_node(scroll_to("Week"))            # timeframe picker
+    time.sleep(2)                          # reload for the new timeframe
+    scroll_to("Disk I/O")                  # the last chart
+    root = dump()
+    readouts = [v for n in root.iter("node") for v in labels(n) if v.startswith(("Read ", "Write "))]
+    if not readouts or all(v.endswith("—") for v in readouts):
+        save_dump(root, "charts-without-data")
+        raise AssertionError(f"Disk I/O chart shows no values: {readouts}\n{describe(root)}")
+    screenshot("05-performance")
+    back()
+    find("Resources", timeout=20)
+
+
 @step("Guest detail, start a VM and follow its task")
 def guest_start():
     tap_node(scroll_to("win11"))
     find("Start", timeout=30)
-    screenshot("05-guest-stopped")
+    screenshot("06-guest-stopped")
     tap_node(scroll_to("Start"))
     find("finished", timeout=60)       # snackbar "VM start finished"
-    screenshot("06-task-finished")
+    screenshot("07-task-finished")
     tap("View log")
     find("TASK OK", timeout=30)
-    screenshot("07-task-log")
+    screenshot("08-task-log")
     back()
     find("Shut down", timeout=30)      # the VM is running now
     back()
@@ -356,14 +393,14 @@ def snapshots():
     tap_node(scroll_to("win11"))           # running since the previous step
     tap_node(scroll_to("Snapshots"))
     find("fresh-install", timeout=30)      # seeded by the mock
-    screenshot("08-snapshots")
+    screenshot("09-snapshots")
     tap("Take snapshot")
     find("Include RAM", timeout=15)        # offered because the VM is running
-    screenshot("09-take-snapshot")
+    screenshot("10-take-snapshot")
     tap("Take snapshot", pick="lowest")    # the dialog's button, below the screen's
     find("VM snapshot finished", timeout=60)
     find("snap-", timeout=20)              # the suggested name, now in the list
-    screenshot("10-snapshot-taken")
+    screenshot("11-snapshot-taken")
     back()
     # Back on the guest screen, which keeps its scroll position at the Tools section.
     find("Save this state and roll back to it later", timeout=30)
@@ -374,7 +411,7 @@ def snapshots():
 def tasks():
     tap("Tasks")
     find("VM start", timeout=30)
-    screenshot("11-tasks")
+    screenshot("12-tasks")
 
 
 @step("Switch to the light theme")
@@ -383,12 +420,12 @@ def light_theme():
     tap("Settings")
     tap("Light")
     time.sleep(1)
-    screenshot("12-settings-light")
+    screenshot("13-settings-light")
     back()
     tap("Overview")
     find("homelab", timeout=30)
     time.sleep(2)
-    screenshot("13-dashboard-light")
+    screenshot("14-dashboard-light")
 
 
 def main():
@@ -407,7 +444,7 @@ def main():
     print("Tour:", flush=True)
     ok = False
     try:
-        for s in (launch, add_pve, add_pbs, resources, guest_start, snapshots, tasks, light_theme):
+        for s in (launch, add_pve, add_pbs, resources, performance, guest_start, snapshots, tasks, light_theme):
             s()
         ok = True
     finally:
