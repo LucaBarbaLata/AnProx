@@ -92,7 +92,18 @@ def find(text, timeout=30, pick="first"):
             return found[0]
         time.sleep(1)
     save_dump(root, f"missing-{slug(text)}")
-    raise AssertionError(f"'{text}' did not appear within {timeout}s")
+    raise AssertionError(f"'{text}' did not appear within {timeout}s.\n{describe(root)}")
+
+
+def describe(root):
+    """Everything readable on screen, for the CI log (screenshots live in the artifact)."""
+    if root is None:
+        return "(no UI dump)"
+    seen = []
+    for n in root.iter("node"):
+        for value in labels(n):
+            seen.append(f"{value!r}@{n.get('bounds')}")
+    return f"keyboard shown: {keyboard_shown()}\nOn screen: " + ", ".join(seen)
 
 
 def visible(text):
@@ -111,12 +122,14 @@ def tap(text, timeout=30, pick="first"):
 
 
 def scroll_down():
+    # Swipe in the upper half so an open keyboard can't swallow the gesture.
     w, h = screen_size()
-    adb("shell", "input", "swipe", str(w // 2), str(int(h * 0.75)), str(w // 2), str(int(h * 0.30)), "350")
+    adb("shell", "input", "swipe", str(w // 2), str(int(h * 0.55)), str(w // 2), str(int(h * 0.18)), "400")
     time.sleep(1.0)
 
 
-def scroll_to(text, attempts=8):
+def scroll_to(text, attempts=10):
+    hide_keyboard()
     for _ in range(attempts):
         root = dump()
         found = matches(root, text, exact=True) or matches(root, text, exact=False)
@@ -127,7 +140,19 @@ def scroll_to(text, attempts=8):
 
 
 def keyboard_shown():
-    return "mInputShown=true" in adb("shell", "dumpsys", "input_method", check=False)
+    # The marker differs between Android versions (InputMethodManagerService vs. the IME's own dump).
+    out = adb("shell", "dumpsys", "input_method", check=False)
+    return any(marker in out for marker in ("mInputShown=true", "mIsInputViewShown=true"))
+
+
+def disable_soft_keyboards():
+    """
+    No on-screen keyboard during the tour: it covers half the screen and swallows swipes.
+    Compose text fields still accept the key events `adb shell input text` sends (like a
+    hardware keyboard).
+    """
+    for ime in adb("shell", "ime", "list", "-s", check=False).split():
+        adb("shell", "ime", "disable", ime, check=False)
 
 
 def hide_keyboard():
@@ -301,6 +326,7 @@ def main():
     print(f"Installing {apk}", flush=True)
     adb("install", "-r", apk, timeout=300)
     adb("logcat", "-c", check=False)
+    disable_soft_keyboards()
     print("Tour:", flush=True)
     ok = False
     try:
