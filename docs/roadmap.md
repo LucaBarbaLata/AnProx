@@ -53,6 +53,14 @@ Release engineering is in place ([releasing.md](releasing.md)). Gates:
 - [x] Owner: run the manual checklist on real PVE/PBS hardware (2026-10-14: all good)
 - [x] Owner: run the Release workflow (dry run, then publish): [released 2026-10-14](https://github.com/LucaBarbaLata/AnProx/releases/tag/v0.1.0-beta.1)
 
+### Beta 0.1.0-beta.2: 🚧 ready for the owner's test run
+Everything marked ✅ in M1 and M2 below. Gates:
+- [x] CI green: tests, lint, debug and release builds, and the emulator tour (14 steps) on Android 8.0 and 14
+- [x] `CHANGELOG.md` section, store changelog (`fastlane/…/changelogs/10022.txt`), README
+- [x] [Test guide](beta2-test-guide.md) for the owner, Proxmox VE focused (no Backup Server available)
+- [ ] Owner: run the test guide on real hardware (Proxmox VE 8; 9 later)
+- [ ] Owner: set the release date in `CHANGELOG.md`, run the Release workflow (dry run, then publish)
+
 ## M1 — Daily driver
 *Status: 🚧 in progress. Done items are marked ✅ and ship in 0.1.0-beta.2.*
 

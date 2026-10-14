@@ -43,12 +43,15 @@ The most valuable things to test, roughly in order:
 8. **Themes**: light, dark, pure black, and your phone's font size settings.
 
 The full list is in the [manual test checklist](testing.md#manual-test-checklist-real-hardware).
+For 0.1.0-beta.2's new features, the [beta.2 test guide](beta2-test-guide.md) has step-by-step
+instructions for Proxmox VE.
 
 ## Known limitations in this beta
 
 These are planned, not bugs ([roadmap](roadmap.md)):
 
-- No console, snapshots, backups, charts, hardware editing, migration or VM creation yet (M1–M2).
+- No hardware editing, VM/container creation, cloud-init, SPICE or built-in SSH yet (M2). Consoles,
+  snapshots, backups, charts, options, clone and migration arrive in 0.1.0-beta.2.
 - Single sign-on (OpenID Connect) and security keys (WebAuthn) can't be used to sign in yet (M1).
 - No app lock or fingerprint check before actions in 0.1.0-beta.1 (added in 0.1.0-beta.2).
 - No notifications or widgets yet (M3).

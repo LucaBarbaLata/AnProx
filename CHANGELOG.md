@@ -4,7 +4,12 @@ All notable changes to AnProx are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/).
 
-## [Unreleased] (milestone M1, "Daily driver", in progress)
+## [Unreleased]
+
+## [0.1.0-beta.2] — not released yet (milestone M1 "Daily driver", plus consoles and guest management from M2)
+
+Second beta, focused on everyday Proxmox VE work: consoles, snapshots, backups, charts, guest
+options, clone and migrate, bulk actions and an optional app lock.
 
 ### Added
 - **Snapshots** for VMs and containers (Guest → Tools → Snapshots): the snapshot tree with dates,

@@ -1,0 +1,1 @@
+Second beta: VM and container consoles (noVNC, terminal with extra keys), node shell, snapshots, backup now and restore, performance charts, guest IPs and OS, guest options, clone and templates, migration, bulk start/shutdown/stop, favourites on the dashboard, node reboot/shutdown, and an optional app lock with fingerprint check before dangerous actions.

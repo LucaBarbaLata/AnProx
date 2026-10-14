@@ -39,11 +39,18 @@ The goal is every function of the web UI in a fast, beautiful, native app.
   and before rollbacks.
 - **Performance charts** *(next beta)*. CPU, memory, network and disk history of every node and
   guest, from the last hour to the last year, with touch to read exact values.
+- **Consoles** *(next beta)*. The VM's screen (noVNC), container and node terminals (xterm.js)
+  with an extra key row for Esc, Tab, Ctrl+C and the arrows.
+- **Guest management** *(next beta)*. IP addresses and OS from the guest agent; edit name, tags,
+  notes, start at boot and protection; clone (full or linked), convert to template, and migrate
+  to another node (live for VMs).
+- **Bulk actions and favourites** *(next beta)*. Select several guests to start, shut down or
+  stop them together; star guests to pin them to the overview.
 - **Nodes.** Live usage, hardware and kernel info, and the guests running on the node.
 - **Tasks.** A merged timeline of every server's tasks with live, auto-scrolling logs.
 - **Themes.** System, light or dark, plus pure-black AMOLED and an adjustable live refresh rate.
 
-Everything else, from consoles and snapshots to backups, Ceph, SDN, firewall, permissions and
+Everything else, from hardware editing and VM creation to Ceph, SDN, firewall, permissions and
 widgets, is planned in milestones. See the [roadmap](docs/roadmap.md) and the
 [API coverage tracker](docs/api-coverage.md).
 
