@@ -1,6 +1,6 @@
 package io.github.lucabarbalata.anprox.security
 
-import android.app.Activity
+import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.icons.Icons
@@ -14,7 +14,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -48,7 +47,7 @@ fun LockScreen(authenticator: Authenticator, onUnlocked: () -> Unit, onUnavailab
     }
     LaunchedEffect(Unit) { unlock() }
 
-    val activity = LocalContext.current as? Activity
+    val activity = LocalActivity.current
     Dialog(
         onDismissRequest = { activity?.moveTaskToBack(true) }, // Back leaves the app instead of unlocking
         properties = DialogProperties(
