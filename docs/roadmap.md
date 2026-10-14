@@ -28,7 +28,7 @@ Exit criteria for every milestone:
 ---
 
 ## M0 — Foundation
-*Status: ✅ code complete, awaiting the owner's real-hardware test.*
+*Status: ✅ code complete and tested by the owner on real hardware.*
 
 | Area | Delivered | Questionnaire |
 |---|---|---|
@@ -50,7 +50,7 @@ Release engineering is in place ([releasing.md](releasing.md)). Remaining gates:
 - [x] Local crash reports, "Report a bug", issue templates, [beta testing guide](beta-testing.md)
 - [x] Store metadata (Fastlane) for IzzyOnDroid/F-Droid
 - [ ] Owner: create the release key and add the four repository secrets
-- [ ] Owner: run the manual checklist on real PVE/PBS hardware
+- [x] Owner: run the manual checklist on real PVE/PBS hardware (2026-10-14: all good)
 - [ ] Owner: run the Release workflow (dry run, then publish)
 
 ## M1 — Daily driver

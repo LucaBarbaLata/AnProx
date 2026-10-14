@@ -40,6 +40,10 @@ The owner asked: "can you make a release version? or let's prepare for a beta pa
   Android 8.0 and 14 (CI run 33). This isn't an app bug: edge-to-edge apps always show content
   under translucent system bars, and the bars take the touches there.
 
+**Owner sign-off:** the Release workflow's dry run passed (Release run 1), and the owner tested
+the app on their own Proxmox hardware: "everything works great". Remaining before the
+public beta: the release key, the four repository secrets, and the publishing run.
+
 ---
 
 ## 2026-10-14 — Session 1: kick-off and milestone M0

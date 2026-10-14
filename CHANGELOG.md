@@ -4,7 +4,7 @@ All notable changes to AnProx are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/).
 
-## [0.1.0-beta.1] — not yet released (milestone M0, "Foundation")
+## [0.1.0-beta.1] — 2026-10-14 (milestone M0, "Foundation")
 
 ### Added
 - **Servers:** unlimited Proxmox VE and Proxmox Backup Server profiles; multiple addresses per
