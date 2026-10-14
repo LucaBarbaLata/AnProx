@@ -10,7 +10,7 @@ serialization = "1.11.0"
 okhttp = "5.5.0"
 retrofit = "3.0.0"
 ktor = "3.6.0"
-koin = "4.1.1"
+koin = "4.2.2"
 junit = "5.10.1"
 slf4j = "2.0.17"
 
