@@ -25,8 +25,18 @@ All notable changes to AnProx are documented here. The format follows
   dangerous actions", can be switched off). The lock screen covers open dialogs too, and turning
   any of this off requires authenticating.
 
+- **Backups** (Guest → Tools → Backups, or tap a backup storage in Resources): every backup of a
+  guest across the storages its node can see, newest first, with size, notes, a "Protected" badge
+  and the Backup Server's verification result. **Back up now** picks a storage (Backup Server
+  first), the mode (snapshot, suspend or stop) and notes (`{{guestname}}` etc.). **Restore**
+  either as a new guest (the next free ID is suggested and the copy gets new MAC addresses) or
+  over the existing guest (it must be stopped; type its name to confirm, plus the fingerprint
+  check when the app lock is on). A storage that can't be read is reported without hiding the
+  others.
+
 ### Changed
 - The guest screen's tools section lists what works now; everything else is under "Coming later".
+- Backup storages in the Resources list open their backups.
 
 ### Fixed
 - Release notes now show the real signing certificate fingerprint. 0.1.0-beta.1's notes showed a

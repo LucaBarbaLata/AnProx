@@ -7,7 +7,7 @@ exercises exactly what users install — including the R8-minified release build
 
   welcome → add a PVE server → sign in → dashboard → add a PBS → combined dashboard →
   resources → performance charts → guest detail → start a VM → task finished → task log → snapshots → take a
-  snapshot → tasks tab → light theme → no crash
+  snapshot → back up and restore → tasks tab → light theme → no crash
 
 Screenshots, UI dumps and logcat go to $ANPROX_E2E_OUT (default: e2e-output/).
 
@@ -422,6 +422,28 @@ def snapshots():
     back()
 
 
+@step("Back up a container, then restore it as a new one")
+def backups():
+    tap_node(scroll_to("pihole"))
+    tap_node(scroll_to("Backups"))
+    find("Verified", timeout=30)           # the seeded Backup Server backup, verified
+    screenshot("11b-backups")
+    tap("Back up now")
+    find("Backup Server", timeout=15)      # storage choice; the Backup Server is preselected
+    screenshot("11c-back-up-now")
+    tap("Back up", pick="lowest")          # the dialog's button
+    find("Backup finished", timeout=60)
+    tap_node(scroll_to("Restore"))         # newest backup first
+    find("As a new container", timeout=15)
+    find("105", timeout=15)                # the next free id, filled in
+    tap("Start restore")
+    find("CT restore finished", timeout=60)
+    screenshot("11d-restored")
+    back()
+    find("Back up now and restore", timeout=30)
+    back()
+
+
 @step("Tasks tab")
 def tasks():
     tap("Tasks")
@@ -463,7 +485,7 @@ def main():
     print("Tour:", flush=True)
     ok = False
     try:
-        for s in (launch, add_pve, add_pbs, resources, performance, guest_start, snapshots, tasks, light_theme):
+        for s in (launch, add_pve, add_pbs, resources, performance, guest_start, snapshots, backups, tasks, light_theme):
             s()
         ok = True
     finally:

@@ -6,7 +6,9 @@ import io.github.lucabarbalata.anprox.model.pve.ClusterStatusEntry
 import io.github.lucabarbalata.anprox.model.pve.GuestSnapshot
 import io.github.lucabarbalata.anprox.model.pve.GuestStatus
 import io.github.lucabarbalata.anprox.model.pve.NodeStatus
+import io.github.lucabarbalata.anprox.model.pve.NodeStorage
 import io.github.lucabarbalata.anprox.model.pve.RrdPoint
+import io.github.lucabarbalata.anprox.model.pve.StorageContentItem
 import io.github.lucabarbalata.anprox.model.pve.TaskLogLine
 import io.github.lucabarbalata.anprox.model.pve.TaskStatus
 import io.github.lucabarbalata.anprox.model.pve.TaskSummary
@@ -73,6 +75,44 @@ interface PveApi {
         @Query("timeframe") timeframe: String,
         @Query("cf") cf: String,
     ): ApiEnvelope<List<RrdPoint>>
+
+    // ------------------------------------------------------------------ backups (Q20)
+
+    /** Storages a node can use. [content] narrows it, e.g. `backup`; [enabled] 1 hides disabled ones. */
+    @GET("nodes/{node}/storage")
+    suspend fun nodeStorages(
+        @Path("node") node: String,
+        @Query("content") content: String?,
+        @Query("enabled") enabled: Int?,
+    ): ApiEnvelope<List<NodeStorage>>
+
+    /** Volumes on a storage. [content] e.g. `backup`; [vmid] narrows to one guest. */
+    @GET("nodes/{node}/storage/{storage}/content")
+    suspend fun storageContent(
+        @Path("node") node: String,
+        @Path("storage") storage: String,
+        @Query("content") content: String?,
+        @Query("vmid") vmid: Int?,
+    ): ApiEnvelope<List<StorageContentItem>>
+
+    /** Backup now. [params]: `vmid`, `storage`, `mode`, optional `compress`, `notes-template`. Returns a UPID. */
+    @FormUrlEncoded
+    @POST("nodes/{node}/vzdump")
+    suspend fun vzdump(@Path("node") node: String, @FieldMap params: Map<String, String>): ApiEnvelope<String>
+
+    /** The lowest free VMID, for restoring or creating a guest. */
+    @GET("cluster/nextid")
+    suspend fun nextId(): ApiEnvelope<Int>
+
+    /** Creates a VM; with `archive=<backup volid>` it restores one. Returns a UPID. */
+    @FormUrlEncoded
+    @POST("nodes/{node}/qemu")
+    suspend fun createQemu(@Path("node") node: String, @FieldMap params: Map<String, String>): ApiEnvelope<String>
+
+    /** Creates a container; with `ostemplate=<backup volid>` and `restore=1` it restores one. Returns a UPID. */
+    @FormUrlEncoded
+    @POST("nodes/{node}/lxc")
+    suspend fun createLxc(@Path("node") node: String, @FieldMap params: Map<String, String>): ApiEnvelope<String>
 
     /** Snapshots, including the `current` pseudo-entry. [type] is `qemu` or `lxc`. */
     @GET("nodes/{node}/{type}/{vmid}/snapshot")

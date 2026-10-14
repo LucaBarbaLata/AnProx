@@ -4,6 +4,7 @@ import io.github.lucabarbalata.anprox.model.ProxmoxProduct
 import io.github.lucabarbalata.anprox.model.auth.Realm
 import io.github.lucabarbalata.anprox.model.pbs.DatastoreInfo
 import io.github.lucabarbalata.anprox.model.pbs.DatastoreUsage
+import io.github.lucabarbalata.anprox.model.pve.BackupVerification
 import io.github.lucabarbalata.anprox.model.pve.ClusterResource
 import io.github.lucabarbalata.anprox.model.pve.ClusterStatusEntry
 import io.github.lucabarbalata.anprox.model.pve.CpuInfo
@@ -13,15 +14,21 @@ import io.github.lucabarbalata.anprox.model.pve.GuestStatus
 import io.github.lucabarbalata.anprox.model.pve.HaStatus
 import io.github.lucabarbalata.anprox.model.pve.MemoryUsage
 import io.github.lucabarbalata.anprox.model.pve.NodeStatus
+import io.github.lucabarbalata.anprox.model.pve.NodeStorage
 import io.github.lucabarbalata.anprox.model.pve.RrdPoint
 import io.github.lucabarbalata.anprox.model.pve.RrdTimeframe
 import io.github.lucabarbalata.anprox.model.pve.SnapshotName
+import io.github.lucabarbalata.anprox.model.pve.StorageContentItem
 import io.github.lucabarbalata.anprox.model.pve.TaskLogLine
 import io.github.lucabarbalata.anprox.model.pve.TaskStatus
 import io.github.lucabarbalata.anprox.model.pve.TaskSummary
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import java.security.SecureRandom
+import java.time.Instant
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
 import java.util.Base64
 import kotlin.math.abs
 import kotlin.math.sin
@@ -547,6 +554,130 @@ class MockState(
             if (snapHead[g.vmid] == name) snapHead[g.vmid] = snap.parent
         }
         Result.success(upid)
+    }
+
+    // ------------------------------------------------------------------ backups
+
+    /** A backup plus the guest settings it carries, so a restore can recreate the guest. */
+    data class MockBackup(
+        val storage: String,
+        /** Where it was taken; only matters for node-local storages such as `local`. */
+        val node: String,
+        val vmid: Int,
+        val type: String,
+        val createdMillis: Long,
+        val size: Long,
+        val notes: String,
+        val isProtected: Boolean,
+        /** Backup Server verification: true ok, false failed, null not verified (yet). */
+        val verified: Boolean?,
+        val guestName: String,
+        val cpus: Int,
+        val maxmem: Long,
+        val maxdisk: Long,
+        val volid: String,
+    )
+
+    private val backups = mutableListOf<MockBackup>()
+
+    private fun storagePlugin(id: String) = storages.firstOrNull { it.id == id }?.plugin
+
+    private fun newBackup(storage: String, g: Guest, createdMillis: Long, notes: String, isProtected: Boolean = false, verified: Boolean? = null): MockBackup {
+        val instant = Instant.ofEpochMilli(createdMillis).truncatedTo(ChronoUnit.SECONDS)
+        val volid = if (storagePlugin(storage) == "pbs") {
+            "$storage:backup/${if (g.type == "qemu") "vm" else "ct"}/${g.vmid}/$instant"
+        } else {
+            val stamp = DateTimeFormatter.ofPattern("yyyy_MM_dd-HH_mm_ss").withZone(ZoneOffset.UTC).format(instant)
+            "$storage:backup/vzdump-${g.type}-${g.vmid}-$stamp.${if (g.type == "qemu") "vma.zst" else "tar.zst"}"
+        }
+        return MockBackup(
+            storage, g.node, g.vmid, g.type, createdMillis, size = g.maxdisk / 4, notes = notes, isProtected = isProtected,
+            verified = verified, guestName = g.name, cpus = g.cpus, maxmem = g.maxmem, maxdisk = g.maxdisk, volid = volid,
+        )
+    }
+
+    init {
+        if (product == ProxmoxProduct.PVE) {
+            val now = clockMillis()
+            fun add(vmid: Int, storage: String, daysAgo: Int, notes: String, isProtected: Boolean = false, verified: Boolean? = null) {
+                backups += newBackup(storage, guest(vmid)!!, now - daysAgo * DAY - 2 * HOUR, notes, isProtected, verified)
+            }
+            add(100, "pbs", 1, "web", verified = true)
+            add(100, "pbs", 8, "web — before the PVE 9 upgrade", isProtected = true, verified = true)
+            add(100, "local", 3, "web")
+            add(101, "pbs", 1, "db", verified = false)
+            add(102, "nas-nfs", 5, "win11")
+            add(200, "pbs", 2, "pihole", verified = true)
+            add(201, "local", 4, "nginx-proxy")
+        }
+    }
+
+    private fun MockBackup.toItem() = StorageContentItem(
+        volid = volid, content = "backup", ctime = createdMillis / 1000, size = size,
+        format = if (storagePlugin(storage) == "pbs") (if (type == "qemu") "pbs-vm" else "pbs-ct") else volid.substringAfterLast('-').substringAfter('.'),
+        notes = notes.ifEmpty { null }, isProtected = isProtected, vmid = vmid, subtype = type,
+        verification = verified?.let { BackupVerification(if (it) "ok" else "failed") },
+    )
+
+    fun nodeStorages(n: Node, content: String?): List<NodeStorage> = storages
+        .filter { it.node == n.name && (content == null || content in it.content.split(',')) }
+        .map { NodeStorage(it.id, it.plugin, it.content, active = n.online, enabled = true, shared = it.shared, total = it.total, used = it.used, avail = it.total - it.used) }
+
+    /** `null` if the storage doesn't exist on that node. The mock only stores backups. */
+    fun storageContent(n: Node, storage: String, content: String?, vmid: Int?): List<StorageContentItem>? = synchronized(lock) {
+        settleTasks()
+        val s = storages.firstOrNull { it.node == n.name && it.id == storage } ?: return null
+        if (content != null && content != "backup") return emptyList()
+        backups
+            .filter { it.storage == storage && (s.shared || it.node == n.name) && (vmid == null || it.vmid == vmid) }
+            .map { it.toItem() }
+    }
+
+    /** `vzdump` for one guest. Returns a UPID, or an error message (500). */
+    fun backupNow(g: Guest, storage: String, mode: String, notesTemplate: String?, user: String): Result<String> = synchronized(lock) {
+        settleTasks()
+        fun fail(msg: String) = Result.failure<String>(IllegalStateException(msg))
+        val s = storages.firstOrNull { it.node == g.node && it.id == storage } ?: return fail("storage '$storage' does not exist")
+        if ("backup" !in s.content.split(',')) return fail("storage '$storage' does not support backups")
+        if (mode !in listOf("snapshot", "suspend", "stop")) return fail("value '$mode' does not have a value in the enumeration 'snapshot, suspend, stop'")
+        val notes = notesTemplate.orEmpty()
+            .replace("{{guestname}}", g.name).replace("{{vmid}}", g.vmid.toString())
+            .replace("{{node}}", g.node).replace("{{cluster}}", clusterName)
+        Result.success(startTask(g.node, "vzdump", g.vmid.toString(), user) { backups += newBackup(storage, g, clockMillis(), notes) })
+    }
+
+    /** The lowest unused VMID, like `/cluster/nextid`. */
+    fun nextId(): Int = synchronized(lock) { generateSequence(100) { it + 1 }.first { id -> guests.none { it.vmid == id } } }
+
+    /**
+     * Restores [volid] as guest [vmid] on [nodeName]. Replacing an existing guest needs [force]
+     * and a stopped guest on the same node; its snapshots are gone afterwards, like in Proxmox.
+     */
+    fun restore(nodeName: String, type: String, vmid: Int, volid: String, force: Boolean, user: String): Result<String> = synchronized(lock) {
+        settleTasks()
+        val label = if (type == "qemu") "VM" else "CT"
+        fun fail(msg: String) = Result.failure<String>(IllegalStateException(msg))
+        val b = backups.firstOrNull { it.volid == volid } ?: return fail("volume '$volid' does not exist")
+        if (b.type != type) return fail("'$volid' is not a ${if (type == "qemu") "VM" else "container"} backup")
+        if (node(nodeName)?.online != true) return fail("node '$nodeName' seems to be offline")
+        val existing = guests.firstOrNull { it.vmid == vmid }
+        if (existing != null) {
+            if (!force || existing.node != nodeName || existing.type != type) {
+                return fail("unable to restore $label $vmid - $label $vmid already exists on node '${existing.node}'")
+            }
+            if (existing.status == "running") return fail("unable to restore $label $vmid - $label is running")
+        }
+        val prefix = if (type == "qemu") "qm" else "vz"
+        Result.success(
+            startTask(nodeName, prefix + "restore", vmid.toString(), user) {
+                if (existing != null) {
+                    guests.remove(existing)
+                    snaps.remove(vmid)
+                    snapHead.remove(vmid)
+                }
+                guests += Guest(vmid, type, nodeName, b.guestName, "stopped", b.cpus, b.maxmem, b.maxdisk, tags = existing?.tags)
+            },
+        )
     }
 
     // ------------------------------------------------------------------ PBS

@@ -169,6 +169,41 @@ class MockProxmoxServer(
             if (!node.online) return@get call.fail(595, "Connection refused")
             call.ok(state.nodeStatus(node))
         }
+        get("nodes/{node}/storage") {
+            call.authed() ?: return@get
+            val node = state.node(call.parameters["node"]!!) ?: return@get call.fail(404, "no such node")
+            call.ok(state.nodeStorages(node, call.request.queryParameters["content"]))
+        }
+        get("nodes/{node}/storage/{storage}/content") {
+            call.authed() ?: return@get
+            val node = state.node(call.parameters["node"]!!) ?: return@get call.fail(404, "no such node")
+            if (!node.online) return@get call.fail(595, "Connection refused")
+            val storage = call.parameters["storage"]!!
+            val q = call.request.queryParameters
+            val items = state.storageContent(node, storage, q["content"], q["vmid"]?.toIntOrNull())
+                ?: return@get call.fail(500, "storage '$storage' does not exist")
+            call.ok(items)
+        }
+        post("nodes/{node}/vzdump") {
+            val s = call.authed() ?: return@post
+            val p = call.receiveParameters()
+            val vmid = p["vmid"]?.toIntOrNull()
+                ?: return@post call.fail(400, "Parameter verification failed.", mapOf("vmid" to "property is missing and it is not optional"))
+            val g = state.guest(vmid)?.takeIf { it.node == call.parameters["node"] }
+                ?: return@post call.fail(500, "guest $vmid is not on node '${call.parameters["node"]}'")
+            if (state.isReadOnly(s.user)) return@post call.fail(403, "Permission check failed (/vms/$vmid, VM.Backup)")
+            state.backupNow(g, p["storage"].orEmpty(), p["mode"] ?: "snapshot", p["notes-template"], s.user).fold(
+                onSuccess = { call.ok(it) },
+                onFailure = { call.fail(500, it.message ?: "error") },
+            )
+        }
+        // Proxmox returns the id as a string.
+        get("cluster/nextid") {
+            call.authed() ?: return@get
+            call.ok(state.nextId().toString())
+        }
+        post("nodes/{node}/qemu") { call.restore("qemu") }
+        post("nodes/{node}/lxc") { call.restore("lxc") }
         get("nodes/{node}/rrddata") {
             call.authed() ?: return@get
             val node = state.node(call.parameters["node"]!!) ?: return@get call.fail(404, "no such node")
@@ -284,6 +319,21 @@ class MockProxmoxServer(
             return null
         }
         return session
+    }
+
+    /** `POST /nodes/{node}/{qemu|lxc}` — the mock supports only restores (`archive=` / `ostemplate=` + `restore=1`). */
+    private suspend fun ApplicationCall.restore(type: String) {
+        val s = authed() ?: return
+        val p = receiveParameters()
+        val vmid = p["vmid"]?.toIntOrNull()
+            ?: return fail(400, "Parameter verification failed.", mapOf("vmid" to "property is missing and it is not optional"))
+        val volid = (if (type == "qemu") p["archive"] else p["ostemplate"]?.takeIf { p["restore"] == "1" })
+            ?: return fail(501, "the mock server can only restore guests, not create new ones")
+        if (state.isReadOnly(s.user)) return fail(403, "Permission check failed (/vms/$vmid, VM.Allocate)")
+        state.restore(parameters["node"]!!, type, vmid, volid, p["force"] == "1", s.user).fold(
+            onSuccess = { ok(it) },
+            onFailure = { fail(500, it.message ?: "error") },
+        )
     }
 
     private suspend fun ApplicationCall.guest(): MockState.Guest? {

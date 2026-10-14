@@ -53,6 +53,16 @@ windows, so a plain overlay would have left an open "Roll back?" dialog usable a
 The lock screen is therefore a full-screen dialog itself. The emulator tour checks the "needs a
 screen lock" path; the full flow is on the manual checklist.
 
+**Backups (fourth M1 feature):** `NodeStorage`/`StorageContentItem`/`BackupMode` (guest type from
+`subtype`, or guessed from the volume name on older servers); `PveApi` storage listing, content,
+`vzdump`, `nextid` and restore through `POST /nodes/{node}/{qemu|lxc}`; the mock keeps backups on
+`local`, `nas-nfs` and `pbs` and enforces Proxmox's restore rules (replace needs `force` and a
+stopped guest, and drops snapshots; new guests come from the backup's config). `BackupRepository`
+lists storages in parallel and reports a failing one instead of failing the whole list. One
+screen serves both a guest's backups and a storage's backups; replace is type-to-confirm plus
+the app lock check. +9 JVM tests (80 in total) and a tour step that backs up `pihole` and restores
+it as CT 105. Side fix: lint's ContextCastToActivity wanted `LocalActivity` in the lock screen.
+
 Gotchas: one new data test ended in `assertNotNull(...)`, which returns a value, so JUnit silently
 skipped it (the CLAUDE.md pitfall again, caught because the test count was one short). The tour's
 `scroll_to` now turns around at the end of a list, since the guest screen got longer. Chart touch

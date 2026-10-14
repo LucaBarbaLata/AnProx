@@ -20,6 +20,7 @@ import androidx.compose.material.icons.outlined.PowerSettingsNew
 import androidx.compose.material.icons.outlined.RestartAlt
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.StopCircle
+import androidx.compose.material.icons.outlined.Backup
 import androidx.compose.material.icons.outlined.Bolt
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -71,8 +72,9 @@ fun GuestScreen(
     onBack: () -> Unit,
     onTask: (serverId: String, node: String, upid: String) -> Unit,
     onSnapshots: (ref: GuestRef, guestName: String) -> Unit,
+    onBackups: (ref: GuestRef, guestName: String) -> Unit,
 ) {
-    GuestDetail(ref = ref, onTask = onTask, onSnapshots = onSnapshots, onBack = onBack)
+    GuestDetail(ref = ref, onTask = onTask, onSnapshots = onSnapshots, onBackups = onBackups, onBack = onBack)
 }
 
 /**
@@ -84,6 +86,7 @@ fun GuestDetail(
     ref: GuestRef,
     onTask: (serverId: String, node: String, upid: String) -> Unit,
     onSnapshots: (ref: GuestRef, guestName: String) -> Unit,
+    onBackups: (ref: GuestRef, guestName: String) -> Unit,
     onBack: (() -> Unit)? = null,
     onClose: (() -> Unit)? = null,
 ) {
@@ -121,17 +124,22 @@ fun GuestDetail(
                 }
                 item { SectionHeader(stringResource(R.string.guest_details)) }
                 item { Details(ref, status) }
-                // Templates can't have snapshots in Proxmox.
-                if (!status.template) {
-                    item { SectionHeader(stringResource(R.string.guest_more_tools)) }
-                    item {
-                        GlassCard(contentPadding = PaddingValues(vertical = 6.dp)) {
+                item { SectionHeader(stringResource(R.string.guest_more_tools)) }
+                item {
+                    GlassCard(contentPadding = PaddingValues(vertical = 6.dp)) {
+                        // Templates can't have snapshots in Proxmox.
+                        if (!status.template) {
                             MenuRow(
                                 Icons.Outlined.PhotoCamera,
                                 stringResource(R.string.snapshots_title),
                                 stringResource(R.string.snapshots_open_body),
                             ) { onSnapshots(ref, state.title) }
                         }
+                        MenuRow(
+                            Icons.Outlined.Backup,
+                            stringResource(R.string.backups_title),
+                            stringResource(R.string.backups_open_body),
+                        ) { onBackups(ref, state.title) }
                     }
                 }
                 item { SectionHeader(stringResource(R.string.guest_coming_later)) }
@@ -240,7 +248,6 @@ private fun ComingSoon() {
     val c = AnProxTheme.colors
     val items = listOf(
         R.string.tool_console to "M2",
-        R.string.tool_backups to "M1",
         R.string.tool_hardware to "M2",
         R.string.tool_clone to "M2",
         R.string.tool_migrate to "M2",

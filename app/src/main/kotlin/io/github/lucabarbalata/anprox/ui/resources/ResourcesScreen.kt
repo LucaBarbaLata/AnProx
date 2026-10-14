@@ -56,6 +56,7 @@ import io.github.lucabarbalata.anprox.core.designsystem.theme.AnProxTheme
 import io.github.lucabarbalata.anprox.core.designsystem.theme.MonoStyle
 import io.github.lucabarbalata.anprox.data.guest.GuestRef
 import io.github.lucabarbalata.anprox.model.format.Formatters
+import io.github.lucabarbalata.anprox.model.pve.ClusterResource
 import io.github.lucabarbalata.anprox.model.pve.GuestType
 import io.github.lucabarbalata.anprox.model.pve.ResourceType
 import io.github.lucabarbalata.anprox.ui.common.AnProxScaffold
@@ -72,8 +73,10 @@ import org.koin.compose.viewmodel.koinViewModel
 fun ResourcesScreen(
     onGuest: (GuestRef) -> Unit,
     onNode: (serverId: String, node: String) -> Unit,
+    onStorage: (serverId: String, node: String, storage: String) -> Unit,
     onTask: (serverId: String, node: String, upid: String) -> Unit,
     onSnapshots: (ref: GuestRef, guestName: String) -> Unit,
+    onBackups: (ref: GuestRef, guestName: String) -> Unit,
     viewModel: ResourcesViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -102,8 +105,9 @@ fun ResourcesScreen(
                         }
                     } else if (r.resourceType == ResourceType.NODE && r.node != null) {
                         onNode(item.serverId, r.node!!)
+                    } else if (r.holdsBackups && r.node != null && r.storage != null) {
+                        onStorage(item.serverId, r.node!!, r.storage!!)
                     }
-                    Unit
                 },
             )
         }
@@ -125,7 +129,7 @@ fun ResourcesScreen(
                             modifier = Modifier.align(Alignment.Center),
                         )
                     } else {
-                        GuestDetail(ref = ref, onTask = onTask, onSnapshots = onSnapshots, onClose = { selected = null })
+                        GuestDetail(ref = ref, onTask = onTask, onSnapshots = onSnapshots, onBackups = onBackups, onClose = { selected = null })
                     }
                 }
             }
@@ -244,7 +248,7 @@ private fun ResourceRow(item: ResourceItem, showServer: Boolean, selected: Boole
     val c = AnProxTheme.colors
     val r = item.resource
     val appearance = statusAppearance(r.status)
-    val clickable = r.isGuest || r.resourceType == ResourceType.NODE
+    val clickable = r.isGuest || r.resourceType == ResourceType.NODE || r.holdsBackups
     GlassCard(
         onClick = if (clickable) onClick else null,
         strong = selected,
@@ -336,3 +340,7 @@ private fun subtitle(item: ResourceItem, showServer: Boolean): String {
     }
     return parts.filter { it.isNotBlank() }.joinToString(" · ")
 }
+
+/** Storages that accept backups open their backup list. */
+private val ClusterResource.holdsBackups: Boolean
+    get() = resourceType == ResourceType.STORAGE && content?.split(',')?.contains("backup") == true

@@ -213,7 +213,6 @@
     <string name="power_pause">Pause</string>
     <string name="power_resume">Resume</string>
     <string name="tool_console">Console (noVNC, terminal, SPICE)</string>
-    <string name="tool_backups">Backup and restore</string>
     <string name="tool_hardware">Hardware and options</string>
     <string name="tool_clone">Clone, templates, cloud-init</string>
     <string name="tool_migrate">Migrate</string>
@@ -240,6 +239,50 @@
     <string name="chart_write">Write</string>
     <string name="chart_no_data">No data for this period</string>
     <string name="chart_description">%1$s, %2$s: now %3$s, average %4$s, peak %5$s</string>
+
+    <!-- Backups (M1) -->
+    <string name="backups_title">Backups</string>
+    <string name="backups_open_body">Back up now and restore</string>
+    <string name="storage_subtitle">Backups · %1$s</string>
+    <string name="backup_now">Back up now</string>
+    <string name="backup_now_title">Back up now</string>
+    <string name="backup_storage">Storage</string>
+    <string name="backup_no_storage">No storage on this node accepts backups.</string>
+    <string name="backup_storage_pbs">Backup Server · %1$s free</string>
+    <string name="backup_storage_other">%1$s · %2$s free</string>
+    <string name="backup_mode">Mode</string>
+    <string name="backup_mode_snapshot">Snapshot</string>
+    <string name="backup_mode_suspend">Suspend</string>
+    <string name="backup_mode_stop">Stop</string>
+    <string name="backup_mode_snapshot_body">No downtime: the guest keeps running while it is copied.</string>
+    <string name="backup_mode_suspend_body">Pauses the guest briefly for a more consistent copy.</string>
+    <string name="backup_mode_stop_body">Shuts the guest down for the most consistent copy, then starts it again.</string>
+    <string name="backup_notes">Notes</string>
+    <string name="backup_notes_help">{{guestname}}, {{vmid}}, {{node}} and {{cluster}} are filled in.</string>
+    <string name="backup_start">Back up</string>
+    <string name="backups_busy_backup">Backing up…</string>
+    <string name="backups_busy_restore">Restoring…</string>
+    <string name="backups_empty_title">No backups yet</string>
+    <string name="backups_empty_body_guest">Back up now to keep a copy you can restore if something goes wrong.</string>
+    <string name="backups_empty_body_storage">This storage holds no backups.</string>
+    <string name="backups_storage_failed">Couldn’t list the backups on %1$s.</string>
+    <string name="backup_protected">Protected</string>
+    <string name="backup_verified">Verified</string>
+    <string name="backup_verify_failed">Verification failed</string>
+    <string name="backup_restore">Restore</string>
+    <string name="backup_restore_title">Restore backup</string>
+    <string name="backup_restore_new">As a new %1$s</string>
+    <string name="backup_type_vm">VM</string>
+    <string name="backup_type_ct">container</string>
+    <string name="backup_restore_new_body">Gets new network MAC addresses so it can run next to the original.</string>
+    <string name="backup_restore_id">New ID</string>
+    <string name="backup_restore_replace">Replace %1$s</string>
+    <string name="backup_restore_replace_body">Overwrites its disks and settings, and its snapshots are lost. It must be stopped first.</string>
+    <string name="backup_restore_start">Start restore</string>
+    <string name="backup_target_guest">%1$s (ID %2$d)</string>
+    <string name="backup_replace_confirm_title">Replace %1$s with this backup?</string>
+    <string name="backup_replace_confirm_message">Everything on it since this backup is lost, including its snapshots. This can’t be undone.</string>
+    <string name="lock_reason_restore">Replace %1$s</string>
 
     <!-- Snapshots (M1) -->
     <string name="snapshots_title">Snapshots</string>

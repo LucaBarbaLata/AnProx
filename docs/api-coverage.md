@@ -36,7 +36,7 @@ Code: `core/network/src/main/kotlin/.../network/api/` (`AccessApi`, `PveApi`, `P
 | `GET /cluster/status` | Quorum, nodes online | ✅ |
 | `GET /cluster/tasks` | Recent tasks of all nodes | ✅ |
 | `GET /cluster/log` | Cluster log | 🗓 M4 |
-| `GET /cluster/nextid` | Free VMID for create/clone/restore | 🗓 M1 |
+| `GET /cluster/nextid` | Free VMID for create/clone/restore | ✅ (restore) |
 | `/cluster/options` | Datacenter options | 🗓 M4 |
 | `/cluster/backup`, `/cluster/backup-info/not-backed-up` | Backup jobs | 🗓 M4 |
 | `/cluster/replication` | Storage replication jobs | 🗓 M4 |
@@ -62,7 +62,7 @@ Code: `core/network/src/main/kotlin/.../network/api/` (`AccessApi`, `PveApi`, `P
 | `DELETE /nodes/{node}/tasks/{upid}` | Stop a running task | 🗓 M1 |
 | `GET /nodes/{node}/tasks` | Node task history with filters | 🗓 M1 |
 | `GET /nodes/{node}/rrddata` | Performance history (charts) | ✅ |
-| `POST /nodes/{node}/vzdump` | Backup now | 🗓 M1 |
+| `POST /nodes/{node}/vzdump` | Backup now | ✅ (one guest; storage, mode, notes) |
 | `/nodes/{node}/{startall,stopall,migrateall}` | Bulk actions | 🗓 M4 |
 | `/nodes/{node}/{termproxy,vncshell,vncwebsocket}` | Node shell | 🗓 M2 |
 | `/nodes/{node}/apt/*` | Updates, changelog, repositories | 🗓 M5 |
@@ -106,7 +106,7 @@ Code: `core/network/src/main/kotlin/.../network/api/` (`AccessApi`, `PveApi`, `P
 | `…/vncproxy`, `…/vncwebsocket`, `…/termproxy` | noVNC / terminal console | 🗓 M2 |
 | `POST /qemu/{vmid}/spiceproxy` | SPICE `.vv` handoff | 🗓 M2 |
 | `…/firewall/*` | Guest firewall | 🗓 M4 |
-| `POST /nodes/{node}/qemu` (`archive=`) / `lxc` (`restore=1`) | Restore from backup | 🗓 M1 |
+| `POST /nodes/{node}/qemu` (`archive=`) / `lxc` (`restore=1`) | Restore from backup | ✅ (as new with `unique=1`, or replace with `force=1`; target storage choice 🗓) |
 
 ### `/storage`, `/pools`, `/nodes/{node}/storage`
 
@@ -114,7 +114,8 @@ Code: `core/network/src/main/kotlin/.../network/api/` (`AccessApi`, `PveApi`, `P
 |---|---|---|
 | storage rows in `/cluster/resources` | Usage on dashboard/resources | ✅ |
 | `/storage` (CRUD) | Storage configuration | 🗓 M4 |
-| `GET /nodes/{node}/storage/{storage}/content` | Browse ISOs, templates, backups, disks | 🗓 M1 (backups), M4 (all) |
+| `GET /nodes/{node}/storage` | Storages a node can use (backup targets) | ✅ |
+| `GET /nodes/{node}/storage/{storage}/content` | Browse ISOs, templates, backups, disks | 🔸 backups ✅, the rest M4 |
 | `POST …/upload`, `POST …/download-url` | Upload / download ISO & templates | 🗓 M4 |
 | `GET …/rrddata` | Storage charts | 🗓 M1 |
 | `…/file-restore/{list,download}` | File-level restore from PBS-backed backups | 🗓 M8 |

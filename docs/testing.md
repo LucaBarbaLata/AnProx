@@ -7,12 +7,12 @@ testing debug builds on **real hardware**.
 
 | Layer | Where | Runs on | Count |
 |---|---|---|---|
-| Unit: parsing, formatting, URL rules, UPID/TFA parsing, snapshot tree and names, chart scales | `core/model/src/test` | JVM | 29 |
+| Unit: parsing, formatting, URL rules, UPID/TFA parsing, snapshot tree and names, chart scales, backup listings | `core/model/src/test` | JVM | 31 |
 | Integration: HTTP client ↔ mock server over real HTTPS (auth, TFA, failover, TLS, errors, renewal, PBS) | `core/network/src/test` | JVM | 16 |
-| Integration: multi-server hub, sessions, dashboard snapshots, guest actions, guest snapshots, performance history, app lock rules | `core/data/src/test` | JVM | 26 |
+| Integration: multi-server hub, sessions, dashboard snapshots, guest actions, guest snapshots, performance history, app lock rules, backup and restore | `core/data/src/test` | JVM | 33 |
 | Android lint | `:app:lintDebug` | CI | — |
 | Build: debug and R8-minified release | `:app:assemble*` | CI | — |
-| **End-to-end tour** of the minified release APK on emulators against the mock server | `scripts/e2e/tour.py` | CI (Android 8.0 + 14), Release workflow | 9 steps |
+| **End-to-end tour** of the minified release APK on emulators against the mock server | `scripts/e2e/tour.py` | CI (Android 8.0 + 14), Release workflow | 10 steps |
 | UI / screenshot tests | planned (M1) | — | — |
 | Manual on real hardware | [checklist below](#manual-test-checklist-real-hardware) | owner | — |
 
@@ -45,6 +45,10 @@ status line, asynchronous tasks with UPIDs and logs, and a self-signed certifica
 | pve3 | **offline** | VM 104 `lab-vm` |
 
 Storage: `local`, `local-zfs` (pve1 at **92 %** to trigger the dashboard warning), shared `nas-nfs` and `pbs`.
+Backups: `web` has two Backup Server backups (one protected, both verified) and one on `local`;
+`db` has one whose verification failed; `win11` has one on `nas-nfs`; `pihole` and `nginx-proxy`
+have one each; `k8s-master` has none. Back up now works on any guest. Restoring as new needs a
+free ID (`/cluster/nextid` → 105 at first); replacing needs the guest stopped and drops its snapshots.
 Performance history: 70 samples per timeframe, like Proxmox, as smooth repeatable curves. Stopped
 guests only have data for the older part of each timeframe (gaps), templates have none, and the
 offline node `pve3` answers 595 like a real unreachable node.
@@ -113,8 +117,9 @@ so no test code is compiled into the app. `scripts/e2e/run.sh` starts the mock s
 5. A running VM's **Performance** charts → **Week** → the Disk I/O chart shows values.
 6. Open a stopped VM → **Start** → "finished" snackbar → **View log** shows `TASK OK` → the VM now offers **Shut down**.
 7. Snapshots of the now-running VM → **Take snapshot** with RAM → "VM snapshot finished" → the new snapshot is listed.
-8. Tasks tab shows the new task.
-9. Settings → Light theme; turning on the app lock explains that the emulator has no screen lock → dashboard in light mode.
+8. Backups of the `pihole` container → **Back up now** to the Backup Server → "Backup finished" → **Restore** the new backup as a new container (ID 105) → "CT restore finished".
+9. Tasks tab shows the new task.
+10. Settings → Light theme; turning on the app lock explains that the emulator has no screen lock → dashboard in light mode.
 
 After every step the script checks that the app process is alive and that logcat has no
 `FATAL EXCEPTION` for the app. Screenshots of each step, plus UI dumps and logcat on failure,
@@ -176,6 +181,15 @@ Run this before closing a milestone. Note the PVE/PBS versions you tested agains
 - [ ] Touching or dragging across a chart shows the time and values; tapping the same spot again returns to the latest values.
 - [ ] Node charts: CPU with IO wait, load average, memory, network.
 - [ ] TalkBack reads each chart as a summary (now, average, peak).
+
+**Backups** (use a test VM)
+- [ ] Guest → Backups lists the same backups as the web UI's Backup tab (all storages), newest first; protected and verified badges match.
+- [ ] Back up now to a Backup Server storage and to a file storage; both tasks finish and the notes show the guest name.
+- [ ] Tapping a backup storage in Resources lists every guest's backups on it.
+- [ ] Restore as a new guest: the suggested ID is free; the copy appears stopped with new MAC addresses.
+- [ ] Restore over a running guest is refused with a clear message; after stopping it, typing the name restores it.
+- [ ] Read-only user: Back up now and Restore show "Permission denied …".
+- [ ] An unreachable Backup Server storage shows a warning but the other storages' backups still list.
 
 **App lock** (More → Settings → Security)
 - [ ] Without a phone screen lock: turning the app lock on explains that a screen lock is needed.
