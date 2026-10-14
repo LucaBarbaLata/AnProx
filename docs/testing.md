@@ -114,7 +114,7 @@ so no test code is compiled into the app. `scripts/e2e/run.sh` starts the mock s
 2. Add a Proxmox VE server (bare host, insecure certificate) → sign in → dashboard shows the cluster and the offline node.
 3. Add a Proxmox Backup Server (default port 8007 added automatically) → sign in → datastores on the dashboard.
 4. Resources list across both servers.
-5. A running VM's **Network** card shows the guest agent's IP and OS; its **Performance** charts → **Week** → the Disk I/O chart shows values.
+5. A running VM's **Network** card shows the guest agent's IP and OS; the star adds it to the favourites; its **Performance** charts → **Week** → the Disk I/O chart shows values.
 6. Open a stopped VM → **Start** → "finished" snackbar → **View log** shows `TASK OK` → the VM now offers **Shut down**.
 7. Snapshots of the now-running VM → **Take snapshot** with RAM → "VM snapshot finished" → the new snapshot is listed.
 8. Backups of the `pihole` container → **Back up now** to the Backup Server → "Backup finished" → **Restore** the new backup as a new container (ID 105) → "CT restore finished".
@@ -122,7 +122,7 @@ so no test code is compiled into the app. `scripts/e2e/run.sh` starts the mock s
 10. **Console** of `nginx-proxy` → the mock's console page reports "(signed in)" (the session cookie works through the self-signed certificate) → **Esc** on the key row reaches the page's terminal input.
 11. **Clone** the Ubuntu template (linked by default) → **Open it** → **Migrate** the clone to `pve2` → the guest screen now says `pve2`.
 12. Tasks tab shows the newest task ("VM migrate").
-13. Settings → Light theme; turning on the app lock explains that the emulator has no screen lock → dashboard in light mode.
+13. Settings → Light theme; turning on the app lock explains that the emulator has no screen lock → dashboard in light mode, with the starred VM under Favourites.
 
 After every step the script checks that the app process is alive and that logcat has no
 `FATAL EXCEPTION` for the app. Screenshots of each step, plus UI dumps and logcat on failure,
@@ -205,6 +205,10 @@ Run this before closing a milestone. Note the PVE/PBS versions you tested agains
 - [ ] Node → Shell opens a root shell (as root@pam).
 - [ ] With "Allow insecure certificate" off on a self-signed server, the console explains the certificate problem instead of loading.
 - [ ] Leave a console open for over an hour, then Reconnect: it opens again without signing in.
+
+**Favourites**
+- [ ] The star on a guest's screen adds it to Overview → Favourites; its state and CPU update there; tapping it opens the guest.
+- [ ] Unstarring removes it; favourites survive an app restart.
 
 **Node power** (only on a node you can afford to restart)
 - [ ] Node → Reboot asks you to type the node name; the node restarts and comes back online in the app.

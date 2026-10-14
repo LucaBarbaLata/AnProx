@@ -2,14 +2,17 @@ package io.github.lucabarbalata.anprox.ui.dashboard
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import io.github.lucabarbalata.anprox.data.guest.GuestRef
 import io.github.lucabarbalata.anprox.data.hub.AuthState
 import io.github.lucabarbalata.anprox.data.hub.ServerHub
 import io.github.lucabarbalata.anprox.data.snapshot.PbsSnapshot
 import io.github.lucabarbalata.anprox.data.snapshot.PveSnapshot
 import io.github.lucabarbalata.anprox.data.snapshot.SnapshotRepository
 import io.github.lucabarbalata.anprox.data.snapshot.SnapshotState
+import io.github.lucabarbalata.anprox.model.pve.ClusterResource
 import io.github.lucabarbalata.anprox.model.pve.GuestType
 import io.github.lucabarbalata.anprox.storage.SettingsRepository
+import io.github.lucabarbalata.anprox.storage.favouriteKey
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -40,8 +43,17 @@ sealed interface DashboardAlert {
     data class DatastoreFull(override val serverId: String, override val serverName: String, val store: String, val fraction: Double) : DashboardAlert
 }
 
+/** A guest the user pinned (star on the guest screen), as the cluster currently reports it. */
+data class FavouriteGuest(val serverId: String, val serverName: String, val resource: ClusterResource) {
+    val ref: GuestRef? get() {
+        val type = GuestType.fromApi(resource.type) ?: return null
+        return GuestRef(serverId, resource.node ?: return null, type, resource.vmid ?: return null)
+    }
+}
+
 data class DashboardState(
     val loaded: Boolean = false,
+    val favourites: List<FavouriteGuest> = emptyList(),
     val servers: List<SnapshotState> = emptyList(),
     val totals: DashboardTotals = DashboardTotals(),
     val alerts: List<DashboardAlert> = emptyList(),
@@ -62,13 +74,18 @@ class DashboardViewModel(
         .map { it.refreshIntervalMillis }
         .distinctUntilChanged()
         .flatMapLatest { interval ->
-            combine(hub.isLoaded, snapshots.snapshots(interval)) { loaded, list -> build(loaded, list, interval) }
+            combine(
+                hub.isLoaded,
+                snapshots.snapshots(interval),
+                settings.settings.map { it.favourites }.distinctUntilChanged(),
+            ) { loaded, list, favourites -> build(loaded, list, interval, favourites) }
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), DashboardState())
 
-    private fun build(loaded: Boolean, list: List<SnapshotState>, interval: Long): DashboardState {
+    private fun build(loaded: Boolean, list: List<SnapshotState>, interval: Long, favouriteKeys: Set<String>): DashboardState {
         var totals = DashboardTotals()
         val alerts = mutableListOf<DashboardAlert>()
+        val favourites = mutableListOf<FavouriteGuest>()
         for (s in list) {
             val id = s.server.id
             val name = s.server.profile.name
@@ -87,6 +104,9 @@ class DashboardViewModel(
                         nodesOnline = totals.nodesOnline + snap.nodesOnline,
                         nodesTotal = totals.nodesTotal + snap.nodes.size,
                     )
+                    snap.guests
+                        .filter { g -> g.vmid != null && favouriteKey(id, g.type, g.vmid!!) in favouriteKeys }
+                        .forEach { favourites += FavouriteGuest(id, name, it) }
                     if (snap.quorate == false) alerts += DashboardAlert.NoQuorum(id, name)
                     snap.nodes.filter { it.status != "online" }.forEach {
                         alerts += DashboardAlert.NodeOffline(id, name, it.node ?: it.id)
@@ -101,7 +121,14 @@ class DashboardViewModel(
                 null -> Unit
             }
         }
-        return DashboardState(loaded = loaded, servers = list, totals = totals, alerts = alerts, refreshSeconds = interval / 1000)
+        return DashboardState(
+            loaded = loaded,
+            favourites = favourites.sortedBy { it.resource.name?.lowercase() ?: "" },
+            servers = list,
+            totals = totals,
+            alerts = alerts,
+            refreshSeconds = interval / 1000,
+        )
     }
 
     companion object {

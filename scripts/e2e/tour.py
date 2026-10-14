@@ -377,6 +377,8 @@ def performance():
     # The Network card sits above the charts: check it first, before scrolling down.
     scroll_to("10.0.0.103")                # IP address reported by the guest agent
     find("Ubuntu 24.04.1 LTS", timeout=10)
+    tap("Add to favourites")               # the star in the top bar; checked on the dashboard at the end
+    find("Remove from favourites", timeout=10)
     tap_node(scroll_to("Week"))            # timeframe picker
     time.sleep(2)                          # reload for the new timeframe
     scroll_to("Disk I/O")                  # the last chart
@@ -505,7 +507,7 @@ def tasks():
     screenshot("12-tasks")
 
 
-@step("Light theme, and the app lock without a screen lock")
+@step("Light theme, the app lock without a screen lock, favourites on the dashboard")
 def light_theme():
     tap("More")
     tap("Settings")
@@ -519,6 +521,7 @@ def light_theme():
     back()
     tap("Overview")
     find("homelab", timeout=30)
+    scroll_to("k8s-master")                # pinned in the charts step: the Favourites card
     time.sleep(2)
     screenshot("14-dashboard-light")
 

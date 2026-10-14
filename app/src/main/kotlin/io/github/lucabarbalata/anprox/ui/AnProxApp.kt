@@ -168,6 +168,7 @@ fun AnProxApp() {
                     onLogin = { id -> nav.navigate(LoginRoute(id)) },
                     onNode = openNode,
                     onResources = { nav.selectTab(Tab.RESOURCES) },
+                    onGuest = openGuest,
                 )
             }
             composable<ResourcesRoute> {

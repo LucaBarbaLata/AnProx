@@ -249,6 +249,11 @@
     <string name="options_discard_body">Your edits to this guest haven\'t been saved.</string>
     <string name="options_discard">Discard</string>
 
+    <!-- Favourites -->
+    <string name="dashboard_favourites">Favourites</string>
+    <string name="favourite_add">Add to favourites</string>
+    <string name="favourite_remove">Remove from favourites</string>
+
     <!-- Consoles (Q15) -->
     <string name="console_title">Console</string>
     <string name="console_open_body_vm">The VM\'s screen (noVNC)</string>

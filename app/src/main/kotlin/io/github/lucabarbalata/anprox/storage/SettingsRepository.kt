@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import io.github.lucabarbalata.anprox.core.designsystem.theme.ThemeMode
 import io.github.lucabarbalata.anprox.data.security.AppLock
 import kotlinx.coroutines.flow.Flow
@@ -25,7 +26,12 @@ data class AppSettings(
     val lockAfterMillis: Long = AppLock.DEFAULT_LOCK_AFTER_MILLIS,
     /** With the app lock on, check again before actions that can't be undone. */
     val confirmDangerous: Boolean = true,
+    /** Guests pinned to the dashboard, as [favouriteKey]s. */
+    val favourites: Set<String> = emptySet(),
 )
+
+/** Identifies a guest independently of its node, so a favourite survives migrations. */
+fun favouriteKey(serverId: String, type: String, vmid: Int): String = "$serverId|$type|$vmid"
 
 class SettingsRepository(context: Context) {
     private val store = context.applicationContext.settingsDataStore
@@ -35,6 +41,7 @@ class SettingsRepository(context: Context) {
     private val appLockKey = booleanPreferencesKey("app_lock")
     private val lockAfterKey = longPreferencesKey("lock_after_ms")
     private val confirmDangerousKey = booleanPreferencesKey("confirm_dangerous")
+    private val favouritesKey = stringSetPreferencesKey("favourite_guests")
 
     val settings: Flow<AppSettings> = store.data
         .catch { e -> if (e is IOException) emit(emptyPreferences()) else throw e }
@@ -46,6 +53,7 @@ class SettingsRepository(context: Context) {
                 appLock = prefs[appLockKey] ?: false,
                 lockAfterMillis = prefs[lockAfterKey] ?: AppLock.DEFAULT_LOCK_AFTER_MILLIS,
                 confirmDangerous = prefs[confirmDangerousKey] ?: true,
+                favourites = prefs[favouritesKey].orEmpty(),
             )
         }
 
@@ -55,4 +63,9 @@ class SettingsRepository(context: Context) {
     suspend fun setAppLock(enabled: Boolean) = store.edit { it[appLockKey] = enabled }
     suspend fun setLockAfter(millis: Long) = store.edit { it[lockAfterKey] = millis }
     suspend fun setConfirmDangerous(enabled: Boolean) = store.edit { it[confirmDangerousKey] = enabled }
+
+    suspend fun setFavourite(key: String, favourite: Boolean) = store.edit {
+        val current = it[favouritesKey].orEmpty()
+        it[favouritesKey] = if (favourite) current + key else current - key
+    }
 }

@@ -22,7 +22,9 @@ import androidx.compose.material.icons.outlined.RestartAlt
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.StopCircle
 import androidx.compose.material.icons.outlined.Terminal
+import androidx.compose.material.icons.outlined.StarOutline
 import androidx.compose.material.icons.outlined.Tune
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.SwapHoriz
 import androidx.compose.material.icons.outlined.Backup
@@ -114,6 +116,13 @@ fun GuestDetail(
         onBack = onBack,
         snackbarHostState = snackbar,
         actions = {
+            IconButton(onClick = viewModel::toggleFavourite) {
+                if (state.favourite) {
+                    Icon(Icons.Filled.Star, contentDescription = stringResource(R.string.favourite_remove), tint = AnProxTheme.colors.warning)
+                } else {
+                    Icon(Icons.Outlined.StarOutline, contentDescription = stringResource(R.string.favourite_add))
+                }
+            }
             if (onClose != null) {
                 IconButton(onClick = onClose) { Icon(Icons.Outlined.Close, contentDescription = stringResource(R.string.action_close)) }
             }

@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -56,6 +57,7 @@ import io.github.lucabarbalata.anprox.core.designsystem.component.UsageRing
 import io.github.lucabarbalata.anprox.core.designsystem.component.color
 import io.github.lucabarbalata.anprox.core.designsystem.component.isWideLayout
 import io.github.lucabarbalata.anprox.core.designsystem.theme.AnProxTheme
+import io.github.lucabarbalata.anprox.data.guest.GuestRef
 import io.github.lucabarbalata.anprox.data.hub.AuthState
 import io.github.lucabarbalata.anprox.data.snapshot.PbsSnapshot
 import io.github.lucabarbalata.anprox.data.snapshot.PveSnapshot
@@ -77,6 +79,7 @@ fun DashboardScreen(
     onLogin: (serverId: String) -> Unit,
     onNode: (serverId: String, node: String) -> Unit,
     onResources: () -> Unit,
+    onGuest: (GuestRef) -> Unit,
     viewModel: DashboardViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -104,6 +107,10 @@ fun DashboardScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 item(span = { GridItemSpan(maxLineSpan) }) { Totals(state.totals, onResources) }
+                if (state.favourites.isNotEmpty()) {
+                    item(span = { GridItemSpan(maxLineSpan) }) { SectionHeader(stringResource(R.string.dashboard_favourites)) }
+                    item(span = { GridItemSpan(maxLineSpan) }) { FavouritesCard(state.favourites, onGuest) }
+                }
                 if (state.alerts.isNotEmpty()) {
                     item(span = { GridItemSpan(maxLineSpan) }) { SectionHeader(stringResource(R.string.dashboard_attention)) }
                     item(span = { GridItemSpan(maxLineSpan) }) { AlertsCard(state.alerts, onLogin) }
@@ -112,6 +119,53 @@ fun DashboardScreen(
                 items(state.servers, key = { it.server.id }) { s ->
                     ServerCard(s, onLogin = { onLogin(s.server.id) }, onNode = { node -> onNode(s.server.id, node) })
                 }
+            }
+        }
+    }
+}
+
+/** Pinned guests with their live state; tap one to open it. */
+@Composable
+private fun FavouritesCard(favourites: List<FavouriteGuest>, onGuest: (GuestRef) -> Unit) {
+    val c = AnProxTheme.colors
+    val vm = stringResource(R.string.guest_type_vm)
+    val ct = stringResource(R.string.guest_type_ct)
+    val multipleServers = favourites.map { it.serverId }.distinct().size > 1
+    GlassCard(contentPadding = PaddingValues(vertical = 6.dp)) {
+        favourites.forEach { f ->
+            val r = f.resource
+            val ref = f.ref
+            val appearance = statusAppearance(r.status)
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .then(if (ref != null) Modifier.clickable { onGuest(ref) } else Modifier)
+                    .padding(horizontal = 16.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                StatusDot(appearance.tone)
+                Spacer(Modifier.width(12.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        r.name ?: r.vmid?.toString().orEmpty(),
+                        style = MaterialTheme.typography.titleSmall,
+                        color = c.textPrimary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    val type = if (GuestType.fromApi(r.type) == GuestType.QEMU) vm else ct
+                    Text(
+                        listOfNotNull("$type ${r.vmid}", r.node, f.serverName.takeIf { multipleServers }).joinToString(" · "),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = c.textSecondary,
+                    )
+                }
+                Text(
+                    if (r.status == "running") Formatters.percent(r.cpu) else appearance.label,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = c.textSecondary,
+                )
             }
         }
     }

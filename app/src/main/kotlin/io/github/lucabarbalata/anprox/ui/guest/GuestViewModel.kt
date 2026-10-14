@@ -15,6 +15,8 @@ import io.github.lucabarbalata.anprox.model.pve.GuestType
 import io.github.lucabarbalata.anprox.model.pve.PowerAction
 import io.github.lucabarbalata.anprox.model.pve.Upid
 import io.github.lucabarbalata.anprox.network.ApiException
+import io.github.lucabarbalata.anprox.storage.SettingsRepository
+import io.github.lucabarbalata.anprox.storage.favouriteKey
 import io.github.lucabarbalata.anprox.ui.common.TaskResult
 import io.github.lucabarbalata.anprox.ui.common.UiText
 import io.github.lucabarbalata.anprox.ui.common.toUiText
@@ -22,6 +24,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -39,6 +43,8 @@ data class GuestState(
     val confirm: PowerAction? = null,
     /** One-shot result shown as a snackbar. */
     val result: TaskResult? = null,
+    /** Pinned to the dashboard. */
+    val favourite: Boolean = false,
 ) {
     val title: String get() = status?.name?.takeIf { it.isNotBlank() } ?: ref.vmid.toString()
 
@@ -61,13 +67,26 @@ class GuestViewModel(
     private val ref: GuestRef,
     private val guests: GuestRepository,
     hub: ServerHub,
+    private val settings: SettingsRepository,
 ) : ViewModel() {
+
+    private val favouriteKey = favouriteKey(ref.serverId, ref.type.apiName, ref.vmid)
 
     private val ui = MutableStateFlow(GuestState(ref, serverName = hub.server(ref.serverId)?.profile?.name.orEmpty()))
 
-    val state: StateFlow<GuestState> = combine(guests.observeStatus(ref), guests.observeNetwork(ref), ui) { polled: Polled<GuestStatus>, network, s ->
-        s.copy(status = polled.value ?: s.status, network = network, error = polled.error?.toUiText())
+    val state: StateFlow<GuestState> = combine(
+        guests.observeStatus(ref),
+        guests.observeNetwork(ref),
+        settings.settings.map { favouriteKey in it.favourites }.distinctUntilChanged(),
+        ui,
+    ) { polled: Polled<GuestStatus>, network, favourite, s ->
+        s.copy(status = polled.value ?: s.status, network = network, error = polled.error?.toUiText(), favourite = favourite)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ui.value)
+
+    fun toggleFavourite() {
+        val pinned = !state.value.favourite
+        viewModelScope.launch { settings.setFavourite(favouriteKey, pinned) }
+    }
 
     /** Tiered confirmation (questionnaire Q12): SAFE actions run immediately. */
     fun request(action: PowerAction) {

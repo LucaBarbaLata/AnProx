@@ -86,7 +86,7 @@ val appModule = module {
     viewModel { (serverId: String) -> LoginViewModel(serverId, get()) }
     viewModel { DashboardViewModel(get(), get(), get()) }
     viewModel { ResourcesViewModel(get(), get(), get()) }
-    viewModel { (ref: GuestRef) -> GuestViewModel(ref, get(), get()) }
+    viewModel { (ref: GuestRef) -> GuestViewModel(ref, get(), get(), get()) }
     viewModel { (ref: GuestRef) -> OptionsViewModel(ref, get()) }
     viewModel { (ref: GuestRef, name: String) -> CloneViewModel(ref, name, get()) }
     viewModel { (serverId: String, target: ConsoleTarget) -> ConsoleViewModel(serverId, target, get()) }

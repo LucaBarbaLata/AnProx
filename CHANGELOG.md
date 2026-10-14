@@ -48,6 +48,9 @@ All notable changes to AnProx are documented here. The format follows
   session. Terminals get a row of keys phone keyboards lack: Esc, Tab, Ctrl+C, Ctrl+D and the
   arrows. Self-signed certificates are accepted only for servers with "Allow insecure certificate".
 
+- **Favourites:** the star on a guest's screen pins it to the dashboard, with its live state. A
+  favourite follows the guest when it moves to another node.
+
 - **Node reboot and shut down** (Node → Power): type the node's name to confirm, plus the app lock
   check when it is on.
 

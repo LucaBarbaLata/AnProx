@@ -69,7 +69,7 @@ Release engineering is in place ([releasing.md](releasing.md)). Gates:
   fs-freeze/thaw and set user password are still to do.
 - **Bulk actions** on the resource list (multi-select start, shut down, stop).
 - **Live task notifications** (Q28) for long operations started from the app.
-- **Favourites** pinned to the top of the dashboard.
+- ✅ **Favourites** pinned to the top of the dashboard (star on the guest screen).
 
 ## M2 — Consoles & guest configuration
 - ✅ **noVNC console** for VMs, **xterm.js terminal** for nodes and containers, in a WebView with
