@@ -13,6 +13,18 @@ updates:
         patterns: ["org.jetbrains.kotlin*", "org.jetbrains.kotlinx*"]
       ktor:
         patterns: ["io.ktor*"]
+    ignore:
+      # Major toolchain upgrades move together with AGP 9 (docs/adr/0002-toolchain-baseline.md).
+      - dependency-name: "gradle-wrapper"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "org.junit:junit-bom"
+        update-types: ["version-update:semver-major"]
+      # OkHttp 5.5+ needs compileSdk 37, i.e. AGP 9 (ADR 0002).
+      - dependency-name: "com.squareup.okhttp3:*"
+        versions: [">= 5.5.0"]
+      # Koin 4.2 pulls a newer AndroidX generation than Compose BOM 2025.06 (ADR 0002).
+      - dependency-name: "io.insert-koin:*"
+        versions: [">= 4.2.0"]
   - package-ecosystem: github-actions
     directory: /
     schedule:

@@ -14,7 +14,7 @@ Actions, so the chosen versions had to be ones known to exist and to work togeth
 |---|---|---|
 | Gradle | 8.14.3 | Supported by AGP 8.12. Matches the container's local Gradle. |
 | Android Gradle Plugin | 8.12.0 | Stable and well documented. Supports compileSdk 36. |
-| Kotlin (+ Compose compiler plugin, serialization plugin) | 2.4.20 | Current stable (verified on Maven Central). |
+| Kotlin (+ Compose compiler plugin, serialization plugin) | 2.4.21 | Current stable (verified on Maven Central). 2.4.21 is a bug-fix release taken from Dependabot (#5). |
 | compileSdk / targetSdk / minSdk | 36 / 36 / 26 | Android 16 APIs; Q2 minimum. |
 | Compose BOM | 2025.06.00 | Compose 1.8 / Material 3 1.3, known compatible with AGP 8.12. |
 | OkHttp | **5.4.0** (pinned) | 5.5.0's Android artifact requires compileSdk 37, which AGP 8.12 doesn't support. |

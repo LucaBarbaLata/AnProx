@@ -38,6 +38,13 @@ If the container can't reach `dl.google.com`, Android code is verified only by G
 - JUnit skips `@Test` functions that don't return `Unit`. End `= runBlocking { … }` tests with `Unit`.
 - ViewModel functions referenced as callbacks should return `Unit` (block body), not `Job`.
 - Non-composable lambdas (e.g. `SegmentedPicker(label = …)`) can't call `stringResource`; precompute labels.
+- Parallel loads in a ViewModel: wrap the `async` calls in `coroutineScope { … }` inside
+  `viewModelScope.launch`, or one failed request cancels the parent and crashes the app even
+  inside `try/catch`.
+- Version pins in `docs/adr/0002-toolchain-baseline.md` also decide Dependabot PRs (ignored ones
+  are listed in `.github/dependabot.yml`).
+- e2e: check things near the top of a long screen before scrolling down to the charts, and keep
+  tour texts unique (two guests named `pihole` exist after the restore step).
 - In `*.gradle.kts`, `java.util.X` fails ("Unresolved reference: util") because `java` is the Java
   extension there. Import the class instead.
 - Update docs (api-coverage, roadmap, CHANGELOG, devlog) in the same change as the code.

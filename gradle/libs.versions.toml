@@ -4,7 +4,7 @@
 
 [versions]
 agp = "8.12.0"
-kotlin = "2.4.20"
+kotlin = "2.4.21"
 coroutines = "1.11.0"
 serialization = "1.11.0"
 # 5.5.0+ requires compileSdk 37, which needs a newer AGP — see docs/devlog.md
@@ -13,7 +13,7 @@ retrofit = "3.0.0"
 ktor = "3.6.0"
 koin = "4.1.1"
 junit = "5.10.1"
-slf4j = "2.0.17"
+slf4j = "2.0.20"
 
 # AndroidX (Google Maven)
 composeBom = "2025.06.00"
