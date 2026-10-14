@@ -24,4 +24,17 @@ class SettingsViewModel(private val repo: SettingsRepository) : ViewModel() {
     fun setRefreshInterval(millis: Long) {
         viewModelScope.launch { repo.setRefreshInterval(millis) }
     }
+
+    /** Call only after the user has authenticated (the screen does that). */
+    fun setAppLock(enabled: Boolean) {
+        viewModelScope.launch { repo.setAppLock(enabled) }
+    }
+
+    fun setLockAfter(millis: Long) {
+        viewModelScope.launch { repo.setLockAfter(millis) }
+    }
+
+    fun setConfirmDangerous(enabled: Boolean) {
+        viewModelScope.launch { repo.setConfirmDangerous(enabled) }
+    }
 }

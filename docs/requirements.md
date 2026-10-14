@@ -45,8 +45,8 @@ or backup, and confirming the result in the task log, without reaching for a lap
 | FR-AUTH-3 | Second factor: WebAuthn / security keys | Q9 | M1 🗓 |
 | FR-AUTH-4 | OpenID Connect SSO | Q9 | M1 🗓 |
 | FR-AUTH-5 | Automatic ticket renewal; silent re-login with a remembered password | Q9 | M0 ✅ |
-| FR-AUTH-6 | Optional app lock (biometric/PIN) | Q11 | M1 🗓 |
-| FR-AUTH-7 | Biometric re-authentication before destructive actions | Q11 | M1 🗓 |
+| FR-AUTH-6 | Optional app lock (biometric/PIN) | Q11 | M1 ✅ |
+| FR-AUTH-7 | Biometric re-authentication before destructive actions | Q11 | M1 ✅ |
 | FR-AUTH-8 | Tiered confirmation: simple confirm for stop/reboot, type-the-name for delete/destroy/purge/rollback | Q12 | M0 ✅ (power actions); applied to each destructive feature as it lands |
 
 ### Monitoring

@@ -50,7 +50,7 @@ These are planned, not bugs ([roadmap](roadmap.md)):
 
 - No console, snapshots, backups, charts, hardware editing, migration or VM creation yet (M1–M2).
 - Single sign-on (OpenID Connect) and security keys (WebAuthn) can't be used to sign in yet (M1).
-- No app lock or fingerprint check before actions yet (M1).
+- No app lock or fingerprint check before actions in 0.1.0-beta.1 (added in 0.1.0-beta.2).
 - No notifications or widgets yet (M3).
 - Backup Server task logs can't be opened yet (M1).
 - English only for now. Translations come later.

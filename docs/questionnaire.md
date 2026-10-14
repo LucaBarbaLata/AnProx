@@ -280,5 +280,9 @@ questionnaire at 40. Each can be changed — record it under Amendments.
 
 ## Amendments
 
-_None yet. Add dated entries here when an answer changes, e.g._
-`2026-11-02 — Q9: API tokens added to scope (owner request).`
+Add dated entries here when an answer changes or needs clarifying.
+
+- 2026-10-14, Q11 (clarification, no change in scope): the "PIN" is the phone's own screen lock
+  (PIN, pattern or password) through Android's biometric prompt, not a separate AnProx PIN. The
+  extra check before dangerous actions applies to type-to-confirm actions while the app lock is
+  on, and can be switched off. See [ADR 0013](adr/0013-app-lock.md).

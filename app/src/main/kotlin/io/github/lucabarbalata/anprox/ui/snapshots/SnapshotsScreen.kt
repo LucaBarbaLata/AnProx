@@ -65,6 +65,7 @@ import io.github.lucabarbalata.anprox.model.pve.DangerLevel
 import io.github.lucabarbalata.anprox.model.pve.GuestType
 import io.github.lucabarbalata.anprox.model.pve.SnapshotName
 import io.github.lucabarbalata.anprox.model.pve.SnapshotRow
+import io.github.lucabarbalata.anprox.security.LocalDangerousActionGuard
 import io.github.lucabarbalata.anprox.ui.common.AnProxScaffold
 import io.github.lucabarbalata.anprox.ui.common.ConfirmActionDialog
 import io.github.lucabarbalata.anprox.ui.common.TaskResultSnackbar
@@ -157,13 +158,18 @@ fun SnapshotsScreen(
 
     state.confirm?.let { op ->
         val rollback = op.action == SnapshotAction.ROLLBACK
+        val guard = LocalDangerousActionGuard.current
+        val reason = stringResource(R.string.lock_reason_rollback, op.name)
         ConfirmActionDialog(
             title = stringResource(if (rollback) R.string.snapshot_rollback_title else R.string.snapshot_delete_title, op.name),
             message = if (rollback) stringResource(R.string.snapshot_rollback_message, guestName) else stringResource(R.string.snapshot_delete_message),
             confirmLabel = stringResource(if (rollback) R.string.snapshot_rollback else R.string.action_delete),
             danger = op.action.danger,
             confirmText = if (op.action.danger == DangerLevel.TYPE_TO_CONFIRM) op.name else null,
-            onConfirm = viewModel::confirm,
+            // Actions that can't be undone also re-check the user's identity when the app lock asks for it (Q11).
+            onConfirm = {
+                if (op.action.danger == DangerLevel.TYPE_TO_CONFIRM) guard.confirm(reason, viewModel::confirm) else viewModel.confirm()
+            },
             onDismiss = viewModel::dismissConfirm,
         )
     }

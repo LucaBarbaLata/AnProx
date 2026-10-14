@@ -9,7 +9,7 @@ testing debug builds on **real hardware**.
 |---|---|---|---|
 | Unit: parsing, formatting, URL rules, UPID/TFA parsing, snapshot tree and names, chart scales | `core/model/src/test` | JVM | 29 |
 | Integration: HTTP client ↔ mock server over real HTTPS (auth, TFA, failover, TLS, errors, renewal, PBS) | `core/network/src/test` | JVM | 16 |
-| Integration: multi-server hub, sessions, dashboard snapshots, guest actions, guest snapshots, performance history | `core/data/src/test` | JVM | 20 |
+| Integration: multi-server hub, sessions, dashboard snapshots, guest actions, guest snapshots, performance history, app lock rules | `core/data/src/test` | JVM | 26 |
 | Android lint | `:app:lintDebug` | CI | — |
 | Build: debug and R8-minified release | `:app:assemble*` | CI | — |
 | **End-to-end tour** of the minified release APK on emulators against the mock server | `scripts/e2e/tour.py` | CI (Android 8.0 + 14), Release workflow | 9 steps |
@@ -114,7 +114,7 @@ so no test code is compiled into the app. `scripts/e2e/run.sh` starts the mock s
 6. Open a stopped VM → **Start** → "finished" snackbar → **View log** shows `TASK OK` → the VM now offers **Shut down**.
 7. Snapshots of the now-running VM → **Take snapshot** with RAM → "VM snapshot finished" → the new snapshot is listed.
 8. Tasks tab shows the new task.
-9. Settings → Light theme → dashboard in light mode.
+9. Settings → Light theme; turning on the app lock explains that the emulator has no screen lock → dashboard in light mode.
 
 After every step the script checks that the app process is alive and that logcat has no
 `FATAL EXCEPTION` for the app. Screenshots of each step, plus UI dumps and logcat on failure,
@@ -176,6 +176,16 @@ Run this before closing a milestone. Note the PVE/PBS versions you tested agains
 - [ ] Touching or dragging across a chart shows the time and values; tapping the same spot again returns to the latest values.
 - [ ] Node charts: CPU with IO wait, load average, memory, network.
 - [ ] TalkBack reads each chart as a summary (now, average, peak).
+
+**App lock** (More → Settings → Security)
+- [ ] Without a phone screen lock: turning the app lock on explains that a screen lock is needed.
+- [ ] Turning it on asks for the fingerprint/screen lock; cancelling leaves it off.
+- [ ] Kill and reopen the app: the lock screen appears and the prompt opens by itself; Back leaves the app.
+- [ ] "Lock again after leaving the app": Immediately locks on every return; After 1 min doesn't lock after 20 s but does after 70 s.
+- [ ] Open a snapshot's Roll back dialog, leave the app until it locks, come back: the lock screen covers the dialog.
+- [ ] Roll back a snapshot: after typing the name, the fingerprint prompt appears; cancelling it doesn't roll back.
+- [ ] Turning the lock or "Check again before dangerous actions" off asks for authentication.
+- [ ] Remove the phone's screen lock in Android settings, return to AnProx: the app lock has turned itself off.
 
 **Snapshots** (use a test VM)
 - [ ] Guest → Snapshots shows the same tree as the web UI (Snapshots tab), with "Now" in the right place.

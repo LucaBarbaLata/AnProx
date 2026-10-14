@@ -19,6 +19,12 @@ All notable changes to AnProx are documented here. The format follows
   moment. Stopped periods show as gaps. Charts refresh while visible: every minute for the hour
   view, every five minutes otherwise.
 
+- **App lock** (More → Settings → Security): ask for your fingerprint, face or the phone's screen
+  lock when AnProx opens and after it has been in the background (immediately, after 1 or
+  5 minutes). With it on, rolling back a snapshot also asks for it ("Check again before
+  dangerous actions", can be switched off). The lock screen covers open dialogs too, and turning
+  any of this off requires authenticating.
+
 ### Changed
 - The guest screen's tools section lists what works now; everything else is under "Coming later".
 

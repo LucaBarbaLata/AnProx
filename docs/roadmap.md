@@ -9,7 +9,7 @@ Status legend: ✅ done · 🚧 in progress · 🗓 planned
 | Milestone | Theme | Status |
 |---|---|---|
 | [M0](#m0--foundation) | Foundation: servers, login, dashboard, resources, power, tasks | ✅ released as **0.1.0-beta.1** |
-| [M1](#m1--daily-driver) | Daily driver: app lock, SSO, snapshots, backups, charts, notifications | 🚧 snapshots and charts done |
+| [M1](#m1--daily-driver) | Daily driver: app lock, SSO, snapshots, backups, charts, notifications | 🚧 snapshots, charts and app lock done |
 | [M2](#m2--consoles--guest-configuration) | Consoles and guest configuration | 🗓 |
 | [M3](#m3--alerts--android-integration) | Alerts and Android integration | 🗓 |
 | [M4](#m4--datacenter) | Datacenter: storage, backup jobs, HA, replication, firewall | 🗓 |
@@ -56,8 +56,8 @@ Release engineering is in place ([releasing.md](releasing.md)). Gates:
 ## M1 — Daily driver
 *Status: 🚧 in progress. Done items are marked ✅ and ship in 0.1.0-beta.2.*
 
-- **App lock** (Q11): optional biometric/PIN on launch, and biometric re-authentication before
-  `TYPE_TO_CONFIRM` actions.
+- ✅ **App lock** (Q11): optional biometric/screen-lock check on launch and after a chosen time
+  away, and re-authentication before `TYPE_TO_CONFIRM` actions ([ADR 0013](adr/0013-app-lock.md)).
 - **OpenID Connect** sign-in (Q9) through a browser tab or WebView, plus **WebAuthn** second factor.
 - ✅ **Snapshots** (Q18): list and tree, create (with RAM), roll back, delete. (Editing a
   snapshot's description is still to do.)

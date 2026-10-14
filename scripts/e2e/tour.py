@@ -124,6 +124,21 @@ def crash_excerpt():
     return None
 
 
+def find_any(texts, timeout=30):
+    """Waits until one of [texts] is on screen (contains-match)."""
+    deadline = time.time() + timeout
+    root = None
+    while time.time() < deadline:
+        root = dump()
+        for text in texts:
+            found = matches(root, text, exact=False)
+            if found:
+                return found[0]
+        time.sleep(1)
+    save_dump(root, "missing-any")
+    raise AssertionError(f"none of {texts} appeared within {timeout}s.\n{describe(root)}")
+
+
 def visible(text):
     root = dump()
     return bool(matches(root, text, exact=True) or matches(root, text, exact=False))
@@ -414,13 +429,17 @@ def tasks():
     screenshot("12-tasks")
 
 
-@step("Switch to the light theme")
+@step("Light theme, and the app lock without a screen lock")
 def light_theme():
     tap("More")
     tap("Settings")
     tap("Light")
     time.sleep(1)
     screenshot("13-settings-light")
+    # The emulator has no screen lock, so turning on the app lock explains why it can't.
+    tap_node(scroll_to("App lock"))
+    find_any(["PIN, pattern or password", "verify your identity"], timeout=15)
+    screenshot("13b-app-lock-needs-screen-lock")
     back()
     tap("Overview")
     find("homelab", timeout=30)

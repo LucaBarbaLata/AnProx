@@ -7,12 +7,12 @@ software. This page covers what is protected, how, and the known trade-offs.
 
 | Threat | Mitigation | Status |
 |---|---|---|
-| Stolen or lost phone | Secrets encrypted with a hardware-backed Keystore key; optional app lock (Q11) | ✅ encryption · 🗓 app lock (M1) |
+| Stolen or lost phone | Secrets encrypted with a hardware-backed Keystore key; optional app lock (Q11) | ✅ |
 | Another app reading AnProx's files | Android app sandbox; secrets encrypted at rest; no backups | ✅ |
 | Malware with root / a forensic image | Keystore key can't be extracted from secure hardware; tickets expire after 2 h | ✅ (partial: a rooted live device is out of scope) |
 | Network eavesdropping | HTTPS only; plain `http://` addresses are rejected | ✅ |
 | Man-in-the-middle with a fake certificate | Certificate validation on by default; the per-server insecure switch is opt-in with a warning | ✅ (see trade-off below) |
-| Accidental destructive actions | Tiered confirmation (Q12); biometric re-auth (Q11) | ✅ confirmation · 🗓 biometric (M1) |
+| Accidental or unauthorised destructive actions | Tiered confirmation (Q12); fingerprint or screen lock check before type-to-confirm actions while the app lock is on (Q11) | ✅ |
 | Leaking data to third parties | No analytics, crash reporting, ads or Google libraries (Q36) | ✅ |
 | Logs leaking credentials | HTTP logging is off in builds and, when enabled, only logs method, URL and status (never headers) | ✅ |
 | Executing an action twice during failover | Failover retries a write only if the connection was never established | ✅ |
@@ -82,6 +82,25 @@ certificate's SHA-256 fingerprint on first use, and warn if it changes.
 - Connect timeout 5 s (for fast failover), read timeout 30 s.
 - Failover order and safety rules: [ADR 0006](adr/0006-endpoint-failover.md).
 - `User-Agent: AnProx/<version>` identifies the app in Proxmox's access logs.
+
+## App lock (Q11)
+
+Optional, under **More → Settings → Security** ([ADR 0013](adr/0013-app-lock.md)).
+
+- Uses Android's own biometric prompt: any fingerprint or face the phone has enrolled, or the
+  phone's screen lock PIN/pattern/password. There's no separate AnProx PIN, and Android handles
+  rate limiting and lockouts.
+- Locks after a fresh start and after the app has been in the background for the chosen time
+  (immediately, 1 or 5 minutes). The lock screen covers everything, including dialogs that were
+  open, and Back leaves the app.
+- **Check again before dangerous actions** (on by default while the lock is on): rolling back a
+  snapshot, and later destroying a guest, ask for the fingerprint or screen lock after you type
+  the name.
+- Turning the lock or that check off requires authenticating first. If the phone's screen lock
+  is removed, the app lock turns itself off, since it can't work without one.
+- Not covered: the recent-apps thumbnail can still show the last screen (an opt-in "hide content"
+  setting may follow), and secrets stay decryptable while the app is locked, because silent
+  re-login and background alerts need them.
 
 ## Crash reports
 

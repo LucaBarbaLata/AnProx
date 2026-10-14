@@ -33,6 +33,8 @@ The goal is every function of the web UI in a fast, beautiful, native app.
   stop, pause, resume, reset). Dangerous actions need confirmation.
 - **Snapshots** *(next beta)*. The snapshot tree of every VM and container: take one (with RAM
   for running VMs), roll back, or delete.
+- **App lock** *(next beta)*. Optional fingerprint, face or screen lock check on opening the app
+  and before rollbacks.
 - **Performance charts** *(next beta)*. CPU, memory, network and disk history of every node and
   guest, from the last hour to the last year, with touch to read exact values.
 - **Nodes.** Live usage, hardware and kernel info, and the guests running on the node.

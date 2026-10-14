@@ -43,6 +43,16 @@ extracted to `ui/common/TaskResult.kt` (used by the guest and snapshot screens).
 | UI | `ui/metrics/PerformanceSection` on the guest and node screens, with a timeframe picker; polls only while visible |
 | Tests | +8 JVM tests (65 in total); a tour step checks the Disk I/O chart has values after switching to Week |
 
+**App lock (third M1 feature),** [ADR 0013](adr/0013-app-lock.md): Android's biometric prompt with
+the phone's screen lock as fallback (no separate AnProx PIN). `AppLock` (`:core:data`, 6 tests)
+decides when to lock; `app/.../security/` holds the prompt, the lock screen and
+`DangerousActionGuard`, which snapshot rollback now uses. `MainActivity` became a
+`FragmentActivity`, with an explicit current `androidx.fragment`, because biometric 1.1.0 would
+otherwise pull in fragment 1.2.5 from 2020. Security catch while building it: dialogs are separate
+windows, so a plain overlay would have left an open "Roll back?" dialog usable above the lock.
+The lock screen is therefore a full-screen dialog itself. The emulator tour checks the "needs a
+screen lock" path; the full flow is on the manual checklist.
+
 Gotchas: one new data test ended in `assertNotNull(...)`, which returns a value, so JUnit silently
 skipped it (the CLAUDE.md pitfall again, caught because the test count was one short). The tour's
 `scroll_to` now turns around at the end of a list, since the guest screen got longer. Chart touch

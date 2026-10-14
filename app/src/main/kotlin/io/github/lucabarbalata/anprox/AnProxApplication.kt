@@ -3,12 +3,23 @@ package io.github.lucabarbalata.anprox
 import android.app.Application
 import android.net.ConnectivityManager
 import android.net.Network
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.ProcessLifecycleOwner
 import io.github.lucabarbalata.anprox.data.hub.ServerHub
+import io.github.lucabarbalata.anprox.data.security.AppLock
 import io.github.lucabarbalata.anprox.di.appModule
 import io.github.lucabarbalata.anprox.diagnostics.CrashReporter
+import io.github.lucabarbalata.anprox.storage.SettingsRepository
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
+import org.koin.android.ext.android.get
 import org.koin.android.ext.android.inject
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
+import org.koin.core.qualifier.named
 
 class AnProxApplication : Application() {
 
@@ -23,6 +34,31 @@ class AnProxApplication : Application() {
         }
         crashReporter.install()
         watchNetwork()
+        watchAppLock()
+    }
+
+    /**
+     * Feeds the app lock (questionnaire Q11) its settings and the app's background/foreground
+     * changes. ProcessLifecycleOwner ignores rotations and other configuration changes.
+     */
+    private fun watchAppLock() {
+        val appLock: AppLock = get()
+        val settings: SettingsRepository = get()
+        get<CoroutineScope>(named("appScope")).launch {
+            settings.settings
+                .map { it.appLock to it.lockAfterMillis }
+                .distinctUntilChanged()
+                .collect { (enabled, lockAfter) -> appLock.configure(enabled, lockAfter) }
+        }
+        ProcessLifecycleOwner.get().lifecycle.addObserver(
+            LifecycleEventObserver { _, event ->
+                when (event) {
+                    Lifecycle.Event.ON_STOP -> appLock.onBackground()
+                    Lifecycle.Event.ON_START -> appLock.onForeground()
+                    else -> Unit
+                }
+            },
+        )
     }
 
     /**

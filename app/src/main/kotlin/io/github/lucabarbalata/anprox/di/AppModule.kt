@@ -6,6 +6,7 @@ import io.github.lucabarbalata.anprox.data.guest.GuestRepository
 import io.github.lucabarbalata.anprox.data.hub.ServerHub
 import io.github.lucabarbalata.anprox.data.metrics.MetricsRepository
 import io.github.lucabarbalata.anprox.data.metrics.MetricsSource
+import io.github.lucabarbalata.anprox.data.security.AppLock
 import io.github.lucabarbalata.anprox.data.snapshot.SnapshotRepository
 import io.github.lucabarbalata.anprox.data.store.ProfileStore
 import io.github.lucabarbalata.anprox.data.store.SecretStore
@@ -48,6 +49,7 @@ val appModule = module {
     single<SecretStore> { KeystoreSecretStore(androidContext()) }
     single { SettingsRepository(androidContext()) }
     single { CrashReporter(androidContext()) }
+    single { AppLock() }
 
     // Networking: one shared OkHttp pool for all servers.
     single { OkHttpClient() }
