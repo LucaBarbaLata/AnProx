@@ -1,5 +1,6 @@
 # Weekly dependency update PRs for the Gradle version catalog and GitHub Actions.
 version: 2
+# Note: Dependabot PRs target the default branch.
 updates:
   - package-ecosystem: gradle
     directory: /
