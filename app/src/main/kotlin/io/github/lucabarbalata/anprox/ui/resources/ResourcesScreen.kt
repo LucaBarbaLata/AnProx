@@ -63,6 +63,7 @@ import io.github.lucabarbalata.anprox.ui.common.AnProxScaffold
 import io.github.lucabarbalata.anprox.ui.common.contentPadding
 import io.github.lucabarbalata.anprox.ui.common.statusAppearance
 import io.github.lucabarbalata.anprox.ui.guest.GuestDetail
+import io.github.lucabarbalata.anprox.ui.guest.GuestTool
 import org.koin.compose.viewmodel.koinViewModel
 
 /**
@@ -75,8 +76,7 @@ fun ResourcesScreen(
     onNode: (serverId: String, node: String) -> Unit,
     onStorage: (serverId: String, node: String, storage: String) -> Unit,
     onTask: (serverId: String, node: String, upid: String) -> Unit,
-    onSnapshots: (ref: GuestRef, guestName: String) -> Unit,
-    onBackups: (ref: GuestRef, guestName: String) -> Unit,
+    onTool: (tool: GuestTool, ref: GuestRef, guestName: String) -> Unit,
     viewModel: ResourcesViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -129,7 +129,7 @@ fun ResourcesScreen(
                             modifier = Modifier.align(Alignment.Center),
                         )
                     } else {
-                        GuestDetail(ref = ref, onTask = onTask, onSnapshots = onSnapshots, onBackups = onBackups, onClose = { selected = null })
+                        GuestDetail(ref = ref, onTask = onTask, onTool = onTool, onClose = { selected = null })
                     }
                 }
             }

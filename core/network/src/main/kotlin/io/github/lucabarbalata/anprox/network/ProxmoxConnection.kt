@@ -187,6 +187,12 @@ class ProxmoxConnection(
         return execute { pveApi.call() }
     }
 
+    /** Like [pve] for calls that answer `{"data": null}` on success, such as `PUT …/config`. */
+    suspend fun pveNoData(call: suspend PveApi.() -> ApiEnvelope<*>) {
+        check(product == ProxmoxProduct.PVE) { "${profile.name} is not a Proxmox VE server" }
+        envelope { pveApi.call() }
+    }
+
     /** Run a call against the PBS API. Throws [ApiException] on any failure. */
     suspend fun <T> pbs(call: suspend PbsApi.() -> ApiEnvelope<T>): T {
         check(product == ProxmoxProduct.PBS) { "${profile.name} is not a Proxmox Backup Server" }
@@ -202,13 +208,16 @@ class ProxmoxConnection(
         }
     }
 
-    private suspend fun <T> execute(renew: Boolean = true, call: suspend () -> ApiEnvelope<T>): T {
+    private suspend fun <T> execute(renew: Boolean = true, call: suspend () -> ApiEnvelope<T>): T =
+        envelope(renew, call).data ?: throw ApiException.Protocol("The server returned no data")
+
+    /** Renews the ticket when due, runs [call] and turns failures into [ApiException]s. */
+    private suspend fun <T> envelope(renew: Boolean = true, call: suspend () -> ApiEnvelope<T>): ApiEnvelope<T> {
         if (renew) {
             val s = session
             if (s != null && s.needsRenewal(clock()) && !s.isExpired(clock())) renewSession()
         }
-        val envelope = translateErrors { call() }
-        return envelope.data ?: throw ApiException.Protocol("The server returned no data")
+        return translateErrors { call() }
     }
 
     private inline fun <R> translateErrors(block: () -> R): R = try {

@@ -446,6 +446,20 @@ def backups():
     back()
 
 
+@step("Edit a container's options")
+def options():
+    tap_node(scroll_to("nginx-proxy"))
+    tap_node(scroll_to("Options"))
+    find("Hostname", timeout=30)           # containers call their name a hostname
+    tap_node(scroll_to("Start at boot"))
+    tap_node(scroll_to("Save"))
+    find("Options saved", timeout=30)
+    screenshot("11e-options")
+    back()
+    scroll_to("Name, tags, notes, start at boot, protection")  # back on the guest screen
+    back()
+
+
 @step("Tasks tab")
 def tasks():
     tap("Tasks")

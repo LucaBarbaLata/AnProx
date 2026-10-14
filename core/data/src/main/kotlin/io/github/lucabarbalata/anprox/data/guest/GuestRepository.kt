@@ -2,6 +2,7 @@ package io.github.lucabarbalata.anprox.data.guest
 
 import io.github.lucabarbalata.anprox.data.hub.ServerHub
 import io.github.lucabarbalata.anprox.model.pve.GuestNic
+import io.github.lucabarbalata.anprox.model.pve.GuestOptions
 import io.github.lucabarbalata.anprox.model.pve.GuestSnapshot
 import io.github.lucabarbalata.anprox.model.pve.GuestStatus
 import io.github.lucabarbalata.anprox.model.pve.GuestType
@@ -85,6 +86,21 @@ class GuestRepository(private val hub: ServerHub) {
             if (e is ApiException.Unauthorized || e is ApiException.Unreachable) throw e
             GuestNetworkInfo(agentProblem = e.message)
         }
+    }
+
+    // ------------------------------------------------------------------ options (Q19)
+
+    suspend fun options(ref: GuestRef): GuestOptions =
+        GuestOptions.fromConfig(ref.type, hub.use(ref.serverId) { it.pve { guestConfig(ref.node, ref.type.apiName, ref.vmid) } })
+
+    /**
+     * Saves what changed from [old] to [new]. [old] carries the config digest, so Proxmox refuses
+     * the change if someone else edited the guest since it was loaded. Does nothing if nothing changed.
+     */
+    suspend fun saveOptions(ref: GuestRef, old: GuestOptions, new: GuestOptions) {
+        val params = GuestOptions.changes(ref.type, old, new)
+        if (params.isEmpty()) return
+        hub.use(ref.serverId) { it.pveNoData { updateGuestConfig(ref.node, ref.type.apiName, ref.vmid, params) } }
     }
 
     /** Starts [action] and returns the task UPID. */

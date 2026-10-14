@@ -31,7 +31,8 @@ If the container can't reach `dl.google.com`, Android code is verified only by G
 
 ## Conventions that bite
 - All user-visible text goes in `app/src/main/res/values/strings.xml`. Check that every
-  `R.string.x` used is defined.
+  `R.string.x` used is defined and that no name is defined twice (a duplicate fails the Android
+  build, which JVM-only runs don't catch).
 - Pure-JVM modules must only use Java APIs available on Android 8.0 (API 26).
 - Version pins have reasons (`docs/adr/0002-toolchain-baseline.md`). For example, OkHttp ≥ 5.5 needs compileSdk 37 / AGP 9.
 - JUnit skips `@Test` functions that don't return `Unit`. End `= runBlocking { … }` tests with `Unit`.

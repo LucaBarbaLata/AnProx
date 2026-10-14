@@ -26,6 +26,9 @@ import io.github.lucabarbalata.anprox.model.pve.StorageContentItem
 import io.github.lucabarbalata.anprox.model.pve.TaskLogLine
 import io.github.lucabarbalata.anprox.model.pve.TaskStatus
 import io.github.lucabarbalata.anprox.model.pve.TaskSummary
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import java.security.SecureRandom
@@ -152,14 +155,17 @@ class MockState(
         val vmid: Int,
         val type: String,
         var node: String,
-        val name: String,
+        var name: String,
         var status: String,
         val cpus: Int,
         val maxmem: Long,
         val maxdisk: Long,
         val template: Boolean = false,
-        val tags: String? = null,
-        val agent: Boolean = false,
+        var tags: String? = null,
+        var agent: Boolean = false,
+        var onBoot: Boolean = false,
+        var protection: Boolean = false,
+        var description: String = "",
         var paused: Boolean = false,
         var startedAtMillis: Long = 0,
         val ha: Boolean = false,
@@ -558,6 +564,51 @@ class MockState(
             if (snapHead[g.vmid] == name) snapHead[g.vmid] = snap.parent
         }
         Result.success(upid)
+    }
+
+    // ------------------------------------------------------------------ guest config
+
+    private fun Guest.digest(): String =
+        Integer.toHexString(listOf(name, tags, agent, onBoot, protection, description).hashCode()).padStart(8, '0')
+
+    /** The keys of `GET …/config` the app reads, plus a few others for realism. */
+    fun guestConfig(g: Guest): JsonObject = synchronized(lock) {
+        buildJsonObject {
+            put(if (g.type == "qemu") "name" else "hostname", g.name)
+            put("onboot", if (g.onBoot) 1 else 0)
+            if (g.protection) put("protection", 1)
+            if (g.description.isNotEmpty()) put("description", g.description)
+            g.tags?.let { put("tags", it) }
+            if (g.type == "qemu") {
+                if (g.agent) put("agent", "enabled=1,fstrim_cloned_disks=1")
+                put("cores", g.cpus)
+                put("memory", (g.maxmem / MIB).toString())
+                put("ostype", "l26")
+            } else {
+                put("cores", g.cpus)
+                put("memory", g.maxmem / MIB)
+                put("ostype", "debian")
+            }
+            put("digest", g.digest())
+        }
+    }
+
+    /** `PUT …/config` for the options the app edits. Returns an error message, or null when applied. */
+    fun updateGuestConfig(g: Guest, params: Map<String, String>): String? = synchronized(lock) {
+        params["digest"]?.let { if (it != g.digest()) return "detected modified configuration - file changed by other user? Try again." }
+        val nameKey = if (g.type == "qemu") "name" else "hostname"
+        val nameRule = Regex("^(?:(?:[a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9])\\.)*(?:[a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9])$")
+        params[nameKey]?.let { if (!nameRule.matches(it)) return "$nameKey: invalid format - value does not look like a valid DNS name" }
+        val delete = params["delete"]?.split(',')?.map { it.trim() }.orEmpty()
+        params[nameKey]?.let { g.name = it }
+        params["onboot"]?.let { g.onBoot = it == "1" }
+        params["protection"]?.let { g.protection = it == "1" }
+        params["description"]?.let { g.description = it }
+        params["tags"]?.let { g.tags = it }
+        params["agent"]?.let { g.agent = it.startsWith("1") || it.contains("enabled=1") }
+        if ("description" in delete) g.description = ""
+        if ("tags" in delete) g.tags = null
+        null
     }
 
     // ------------------------------------------------------------------ guest agent

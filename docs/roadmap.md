@@ -10,7 +10,7 @@ Status legend: ✅ done · 🚧 in progress · 🗓 planned
 |---|---|---|
 | [M0](#m0--foundation) | Foundation: servers, login, dashboard, resources, power, tasks | ✅ released as **0.1.0-beta.1** |
 | [M1](#m1--daily-driver) | Daily driver: app lock, SSO, snapshots, backups, charts, notifications | 🚧 snapshots, charts, app lock, backups, guest IPs done |
-| [M2](#m2--consoles--guest-configuration) | Consoles and guest configuration | 🗓 |
+| [M2](#m2--consoles--guest-configuration) | Consoles and guest configuration | 🚧 guest options done |
 | [M3](#m3--alerts--android-integration) | Alerts and Android integration | 🗓 |
 | [M4](#m4--datacenter) | Datacenter: storage, backup jobs, HA, replication, firewall | 🗓 |
 | [M5](#m5--node-administration) | Node administration | 🗓 |
@@ -78,7 +78,8 @@ Release engineering is in place ([releasing.md](releasing.md)). Gates:
 - **Built-in SSH client** with key management (Q15).
 - **Hardware editing**, common settings first (Q19): CPU, memory/balloon, disks
   (add/resize/move), network devices, CD-ROM, boot order. Container resources and mount points.
-- **Options**: name, start at boot, start order, protection, tags, description, QEMU agent.
+- ✅ **Options** (pulled into 0.1.0-beta.2): name, start at boot, protection, tags, description, QEMU agent.
+  (Start order and the remaining options are still to do.)
 - **Clone, templates and cloud-init** (Q18): full and linked clones, convert to template, cloud-init user/keys/IP.
 - **Creation wizard** for VMs and containers (Q17): a simple flow with an "Advanced" toggle.
 - **Migration**: live or offline, with progress.

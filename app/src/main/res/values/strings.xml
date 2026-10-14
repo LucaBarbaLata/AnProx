@@ -190,10 +190,10 @@
     <string name="guest_details">Details</string>
     <string name="guest_more_tools">Tools</string>
     <string name="guest_coming_later">Coming later</string>
-    <string name="guest_network">Network</string>
+    <string name="guest_network_section">Network</string>
     <string name="guest_network_loading">Asking the guest for its addresses…</string>
     <string name="guest_os">Operating system</string>
-    <string name="guest_agent_missing">Install the QEMU guest agent in this VM (qemu-guest-agent) and enable it under Options → QEMU Guest Agent to see its IP addresses.</string>
+    <string name="guest_agent_missing">Install the QEMU guest agent in this VM (qemu-guest-agent), turn on Tools → Options → QEMU guest agent, then stop and start the VM to see its IP addresses.</string>
     <string name="guest_agent_problem">Proxmox says: %1$s</string>
     <string name="guest_no_addresses">No IP addresses reported yet.</string>
     <string name="guest_copy_address">Copy %1$s</string>
@@ -221,10 +221,34 @@
     <string name="power_pause">Pause</string>
     <string name="power_resume">Resume</string>
     <string name="tool_console">Console (noVNC, terminal, SPICE)</string>
-    <string name="tool_hardware">Hardware and options</string>
+    <string name="tool_hardware">Hardware (CPU, memory, disks, network)</string>
     <string name="tool_clone">Clone, templates, cloud-init</string>
     <string name="tool_migrate">Migrate</string>
     <string name="coming_in">Coming in %1$s</string>
+
+    <!-- Guest options (Q19) -->
+    <string name="options_title">Options</string>
+    <string name="options_open_body">Name, tags, notes, start at boot, protection</string>
+    <string name="options_name_vm">Name</string>
+    <string name="options_name_ct">Hostname</string>
+    <string name="options_name_error">Letters, digits, hyphens and dots only, like web-01 or web.lan</string>
+    <string name="options_tags">Tags</string>
+    <string name="options_tags_help">Separate with spaces or commas, e.g. prod web</string>
+    <string name="options_tags_error">Tags use letters, digits and _ + . - and can\'t start with + . or -</string>
+    <string name="options_notes">Notes</string>
+    <string name="options_notes_help">Shown on the guest\'s Summary page in Proxmox (Markdown).</string>
+    <string name="options_onboot">Start at boot</string>
+    <string name="options_onboot_body">Start this guest automatically when the node boots.</string>
+    <string name="options_protection">Protection</string>
+    <string name="options_protection_body">Prevents removing the guest or its disks until turned off.</string>
+    <string name="options_agent">QEMU guest agent</string>
+    <string name="options_agent_body">Lets Proxmox read IP addresses and shut down cleanly. Takes effect after the VM is stopped and started again.</string>
+    <string name="options_no_changes">No unsaved changes.</string>
+    <string name="options_saved">Options saved</string>
+    <string name="options_reload">Reload</string>
+    <string name="options_discard_title">Discard changes?</string>
+    <string name="options_discard_body">Your edits to this guest haven\'t been saved.</string>
+    <string name="options_discard">Discard</string>
 
     <!-- Performance charts (M1) -->
     <string name="perf_title">Performance</string>

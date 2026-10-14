@@ -21,6 +21,7 @@ import androidx.compose.material.icons.outlined.PowerSettingsNew
 import androidx.compose.material.icons.outlined.RestartAlt
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.StopCircle
+import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material.icons.outlined.Backup
 import androidx.compose.material.icons.outlined.Bolt
 import androidx.compose.material3.Icon
@@ -78,10 +79,9 @@ fun GuestScreen(
     ref: GuestRef,
     onBack: () -> Unit,
     onTask: (serverId: String, node: String, upid: String) -> Unit,
-    onSnapshots: (ref: GuestRef, guestName: String) -> Unit,
-    onBackups: (ref: GuestRef, guestName: String) -> Unit,
+    onTool: (tool: GuestTool, ref: GuestRef, guestName: String) -> Unit,
 ) {
-    GuestDetail(ref = ref, onTask = onTask, onSnapshots = onSnapshots, onBackups = onBackups, onBack = onBack)
+    GuestDetail(ref = ref, onTask = onTask, onTool = onTool, onBack = onBack)
 }
 
 /**
@@ -92,8 +92,7 @@ fun GuestScreen(
 fun GuestDetail(
     ref: GuestRef,
     onTask: (serverId: String, node: String, upid: String) -> Unit,
-    onSnapshots: (ref: GuestRef, guestName: String) -> Unit,
-    onBackups: (ref: GuestRef, guestName: String) -> Unit,
+    onTool: (tool: GuestTool, ref: GuestRef, guestName: String) -> Unit,
     onBack: (() -> Unit)? = null,
     onClose: (() -> Unit)? = null,
 ) {
@@ -127,7 +126,7 @@ fun GuestDetail(
                     item { PowerActions(state.availableActions, state.running, viewModel::request) }
                 }
                 if (status.isRunning) {
-                    item { SectionHeader(stringResource(R.string.guest_network)) }
+                    item { SectionHeader(stringResource(R.string.guest_network_section)) }
                     item { NetworkCard(ref.type, state.network, onCopied = { text -> scope.launch { snackbar.showSnackbar(copiedLabel.format(text)) } }) }
                 }
                 // Templates never run, so they have no history.
@@ -146,13 +145,18 @@ fun GuestDetail(
                                 Icons.Outlined.PhotoCamera,
                                 stringResource(R.string.snapshots_title),
                                 stringResource(R.string.snapshots_open_body),
-                            ) { onSnapshots(ref, state.title) }
+                            ) { onTool(GuestTool.SNAPSHOTS, ref, state.title) }
                         }
                         MenuRow(
                             Icons.Outlined.Backup,
                             stringResource(R.string.backups_title),
                             stringResource(R.string.backups_open_body),
-                        ) { onBackups(ref, state.title) }
+                        ) { onTool(GuestTool.BACKUPS, ref, state.title) }
+                        MenuRow(
+                            Icons.Outlined.Tune,
+                            stringResource(R.string.options_title),
+                            stringResource(R.string.options_open_body),
+                        ) { onTool(GuestTool.OPTIONS, ref, state.title) }
                     }
                 }
                 item { SectionHeader(stringResource(R.string.guest_coming_later)) }

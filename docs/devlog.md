@@ -63,6 +63,18 @@ screen serves both a guest's backups and a storage's backups; replace is type-to
 the app lock check. +9 JVM tests (80 in total) and a tour step that backs up `pihole` and restores
 it as CT 105. Side fix: lint's ContextCastToActivity wanted `LocalActivity` in the lock screen.
 
+**Guest agent info and options (night work for beta.2, PVE first because the owner has no
+Backup Server).** Running guests get a Network card: OS and IP addresses from the QEMU guest agent,
+or from `GET …/lxc/{vmid}/interfaces` for containers (no agent needed); loopback and link-local
+addresses are hidden. The status screen never waits on a slow agent: the network flow emits a
+loading `null` first. Guest → Tools → Options edits the everyday options through
+`GET/PUT …/config`. `GuestOptions.changes` sends only changed fields, empties through `delete`, and
+the config `digest`, which the mock checks like Proxmox does. The guest Tools rows now go through
+one `onTool(GuestTool, …)` callback. The agent commit's CI failed in 30 seconds because two
+`<string name="guest_network">` entries existed (a new section header reused an existing key).
+JVM-only builds don't merge Android resources, so this only showed in CI; the local strings check
+now also reports duplicate names.
+
 Gotchas: one new data test ended in `assertNotNull(...)`, which returns a value, so JUnit silently
 skipped it (the CLAUDE.md pitfall again, caught because the test count was one short). The tour's
 `scroll_to` now turns around at the end of a list, since the guest screen got longer. Chart touch

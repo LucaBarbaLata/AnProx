@@ -27,6 +27,7 @@ import io.ktor.server.routing.Route
 import io.ktor.server.routing.delete
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
+import io.ktor.server.routing.put
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
 import io.ktor.http.Headers
@@ -169,6 +170,19 @@ class MockProxmoxServer(
             val node = state.node(call.parameters["node"]!!) ?: return@get call.fail(404, "no such node")
             if (!node.online) return@get call.fail(595, "Connection refused")
             call.ok(state.nodeStatus(node))
+        }
+        get("nodes/{node}/{type}/{vmid}/config") {
+            call.authed() ?: return@get
+            val g = call.guest() ?: return@get
+            call.ok(state.guestConfig(g))
+        }
+        put("nodes/{node}/{type}/{vmid}/config") {
+            val s = call.authed() ?: return@put
+            val g = call.guest() ?: return@put
+            val p = call.receiveParameters()
+            if (state.isReadOnly(s.user)) return@put call.fail(403, "Permission check failed (/vms/${g.vmid}, VM.Config.Options)")
+            val error = state.updateGuestConfig(g, p.entries().associate { it.key to it.value.first() })
+            if (error != null) call.fail(500, error) else call.ok(JsonNull)
         }
         get("nodes/{node}/qemu/{vmid}/agent/{command}") {
             call.authed() ?: return@get

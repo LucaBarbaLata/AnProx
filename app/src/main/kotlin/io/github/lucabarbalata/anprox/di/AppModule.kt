@@ -20,6 +20,7 @@ import io.github.lucabarbalata.anprox.ui.backups.BackupScope
 import io.github.lucabarbalata.anprox.ui.backups.BackupsViewModel
 import io.github.lucabarbalata.anprox.ui.dashboard.DashboardViewModel
 import io.github.lucabarbalata.anprox.ui.guest.GuestViewModel
+import io.github.lucabarbalata.anprox.ui.guest.OptionsViewModel
 import io.github.lucabarbalata.anprox.ui.login.LoginViewModel
 import io.github.lucabarbalata.anprox.ui.metrics.PerformanceViewModel
 import io.github.lucabarbalata.anprox.ui.node.NodeViewModel
@@ -80,6 +81,7 @@ val appModule = module {
     viewModel { DashboardViewModel(get(), get(), get()) }
     viewModel { ResourcesViewModel(get(), get(), get()) }
     viewModel { (ref: GuestRef) -> GuestViewModel(ref, get(), get()) }
+    viewModel { (ref: GuestRef) -> OptionsViewModel(ref, get()) }
     viewModel { (ref: GuestRef, name: String) -> SnapshotsViewModel(ref, name, get()) }
     viewModel { (source: MetricsSource) -> PerformanceViewModel(source, get()) }
     viewModel { (scope: BackupScope) -> BackupsViewModel(scope, get(), get()) }

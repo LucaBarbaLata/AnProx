@@ -7,12 +7,12 @@ testing debug builds on **real hardware**.
 
 | Layer | Where | Runs on | Count |
 |---|---|---|---|
-| Unit: parsing, formatting, URL rules, UPID/TFA parsing, snapshot tree and names, chart scales, backup listings | `core/model/src/test` | JVM | 31 |
+| Unit: parsing, formatting, URL rules, UPID/TFA parsing, snapshot tree and names, chart scales, backup listings, guest agent replies, guest options | `core/model/src/test` | JVM | 38 |
 | Integration: HTTP client ↔ mock server over real HTTPS (auth, TFA, failover, TLS, errors, renewal, PBS) | `core/network/src/test` | JVM | 16 |
-| Integration: multi-server hub, sessions, dashboard snapshots, guest actions, guest snapshots, performance history, app lock rules, backup and restore | `core/data/src/test` | JVM | 33 |
+| Integration: multi-server hub, sessions, dashboard snapshots, guest actions, guest snapshots, performance history, app lock rules, backup and restore, guest network info, guest options | `core/data/src/test` | JVM | 40 |
 | Android lint | `:app:lintDebug` | CI | — |
 | Build: debug and R8-minified release | `:app:assemble*` | CI | — |
-| **End-to-end tour** of the minified release APK on emulators against the mock server | `scripts/e2e/tour.py` | CI (Android 8.0 + 14), Release workflow | 10 steps |
+| **End-to-end tour** of the minified release APK on emulators against the mock server | `scripts/e2e/tour.py` | CI (Android 8.0 + 14), Release workflow | 11 steps |
 | UI / screenshot tests | planned (M1) | — | — |
 | Manual on real hardware | [checklist below](#manual-test-checklist-real-hardware) | owner | — |
 
@@ -118,8 +118,9 @@ so no test code is compiled into the app. `scripts/e2e/run.sh` starts the mock s
 6. Open a stopped VM → **Start** → "finished" snackbar → **View log** shows `TASK OK` → the VM now offers **Shut down**.
 7. Snapshots of the now-running VM → **Take snapshot** with RAM → "VM snapshot finished" → the new snapshot is listed.
 8. Backups of the `pihole` container → **Back up now** to the Backup Server → "Backup finished" → **Restore** the new backup as a new container (ID 105) → "CT restore finished".
-9. Tasks tab shows the new task.
-10. Settings → Light theme; turning on the app lock explains that the emulator has no screen lock → dashboard in light mode.
+9. Options of the `nginx-proxy` container → turn on **Start at boot** → **Save** → "Options saved".
+10. Tasks tab shows the new task.
+11. Settings → Light theme; turning on the app lock explains that the emulator has no screen lock → dashboard in light mode.
 
 After every step the script checks that the app process is alive and that logcat has no
 `FATAL EXCEPTION` for the app. Screenshots of each step, plus UI dumps and logcat on failure,
@@ -186,6 +187,15 @@ Run this before closing a milestone. Note the PVE/PBS versions you tested agains
 - [ ] A running VM with qemu-guest-agent installed and enabled shows its OS and IP addresses (no 127.x/fe80 noise).
 - [ ] Tapping an address copies it ("Copied …").
 - [ ] A VM without the agent explains how to enable it; a running container shows its IPs without an agent.
+
+**Options** (use a test VM)
+- [ ] Guest → Options shows the same name, tags, notes, Start at boot and Protection as the web UI (Options and Summary tabs).
+- [ ] Rename the VM, add two tags and a note → Save → "Options saved"; the web UI shows the changes.
+- [ ] A container shows "Hostname" instead of "Name"; renaming changes the hostname.
+- [ ] An invalid name (e.g. `web server`) or tag (e.g. `-x`) shows an error and Save stays disabled.
+- [ ] Turn on Protection → Save; the web UI refuses to remove the VM. Turn it off again.
+- [ ] Change something in the web UI while the Options screen is open, then Save in the app: Proxmox refuses it (config changed); Reload shows the new values.
+- [ ] Edit a field, press Back → "Discard changes?".
 
 **Backups** (use a test VM)
 - [ ] Guest → Backups lists the same backups as the web UI's Backup tab (all storages), newest first; protected and verified badges match.

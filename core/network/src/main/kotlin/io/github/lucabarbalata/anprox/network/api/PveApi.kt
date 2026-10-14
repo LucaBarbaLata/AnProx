@@ -16,10 +16,13 @@ import io.github.lucabarbalata.anprox.model.pve.StorageContentItem
 import io.github.lucabarbalata.anprox.model.pve.TaskLogLine
 import io.github.lucabarbalata.anprox.model.pve.TaskStatus
 import io.github.lucabarbalata.anprox.model.pve.TaskSummary
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
 import retrofit2.http.DELETE
 import retrofit2.http.FieldMap
 import retrofit2.http.FormUrlEncoded
 import retrofit2.http.GET
+import retrofit2.http.PUT
 import retrofit2.http.POST
 import retrofit2.http.Path
 import retrofit2.http.Query
@@ -79,6 +82,26 @@ interface PveApi {
         @Query("timeframe") timeframe: String,
         @Query("cf") cf: String,
     ): ApiEnvelope<List<RrdPoint>>
+
+    // ------------------------------------------------------------------ guest config (Q19)
+
+    /** The guest's current configuration (keys differ between VMs and containers). */
+    @GET("nodes/{node}/{type}/{vmid}/config")
+    suspend fun guestConfig(
+        @Path("node") node: String,
+        @Path("type") type: String,
+        @Path("vmid") vmid: Int,
+    ): ApiEnvelope<JsonObject>
+
+    /** Synchronous config change; answers `{"data": null}`. Use with `pveNoData`. */
+    @FormUrlEncoded
+    @PUT("nodes/{node}/{type}/{vmid}/config")
+    suspend fun updateGuestConfig(
+        @Path("node") node: String,
+        @Path("type") type: String,
+        @Path("vmid") vmid: Int,
+        @FieldMap params: Map<String, String>,
+    ): ApiEnvelope<JsonElement>
 
     // ------------------------------------------------------------------ guest agent (Q18)
 

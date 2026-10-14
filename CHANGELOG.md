@@ -38,6 +38,11 @@ All notable changes to AnProx are documented here. The format follows
   guest agent (VMs) or by the container itself. Tap an address to copy it. Without the agent, the
   card explains how to enable it.
 
+- **Guest options** (Guest → Tools → Options): name (hostname for containers), tags, notes, start
+  at boot, protection and, for VMs, the QEMU guest agent switch. Only what you changed is sent,
+  together with Proxmox's config checksum, so an edit made meanwhile in the web UI is refused
+  instead of overwritten. Leaving with unsaved changes asks first.
+
 ### Changed
 - The guest screen's tools section lists what works now; everything else is under "Coming later".
 - Backup storages in the Resources list open their backups.
