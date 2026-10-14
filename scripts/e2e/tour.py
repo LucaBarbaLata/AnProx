@@ -189,7 +189,7 @@ def first_match(root, text, pick="first"):
     return max(found, key=lambda n: center(n)[1]) if pick == "lowest" else found[0]
 
 
-def scroll_to(text, attempts=16, pick="first"):
+def scroll_to(text, attempts=24, pick="first"):
     """
     Scrolls until [text] is on screen, then brings it towards mid-screen and waits until it
     stops moving. Use this for anything inside a scrolling list before tapping it.
@@ -374,6 +374,9 @@ def resources():
 @step("Performance charts and guest agent info of a running VM")
 def performance():
     tap_node(scroll_to("k8s-master"))
+    # The Network card sits above the charts: check it first, before scrolling down.
+    scroll_to("10.0.0.103")                # IP address reported by the guest agent
+    find("Ubuntu 24.04.1 LTS", timeout=10)
     tap_node(scroll_to("Week"))            # timeframe picker
     time.sleep(2)                          # reload for the new timeframe
     scroll_to("Disk I/O")                  # the last chart
@@ -383,8 +386,6 @@ def performance():
         save_dump(root, "charts-without-data")
         raise AssertionError(f"Disk I/O chart shows no values: {readouts}\n{describe(root)}")
     screenshot("05-performance")
-    scroll_to("10.0.0.103")                # IP address reported by the guest agent (Network card)
-    find("Ubuntu 24.04.1 LTS", timeout=10)
     back()
     find("Resources", timeout=20)
 
@@ -460,10 +461,32 @@ def options():
     back()
 
 
+@step("Clone the template, then migrate the clone to another node")
+def clone_migrate():
+    tap_node(scroll_to("ubuntu-2404-template"))
+    tap_node(scroll_to("Clone"))
+    find("Linked clone", timeout=30)       # templates clone linked by default
+    tap_node(scroll_to("Create clone"))
+    find("Open it", timeout=60)            # the clone task finished
+    screenshot("11f-cloned")
+    tap_node(scroll_to("Open it"))
+    find("ubuntu-2404-template-clone", timeout=30)
+    tap_node(scroll_to("Migrate"))
+    find("Offline migration", timeout=30)  # the clone is stopped; pve2 is preselected
+    tap_node(scroll_to("Start migration"))
+    tap("Start migration", pick="lowest")  # the confirmation dialog's button
+    find("· pve2 ·", timeout=60)           # the guest screen again, now on pve2
+    screenshot("11g-migrated")
+    back()                                 # to the clone screen
+    back()                                 # to the template
+    scroll_to("Create new guests from this template")
+    back()
+
+
 @step("Tasks tab")
 def tasks():
     tap("Tasks")
-    find("VM start", timeout=30)
+    find("VM migrate", timeout=30)         # the newest task, from the previous step
     screenshot("12-tasks")
 
 

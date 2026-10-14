@@ -222,8 +222,7 @@
     <string name="power_resume">Resume</string>
     <string name="tool_console">Console (noVNC, terminal, SPICE)</string>
     <string name="tool_hardware">Hardware (CPU, memory, disks, network)</string>
-    <string name="tool_clone">Clone, templates, cloud-init</string>
-    <string name="tool_migrate">Migrate</string>
+    <string name="tool_cloudinit">Cloud-init (user, SSH keys, IP)</string>
     <string name="coming_in">Coming in %1$s</string>
 
     <!-- Guest options (Q19) -->
@@ -249,6 +248,62 @@
     <string name="options_discard_title">Discard changes?</string>
     <string name="options_discard_body">Your edits to this guest haven\'t been saved.</string>
     <string name="options_discard">Discard</string>
+
+    <!-- Clone and templates (Q18) -->
+    <string name="clone_title">Clone</string>
+    <string name="clone_open_body">Copy to a new ID or node, or make it a template</string>
+    <string name="clone_open_body_template">Create new guests from this template</string>
+    <string name="clone_id">New ID</string>
+    <string name="clone_id_error">Use a number from 100 to 999999999</string>
+    <string name="clone_name_help">Optional. Leave it empty to let Proxmox choose.</string>
+    <string name="clone_mode">Clone mode</string>
+    <string name="clone_full">Full clone</string>
+    <string name="clone_full_body">An independent copy of every disk. Takes longer and uses the full space.</string>
+    <string name="clone_linked">Linked clone</string>
+    <string name="clone_linked_body">Shares the template\'s disks and stores only the changes. Fast and small, but the template can\'t be removed while clones use it.</string>
+    <string name="clone_linked_needs_template">Only templates can be cloned linked.</string>
+    <string name="clone_target_node">Target node</string>
+    <string name="clone_same_node">Same node</string>
+    <string name="clone_other_node">Needs shared storage, or pick a target storage on that node</string>
+    <string name="clone_node_offline">Offline</string>
+    <string name="clone_storage">Target storage</string>
+    <string name="clone_storage_same">Same as the source</string>
+    <string name="clone_action">Create clone</string>
+    <string name="clone_busy">Cloning… large disks can take a while.</string>
+    <string name="clone_created">Created %1$s %2$d on %3$s.</string>
+    <string name="clone_open">Open it</string>
+    <string name="clone_template_title">Template</string>
+    <string name="clone_template_body">A template can\'t be started. It\'s a master copy for quick linked clones. Converting can\'t be undone.</string>
+    <string name="clone_template_running_vm">Shut the VM down first.</string>
+    <string name="clone_template_running_ct">Shut the container down first.</string>
+    <string name="clone_template_action">Convert to template</string>
+    <string name="clone_template_busy">Converting to a template…</string>
+    <string name="clone_template_confirm_title">Turn %1$s into a template?</string>
+    <string name="clone_template_confirm_body">It can\'t be started afterwards, and this can\'t be undone.</string>
+    <string name="clone_template_done">Converted to a template</string>
+
+    <!-- Migration (Q18) -->
+    <string name="migrate_title">Migrate</string>
+    <string name="migrate_open_body">Move to another node</string>
+    <string name="migrate_no_nodes_title">No other node</string>
+    <string name="migrate_no_nodes_body">This server isn\'t part of a cluster, so there is nowhere to move the guest.</string>
+    <string name="migrate_target">Target node</string>
+    <string name="migrate_missing">Missing there: %1$s</string>
+    <string name="migrate_busy">Moving to %1$s…</string>
+    <string name="migrate_action">Start migration</string>
+    <string name="migrate_confirm_title">Move %1$s to %2$s?</string>
+    <string name="migrate_confirm_offline">The guest is stopped, so it moves offline.</string>
+    <string name="migrate_confirm_live">The VM keeps running while its memory is copied over (live migration).</string>
+    <string name="migrate_confirm_restart">The container is shut down, moved and started again on the new node.</string>
+    <string name="migrate_how_offline">Offline migration: the guest is stopped, so its configuration and any local disks move to the new node.</string>
+    <string name="migrate_how_live">Live migration: the VM keeps running while its memory is copied over.</string>
+    <string name="migrate_how_restart">Restart migration: a running container can\'t move live, so it is shut down, moved and started again.</string>
+    <string name="migrate_ha">Managed by HA: Proxmox\'s HA manager carries out the move.</string>
+    <plurals name="migrate_local_disks">
+        <item quantity="one">%1$d local disk (%2$s) is copied over the network, which can take a while.</item>
+        <item quantity="other">%1$d local disks (%2$s) are copied over the network, which can take a while.</item>
+    </plurals>
+    <string name="migrate_local_devices">Uses host devices (%1$s). Proxmox refuses to move it unless they are mapped on the target node.</string>
 
     <!-- Performance charts (M1) -->
     <string name="perf_title">Performance</string>

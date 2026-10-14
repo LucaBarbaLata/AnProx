@@ -19,7 +19,9 @@ import io.github.lucabarbalata.anprox.storage.SettingsRepository
 import io.github.lucabarbalata.anprox.ui.backups.BackupScope
 import io.github.lucabarbalata.anprox.ui.backups.BackupsViewModel
 import io.github.lucabarbalata.anprox.ui.dashboard.DashboardViewModel
+import io.github.lucabarbalata.anprox.ui.guest.CloneViewModel
 import io.github.lucabarbalata.anprox.ui.guest.GuestViewModel
+import io.github.lucabarbalata.anprox.ui.guest.MigrateViewModel
 import io.github.lucabarbalata.anprox.ui.guest.OptionsViewModel
 import io.github.lucabarbalata.anprox.ui.login.LoginViewModel
 import io.github.lucabarbalata.anprox.ui.metrics.PerformanceViewModel
@@ -82,6 +84,8 @@ val appModule = module {
     viewModel { ResourcesViewModel(get(), get(), get()) }
     viewModel { (ref: GuestRef) -> GuestViewModel(ref, get(), get()) }
     viewModel { (ref: GuestRef) -> OptionsViewModel(ref, get()) }
+    viewModel { (ref: GuestRef, name: String) -> CloneViewModel(ref, name, get()) }
+    viewModel { (ref: GuestRef, name: String) -> MigrateViewModel(ref, name, get()) }
     viewModel { (ref: GuestRef, name: String) -> SnapshotsViewModel(ref, name, get()) }
     viewModel { (source: MetricsSource) -> PerformanceViewModel(source, get()) }
     viewModel { (scope: BackupScope) -> BackupsViewModel(scope, get(), get()) }

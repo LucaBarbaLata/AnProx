@@ -193,6 +193,12 @@ class ProxmoxConnection(
         envelope { pveApi.call() }
     }
 
+    /** Like [pve] for calls whose `data` may be `null`, such as converting a container to a template. */
+    suspend fun <T> pveOrNull(call: suspend PveApi.() -> ApiEnvelope<T>): T? {
+        check(product == ProxmoxProduct.PVE) { "${profile.name} is not a Proxmox VE server" }
+        return envelope { pveApi.call() }.data
+    }
+
     /** Run a call against the PBS API. Throws [ApiException] on any failure. */
     suspend fun <T> pbs(call: suspend PbsApi.() -> ApiEnvelope<T>): T {
         check(product == ProxmoxProduct.PBS) { "${profile.name} is not a Proxmox Backup Server" }

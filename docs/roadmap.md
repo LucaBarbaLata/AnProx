@@ -10,7 +10,7 @@ Status legend: ✅ done · 🚧 in progress · 🗓 planned
 |---|---|---|
 | [M0](#m0--foundation) | Foundation: servers, login, dashboard, resources, power, tasks | ✅ released as **0.1.0-beta.1** |
 | [M1](#m1--daily-driver) | Daily driver: app lock, SSO, snapshots, backups, charts, notifications | 🚧 snapshots, charts, app lock, backups, guest IPs done |
-| [M2](#m2--consoles--guest-configuration) | Consoles and guest configuration | 🚧 guest options done |
+| [M2](#m2--consoles--guest-configuration) | Consoles and guest configuration | 🚧 options, clone, templates, migration done |
 | [M3](#m3--alerts--android-integration) | Alerts and Android integration | 🗓 |
 | [M4](#m4--datacenter) | Datacenter: storage, backup jobs, HA, replication, firewall | 🗓 |
 | [M5](#m5--node-administration) | Node administration | 🗓 |
@@ -80,9 +80,10 @@ Release engineering is in place ([releasing.md](releasing.md)). Gates:
   (add/resize/move), network devices, CD-ROM, boot order. Container resources and mount points.
 - ✅ **Options** (pulled into 0.1.0-beta.2): name, start at boot, protection, tags, description, QEMU agent.
   (Start order and the remaining options are still to do.)
-- **Clone, templates and cloud-init** (Q18): full and linked clones, convert to template, cloud-init user/keys/IP.
+- ✅ **Clone and templates** (Q18, pulled into 0.1.0-beta.2): full and linked clones to any node and storage, convert to template.
+- **Cloud-init** (Q18): user, SSH keys, IP.
 - **Creation wizard** for VMs and containers (Q17): a simple flow with an "Advanced" toggle.
-- **Migration**: live or offline, with progress.
+- ✅ **Migration** (pulled into 0.1.0-beta.2): live for VMs (copying local disks), restart mode for containers, offline when stopped; uses Proxmox's pre-flight check.
 
 ## M3 — Alerts & Android integration
 - **Background polling** with WorkManager (Q26) for the alert types in Q27: node or guest down,

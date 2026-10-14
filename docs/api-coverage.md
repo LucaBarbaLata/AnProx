@@ -36,7 +36,7 @@ Code: `core/network/src/main/kotlin/.../network/api/` (`AccessApi`, `PveApi`, `P
 | `GET /cluster/status` | Quorum, nodes online | ✅ |
 | `GET /cluster/tasks` | Recent tasks of all nodes | ✅ |
 | `GET /cluster/log` | Cluster log | 🗓 M4 |
-| `GET /cluster/nextid` | Free VMID for create/clone/restore | ✅ (restore) |
+| `GET /cluster/nextid` | Free VMID for create/clone/restore | ✅ (restore, clone) |
 | `/cluster/options` | Datacenter options | 🗓 M4 |
 | `/cluster/backup`, `/cluster/backup-info/not-backed-up` | Backup jobs | 🗓 M4 |
 | `/cluster/replication` | Storage replication jobs | 🗓 M4 |
@@ -99,9 +99,9 @@ Code: `core/network/src/main/kotlin/.../network/api/` (`AccessApi`, `PveApi`, `P
 | `GET /lxc/{vmid}/interfaces` | A running container's IP addresses (PVE 7.2+) | ✅ |
 | `GET/POST/PUT …/config`, `GET …/pending` | Hardware & options | 🔸 options ✅ (name/hostname, tags, notes, start at boot, protection, QEMU agent; sent with the config digest); hardware 🗓 M2 (common), M9 (advanced: passthrough, NUMA, CPU flags) |
 | `PUT …/resize`, `POST …/move_disk` / `move_volume`, `POST …/unlink` | Disks | 🗓 M2 |
-| `POST …/clone`, `POST …/template` | Clone / template | 🗓 M2 |
+| `POST …/clone`, `POST …/template` | Clone (full/linked, any node, target storage) / convert to template | ✅ |
 | `/qemu/{vmid}/cloudinit` (+ `/dump`) | Cloud-init | 🗓 M2 |
-| `POST …/migrate` (+ `GET` precondition check) | Migration | 🗓 M2 |
+| `POST …/migrate` (+ `GET` precondition check) | Migration: live for VMs (with local disks), restart mode for containers, offline when stopped | ✅ |
 | `POST /nodes/{node}/{qemu,lxc}` | Create guest (wizard) | 🗓 M2 |
 | `DELETE …/{vmid}` | Destroy guest (type-to-confirm) | 🗓 M2 |
 | `…/vncproxy`, `…/vncwebsocket`, `…/termproxy` | noVNC / terminal console | 🗓 M2 |

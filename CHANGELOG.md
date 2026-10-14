@@ -43,11 +43,23 @@ All notable changes to AnProx are documented here. The format follows
   together with Proxmox's config checksum, so an edit made meanwhile in the web UI is refused
   instead of overwritten. Leaving with unsaved changes asks first.
 
+- **Clone** (Guest → Tools → Clone): a full or linked clone (linked needs a template) with the
+  next free ID, a name, the target node and the target storage. When it's done, **Open it** jumps
+  to the new guest. **Convert to template** (stopped guests; type the name to confirm).
+
+- **Migrate** (Guest → Tools → Migrate): move a guest to another node. Running VMs move live
+  (local disks are copied too), running containers are restarted on the new node, stopped guests
+  move offline. Uses Proxmox's own pre-flight check: nodes missing a storage, and host devices that
+  pin the VM to its node, are shown before you start. Afterwards the guest screen follows the
+  guest to its new node.
+
 ### Changed
 - The guest screen's tools section lists what works now; everything else is under "Coming later".
 - Backup storages in the Resources list open their backups.
+- On tablets, a selected guest that moves to another node (migration or HA) stays selected.
 
 ### Fixed
+- VM migration tasks are labelled "VM migrate" (the task type is `qmigrate`), and HA migrations "HA migrate".
 - Release notes now show the real signing certificate fingerprint. 0.1.0-beta.1's notes showed a
   placeholder; the correct value is in the README.
 

@@ -34,6 +34,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -82,6 +83,14 @@ fun ResourcesScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val wide = isWideLayout()
     var selected by rememberSaveable { mutableStateOf<String?>(null) }
+    // A selected guest that moved to another node (migration, HA) is followed there.
+    LaunchedEffect(state.items) {
+        val ref = selected?.let(::parseRefKey) ?: return@LaunchedEffect
+        val node = state.items.firstOrNull {
+            it.serverId == ref.serverId && it.resource.vmid == ref.vmid && GuestType.fromApi(it.resource.type) == ref.type
+        }?.resource?.node
+        if (node != null && node != ref.node) selected = refKey(ref.copy(node = node))
+    }
 
     AnProxScaffold(title = stringResource(R.string.resources_title), subtitle = stringResource(R.string.resources_subtitle, state.items.size)) { inner ->
         val list = @Composable { modifier: Modifier ->

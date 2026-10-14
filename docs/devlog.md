@@ -75,6 +75,18 @@ one `onTool(GuestTool, …)` callback. The agent commit's CI failed in 30 second
 JVM-only builds don't merge Android resources, so this only showed in CI; the local strings check
 now also reports duplicate names.
 
+**Clone, templates and migration.** `CloneRequest` and `MigrationPlan` (`:core:model`) hold
+Proxmox's rules: linked clones only from templates, a target storage only for full clones, live
+migration with `with-local-disks` when the VM has local disks, `restart` for running containers.
+`GET …/qemu/{vmid}/migrate` is Proxmox's pre-flight check; containers have none. The mock enforces
+the same rules (local storage can't be cloned to another node without a target storage, a running
+VM needs `online`, …), +7 tests (101 in total). After a migration the phone navigation replaces
+the old guest screen; the tablet list re-selects the guest on its new node, which also covers HA
+moving it. The task-type table said `qmmigrate`; Proxmox's VM migration task is `qmigrate`.
+The emulator tour broke on the long guest screen: the Network card sits above the charts, and
+checking it after the charts needed more than 16 swipes (down to the end, then back up). The step
+now checks it first, and `scroll_to` allows 24 swipes.
+
 Gotchas: one new data test ended in `assertNotNull(...)`, which returns a value, so JUnit silently
 skipped it (the CLAUDE.md pitfall again, caught because the test count was one short). The tour's
 `scroll_to` now turns around at the end of a list, since the guest screen got longer. Chart touch

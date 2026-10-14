@@ -1,13 +1,18 @@
 package io.github.lucabarbalata.anprox.data.guest
 
 import io.github.lucabarbalata.anprox.data.hub.ServerHub
+import io.github.lucabarbalata.anprox.model.pve.CloneRequest
 import io.github.lucabarbalata.anprox.model.pve.GuestNic
 import io.github.lucabarbalata.anprox.model.pve.GuestOptions
 import io.github.lucabarbalata.anprox.model.pve.GuestSnapshot
 import io.github.lucabarbalata.anprox.model.pve.GuestStatus
 import io.github.lucabarbalata.anprox.model.pve.GuestType
+import io.github.lucabarbalata.anprox.model.pve.MigrationCheck
+import io.github.lucabarbalata.anprox.model.pve.MigrationPlan
 import io.github.lucabarbalata.anprox.model.pve.NodeStatus
+import io.github.lucabarbalata.anprox.model.pve.NodeStorage
 import io.github.lucabarbalata.anprox.model.pve.PowerAction
+import io.github.lucabarbalata.anprox.model.pve.ResourceType
 import io.github.lucabarbalata.anprox.model.pve.TaskLogLine
 import io.github.lucabarbalata.anprox.model.pve.TaskStatus
 import io.github.lucabarbalata.anprox.network.ApiException
@@ -36,9 +41,10 @@ data class GuestNetworkInfo(
 /** Guest-level operations (questionnaire Q18/Q19 grow this over the milestones). */
 class GuestRepository(private val hub: ServerHub) {
 
-    fun observeStatus(ref: GuestRef, intervalMillis: Long = 3_000): Flow<Polled<GuestStatus>> = poll(intervalMillis) {
+    fun observeStatus(ref: GuestRef, intervalMillis: Long = 3_000): Flow<Polled<GuestStatus>> = poll(intervalMillis) { status(ref) }
+
+    suspend fun status(ref: GuestRef): GuestStatus =
         hub.use(ref.serverId) { it.pve { guestStatus(ref.node, ref.type.apiName, ref.vmid) } }
-    }
 
     fun observeNode(serverId: String, node: String, intervalMillis: Long = 3_000): Flow<Polled<NodeStatus>> =
         poll(intervalMillis) { hub.use(serverId) { it.pve { nodeStatus(node) } } }
@@ -102,6 +108,43 @@ class GuestRepository(private val hub: ServerHub) {
         if (params.isEmpty()) return
         hub.use(ref.serverId) { it.pveNoData { updateGuestConfig(ref.node, ref.type.apiName, ref.vmid, params) } }
     }
+
+    // ------------------------------------------------------------------ clone, template, migrate (Q18)
+
+    /** Every node of the server's cluster and whether it is online, for picking a target. */
+    suspend fun clusterNodes(serverId: String): Map<String, Boolean> =
+        hub.use(serverId) { it.pve { clusterResources("node") } }
+            .filter { it.resourceType == ResourceType.NODE && it.node != null }
+            .associate { it.node!! to (it.status == "online") }
+
+    /** Enabled storages on [node] that can hold the disks of a [type] guest. */
+    suspend fun diskStorages(serverId: String, node: String, type: GuestType): List<NodeStorage> {
+        val content = if (type == GuestType.QEMU) "images" else "rootdir"
+        return hub.use(serverId) { it.pve { nodeStorages(node, content, 1) } }
+            .filter { it.enabled && it.active && content in it.content.split(',') }
+            .sortedBy { it.storage }
+    }
+
+    /** The lowest free VMID. */
+    suspend fun nextVmid(serverId: String): Int = hub.use(serverId) { it.pve { nextId() } }
+
+    /** Starts the clone and returns the task UPID (the task runs on the source node). */
+    suspend fun clone(ref: GuestRef, request: CloneRequest): String =
+        hub.use(ref.serverId) { it.pve { cloneGuest(ref.node, ref.type.apiName, ref.vmid, request.params(ref.type, ref.node)) } }
+
+    /** Turns a stopped guest into a template. A task UPID for VMs; null for containers, which convert at once. */
+    suspend fun convertToTemplate(ref: GuestRef): String? =
+        hub.use(ref.serverId) { it.pveOrNull { convertToTemplate(ref.node, ref.type.apiName, ref.vmid, emptyMap()) } }
+
+    /** Proxmox's pre-flight check for VMs; containers have none (null). */
+    suspend fun migrationCheck(ref: GuestRef): MigrationCheck? =
+        if (ref.type == GuestType.QEMU) hub.use(ref.serverId) { it.pve { migrationCheck(ref.node, ref.vmid) } } else null
+
+    /** Moves the guest to [target] (live for running VMs, with a restart for running containers). Returns the UPID. */
+    suspend fun migrate(ref: GuestRef, target: String, running: Boolean, check: MigrationCheck?): String =
+        hub.use(ref.serverId) {
+            it.pve { migrateGuest(ref.node, ref.type.apiName, ref.vmid, MigrationPlan.params(ref.type, target, running, check)) }
+        }
 
     /** Starts [action] and returns the task UPID. */
     suspend fun power(ref: GuestRef, action: PowerAction): String {

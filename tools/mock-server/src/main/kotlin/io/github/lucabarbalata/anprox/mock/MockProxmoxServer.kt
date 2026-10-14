@@ -5,6 +5,7 @@ import io.github.lucabarbalata.anprox.model.ProxmoxProduct
 import io.github.lucabarbalata.anprox.model.auth.TicketResponse
 import io.github.lucabarbalata.anprox.model.json.ProxmoxJson
 import io.github.lucabarbalata.anprox.model.pve.AgentResult
+import io.github.lucabarbalata.anprox.model.pve.GuestOptions
 import io.github.lucabarbalata.anprox.model.pve.SnapshotName
 import io.github.lucabarbalata.anprox.model.pve.VersionInfo
 import io.ktor.http.ContentType
@@ -239,6 +240,41 @@ class MockProxmoxServer(
         }
         post("nodes/{node}/qemu") { call.restore("qemu") }
         post("nodes/{node}/lxc") { call.restore("lxc") }
+        post("nodes/{node}/{type}/{vmid}/clone") {
+            val s = call.authed() ?: return@post
+            val g = call.guest() ?: return@post
+            val p = call.receiveParameters().entries().associate { it.key to it.value.first() }
+            val newId = p["newid"]?.toIntOrNull()
+            if (newId == null || newId < 100) {
+                return@post call.fail(400, "Parameter verification failed.", mapOf("newid" to "value must have a minimum value of 100"))
+            }
+            val nameKey = if (g.type == "qemu") "name" else "hostname"
+            p[nameKey]?.let { name ->
+                if (!GuestOptions.isValidName(name)) {
+                    return@post call.fail(400, "Parameter verification failed.", mapOf(nameKey to "value does not look like a valid DNS name"))
+                }
+            }
+            if (state.isReadOnly(s.user)) return@post call.fail(403, "Permission check failed (/vms/${g.vmid}, VM.Clone)")
+            state.clone(g, p, s.user).fold(onSuccess = { call.ok(it) }, onFailure = { call.fail(500, it.message ?: "error") })
+        }
+        post("nodes/{node}/{type}/{vmid}/template") {
+            val s = call.authed() ?: return@post
+            val g = call.guest() ?: return@post
+            if (state.isReadOnly(s.user)) return@post call.fail(403, "Permission check failed (/vms/${g.vmid}, VM.Allocate)")
+            state.convertToTemplate(g, s.user).fold(onSuccess = { call.ok(it) }, onFailure = { call.fail(500, it.message ?: "error") })
+        }
+        get("nodes/{node}/qemu/{vmid}/migrate") {
+            call.authed() ?: return@get
+            val g = call.guest("qemu") ?: return@get
+            call.ok(state.migrationCheck(g))
+        }
+        post("nodes/{node}/{type}/{vmid}/migrate") {
+            val s = call.authed() ?: return@post
+            val g = call.guest() ?: return@post
+            val p = call.receiveParameters().entries().associate { it.key to it.value.first() }
+            if (state.isReadOnly(s.user)) return@post call.fail(403, "Permission check failed (/vms/${g.vmid}, VM.Migrate)")
+            state.migrate(g, p, s.user).fold(onSuccess = { call.ok(it) }, onFailure = { call.fail(500, it.message ?: "error") })
+        }
         get("nodes/{node}/rrddata") {
             call.authed() ?: return@get
             val node = state.node(call.parameters["node"]!!) ?: return@get call.fail(404, "no such node")

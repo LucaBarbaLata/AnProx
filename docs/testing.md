@@ -7,12 +7,12 @@ testing debug builds on **real hardware**.
 
 | Layer | Where | Runs on | Count |
 |---|---|---|---|
-| Unit: parsing, formatting, URL rules, UPID/TFA parsing, snapshot tree and names, chart scales, backup listings, guest agent replies, guest options | `core/model/src/test` | JVM | 38 |
+| Unit: parsing, formatting, URL rules, UPID/TFA parsing, snapshot tree and names, chart scales, backup listings, guest agent replies, guest options, clone and migration rules | `core/model/src/test` | JVM | 41 |
 | Integration: HTTP client ↔ mock server over real HTTPS (auth, TFA, failover, TLS, errors, renewal, PBS) | `core/network/src/test` | JVM | 16 |
-| Integration: multi-server hub, sessions, dashboard snapshots, guest actions, guest snapshots, performance history, app lock rules, backup and restore, guest network info, guest options | `core/data/src/test` | JVM | 40 |
+| Integration: multi-server hub, sessions, dashboard snapshots, guest actions, guest snapshots, performance history, app lock rules, backup and restore, guest network info, guest options, clone/template/migrate | `core/data/src/test` | JVM | 44 |
 | Android lint | `:app:lintDebug` | CI | — |
 | Build: debug and R8-minified release | `:app:assemble*` | CI | — |
-| **End-to-end tour** of the minified release APK on emulators against the mock server | `scripts/e2e/tour.py` | CI (Android 8.0 + 14), Release workflow | 11 steps |
+| **End-to-end tour** of the minified release APK on emulators against the mock server | `scripts/e2e/tour.py` | CI (Android 8.0 + 14), Release workflow | 12 steps |
 | UI / screenshot tests | planned (M1) | — | — |
 | Manual on real hardware | [checklist below](#manual-test-checklist-real-hardware) | owner | — |
 
@@ -114,13 +114,14 @@ so no test code is compiled into the app. `scripts/e2e/run.sh` starts the mock s
 2. Add a Proxmox VE server (bare host, insecure certificate) → sign in → dashboard shows the cluster and the offline node.
 3. Add a Proxmox Backup Server (default port 8007 added automatically) → sign in → datastores on the dashboard.
 4. Resources list across both servers.
-5. A running VM's **Performance** charts → **Week** → the Disk I/O chart shows values; its **Network** card shows the guest agent's IP and OS.
+5. A running VM's **Network** card shows the guest agent's IP and OS; its **Performance** charts → **Week** → the Disk I/O chart shows values.
 6. Open a stopped VM → **Start** → "finished" snackbar → **View log** shows `TASK OK` → the VM now offers **Shut down**.
 7. Snapshots of the now-running VM → **Take snapshot** with RAM → "VM snapshot finished" → the new snapshot is listed.
 8. Backups of the `pihole` container → **Back up now** to the Backup Server → "Backup finished" → **Restore** the new backup as a new container (ID 105) → "CT restore finished".
 9. Options of the `nginx-proxy` container → turn on **Start at boot** → **Save** → "Options saved".
-10. Tasks tab shows the new task.
-11. Settings → Light theme; turning on the app lock explains that the emulator has no screen lock → dashboard in light mode.
+10. **Clone** the Ubuntu template (linked by default) → **Open it** → **Migrate** the clone to `pve2` → the guest screen now says `pve2`.
+11. Tasks tab shows the newest task ("VM migrate").
+12. Settings → Light theme; turning on the app lock explains that the emulator has no screen lock → dashboard in light mode.
 
 After every step the script checks that the app process is alive and that logcat has no
 `FATAL EXCEPTION` for the app. Screenshots of each step, plus UI dumps and logcat on failure,
@@ -196,6 +197,14 @@ Run this before closing a milestone. Note the PVE/PBS versions you tested agains
 - [ ] Turn on Protection → Save; the web UI refuses to remove the VM. Turn it off again.
 - [ ] Change something in the web UI while the Options screen is open, then Save in the app: Proxmox refuses it (config changed); Reload shows the new values.
 - [ ] Edit a field, press Back → "Discard changes?".
+
+**Clone, template, migrate** (use a test VM)
+- [ ] Clone a stopped VM (full) on the same node: the next free ID is suggested; the task finishes; **Open it** shows the copy.
+- [ ] Clone to another node: with the disks on local storage Proxmox refuses unless you pick a target storage on that node.
+- [ ] Convert a stopped test VM to a template (type its name); it then offers **Linked clone**, which is fast.
+- [ ] Migrate a running VM to another node: "Live migration" is explained; the VM keeps running; the guest screen follows it to the new node.
+- [ ] Migrate a running container: "Restart migration" is explained; it's briefly offline and runs on the new node afterwards.
+- [ ] A VM with a PCI/USB device shows the host-device warning before migrating.
 
 **Backups** (use a test VM)
 - [ ] Guest → Backups lists the same backups as the web UI's Backup tab (all storages), newest first; protected and verified badges match.

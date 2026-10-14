@@ -35,6 +35,9 @@ data class GuestOptions(
         private val NAME = Regex("^(?:(?:[a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9])\\.)*(?:[a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9])$")
         private val TAG = Regex("^[a-zA-Z0-9_][a-zA-Z0-9_+.-]*$")
 
+        /** A VM name or container hostname Proxmox accepts (`dns-name`). */
+        fun isValidName(name: String): Boolean = NAME.matches(name)
+
         /** "prod; web,db  backup" → [prod, web, db, backup]. */
         fun parseTags(text: String): List<String> = text.split(';', ',', ' ').map { it.trim() }.filter { it.isNotEmpty() }.distinct()
 

@@ -22,6 +22,8 @@ import androidx.compose.material.icons.outlined.RestartAlt
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.StopCircle
 import androidx.compose.material.icons.outlined.Tune
+import androidx.compose.material.icons.outlined.ContentCopy
+import androidx.compose.material.icons.outlined.SwapHoriz
 import androidx.compose.material.icons.outlined.Backup
 import androidx.compose.material.icons.outlined.Bolt
 import androidx.compose.material3.Icon
@@ -157,6 +159,16 @@ fun GuestDetail(
                             stringResource(R.string.options_title),
                             stringResource(R.string.options_open_body),
                         ) { onTool(GuestTool.OPTIONS, ref, state.title) }
+                        MenuRow(
+                            Icons.Outlined.ContentCopy,
+                            stringResource(R.string.clone_title),
+                            stringResource(if (status.template) R.string.clone_open_body_template else R.string.clone_open_body),
+                        ) { onTool(GuestTool.CLONE, ref, state.title) }
+                        MenuRow(
+                            Icons.Outlined.SwapHoriz,
+                            stringResource(R.string.migrate_title),
+                            stringResource(R.string.migrate_open_body),
+                        ) { onTool(GuestTool.MIGRATE, ref, state.title) }
                     }
                 }
                 item { SectionHeader(stringResource(R.string.guest_coming_later)) }
@@ -315,8 +327,7 @@ private fun ComingSoon() {
     val items = listOf(
         R.string.tool_console to "M2",
         R.string.tool_hardware to "M2",
-        R.string.tool_clone to "M2",
-        R.string.tool_migrate to "M2",
+        R.string.tool_cloudinit to "M2",
     )
     GlassCard(contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)) {
         items.forEach { (label, milestone) ->

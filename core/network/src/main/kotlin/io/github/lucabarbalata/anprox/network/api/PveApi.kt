@@ -9,6 +9,7 @@ import io.github.lucabarbalata.anprox.model.pve.ClusterStatusEntry
 import io.github.lucabarbalata.anprox.model.pve.GuestSnapshot
 import io.github.lucabarbalata.anprox.model.pve.GuestStatus
 import io.github.lucabarbalata.anprox.model.pve.LxcInterface
+import io.github.lucabarbalata.anprox.model.pve.MigrationCheck
 import io.github.lucabarbalata.anprox.model.pve.NodeStatus
 import io.github.lucabarbalata.anprox.model.pve.NodeStorage
 import io.github.lucabarbalata.anprox.model.pve.RrdPoint
@@ -153,6 +154,42 @@ interface PveApi {
     @FormUrlEncoded
     @POST("nodes/{node}/lxc")
     suspend fun createLxc(@Path("node") node: String, @FieldMap params: Map<String, String>): ApiEnvelope<String>
+
+    // ------------------------------------------------------------------ clone, template, migrate (Q18)
+
+    /** [params]: `newid`, `name`/`hostname`, `target`, `full`, `storage`. Returns a UPID. */
+    @FormUrlEncoded
+    @POST("nodes/{node}/{type}/{vmid}/clone")
+    suspend fun cloneGuest(
+        @Path("node") node: String,
+        @Path("type") type: String,
+        @Path("vmid") vmid: Int,
+        @FieldMap params: Map<String, String>,
+    ): ApiEnvelope<String>
+
+    /** Converts a stopped guest into a template. VMs answer with a UPID, containers with `null`. */
+    @FormUrlEncoded
+    @POST("nodes/{node}/{type}/{vmid}/template")
+    suspend fun convertToTemplate(
+        @Path("node") node: String,
+        @Path("type") type: String,
+        @Path("vmid") vmid: Int,
+        @FieldMap params: Map<String, String>,
+    ): ApiEnvelope<String>
+
+    /** Proxmox's pre-flight check for moving a VM: allowed nodes, local disks and devices. */
+    @GET("nodes/{node}/qemu/{vmid}/migrate")
+    suspend fun migrationCheck(@Path("node") node: String, @Path("vmid") vmid: Int): ApiEnvelope<MigrationCheck>
+
+    /** [params]: `target`, plus `online`/`with-local-disks` (VMs) or `restart`/`timeout` (containers). Returns a UPID. */
+    @FormUrlEncoded
+    @POST("nodes/{node}/{type}/{vmid}/migrate")
+    suspend fun migrateGuest(
+        @Path("node") node: String,
+        @Path("type") type: String,
+        @Path("vmid") vmid: Int,
+        @FieldMap params: Map<String, String>,
+    ): ApiEnvelope<String>
 
     /** Snapshots, including the `current` pseudo-entry. [type] is `qemu` or `lxc`. */
     @GET("nodes/{node}/{type}/{vmid}/snapshot")

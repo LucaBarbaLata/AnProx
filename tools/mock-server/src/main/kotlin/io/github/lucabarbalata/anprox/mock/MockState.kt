@@ -15,8 +15,10 @@ import io.github.lucabarbalata.anprox.model.pve.FsUsage
 import io.github.lucabarbalata.anprox.model.pve.GuestSnapshot
 import io.github.lucabarbalata.anprox.model.pve.GuestStatus
 import io.github.lucabarbalata.anprox.model.pve.HaStatus
+import io.github.lucabarbalata.anprox.model.pve.LocalDisk
 import io.github.lucabarbalata.anprox.model.pve.LxcInterface
 import io.github.lucabarbalata.anprox.model.pve.MemoryUsage
+import io.github.lucabarbalata.anprox.model.pve.MigrationCheck
 import io.github.lucabarbalata.anprox.model.pve.NodeStatus
 import io.github.lucabarbalata.anprox.model.pve.NodeStorage
 import io.github.lucabarbalata.anprox.model.pve.RrdPoint
@@ -160,7 +162,7 @@ class MockState(
         val cpus: Int,
         val maxmem: Long,
         val maxdisk: Long,
-        val template: Boolean = false,
+        var template: Boolean = false,
         var tags: String? = null,
         var agent: Boolean = false,
         var onBoot: Boolean = false,
@@ -169,6 +171,8 @@ class MockState(
         var paused: Boolean = false,
         var startedAtMillis: Long = 0,
         val ha: Boolean = false,
+        /** Where the guest's disks live; local storage ties it to its node. */
+        var diskStorage: String = "local-zfs",
     )
 
     data class Storage(val node: String, val id: String, val plugin: String, val content: String, val shared: Boolean, val total: Long, val used: Long)
@@ -182,12 +186,12 @@ class MockState(
     private val bootMillis = clockMillis()
 
     val guests = mutableListOf(
-        Guest(100, "qemu", "pve1", "web", "running", 4, 8 * GIB, 64 * GIB, tags = "prod;web", agent = true, startedAtMillis = bootMillis - 9 * DAY, ha = true),
-        Guest(101, "qemu", "pve1", "db", "running", 8, 16 * GIB, 256 * GIB, tags = "prod;db", agent = true, startedAtMillis = bootMillis - 9 * DAY, ha = true),
+        Guest(100, "qemu", "pve1", "web", "running", 4, 8 * GIB, 64 * GIB, tags = "prod;web", agent = true, startedAtMillis = bootMillis - 9 * DAY, ha = true, diskStorage = "nas-nfs"),
+        Guest(101, "qemu", "pve1", "db", "running", 8, 16 * GIB, 256 * GIB, tags = "prod;db", agent = true, startedAtMillis = bootMillis - 9 * DAY, ha = true, diskStorage = "nas-nfs"),
         Guest(102, "qemu", "pve2", "win11", "stopped", 4, 8 * GIB, 128 * GIB, tags = "desktop"),
         Guest(103, "qemu", "pve2", "k8s-master", "running", 4, 8 * GIB, 64 * GIB, tags = "k8s", agent = true, startedAtMillis = bootMillis - 2 * DAY),
         Guest(104, "qemu", "pve3", "lab-vm", "stopped", 2, 4 * GIB, 32 * GIB, tags = "lab"),
-        Guest(9000, "qemu", "pve1", "ubuntu-2404-template", "stopped", 2, 2 * GIB, 32 * GIB, template = true, tags = "template"),
+        Guest(9000, "qemu", "pve1", "ubuntu-2404-template", "stopped", 2, 2 * GIB, 32 * GIB, template = true, tags = "template", diskStorage = "nas-nfs"),
         Guest(200, "lxc", "pve1", "pihole", "running", 1, 512 * MIB, 8 * GIB, tags = "dns", startedAtMillis = bootMillis - 30 * DAY),
         Guest(201, "lxc", "pve2", "nginx-proxy", "running", 2, 1 * GIB, 8 * GIB, tags = "prod;web", startedAtMillis = bootMillis - 5 * DAY),
         Guest(202, "lxc", "pve2", "backup-client", "stopped", 1, 1 * GIB, 16 * GIB),
@@ -378,7 +382,7 @@ class MockState(
             seedTask("pve1", "vzdump", "", "root@pam", now - 6 * HOUR, 14 * MINUTE, "OK")
             seedTask("pve2", "vzdump", "", "root@pam", now - 5 * HOUR, 9 * MINUTE, "WARNINGS: 1")
             seedTask("pve1", "qmstart", "100", "root@pam", now - 3 * HOUR, 3_000, "OK")
-            seedTask("pve2", "qmmigrate", "104", "admin@pve", now - 2 * HOUR, 70_000, "migration aborted: target node pve3 is offline")
+            seedTask("pve2", "qmigrate", "104", "admin@pve", now - 2 * HOUR, 70_000, "migration aborted: target node pve3 is offline")
             seedTask("pve2", "aptupdate", "", "root@pam", now - 1 * HOUR, 20_000, "OK")
         } else {
             seedTask("pbs", "garbage_collection", "store1", "root@pam", now - 4 * HOUR, 120_000, "OK")
@@ -783,6 +787,99 @@ class MockState(
                 guests += Guest(vmid, type, nodeName, b.guestName, "stopped", b.cpus, b.maxmem, b.maxdisk, tags = existing?.tags)
             },
         )
+    }
+
+    // ------------------------------------------------------------------ clone, template, migrate
+
+    private fun Guest.label() = if (type == "qemu") "VM" else "CT"
+    private fun Guest.onLocalDisks() = storages.firstOrNull { it.id == diskStorage }?.shared != true
+
+    /**
+     * `POST …/clone`. Like Proxmox: normal guests are always copied in full, linked clones need a
+     * template, another node needs shared storage, and a target storage is only for full clones.
+     */
+    fun clone(g: Guest, params: Map<String, String>, user: String): Result<String> = synchronized(lock) {
+        settleTasks()
+        fun fail(msg: String) = Result.failure<String>(IllegalStateException(msg))
+        val newId = params["newid"]?.toIntOrNull() ?: return fail("missing newid")
+        val label = g.label()
+        guests.firstOrNull { it.vmid == newId }?.let { return fail("unable to create $label $newId: config file already exists") }
+        val target = params["target"] ?: g.node
+        val targetNode = node(target) ?: return fail("no such cluster node '$target'")
+        if (!targetNode.online) return fail("target node '$target' is not online")
+        val full = !g.template || params["full"] == "1"
+        val storage = params["storage"]
+        if (storage != null) {
+            if (!full) return fail("parameter 'storage' not allowed for linked clones")
+            val s = storages.firstOrNull { it.node == target && it.id == storage } ?: return fail("storage '$storage' does not exist")
+            val needed = if (g.type == "qemu") "images" else "rootdir"
+            if (needed !in s.content.split(',')) return fail("storage '$storage' does not support $needed")
+        }
+        if (target != g.node && g.onLocalDisks() && storage == null) {
+            return fail("can't clone $label to node '$target' (${g.label()} uses local storage '${g.diskStorage}')")
+        }
+        val name = params[if (g.type == "qemu") "name" else "hostname"] ?: if (g.type == "qemu") "Copy-of-VM-${g.name}" else g.name
+        val prefix = if (g.type == "qemu") "qm" else "vz"
+        Result.success(
+            startTask(g.node, prefix + "clone", g.vmid.toString(), user) {
+                guests += Guest(
+                    newId, g.type, target, name, "stopped", g.cpus, g.maxmem, g.maxdisk,
+                    tags = g.tags, agent = g.agent, description = g.description, diskStorage = storage ?: g.diskStorage,
+                )
+            },
+        )
+    }
+
+    /** `POST …/template`. VMs convert in a task; containers answer at once (`null`). */
+    fun convertToTemplate(g: Guest, user: String): Result<String?> = synchronized(lock) {
+        settleTasks()
+        val label = g.label()
+        if (g.template) return Result.failure(IllegalStateException("$label ${g.vmid} is already a template"))
+        if (g.status != "stopped") return Result.failure(IllegalStateException("you can't convert a running $label to a template"))
+        if (g.type == "qemu") {
+            Result.success(startTask(g.node, "qmtemplate", g.vmid.toString(), user) { g.template = true })
+        } else {
+            g.template = true
+            Result.success(null)
+        }
+    }
+
+    /** `GET /nodes/{node}/qemu/{vmid}/migrate`: allowed nodes only for stopped VMs, as in Proxmox. */
+    fun migrationCheck(g: Guest): MigrationCheck = synchronized(lock) {
+        settleTasks()
+        val running = g.status == "running"
+        MigrationCheck(
+            running = running,
+            allowedNodes = if (running) null else nodes.map { it.name }.filter { it != g.node },
+            localDisks = if (g.onLocalDisks()) listOf(LocalDisk("${g.diskStorage}:vm-${g.vmid}-disk-0", "scsi0", g.maxdisk)) else emptyList(),
+        )
+    }
+
+    /** `POST …/migrate`. Running VMs need `online` (and `with-local-disks`), running containers `restart`. */
+    fun migrate(g: Guest, params: Map<String, String>, user: String): Result<String> = synchronized(lock) {
+        settleTasks()
+        fun fail(msg: String) = Result.failure<String>(IllegalStateException(msg))
+        val target = params["target"] ?: return fail("missing target")
+        if (target == g.node) return fail("target is local node.")
+        val targetNode = node(target) ?: return fail("no such cluster node '$target'")
+        if (!targetNode.online) return fail("target node '$target' not online")
+        val running = g.status == "running"
+        if (running) {
+            if (g.type == "qemu") {
+                if (params["online"] != "1") return fail("can't migrate running VM without --online")
+                if (g.onLocalDisks() && params["with-local-disks"] != "1") {
+                    return fail("can't live migrate attached local disks without with-local-disks option")
+                }
+            } else if (params["restart"] != "1") {
+                return fail("CT is running - use online migration")
+            }
+        }
+        val type = when {
+            g.ha -> "hamigrate"
+            g.type == "qemu" -> "qmigrate"
+            else -> "vzmigrate"
+        }
+        Result.success(startTask(g.node, type, g.vmid.toString(), user) { g.node = target })
     }
 
     // ------------------------------------------------------------------ PBS

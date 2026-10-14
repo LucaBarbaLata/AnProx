@@ -36,8 +36,10 @@ import io.github.lucabarbalata.anprox.data.guest.GuestRef
 import io.github.lucabarbalata.anprox.diagnostics.CrashReportDialog
 import io.github.lucabarbalata.anprox.model.pve.GuestType
 import io.github.lucabarbalata.anprox.ui.dashboard.DashboardScreen
+import io.github.lucabarbalata.anprox.ui.guest.CloneScreen
 import io.github.lucabarbalata.anprox.ui.guest.GuestScreen
 import io.github.lucabarbalata.anprox.ui.guest.GuestTool
+import io.github.lucabarbalata.anprox.ui.guest.MigrateScreen
 import io.github.lucabarbalata.anprox.ui.guest.OptionsScreen
 import io.github.lucabarbalata.anprox.ui.login.LoginScreen
 import io.github.lucabarbalata.anprox.ui.backups.BackupScope
@@ -45,9 +47,11 @@ import io.github.lucabarbalata.anprox.ui.backups.BackupsScreen
 import io.github.lucabarbalata.anprox.ui.navigation.AboutRoute
 import io.github.lucabarbalata.anprox.ui.navigation.BackupsRoute
 import io.github.lucabarbalata.anprox.ui.navigation.DashboardRoute
+import io.github.lucabarbalata.anprox.ui.navigation.CloneRoute
 import io.github.lucabarbalata.anprox.ui.navigation.GuestRoute
 import io.github.lucabarbalata.anprox.ui.navigation.LoginRoute
 import io.github.lucabarbalata.anprox.ui.navigation.MoreRoute
+import io.github.lucabarbalata.anprox.ui.navigation.MigrateRoute
 import io.github.lucabarbalata.anprox.ui.navigation.NodeRoute
 import io.github.lucabarbalata.anprox.ui.navigation.OptionsRoute
 import io.github.lucabarbalata.anprox.ui.navigation.ResourcesRoute
@@ -120,6 +124,18 @@ fun AnProxApp() {
             GuestTool.SNAPSHOTS -> nav.navigate(SnapshotsRoute(ref.serverId, ref.node, type, ref.vmid, name))
             GuestTool.BACKUPS -> nav.navigate(BackupsRoute(ref.serverId, ref.node, type, ref.vmid, name))
             GuestTool.OPTIONS -> nav.navigate(OptionsRoute(ref.serverId, ref.node, type, ref.vmid, name))
+            GuestTool.CLONE -> nav.navigate(CloneRoute(ref.serverId, ref.node, type, ref.vmid, name))
+            GuestTool.MIGRATE -> nav.navigate(MigrateRoute(ref.serverId, ref.node, type, ref.vmid, name))
+        }
+    }
+    // After a migration the guest lives on another node: replace its old screen (phones). On
+    // tablets the Resources list follows the guest by itself.
+    val onMigrated: (GuestRef) -> Unit = { moved ->
+        nav.popBackStack()
+        val below = nav.currentBackStackEntry
+        if (below != null && below.destination.hasRoute(GuestRoute::class) && below.toRoute<GuestRoute>().vmid == moved.vmid) {
+            nav.popBackStack()
+            openGuest(moved)
         }
     }
     val openStorage: (String, String, String) -> Unit = { serverId, node, storage -> nav.navigate(StorageRoute(serverId, node, storage)) }
@@ -204,6 +220,16 @@ fun AnProxApp() {
                 val r = entry.toRoute<OptionsRoute>()
                 val ref = GuestRef(r.serverId, r.node, GuestType.fromApi(r.type) ?: GuestType.QEMU, r.vmid)
                 OptionsScreen(ref, guestName = r.name, onBack = back)
+            }
+            composable<CloneRoute> { entry ->
+                val r = entry.toRoute<CloneRoute>()
+                val ref = GuestRef(r.serverId, r.node, GuestType.fromApi(r.type) ?: GuestType.QEMU, r.vmid)
+                CloneScreen(ref, guestName = r.name, onBack = back, onTask = openTask, onOpenGuest = openGuest)
+            }
+            composable<MigrateRoute> { entry ->
+                val r = entry.toRoute<MigrateRoute>()
+                val ref = GuestRef(r.serverId, r.node, GuestType.fromApi(r.type) ?: GuestType.QEMU, r.vmid)
+                MigrateScreen(ref, guestName = r.name, onBack = back, onTask = openTask, onMigrated = onMigrated)
             }
             composable<StorageRoute> { entry ->
                 val r = entry.toRoute<StorageRoute>()
