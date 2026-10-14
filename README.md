@@ -31,6 +31,8 @@ The goal is every function of the web UI in a fast, beautiful, native app.
   On tablets the list and the detail sit side by side.
 - **Guests.** Live CPU, RAM and disk gauges, details, and power actions (start, shut down, reboot,
   stop, pause, resume, reset). Dangerous actions need confirmation.
+- **Snapshots** *(next beta)*. The snapshot tree of every VM and container: take one (with RAM
+  for running VMs), roll back, or delete.
 - **Nodes.** Live usage, hardware and kernel info, and the guests running on the node.
 - **Tasks.** A merged timeline of every server's tasks with live, auto-scrolling logs.
 - **Themes.** System, light or dark, plus pure-black AMOLED and an adjustable live refresh rate.

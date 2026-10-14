@@ -70,8 +70,8 @@ enum class PowerAction(val apiPath: String, val danger: DangerLevel, val vmOnly:
 /**
  * Tiered confirmation (questionnaire Q12):
  * - SAFE: no confirmation.
- * - CONFIRM: a simple confirm dialog (stop, reboot, …).
- * - TYPE_TO_CONFIRM: the user types the guest name/ID; also requires biometric re-auth when
- *   the app lock is enabled (Q11). Used for delete/destroy/purge/rollback.
+ * - CONFIRM: a simple confirm dialog (stop, reboot, deleting a snapshot, …).
+ * - TYPE_TO_CONFIRM: the user types the guest or snapshot name; also requires biometric re-auth
+ *   when the app lock is enabled (Q11). Used for destroy/purge and snapshot rollback.
  */
 enum class DangerLevel { SAFE, CONFIRM, TYPE_TO_CONFIRM }

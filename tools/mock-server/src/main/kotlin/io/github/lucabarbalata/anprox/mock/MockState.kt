@@ -8,10 +8,12 @@ import io.github.lucabarbalata.anprox.model.pve.ClusterResource
 import io.github.lucabarbalata.anprox.model.pve.ClusterStatusEntry
 import io.github.lucabarbalata.anprox.model.pve.CpuInfo
 import io.github.lucabarbalata.anprox.model.pve.FsUsage
+import io.github.lucabarbalata.anprox.model.pve.GuestSnapshot
 import io.github.lucabarbalata.anprox.model.pve.GuestStatus
 import io.github.lucabarbalata.anprox.model.pve.HaStatus
 import io.github.lucabarbalata.anprox.model.pve.MemoryUsage
 import io.github.lucabarbalata.anprox.model.pve.NodeStatus
+import io.github.lucabarbalata.anprox.model.pve.SnapshotName
 import io.github.lucabarbalata.anprox.model.pve.TaskLogLine
 import io.github.lucabarbalata.anprox.model.pve.TaskStatus
 import io.github.lucabarbalata.anprox.model.pve.TaskSummary
@@ -402,6 +404,86 @@ class MockState(
                 "suspend" -> g.paused = true
                 "resume" -> g.paused = false
             }
+        }
+        Result.success(upid)
+    }
+
+    // ------------------------------------------------------------------ snapshots
+
+    data class Snap(val name: String, var parent: String?, val description: String, val createdMillis: Long, val vmstate: Boolean)
+
+    /** vmid → its snapshots, and vmid → the snapshot it currently runs on (parent of `current`). */
+    private val snaps = HashMap<Int, MutableList<Snap>>()
+    private val snapHead = HashMap<Int, String?>()
+
+    init {
+        if (product == ProxmoxProduct.PVE) {
+            val now = clockMillis()
+            // web: rolled back once, so the tree has a branch.
+            snaps[100] = mutableListOf(
+                Snap("before-upgrade", null, "Before the apt full-upgrade to PVE 9", now - 20 * DAY, vmstate = true),
+                Snap("after-upgrade", "before-upgrade", "", now - 19 * DAY, vmstate = false),
+                Snap("kernel-test", "before-upgrade", "Trying the 6.14 kernel", now - 10 * DAY, vmstate = false),
+            )
+            snapHead[100] = "after-upgrade"
+            snaps[102] = mutableListOf(Snap("fresh-install", null, "Clean Windows 11 24H2 install", now - 40 * DAY, vmstate = false))
+            snapHead[102] = "fresh-install"
+            snaps[200] = mutableListOf(Snap("pre-update", null, "", now - 3 * DAY, vmstate = false))
+            snapHead[200] = "pre-update"
+        }
+    }
+
+    fun snapshots(g: Guest): List<GuestSnapshot> = synchronized(lock) {
+        settleTasks()
+        snaps[g.vmid].orEmpty().map {
+            GuestSnapshot(it.name, it.description, it.createdMillis / 1000, it.parent, vmstate = it.vmstate)
+        } + GuestSnapshot(
+            GuestSnapshot.CURRENT, "You are here!", parent = snapHead[g.vmid],
+            running = g.type == "qemu" && g.status == "running",
+        )
+    }
+
+    /** Returns a UPID, or an error message (the API answers 500 with it). Name format is checked by the route. */
+    fun createSnapshot(g: Guest, name: String, description: String, vmstate: Boolean, user: String): Result<String> = synchronized(lock) {
+        settleTasks()
+        val list = snaps.getOrPut(g.vmid) { mutableListOf() }
+        if (SnapshotName.validate(name, list.map { it.name }) == SnapshotName.Problem.DUPLICATE) {
+            return Result.failure(IllegalStateException("snapshot name '$name' already used"))
+        }
+        val prefix = if (g.type == "qemu") "qm" else "vz"
+        val upid = startTask(g.node, prefix + "snapshot", g.vmid.toString(), user) {
+            list += Snap(name, snapHead[g.vmid], description, clockMillis(), vmstate = vmstate && g.type == "qemu" && g.status == "running")
+            snapHead[g.vmid] = name
+        }
+        Result.success(upid)
+    }
+
+    /** A rollback stops the guest; a VM snapshot that includes RAM resumes running instead. */
+    fun rollbackSnapshot(g: Guest, name: String, user: String): Result<String> = synchronized(lock) {
+        settleTasks()
+        val snap = snaps[g.vmid]?.firstOrNull { it.name == name }
+            ?: return Result.failure(IllegalStateException("snapshot '$name' does not exist"))
+        val prefix = if (g.type == "qemu") "qm" else "vz"
+        val upid = startTask(g.node, prefix + "rollback", g.vmid.toString(), user) {
+            snapHead[g.vmid] = name
+            g.paused = false
+            g.status = if (snap.vmstate) "running" else "stopped"
+            if (snap.vmstate) g.startedAtMillis = clockMillis()
+        }
+        Result.success(upid)
+    }
+
+    /** Children of a deleted snapshot move up to its parent, like in Proxmox. */
+    fun deleteSnapshot(g: Guest, name: String, user: String): Result<String> = synchronized(lock) {
+        settleTasks()
+        val list = snaps[g.vmid]
+        val snap = list?.firstOrNull { it.name == name }
+            ?: return Result.failure(IllegalStateException("snapshot '$name' does not exist"))
+        val prefix = if (g.type == "qemu") "qm" else "vz"
+        val upid = startTask(g.node, prefix + "delsnapshot", g.vmid.toString(), user) {
+            list.remove(snap)
+            list.filter { it.parent == name }.forEach { it.parent = snap.parent }
+            if (snapHead[g.vmid] == name) snapHead[g.vmid] = snap.parent
         }
         Result.success(upid)
     }

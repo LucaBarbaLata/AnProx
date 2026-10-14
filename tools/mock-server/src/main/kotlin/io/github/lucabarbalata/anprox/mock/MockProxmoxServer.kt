@@ -4,6 +4,7 @@ import io.github.lucabarbalata.anprox.model.ApiEnvelope
 import io.github.lucabarbalata.anprox.model.ProxmoxProduct
 import io.github.lucabarbalata.anprox.model.auth.TicketResponse
 import io.github.lucabarbalata.anprox.model.json.ProxmoxJson
+import io.github.lucabarbalata.anprox.model.pve.SnapshotName
 import io.github.lucabarbalata.anprox.model.pve.VersionInfo
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
@@ -22,6 +23,7 @@ import io.ktor.server.request.httpMethod
 import io.ktor.server.request.receiveParameters
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.Route
+import io.ktor.server.routing.delete
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
@@ -179,6 +181,47 @@ class MockProxmoxServer(
                 return@post call.fail(403, "Permission check failed (/vms/${g.vmid}, VM.PowerMgmt)")
             }
             state.power(g, call.parameters["action"]!!, s.user).fold(
+                onSuccess = { call.ok(it) },
+                onFailure = { call.fail(500, it.message ?: "error") },
+            )
+        }
+        get("nodes/{node}/{type}/{vmid}/snapshot") {
+            call.authed() ?: return@get
+            val g = call.guest() ?: return@get
+            call.ok(state.snapshots(g))
+        }
+        post("nodes/{node}/{type}/{vmid}/snapshot") {
+            val s = call.authed() ?: return@post
+            val g = call.guest() ?: return@post
+            val p = call.receiveParameters()
+            val name = p["snapname"].orEmpty()
+            when (SnapshotName.validate(name)) {
+                null, SnapshotName.Problem.DUPLICATE -> Unit
+                else -> return@post call.fail(
+                    400, "Parameter verification failed.",
+                    mapOf("snapname" to "invalid format - invalid configuration ID '$name'"),
+                )
+            }
+            if (state.isReadOnly(s.user)) return@post call.fail(403, "Permission check failed (/vms/${g.vmid}, VM.Snapshot)")
+            state.createSnapshot(g, name, p["description"].orEmpty(), p["vmstate"] == "1", s.user).fold(
+                onSuccess = { call.ok(it) },
+                onFailure = { call.fail(500, it.message ?: "error") },
+            )
+        }
+        post("nodes/{node}/{type}/{vmid}/snapshot/{snapname}/rollback") {
+            val s = call.authed() ?: return@post
+            val g = call.guest() ?: return@post
+            if (state.isReadOnly(s.user)) return@post call.fail(403, "Permission check failed (/vms/${g.vmid}, VM.Snapshot.Rollback)")
+            state.rollbackSnapshot(g, call.parameters["snapname"]!!, s.user).fold(
+                onSuccess = { call.ok(it) },
+                onFailure = { call.fail(500, it.message ?: "error") },
+            )
+        }
+        delete("nodes/{node}/{type}/{vmid}/snapshot/{snapname}") {
+            val s = call.authed() ?: return@delete
+            val g = call.guest() ?: return@delete
+            if (state.isReadOnly(s.user)) return@delete call.fail(403, "Permission check failed (/vms/${g.vmid}, VM.Snapshot)")
+            state.deleteSnapshot(g, call.parameters["snapname"]!!, s.user).fold(
                 onSuccess = { call.ok(it) },
                 onFailure = { call.fail(500, it.message ?: "error") },
             )

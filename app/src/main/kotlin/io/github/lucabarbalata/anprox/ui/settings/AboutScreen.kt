@@ -36,6 +36,7 @@ import io.github.lucabarbalata.anprox.core.designsystem.component.StatusPill
 import io.github.lucabarbalata.anprox.core.designsystem.component.Tone
 import io.github.lucabarbalata.anprox.core.designsystem.theme.AnProxTheme
 import io.github.lucabarbalata.anprox.ui.common.AnProxScaffold
+import io.github.lucabarbalata.anprox.ui.common.MenuRow
 import io.github.lucabarbalata.anprox.ui.common.contentPadding
 
 private const val SOURCE_URL = "https://github.com/LucaBarbaLata/AnProx"

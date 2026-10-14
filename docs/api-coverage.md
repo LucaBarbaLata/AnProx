@@ -91,7 +91,10 @@ Code: `core/network/src/main/kotlin/.../network/api/` (`AccessApi`, `PveApi`, `P
 | `POST …/status/{suspend,resume}` | Pause / resume (VM) | ✅ (container suspend ➖: experimental in Proxmox) |
 | `POST /qemu/{vmid}/status/reset` | Hard reset (VM) | ✅ |
 | `GET …/rrddata` | Charts | 🗓 M1 |
-| `…/snapshot` (+ `/{snap}/rollback`, `/{snap}/config`) | Snapshots | 🗓 M1 |
+| `GET/POST …/snapshot` | List (tree) and take snapshots, with RAM for VMs | ✅ |
+| `POST …/snapshot/{snap}/rollback` | Roll back | ✅ |
+| `DELETE …/snapshot/{snap}` | Delete a snapshot | ✅ |
+| `GET/PUT …/snapshot/{snap}/config` | Edit a snapshot's description | 🗓 M1 |
 | `/qemu/{vmid}/agent/*` | Guest agent: IPs, OS info, fs-freeze, set password, exec | 🗓 M1 |
 | `GET/POST/PUT …/config`, `GET …/pending` | Hardware & options | 🗓 M2 (common), M9 (advanced: passthrough, NUMA, CPU flags) |
 | `PUT …/resize`, `POST …/move_disk` / `move_volume`, `POST …/unlink` | Disks | 🗓 M2 |

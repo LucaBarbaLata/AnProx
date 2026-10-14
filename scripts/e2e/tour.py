@@ -6,8 +6,8 @@ It drives the real app through adb + uiautomator (no test framework inside the A
 exercises exactly what users install — including the R8-minified release build:
 
   welcome → add a PVE server → sign in → dashboard → add a PBS → combined dashboard →
-  resources → guest detail → start a VM → task finished → task log → tasks tab →
-  light theme → no crash
+  resources → guest detail → start a VM → task finished → task log → snapshots → take a
+  snapshot → tasks tab → light theme → no crash
 
 Screenshots, UI dumps and logcat go to $ANPROX_E2E_OUT (default: e2e-output/).
 
@@ -351,11 +351,29 @@ def guest_start():
     back()
 
 
+@step("Take a snapshot of the running VM")
+def snapshots():
+    tap_node(scroll_to("win11"))           # running since the previous step
+    tap_node(scroll_to("Snapshots"))
+    find("fresh-install", timeout=30)      # seeded by the mock
+    screenshot("08-snapshots")
+    tap("Take snapshot")
+    find("Include RAM", timeout=15)        # offered because the VM is running
+    screenshot("09-take-snapshot")
+    tap("Take snapshot", pick="lowest")    # the dialog's button, below the screen's
+    find("VM snapshot finished", timeout=60)
+    find("snap-", timeout=20)              # the suggested name, now in the list
+    screenshot("10-snapshot-taken")
+    back()
+    find("Shut down", timeout=30)
+    back()
+
+
 @step("Tasks tab")
 def tasks():
     tap("Tasks")
     find("VM start", timeout=30)
-    screenshot("08-tasks")
+    screenshot("11-tasks")
 
 
 @step("Switch to the light theme")
@@ -364,12 +382,12 @@ def light_theme():
     tap("Settings")
     tap("Light")
     time.sleep(1)
-    screenshot("09-settings-light")
+    screenshot("12-settings-light")
     back()
     tap("Overview")
     find("homelab", timeout=30)
     time.sleep(2)
-    screenshot("10-dashboard-light")
+    screenshot("13-dashboard-light")
 
 
 def main():
@@ -388,7 +406,7 @@ def main():
     print("Tour:", flush=True)
     ok = False
     try:
-        for s in (launch, add_pve, add_pbs, resources, guest_start, tasks, light_theme):
+        for s in (launch, add_pve, add_pbs, resources, guest_start, snapshots, tasks, light_theme):
             s()
         ok = True
     finally:

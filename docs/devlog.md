@@ -5,6 +5,29 @@ solved. Newest first.
 
 ---
 
+## 2026-10-14 — Session 3: M1 starts with snapshots
+
+**Beta 0.1.0-beta.1:** the owner tested the app on **Proxmox VE 8** ("everything works great").
+They have no Backup Server, so PBS support is still only tested against the mock. A Proxmox VE 9
+test will follow later. The beta is pinned to commit `e38c64b`: it is published by pushing the
+tag `v0.1.0-beta.1` on that commit, so the M1 work below doesn't end up in it.
+`anprox.versionName` is now `0.1.0-beta.2`.
+
+**Snapshots (first M1 feature),** built along the architecture recipe:
+| Layer | What |
+|---|---|
+| Model | `GuestSnapshot`, `SnapshotTree.flatten` (depth-first, `current` last, orphans become roots, cycle-safe), `SnapshotName` (Proxmox `pve-configid` rules, 40 characters, `current` reserved, a locale-proof suggested name) |
+| API | `PveApi.snapshots` / `createSnapshot` / `rollbackSnapshot` / `deleteSnapshot` |
+| Mock | Seeded trees for `web`, `win11` and `pihole`. Rollback restores the running state only for RAM snapshots, and deleting re-parents children, as in Proxmox. |
+| Data | `GuestRepository` snapshot functions. `vmstate` is only sent for VMs. |
+| UI | `ui/snapshots/`: tree list, take dialog (suggested name, live validation, Include RAM for running VMs), roll back (type the name) and delete (confirm), busy card, task snackbar with View log |
+| Tests | +12 JVM tests (57 in total) and a snapshot step in the emulator tour |
+
+Small refactors on the way: `MenuRow` moved to `ui/common`, and the task-result snackbar was
+extracted to `ui/common/TaskResult.kt` (used by the guest and snapshot screens).
+
+---
+
 ## 2026-10-14 — Session 2: preparing the first beta (0.1.0-beta.1)
 
 The owner asked: "can you make a release version? or let's prepare for a beta package".

@@ -22,6 +22,8 @@ import kotlinx.serialization.Serializable
 
 // Details
 @Serializable data class GuestRoute(val serverId: String, val node: String, val type: String, val vmid: Int)
+/** [name] is only shown in the subtitle. */
+@Serializable data class SnapshotsRoute(val serverId: String, val node: String, val type: String, val vmid: Int, val name: String)
 @Serializable data class NodeRoute(val serverId: String, val node: String)
 @Serializable data class TaskLogRoute(val serverId: String, val node: String, val upid: String)
 

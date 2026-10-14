@@ -20,6 +20,7 @@ import io.github.lucabarbalata.anprox.ui.resources.ResourcesViewModel
 import io.github.lucabarbalata.anprox.ui.servers.ServerEditorViewModel
 import io.github.lucabarbalata.anprox.ui.servers.ServersViewModel
 import io.github.lucabarbalata.anprox.ui.settings.SettingsViewModel
+import io.github.lucabarbalata.anprox.ui.snapshots.SnapshotsViewModel
 import io.github.lucabarbalata.anprox.ui.tasks.TaskLogViewModel
 import io.github.lucabarbalata.anprox.ui.tasks.TasksViewModel
 import kotlinx.coroutines.CoroutineScope
@@ -69,6 +70,7 @@ val appModule = module {
     viewModel { DashboardViewModel(get(), get(), get()) }
     viewModel { ResourcesViewModel(get(), get(), get()) }
     viewModel { (ref: GuestRef) -> GuestViewModel(ref, get(), get()) }
+    viewModel { (ref: GuestRef, name: String) -> SnapshotsViewModel(ref, name, get()) }
     viewModel { (serverId: String, node: String) -> NodeViewModel(serverId, node, get(), get()) }
     viewModel { TasksViewModel(get()) }
     viewModel { (serverId: String, node: String, upid: String) -> TaskLogViewModel(serverId, node, upid, get()) }

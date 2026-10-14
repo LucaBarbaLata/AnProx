@@ -21,6 +21,7 @@
     <string name="action_delete">Delete</string>
     <string name="action_edit">Edit</string>
     <string name="action_more">More options</string>
+    <string name="action_refresh">Refresh</string>
     <string name="action_retry">Try again</string>
     <string name="action_save">Save</string>
     <string name="action_sign_in">Sign in</string>
@@ -187,7 +188,8 @@
     <string name="guest_type_ct">CT</string>
     <string name="guest_power">Power</string>
     <string name="guest_details">Details</string>
-    <string name="guest_more_tools">More tools</string>
+    <string name="guest_more_tools">Tools</string>
+    <string name="guest_coming_later">Coming later</string>
     <string name="guest_node">Node</string>
     <string name="guest_vmid">ID</string>
     <string name="guest_cpus">CPUs</string>
@@ -211,13 +213,43 @@
     <string name="power_pause">Pause</string>
     <string name="power_resume">Resume</string>
     <string name="tool_console">Console (noVNC, terminal, SPICE)</string>
-    <string name="tool_snapshots">Snapshots</string>
     <string name="tool_backups">Backup and restore</string>
     <string name="tool_hardware">Hardware and options</string>
     <string name="tool_clone">Clone, templates, cloud-init</string>
     <string name="tool_migrate">Migrate</string>
     <string name="tool_charts">Performance charts</string>
     <string name="coming_in">Coming in %1$s</string>
+
+    <!-- Snapshots (M1) -->
+    <string name="snapshots_title">Snapshots</string>
+    <string name="snapshots_open_body">Save this state and roll back to it later</string>
+    <string name="snapshots_take">Take snapshot</string>
+    <string name="snapshots_empty_title">No snapshots yet</string>
+    <string name="snapshots_empty_body">A snapshot saves the disks, and optionally the memory, so you can return to exactly this state later. Take one before upgrades or risky changes.</string>
+    <string name="snapshot_current">Now</string>
+    <string name="snapshot_current_body">The guest’s current state</string>
+    <string name="snapshot_ram">RAM</string>
+    <string name="snapshot_options">Options for %1$s</string>
+    <string name="snapshot_rollback">Roll back</string>
+    <string name="snapshot_busy_create">Taking snapshot “%1$s”…</string>
+    <string name="snapshot_busy_rollback">Rolling back to “%1$s”…</string>
+    <string name="snapshot_busy_delete">Deleting snapshot “%1$s”…</string>
+    <string name="snapshot_take_title">Take a snapshot</string>
+    <string name="snapshot_name">Snapshot name</string>
+    <string name="snapshot_name_help">Letters, numbers, - and _, starting with a letter</string>
+    <string name="snapshot_description">Description (optional)</string>
+    <string name="snapshot_include_ram">Include RAM</string>
+    <string name="snapshot_include_ram_body">Saves the running memory too, so a rollback resumes the VM exactly where it was. Takes longer and uses more space.</string>
+    <string name="snapshot_include_ram_stopped">RAM can only be included while the VM is running.</string>
+    <string name="snapshot_name_error_empty">Enter a name.</string>
+    <string name="snapshot_name_error_format">Use at least 2 letters, numbers, - or _, starting with a letter.</string>
+    <string name="snapshot_name_error_too_long">Use at most 40 characters.</string>
+    <string name="snapshot_name_error_reserved">“current” is reserved by Proxmox.</string>
+    <string name="snapshot_name_error_duplicate">A snapshot with this name already exists.</string>
+    <string name="snapshot_rollback_title">Roll back to %1$s?</string>
+    <string name="snapshot_rollback_message">%1$s returns to the state saved in this snapshot. Every change made since then is lost. Unless the snapshot includes RAM, the guest is stopped afterwards.</string>
+    <string name="snapshot_delete_title">Delete snapshot %1$s?</string>
+    <string name="snapshot_delete_message">The snapshot is removed for good. The guest’s current state is not affected.</string>
 
     <!-- Node -->
     <string name="node_subtitle">Node</string>

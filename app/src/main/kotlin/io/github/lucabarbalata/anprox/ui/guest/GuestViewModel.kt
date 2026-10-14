@@ -14,6 +14,7 @@ import io.github.lucabarbalata.anprox.model.pve.GuestType
 import io.github.lucabarbalata.anprox.model.pve.PowerAction
 import io.github.lucabarbalata.anprox.model.pve.Upid
 import io.github.lucabarbalata.anprox.network.ApiException
+import io.github.lucabarbalata.anprox.ui.common.TaskResult
 import io.github.lucabarbalata.anprox.ui.common.UiText
 import io.github.lucabarbalata.anprox.ui.common.toUiText
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,9 +24,6 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-
-/** A finished task the user may want to open. */
-data class TaskResult(val message: UiText, val upid: String?, val ok: Boolean)
 
 data class GuestState(
     val ref: GuestRef,

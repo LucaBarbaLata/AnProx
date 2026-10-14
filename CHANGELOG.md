@@ -4,6 +4,18 @@ All notable changes to AnProx are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased] (milestone M1, "Daily driver", in progress)
+
+### Added
+- **Snapshots** for VMs and containers (Guest → Tools → Snapshots): the snapshot tree with dates,
+  descriptions and a RAM badge, and a "Now" marker for the current state. **Take snapshot**
+  suggests a valid name, checks it the way Proxmox does, and can include the RAM of a running VM.
+  **Roll back** asks you to type the snapshot name. **Delete** asks for confirmation. Each
+  operation follows its task and offers **View log**.
+
+### Changed
+- The guest screen's tools section lists what works now; everything else is under "Coming later".
+
 ## [0.1.0-beta.1] — 2026-10-14 (milestone M0, "Foundation")
 
 ### Added

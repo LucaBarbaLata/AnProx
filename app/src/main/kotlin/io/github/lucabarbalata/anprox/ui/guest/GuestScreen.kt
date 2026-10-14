@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.PauseCircle
+import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.PowerSettingsNew
 import androidx.compose.material.icons.outlined.RestartAlt
@@ -23,12 +24,9 @@ import androidx.compose.material.icons.outlined.Bolt
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -53,9 +51,10 @@ import io.github.lucabarbalata.anprox.model.pve.DangerLevel
 import io.github.lucabarbalata.anprox.model.pve.GuestStatus
 import io.github.lucabarbalata.anprox.model.pve.GuestType
 import io.github.lucabarbalata.anprox.model.pve.PowerAction
-import io.github.lucabarbalata.anprox.model.pve.Upid
 import io.github.lucabarbalata.anprox.ui.common.AnProxScaffold
 import io.github.lucabarbalata.anprox.ui.common.ConfirmActionDialog
+import io.github.lucabarbalata.anprox.ui.common.MenuRow
+import io.github.lucabarbalata.anprox.ui.common.TaskResultSnackbar
 import io.github.lucabarbalata.anprox.ui.common.asString
 import io.github.lucabarbalata.anprox.ui.common.contentPadding
 import io.github.lucabarbalata.anprox.ui.common.formatDuration
@@ -69,8 +68,9 @@ fun GuestScreen(
     ref: GuestRef,
     onBack: () -> Unit,
     onTask: (serverId: String, node: String, upid: String) -> Unit,
+    onSnapshots: (ref: GuestRef, guestName: String) -> Unit,
 ) {
-    GuestDetail(ref = ref, onTask = onTask, onBack = onBack)
+    GuestDetail(ref = ref, onTask = onTask, onSnapshots = onSnapshots, onBack = onBack)
 }
 
 /**
@@ -81,6 +81,7 @@ fun GuestScreen(
 fun GuestDetail(
     ref: GuestRef,
     onTask: (serverId: String, node: String, upid: String) -> Unit,
+    onSnapshots: (ref: GuestRef, guestName: String) -> Unit,
     onBack: (() -> Unit)? = null,
     onClose: (() -> Unit)? = null,
 ) {
@@ -88,23 +89,7 @@ fun GuestDetail(
     val viewModel: GuestViewModel = koinViewModel(key = key) { parametersOf(ref) }
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }
-
-    val result = state.result
-    val resultText = result?.message?.asString()
-    val viewLog = stringResource(R.string.action_view_log)
-    LaunchedEffect(result) {
-        if (result != null && resultText != null) {
-            val action = snackbar.showSnackbar(
-                message = resultText,
-                actionLabel = if (result.upid != null) viewLog else null,
-                duration = SnackbarDuration.Long,
-            )
-            if (action == SnackbarResult.ActionPerformed && result.upid != null) {
-                onTask(ref.serverId, Upid.parse(result.upid)?.node ?: ref.node, result.upid)
-            }
-            viewModel.consumeResult()
-        }
-    }
+    TaskResultSnackbar(state.result, snackbar, ref.serverId, ref.node, onTask, viewModel::consumeResult)
 
     val typeLabel = stringResource(if (ref.type == GuestType.QEMU) R.string.guest_type_vm else R.string.guest_type_ct)
     AnProxScaffold(
@@ -129,7 +114,20 @@ fun GuestDetail(
                 }
                 item { SectionHeader(stringResource(R.string.guest_details)) }
                 item { Details(ref, status) }
-                item { SectionHeader(stringResource(R.string.guest_more_tools)) }
+                // Templates can't have snapshots in Proxmox.
+                if (!status.template) {
+                    item { SectionHeader(stringResource(R.string.guest_more_tools)) }
+                    item {
+                        GlassCard(contentPadding = PaddingValues(vertical = 6.dp)) {
+                            MenuRow(
+                                Icons.Outlined.PhotoCamera,
+                                stringResource(R.string.snapshots_title),
+                                stringResource(R.string.snapshots_open_body),
+                            ) { onSnapshots(ref, state.title) }
+                        }
+                    }
+                }
+                item { SectionHeader(stringResource(R.string.guest_coming_later)) }
                 item { ComingSoon() }
             }
         }
@@ -235,7 +233,6 @@ private fun ComingSoon() {
     val c = AnProxTheme.colors
     val items = listOf(
         R.string.tool_console to "M2",
-        R.string.tool_snapshots to "M1",
         R.string.tool_backups to "M1",
         R.string.tool_hardware to "M2",
         R.string.tool_clone to "M2",

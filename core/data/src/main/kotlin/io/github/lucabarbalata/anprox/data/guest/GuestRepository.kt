@@ -1,6 +1,7 @@
 package io.github.lucabarbalata.anprox.data.guest
 
 import io.github.lucabarbalata.anprox.data.hub.ServerHub
+import io.github.lucabarbalata.anprox.model.pve.GuestSnapshot
 import io.github.lucabarbalata.anprox.model.pve.GuestStatus
 import io.github.lucabarbalata.anprox.model.pve.GuestType
 import io.github.lucabarbalata.anprox.model.pve.NodeStatus
@@ -35,6 +36,35 @@ class GuestRepository(private val hub: ServerHub) {
             it.pve { guestPower(ref.node, ref.type.apiName, ref.vmid, action.apiPath, emptyMap()) }
         }
     }
+
+    // ------------------------------------------------------------------ snapshots (Q18)
+
+    /** All snapshots, including the `current` pseudo-entry. */
+    suspend fun snapshots(ref: GuestRef): List<GuestSnapshot> =
+        hub.use(ref.serverId) { it.pve { snapshots(ref.node, ref.type.apiName, ref.vmid) } }
+
+    /**
+     * Takes a snapshot and returns the task UPID. [includeRam] only applies to VMs (containers
+     * can't save their memory) and only matters while the VM is running.
+     */
+    suspend fun createSnapshot(ref: GuestRef, name: String, description: String, includeRam: Boolean): String {
+        val params = buildMap {
+            put("snapname", name)
+            if (description.isNotBlank()) put("description", description.trim())
+            if (includeRam && ref.type == GuestType.QEMU) put("vmstate", "1")
+        }
+        return hub.use(ref.serverId) { it.pve { createSnapshot(ref.node, ref.type.apiName, ref.vmid, params) } }
+    }
+
+    /** Rolls back to [name] and returns the task UPID. Everything since that snapshot is lost. */
+    suspend fun rollbackSnapshot(ref: GuestRef, name: String): String =
+        hub.use(ref.serverId) { it.pve { rollbackSnapshot(ref.node, ref.type.apiName, ref.vmid, name, emptyMap()) } }
+
+    /** Deletes [name] (the guest's current state is unaffected) and returns the task UPID. */
+    suspend fun deleteSnapshot(ref: GuestRef, name: String): String =
+        hub.use(ref.serverId) { it.pve { deleteSnapshot(ref.node, ref.type.apiName, ref.vmid, name) } }
+
+    // ------------------------------------------------------------------ tasks
 
     suspend fun awaitTask(serverId: String, node: String, upid: String): TaskStatus =
         hub.use(serverId) { it.awaitPveTask(node, upid) }

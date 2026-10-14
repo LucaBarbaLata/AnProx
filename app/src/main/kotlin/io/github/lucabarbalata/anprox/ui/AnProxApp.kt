@@ -48,6 +48,7 @@ import io.github.lucabarbalata.anprox.ui.navigation.ResourcesRoute
 import io.github.lucabarbalata.anprox.ui.navigation.ServerEditorRoute
 import io.github.lucabarbalata.anprox.ui.navigation.ServersRoute
 import io.github.lucabarbalata.anprox.ui.navigation.SettingsRoute
+import io.github.lucabarbalata.anprox.ui.navigation.SnapshotsRoute
 import io.github.lucabarbalata.anprox.ui.navigation.TaskLogRoute
 import io.github.lucabarbalata.anprox.ui.navigation.TasksRoute
 import io.github.lucabarbalata.anprox.ui.node.NodeScreen
@@ -57,6 +58,7 @@ import io.github.lucabarbalata.anprox.ui.servers.ServersScreen
 import io.github.lucabarbalata.anprox.ui.settings.AboutScreen
 import io.github.lucabarbalata.anprox.ui.settings.MoreScreen
 import io.github.lucabarbalata.anprox.ui.settings.SettingsScreen
+import io.github.lucabarbalata.anprox.ui.snapshots.SnapshotsScreen
 import io.github.lucabarbalata.anprox.ui.tasks.TaskLogScreen
 import io.github.lucabarbalata.anprox.ui.tasks.TasksScreen
 
@@ -105,6 +107,9 @@ fun AnProxApp() {
     val openTask: (String, String, String) -> Unit = { serverId, node, upid -> nav.navigate(TaskLogRoute(serverId, node, upid)) }
     val openNode: (String, String) -> Unit = { serverId, node -> nav.navigate(NodeRoute(serverId, node)) }
     val openGuest: (GuestRef) -> Unit = { ref -> nav.navigate(GuestRoute(ref.serverId, ref.node, ref.type.apiName, ref.vmid)) }
+    val openSnapshots: (GuestRef, String) -> Unit = { ref, name ->
+        nav.navigate(SnapshotsRoute(ref.serverId, ref.node, ref.type.apiName, ref.vmid, name))
+    }
 
     AdaptiveNavScaffold(
         items = items,
@@ -128,7 +133,9 @@ fun AnProxApp() {
                     onResources = { nav.selectTab(Tab.RESOURCES) },
                 )
             }
-            composable<ResourcesRoute> { ResourcesScreen(onGuest = openGuest, onNode = openNode, onTask = openTask) }
+            composable<ResourcesRoute> {
+                ResourcesScreen(onGuest = openGuest, onNode = openNode, onTask = openTask, onSnapshots = openSnapshots)
+            }
             composable<TasksRoute> { TasksScreen(onTask = openTask) }
             composable<MoreRoute> {
                 MoreScreen(
@@ -162,7 +169,21 @@ fun AnProxApp() {
             }
             composable<GuestRoute> { entry ->
                 val r = entry.toRoute<GuestRoute>()
-                GuestScreen(GuestRef(r.serverId, r.node, GuestType.fromApi(r.type) ?: GuestType.QEMU, r.vmid), onBack = back, onTask = openTask)
+                GuestScreen(
+                    GuestRef(r.serverId, r.node, GuestType.fromApi(r.type) ?: GuestType.QEMU, r.vmid),
+                    onBack = back,
+                    onTask = openTask,
+                    onSnapshots = openSnapshots,
+                )
+            }
+            composable<SnapshotsRoute> { entry ->
+                val r = entry.toRoute<SnapshotsRoute>()
+                SnapshotsScreen(
+                    GuestRef(r.serverId, r.node, GuestType.fromApi(r.type) ?: GuestType.QEMU, r.vmid),
+                    guestName = r.name,
+                    onBack = back,
+                    onTask = openTask,
+                )
             }
             composable<NodeRoute> { entry ->
                 val r = entry.toRoute<NodeRoute>()

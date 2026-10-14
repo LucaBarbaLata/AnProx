@@ -210,19 +210,23 @@ Screen → ErrorBanner / snackbar   (certificate errors offer a one-tap "Allow" 
 
 ## Recipe: adding a new feature
 
-Example: "show a VM's snapshots" (planned for M1).
+Worked example: snapshots (M1). Every step below exists in the code, so you can follow it.
 
-1. **Model**: add `@Serializable data class Snapshot(...)` in `:core:model` (`pve/Snapshot.kt`).
-   Add a parsing test with real JSON copied from the Proxmox API viewer.
-2. **API**: add `@GET("nodes/{node}/{type}/{vmid}/snapshot") suspend fun snapshots(...)` to `PveApi`.
-3. **Mock**: teach `MockState`/`MockProxmoxServer` to answer that endpoint.
-4. **Test**: add an integration test in `:core:network` (or `:core:data`) that calls it against
-   the mock. Run `./gradlew -Panprox.jvmOnly=true test`.
-5. **Repository**: add `fun observeSnapshots(ref)` / `suspend fun createSnapshot(...)` to
-   `GuestRepository` (or a new repository, wired in `di/AppModule.kt`).
-6. **ViewModel and screen**: state class, ViewModel and composable in `ui/<feature>/`. Use design
-   system components and put **every** user-visible string in `res/values/strings.xml`.
-7. **Navigation**: add a `@Serializable` route in `Routes.kt` and a `composable<…>` in `AnProxApp.kt`.
+1. **Model**: `@Serializable data class GuestSnapshot(...)` plus helpers in `:core:model`
+   (`pve/Snapshot.kt`), with a parsing test using real JSON from the Proxmox API viewer
+   (`SnapshotTest`).
+2. **API**: `@GET("nodes/{node}/{type}/{vmid}/snapshot") suspend fun snapshots(...)` and friends
+   in `PveApi`.
+3. **Mock**: `MockState` keeps per-guest snapshot trees; `MockProxmoxServer` routes the endpoints.
+4. **Test**: an integration test against the mock (`GuestSnapshotTest` in `:core:data`). Run
+   `./gradlew -Panprox.jvmOnly=true test`.
+5. **Repository**: `snapshots(ref)`, `createSnapshot(...)`, … in `GuestRepository` (a new
+   repository would be wired in `di/AppModule.kt`).
+6. **ViewModel and screen**: state class, ViewModel and composable in `ui/<feature>/`
+   (`ui/snapshots/`). Use design system components and put **every** user-visible string in
+   `res/values/strings.xml`.
+7. **Navigation**: a `@Serializable` route in `Routes.kt` (`SnapshotsRoute`) and a
+   `composable<…>` in `AnProxApp.kt`. Add a step to `scripts/e2e/tour.py` for the main flow.
 8. **Docs**: tick the endpoint in [api-coverage.md](api-coverage.md), update the
    [roadmap](roadmap.md) and [CHANGELOG](../CHANGELOG.md).
 

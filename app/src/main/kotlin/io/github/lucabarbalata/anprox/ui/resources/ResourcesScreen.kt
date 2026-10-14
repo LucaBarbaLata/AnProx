@@ -73,6 +73,7 @@ fun ResourcesScreen(
     onGuest: (GuestRef) -> Unit,
     onNode: (serverId: String, node: String) -> Unit,
     onTask: (serverId: String, node: String, upid: String) -> Unit,
+    onSnapshots: (ref: GuestRef, guestName: String) -> Unit,
     viewModel: ResourcesViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -124,7 +125,7 @@ fun ResourcesScreen(
                             modifier = Modifier.align(Alignment.Center),
                         )
                     } else {
-                        GuestDetail(ref = ref, onTask = onTask, onClose = { selected = null })
+                        GuestDetail(ref = ref, onTask = onTask, onSnapshots = onSnapshots, onClose = { selected = null })
                     }
                 }
             }

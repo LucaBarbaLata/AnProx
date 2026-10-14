@@ -5,14 +5,14 @@ testing debug builds on **real hardware**.
 
 ## The pyramid
 
-| Layer | Where | Runs on | Count (M0) |
+| Layer | Where | Runs on | Count |
 |---|---|---|---|
-| Unit: parsing, formatting, URL rules, UPID/TFA parsing | `core/model/src/test` | JVM | 20 |
+| Unit: parsing, formatting, URL rules, UPID/TFA parsing, snapshot tree and names | `core/model/src/test` | JVM | 25 |
 | Integration: HTTP client ↔ mock server over real HTTPS (auth, TFA, failover, TLS, errors, renewal, PBS) | `core/network/src/test` | JVM | 16 |
-| Integration: multi-server hub, sessions, snapshots, guest actions | `core/data/src/test` | JVM | 9 |
+| Integration: multi-server hub, sessions, dashboard snapshots, guest actions, guest snapshots | `core/data/src/test` | JVM | 16 |
 | Android lint | `:app:lintDebug` | CI | — |
 | Build: debug and R8-minified release | `:app:assemble*` | CI | — |
-| **End-to-end tour** of the minified release APK on emulators against the mock server | `scripts/e2e/tour.py` | CI (Android 8.0 + 14), Release workflow | 7 steps |
+| **End-to-end tour** of the minified release APK on emulators against the mock server | `scripts/e2e/tour.py` | CI (Android 8.0 + 14), Release workflow | 8 steps |
 | UI / screenshot tests | planned (M1) | — | — |
 | Manual on real hardware | [checklist below](#manual-test-checklist-real-hardware) | owner | — |
 
@@ -45,6 +45,8 @@ status line, asynchronous tasks with UPIDs and logs, and a self-signed certifica
 | pve3 | **offline** | VM 104 `lab-vm` |
 
 Storage: `local`, `local-zfs` (pve1 at **92 %** to trigger the dashboard warning), shared `nas-nfs` and `pbs`.
+Snapshots: `web` has a small tree (`before-upgrade` with RAM → `after-upgrade` → now, plus a
+`kernel-test` branch), `win11` has `fresh-install`, and `pihole` has `pre-update`.
 Task history includes a failed migration and a backup with warnings.
 
 ### Fake Backup Server (PBS 4.0.14)
@@ -106,8 +108,9 @@ so no test code is compiled into the app. `scripts/e2e/run.sh` starts the mock s
 3. Add a Proxmox Backup Server (default port 8007 added automatically) → sign in → datastores on the dashboard.
 4. Resources list across both servers.
 5. Open a stopped VM → **Start** → "finished" snackbar → **View log** shows `TASK OK` → the VM now offers **Shut down**.
-6. Tasks tab shows the new task.
-7. Settings → Light theme → dashboard in light mode.
+6. Snapshots of the now-running VM → **Take snapshot** with RAM → "VM snapshot finished" → the new snapshot is listed.
+7. Tasks tab shows the new task.
+8. Settings → Light theme → dashboard in light mode.
 
 After every step the script checks that the app process is alive and that logcat has no
 `FATAL EXCEPTION` for the app. Screenshots of each step, plus UI dumps and logcat on failure,
@@ -162,6 +165,15 @@ Run this before closing a milestone. Note the PVE/PBS versions you tested agains
 - [ ] Stop asks for confirmation; Reset (VM only) asks for confirmation.
 - [ ] Read-only user: power action shows "Permission denied …".
 - [ ] Node screen: gauges, CPU model, kernel, guests list.
+
+**Snapshots** (use a test VM)
+- [ ] Guest → Snapshots shows the same tree as the web UI (Snapshots tab), with "Now" in the right place.
+- [ ] Take snapshot on a running VM with **Include RAM**: the task finishes and the snapshot shows the RAM badge.
+- [ ] Take snapshot on a container (no RAM option) and on a stopped VM (RAM option explained, not offered).
+- [ ] An invalid name (`1abc`, `a b`) is caught before sending; a duplicate name is rejected.
+- [ ] Roll back requires typing the snapshot name; afterwards the VM is in the snapshot's state.
+- [ ] Delete removes the snapshot; its children move up to its parent.
+- [ ] Read-only user: taking a snapshot shows "Permission denied …".
 
 **Tasks / settings**
 - [ ] Tasks list merges servers; the Failed filter works; the log auto-scrolls while running.

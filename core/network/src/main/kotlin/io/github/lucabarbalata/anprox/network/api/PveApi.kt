@@ -3,11 +3,13 @@ package io.github.lucabarbalata.anprox.network.api
 import io.github.lucabarbalata.anprox.model.ApiEnvelope
 import io.github.lucabarbalata.anprox.model.pve.ClusterResource
 import io.github.lucabarbalata.anprox.model.pve.ClusterStatusEntry
+import io.github.lucabarbalata.anprox.model.pve.GuestSnapshot
 import io.github.lucabarbalata.anprox.model.pve.GuestStatus
 import io.github.lucabarbalata.anprox.model.pve.NodeStatus
 import io.github.lucabarbalata.anprox.model.pve.TaskLogLine
 import io.github.lucabarbalata.anprox.model.pve.TaskStatus
 import io.github.lucabarbalata.anprox.model.pve.TaskSummary
+import retrofit2.http.DELETE
 import retrofit2.http.FieldMap
 import retrofit2.http.FormUrlEncoded
 import retrofit2.http.GET
@@ -51,6 +53,44 @@ interface PveApi {
         @Path("vmid") vmid: Int,
         @Path("action") action: String,
         @FieldMap params: Map<String, String>,
+    ): ApiEnvelope<String>
+
+    /** Snapshots, including the `current` pseudo-entry. [type] is `qemu` or `lxc`. */
+    @GET("nodes/{node}/{type}/{vmid}/snapshot")
+    suspend fun snapshots(
+        @Path("node") node: String,
+        @Path("type") type: String,
+        @Path("vmid") vmid: Int,
+    ): ApiEnvelope<List<GuestSnapshot>>
+
+    /** [params]: `snapname`, optional `description`, and `vmstate=1` (VMs) to save the RAM. Returns a UPID. */
+    @FormUrlEncoded
+    @POST("nodes/{node}/{type}/{vmid}/snapshot")
+    suspend fun createSnapshot(
+        @Path("node") node: String,
+        @Path("type") type: String,
+        @Path("vmid") vmid: Int,
+        @FieldMap params: Map<String, String>,
+    ): ApiEnvelope<String>
+
+    /** Returns a UPID. (A form body is required even when [params] is empty.) */
+    @FormUrlEncoded
+    @POST("nodes/{node}/{type}/{vmid}/snapshot/{snapname}/rollback")
+    suspend fun rollbackSnapshot(
+        @Path("node") node: String,
+        @Path("type") type: String,
+        @Path("vmid") vmid: Int,
+        @Path("snapname") snapname: String,
+        @FieldMap params: Map<String, String>,
+    ): ApiEnvelope<String>
+
+    /** Returns a UPID. */
+    @DELETE("nodes/{node}/{type}/{vmid}/snapshot/{snapname}")
+    suspend fun deleteSnapshot(
+        @Path("node") node: String,
+        @Path("type") type: String,
+        @Path("vmid") vmid: Int,
+        @Path("snapname") snapname: String,
     ): ApiEnvelope<String>
 
     @GET("nodes/{node}/tasks/{upid}/status")
