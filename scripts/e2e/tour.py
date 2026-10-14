@@ -103,7 +103,7 @@ def describe(root):
     for n in root.iter("node"):
         for value in labels(n):
             seen.append(f"{value!r}@{n.get('bounds')}")
-    return f"keyboard shown: {keyboard_shown()}\nOn screen: " + ", ".join(seen)
+    return f"keyboard requested: {ime_requested()}\nOn screen: " + ", ".join(seen)
 
 
 def visible(text):
@@ -129,7 +129,6 @@ def scroll_down():
 
 
 def scroll_to(text, attempts=10):
-    hide_keyboard()
     for _ in range(attempts):
         root = dump()
         found = matches(root, text, exact=True) or matches(root, text, exact=False)
@@ -139,8 +138,9 @@ def scroll_to(text, attempts=10):
     return find(text, timeout=5)
 
 
-def keyboard_shown():
-    # The marker differs between Android versions (InputMethodManagerService vs. the IME's own dump).
+def ime_requested():
+    """Diagnostics only. On Android 14 this is true whenever a text field *asks* for a keyboard,
+    even if none is on screen — so never use it to decide whether to press BACK."""
     out = adb("shell", "dumpsys", "input_method", check=False)
     return any(marker in out for marker in ("mInputShown=true", "mIsInputViewShown=true"))
 
@@ -153,12 +153,6 @@ def disable_soft_keyboards():
     """
     for ime in adb("shell", "ime", "list", "-s", check=False).split():
         adb("shell", "ime", "disable", ime, check=False)
-
-
-def hide_keyboard():
-    if keyboard_shown():
-        adb("shell", "input", "keyevent", "4")  # BACK closes the keyboard only
-        time.sleep(0.8)
 
 
 def fill(label, value, fallback_index=None, password=False):
@@ -181,7 +175,6 @@ def fill(label, value, fallback_index=None, password=False):
     tap_node(node)
     adb("shell", "input", "text", value.replace(" ", "%s"))
     time.sleep(0.6)
-    hide_keyboard()
 
 
 def back():

@@ -25,6 +25,12 @@ The owner asked: "can you make a release version? or let's prepare for a beta pa
   is the Java extension in Gradle Kotlin scripts. Fixed with an import, and noted in CLAUDE.md.
 - New-headless Chromium screenshots have a shorter viewport than the window. The headless shell
   binary renders exact sizes.
+- e2e tour, first runs: the release APK started fine on both emulators (no R8 problems at startup).
+  The tour itself needed two fixes: the soft keyboard swallowed scroll gestures (now disabled for
+  the tour), and on Android 14 `dumpsys input_method` reports `mInputShown=true` whenever a field
+  *requests* a keyboard, so "press BACK if the keyboard is shown" closed the server editor instead.
+  The tour never presses BACK to hide the keyboard any more. With that, the full tour passed on
+  Android 8.0.
 
 ---
 
