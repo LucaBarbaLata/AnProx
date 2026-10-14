@@ -28,7 +28,7 @@ jobs:
           distribution: temurin
           java-version: 21
 
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v6
 
       - name: Unit and integration tests
         run: ./gradlew --stacktrace test
@@ -72,7 +72,7 @@ jobs:
           distribution: temurin
           java-version: 21
 
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v6
 
       - name: Build release APK (signed with the debug key) and the mock server
         run: ./gradlew --stacktrace :app:assembleRelease :tools:mock-server:installDist -Panprox.signWithDebugKey=true
