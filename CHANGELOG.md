@@ -28,5 +28,5 @@ All notable changes to AnProx are documented here. The format follows
   mode; floating bottom bar on phones, side rail on tablets; bundled Inter and JetBrains Mono fonts;
   original launcher icon with a themed (monochrome) layer.
 - **Settings:** theme, pure black, live refresh interval. About screen with license and privacy notes.
-- **Developer:** pure-Kotlin core modules, a Ktor mock Proxmox server, 44 automated tests,
+- **Developer:** pure-Kotlin core modules, a Ktor mock Proxmox server, 45 automated tests,
   GitHub Actions CI with downloadable debug APKs, Dependabot, and full documentation in `docs/`.

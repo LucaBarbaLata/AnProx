@@ -133,6 +133,15 @@ class ServerHubTest {
     }
 
     @Test
+    fun `logged in servers report loading before their first snapshot`() = runBlocking {
+        val hub = hubWith(pveProfile())
+        hub.login("pve", "anprox", remember = false)
+        val first = withTimeout(5_000) { SnapshotRepository(hub).snapshots(intervalMillis = 60_000).first { it.isNotEmpty() } }.single()
+        assertTrue(first.isLoading)
+        Unit
+    }
+
+    @Test
     fun `logged out servers produce an error state instead of polling`() = runBlocking {
         val hub = hubWith(pveProfile())
         val state = withTimeout(5_000) { SnapshotRepository(hub).snapshots().first { it.isNotEmpty() } }.single()

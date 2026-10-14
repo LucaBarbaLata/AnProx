@@ -20,6 +20,6 @@ slow and need emulators.
   so the Android Gradle Plugin is never resolved).
 
 ## Consequences
-- 44 integration and unit tests run in seconds on any JVM, including environments without the Android SDK.
+- 45 integration and unit tests run in seconds on any JVM, including environments without the Android SDK.
 - The Android layer stays thin and easy to read.
 - Java APIs used in core modules must exist on Android 8.0 (see ADR 0002).

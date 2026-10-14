@@ -9,7 +9,7 @@ testing debug builds on **real hardware**.
 |---|---|---|---|
 | Unit: parsing, formatting, URL rules, UPID/TFA parsing | `core/model/src/test` | JVM | 20 |
 | Integration: HTTP client ↔ mock server over real HTTPS (auth, TFA, failover, TLS, errors, renewal, PBS) | `core/network/src/test` | JVM | 16 |
-| Integration: multi-server hub, sessions, snapshots, guest actions | `core/data/src/test` | JVM | 8 |
+| Integration: multi-server hub, sessions, snapshots, guest actions | `core/data/src/test` | JVM | 9 |
 | Android lint | `:app:lintDebug` | CI | — |
 | Build: debug and R8-minified release | `:app:assemble*` | CI | — |
 | UI / screenshot tests | planned (M1) | — | — |

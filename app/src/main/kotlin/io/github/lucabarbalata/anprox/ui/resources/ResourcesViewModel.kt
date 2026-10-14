@@ -52,13 +52,14 @@ class ResourcesViewModel(
         .distinctUntilChanged()
         .flatMapLatest { snapshots.snapshots(it) }
         .map { states ->
-            states.flatMap { s ->
+            val items = states.flatMap { s ->
                 val snap = s.snapshot as? PveSnapshot ?: return@flatMap emptyList()
                 (snap.guests + snap.nodes + snap.storages).map { ResourceItem(s.server.id, s.server.profile.name, it) }
             }
+            items to states.none { it.isLoading }
         }
 
-    val state: StateFlow<ResourcesState> = combine(all, filter, query, runningOnly, hub.servers) { items, f, q, running, servers ->
+    val state: StateFlow<ResourcesState> = combine(all, filter, query, runningOnly, hub.servers) { (items, loaded), f, q, running, servers ->
         val counts = ResourceFilter.entries.associateWith { fl -> items.count { matches(it, fl) } }
         val visible = items
             .filter { matches(it, f) }
@@ -66,7 +67,7 @@ class ResourcesViewModel(
             .filter { q.isBlank() || search(it, q) }
             .sortedWith(compareBy({ order(it.resource) }, { it.resource.vmid ?: 0 }, { it.resource.displayName.lowercase() }))
         ResourcesState(
-            loaded = true,
+            loaded = loaded,
             items = visible,
             counts = counts,
             filter = f,

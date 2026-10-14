@@ -43,6 +43,7 @@ Workarounds:
 | Fix | Pinned OkHttp **5.4.0** (checked its AAR metadata: `minCompileSdk=36`). Also replaced `URLDecoder.decode(String, Charset)` (Android 13+ only) with the String-charset overload. |
 | CI run 2 (app shell) | ✅ tests, lint, debug + release |
 | CI run 3 (full M0 UI, ~40 files) | ✅ on the first attempt |
+| Self-review fix | Dashboard/resources briefly showed "empty" before the first fetch, so a per-server loading state is now emitted immediately (+1 test, 45 total). Task list keys de-duplicated. |
 
 ### 4. Side effect: Dependabot PRs
 Because this branch was the repository's first push, it became the default branch, and

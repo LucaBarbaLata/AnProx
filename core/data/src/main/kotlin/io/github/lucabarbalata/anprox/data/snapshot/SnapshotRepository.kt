@@ -50,6 +50,9 @@ class SnapshotRepository(
             emit(SnapshotState(server, null, ApiException.Unauthorized("Not logged in"), null))
             return@flow
         }
+        // Emit a "loading" state right away so combined views don't wait for the slowest server
+        // (and don't mistake "not fetched yet" for "empty").
+        emit(SnapshotState(server, null, null, null))
         var last: ServerSnapshot? = null
         var updatedAt: Long? = null
         while (true) {

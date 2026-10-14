@@ -40,6 +40,7 @@ class TasksViewModel(snapshots: SnapshotRepository) : ViewModel() {
     val state: StateFlow<TasksState> = combine(snapshots.tasks(), filter) { perServer, f ->
         val all = perServer
             .flatMap { s -> s.tasks.map { TaskItem(s.server.id, s.server.profile.name, s.server.profile.product, it) } }
+            .distinctBy { it.serverId + it.task.upid }
             .sortedByDescending { it.task.starttime }
         TasksState(
             loaded = true,
