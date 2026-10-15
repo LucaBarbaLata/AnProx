@@ -120,6 +120,13 @@ ongoing notification after 3 s and, if the app is in the background when the tas
 it ended. Three dynamic shortcuts (Resources, Tasks, Alerts) are published from the activity. The
 tour opens the Alerts screen with `am start -d anprox://alerts`.
 
+**M3: tile and widget.** Each check now also keeps a `ServerSummary` per server (nodes online,
+guests running, storages, current problems; unreachable servers included) in the last run. The
+Quick Settings tile (`StatusTileService`) and the Glance widget (`StatusWidget`, a new
+dependency: `androidx.glance:glance-appwidget` 1.1.1) both read it and are refreshed by the
+worker after every check; both open the dashboard. The widget draws with fixed Midnight Glass
+colours, since widgets can't use the app's Compose theme.
+
 Not alerted on purpose: a server that can't be reached. A phone that leaves the home network
 would otherwise notify every 15 minutes; the Alerts screen lists unreachable servers instead.
 A session that stops working is notified once ("Sign in to … again").

@@ -79,7 +79,23 @@ data class AlertMemory(
     val lastTaskEnd: Long? = null,
 )
 
-/** What the latest background check found, for the alert settings screen. */
+/** One server as the latest check saw it, for the home-screen widget and the tile. */
+@Serializable
+data class ServerSummary(
+    val name: String,
+    val reachable: Boolean = true,
+    val backupServer: Boolean = false,
+    val nodesOnline: Int = 0,
+    val nodes: Int = 0,
+    val guestsRunning: Int = 0,
+    val guests: Int = 0,
+    /** Storages, or a Backup Server's datastores. */
+    val storages: Int = 0,
+    /** Problems right now, reported or not: offline nodes, lost quorum, limits exceeded, Ceph not OK. */
+    val problems: Int = 0,
+)
+
+/** What the latest background check found, for the alert settings screen, the tile and the widget. */
 @Serializable
 data class AlertRun(
     val atMillis: Long,
@@ -88,6 +104,7 @@ data class AlertRun(
     val alerts: Int,
     val unreachable: List<String> = emptyList(),
     val signInNeeded: List<String> = emptyList(),
+    val servers: List<ServerSummary> = emptyList(),
 )
 
 /**

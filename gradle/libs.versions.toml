@@ -23,6 +23,7 @@ lifecycle = "2.9.1"
 navigation = "2.9.0"
 datastore = "1.1.7"
 work = "2.10.1"
+glance = "1.1.1"
 biometric = "1.1.0"
 # BiometricPrompt needs a FragmentActivity; biometric 1.1.0 alone would pull in fragment 1.2.5 (2020).
 fragment = "1.8.5"
@@ -70,6 +71,7 @@ androidx-lifecycle-process = { module = "androidx.lifecycle:lifecycle-process", 
 androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigation" }
 androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastore" }
 androidx-work-runtime = { module = "androidx.work:work-runtime-ktx", version.ref = "work" }
+androidx-glance-appwidget = { module = "androidx.glance:glance-appwidget", version.ref = "glance" }
 androidx-biometric = { module = "androidx.biometric:biometric", version.ref = "biometric" }
 androidx-fragment = { module = "androidx.fragment:fragment-ktx", version.ref = "fragment" }
 

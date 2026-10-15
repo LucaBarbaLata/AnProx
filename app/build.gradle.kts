@@ -152,6 +152,7 @@ dependencies {
     implementation(libs.androidx.biometric)
     implementation(libs.androidx.fragment)
     implementation(libs.androidx.work.runtime)
+    implementation(libs.androidx.glance.appwidget)
 
     implementation(platform(libs.koin.bom))
     implementation(libs.koin.android)

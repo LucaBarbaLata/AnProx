@@ -867,4 +867,20 @@
     <string name="shortcut_tasks_long">Recent tasks</string>
     <string name="shortcut_alerts">Alerts</string>
     <string name="shortcut_alerts_long">Alert settings and the last check</string>
+    <string name="tile_label">Proxmox</string>
+    <string name="tile_description">AnProx: %1$s</string>
+    <string name="tile_alerts_off">Alerts off</string>
+    <string name="tile_no_check">No check yet</string>
+    <string name="tile_unreachable">%1$d unreachable</string>
+    <string name="tile_new_alerts">%1$d new alerts</string>
+    <string name="tile_checked">OK at %1$s</string>
+    <string name="widget_label">Proxmox status</string>
+    <string name="widget_description">Your servers as the last background check saw them</string>
+    <string name="widget_title">AnProx</string>
+    <string name="widget_empty">Switch on background alerts in AnProx (More → Alerts) to see your servers here.</string>
+    <string name="widget_alerts_off">Background alerts are off, so this isn\'t updated.</string>
+    <string name="widget_unreachable">Couldn\'t be reached</string>
+    <string name="widget_pbs">Backup Server · %1$d datastores</string>
+    <string name="widget_pve">%1$d/%2$d nodes · %3$d/%4$d guests running</string>
+    <string name="widget_problems">problems: %1$d</string>
 </resources>

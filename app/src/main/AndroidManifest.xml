@@ -35,6 +35,31 @@
             </intent-filter>
         </activity>
 
+        <!-- Quick Settings tile: the last background check at a glance (Q28). -->
+        <service
+            android:name=".alerts.StatusTileService"
+            android:exported="true"
+            android:icon="@drawable/ic_notification"
+            android:label="@string/tile_label"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
+
+        <!-- Home-screen widget: each server as the last background check saw it (Q28). -->
+        <receiver
+            android:name=".widget.StatusWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/status_widget_info" />
+        </receiver>
+
         <!-- Hands SPICE connection files (.vv) to a viewer app such as aSPICE. -->
         <provider
             android:name="androidx.core.content.FileProvider"

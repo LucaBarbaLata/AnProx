@@ -144,7 +144,11 @@ Hardware → Display → SPICE in the web UI).
    the app open, the notification disappears when the task ends. Tasks that take under 3 s
    show nothing.
 8. **Shortcuts**: long-press the AnProx icon → Resources / Tasks / Alerts open those screens.
-9. Leave alerts on overnight with the app closed: say whether checks kept running (the time of
+9. **Tile**: pull down Quick Settings → edit → add "Proxmox". It shows the last check ("OK at …"
+   or "N new alerts"); tap it → the dashboard.
+10. **Widget**: long-press the home screen → Widgets → AnProx "Proxmox status". Each server shows
+    nodes online and guests running; it updates after each check (**Check now** to see it change).
+11. Leave alerts on overnight with the app closed: say whether checks kept running (the time of
    the last check) and whether anything was notified twice. Some phones stop background work
    for apps with battery optimisation; say which phone you have.
 

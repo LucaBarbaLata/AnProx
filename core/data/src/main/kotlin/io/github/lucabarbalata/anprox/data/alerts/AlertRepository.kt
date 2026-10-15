@@ -14,6 +14,7 @@ import io.github.lucabarbalata.anprox.model.alerts.AlertSettings
 import io.github.lucabarbalata.anprox.model.alerts.FinishedTask
 import io.github.lucabarbalata.anprox.model.alerts.GuestSeen
 import io.github.lucabarbalata.anprox.model.alerts.Observation
+import io.github.lucabarbalata.anprox.model.alerts.ServerSummary
 import io.github.lucabarbalata.anprox.model.pve.ResourceType
 import io.github.lucabarbalata.anprox.model.pve.TaskSummary
 import io.github.lucabarbalata.anprox.network.ApiException
@@ -44,6 +45,8 @@ data class AlertCheck(
     val unreachable: List<String>,
     /** Servers whose session ran out during this check; alerts for them stop until the user signs in. */
     val signInNeeded: List<String>,
+    /** Every server checked, in list order, answered or not. */
+    val servers: List<ServerSummary> = emptyList(),
 )
 
 /**
@@ -75,6 +78,7 @@ class AlertRepository(
         val alerts = ArrayList<ServerAlert>()
         val unreachable = ArrayList<String>()
         val signIn = ArrayList<String>()
+        val summaries = ArrayList<ServerSummary>()
         outcomes.forEach { (server, outcome) ->
             val observation = outcome.getOrNull()
             if (observation != null) {
@@ -83,15 +87,31 @@ class AlertRepository(
                 val (found, remembered) = AlertEngine.evaluate(previous, observation, settings)
                 memory.save(server.id, remembered)
                 found.forEach { alerts += ServerAlert(server.id, server.profile.name, it, server.profile.product) }
-            } else if (outcome.exceptionOrNull() is ApiException.Unauthorized) {
-                // Reported once: when a working session stops working.
-                if (server.auth == AuthState.LOGGED_IN) signIn += server.profile.name
+                summaries += summary(server, observation, remembered)
             } else {
-                unreachable += server.profile.name
+                if (outcome.exceptionOrNull() is ApiException.Unauthorized) {
+                    // Reported once: when a working session stops working.
+                    if (server.auth == AuthState.LOGGED_IN) signIn += server.profile.name
+                } else {
+                    unreachable += server.profile.name
+                }
+                summaries += ServerSummary(server.profile.name, reachable = false, backupServer = server.profile.product == ProxmoxProduct.PBS)
             }
         }
-        return AlertCheck(alerts, outcomes.count { it.second.isSuccess }, unreachable, signIn)
+        return AlertCheck(alerts, outcomes.count { it.second.isSuccess }, unreachable, signIn, summaries)
     }
+
+    private fun summary(server: ServerState, o: Observation, m: AlertMemory) = ServerSummary(
+        name = server.profile.name,
+        backupServer = server.profile.product == ProxmoxProduct.PBS,
+        nodesOnline = o.nodes.count { it.value },
+        nodes = o.nodes.size,
+        guestsRunning = o.runningGuests.size,
+        guests = o.guestIds.size,
+        storages = o.storages.size,
+        problems = m.offlineNodes.size + m.hot.size + (if (o.quorate == false) 1 else 0) +
+            (if (o.ceph == "HEALTH_WARN" || o.ceph == "HEALTH_ERR") 1 else 0),
+    )
 
     /** What [server] looks like right now. */
     suspend fun observe(server: ServerState): Observation {

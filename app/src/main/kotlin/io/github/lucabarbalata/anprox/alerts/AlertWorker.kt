@@ -7,6 +7,7 @@ import io.github.lucabarbalata.anprox.data.alerts.AlertRepository
 import io.github.lucabarbalata.anprox.model.alerts.AlertRun
 import io.github.lucabarbalata.anprox.storage.AlertStore
 import io.github.lucabarbalata.anprox.storage.SettingsRepository
+import io.github.lucabarbalata.anprox.widget.StatusWidget
 import kotlinx.coroutines.flow.first
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -35,8 +36,11 @@ class AlertWorker(context: Context, params: WorkerParameters) : CoroutineWorker(
                 alerts = check.alerts.size,
                 unreachable = check.unreachable,
                 signInNeeded = check.signInNeeded,
+                servers = check.servers,
             ),
         )
+        StatusTileService.refresh(applicationContext)
+        StatusWidget.refresh(applicationContext)
         // A server that couldn't be reached is tried again at the next interval, not sooner.
         return Result.success()
     }

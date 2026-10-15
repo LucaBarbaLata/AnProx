@@ -14,6 +14,7 @@ import io.github.lucabarbalata.anprox.data.security.AppLock
 import io.github.lucabarbalata.anprox.di.appModule
 import io.github.lucabarbalata.anprox.diagnostics.CrashReporter
 import io.github.lucabarbalata.anprox.storage.SettingsRepository
+import io.github.lucabarbalata.anprox.widget.StatusWidget
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
@@ -51,7 +52,11 @@ class AnProxApplication : Application() {
             settings.settings
                 .map { it.alerts }
                 .distinctUntilChanged()
-                .collect { scheduler.apply(it) }
+                .collect {
+                    scheduler.apply(it)
+                    // The widget says when it isn't being kept up to date.
+                    StatusWidget.refresh(this@AnProxApplication)
+                }
         }
     }
 

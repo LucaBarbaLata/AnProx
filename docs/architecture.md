@@ -158,6 +158,13 @@ Key ideas:
   lives in the Android Keystore), and `SettingsRepository` (theme and refresh rate).
 - **Network changes**: `AnProxApplication` listens for Wi-Fi/mobile/VPN switches and calls
   `hub.onNetworkChanged()`, so each server tries its primary (LAN) address first again.
+- **Background work and system surfaces** (`alerts/`, `widget/`): `AlertWorker` (WorkManager)
+  runs `AlertRepository.check()` while background alerts are on; `AlertNotifier` posts one
+  notification per problem; `TaskTracker` follows tasks the app started (it is the
+  `TaskObserver` of `GuestRepository`); `StatusTileService` and `StatusWidget` show the last
+  check. Notifications, shortcuts and the widget open screens through `anprox://` links
+  (`AppLink` in `:core:model`, `AppLinks` + `Shortcuts` in `ui/navigation/`), which the
+  navigation graph opens once it is ready.
 
 ### 5. Design system (`:core:designsystem`)
 

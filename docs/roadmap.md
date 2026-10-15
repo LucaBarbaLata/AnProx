@@ -109,8 +109,9 @@ Everything marked ✅ in M1 and M2 below. Gates:
 - ✅ **Live task notifications** (Q28): tasks started from the app, followed until they end.
 - ✅ **App shortcuts and in-app links** (Q28): Resources, Tasks, Alerts; notifications open the
   node, guest or task they are about (`anprox://` links, explicit intents only).
-- **Home-screen widgets** (Glance): cluster health, favourite guests with power buttons, storage (Q28).
-- **Quick Settings tiles** (Q28).
+- ✅ **Home-screen widget** (Glance, Q28): every server's nodes, running guests and current
+  problems from the last background check. Still to come: favourite guests with power buttons.
+- ✅ **Quick Settings tile** (Q28): the last check at a glance; opens the dashboard.
 
 ## M4 — Datacenter
 - Storage: add/edit/remove every storage type, content browser, upload ISO/templates, download from URL.

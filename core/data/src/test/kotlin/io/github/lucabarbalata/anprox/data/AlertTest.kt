@@ -12,6 +12,7 @@ import io.github.lucabarbalata.anprox.mock.MockProxmoxServer
 import io.github.lucabarbalata.anprox.model.ProxmoxProduct
 import io.github.lucabarbalata.anprox.model.alerts.Alert.Kind
 import io.github.lucabarbalata.anprox.model.alerts.AlertSettings
+import io.github.lucabarbalata.anprox.model.alerts.ServerSummary
 import io.github.lucabarbalata.anprox.model.profile.Endpoint
 import io.github.lucabarbalata.anprox.model.profile.ServerProfile
 import io.github.lucabarbalata.anprox.model.pve.GuestType
@@ -78,6 +79,16 @@ class AlertTest {
         )
         assertEquals(92, first.alerts[2].alert.percent)
         assertEquals("Homelab", first.alerts[1].serverName)
+        // For the widget: pve3 offline, 5 of 8 guests running (the template doesn't count),
+        // and two current problems on each server's side.
+        assertEquals(
+            listOf(
+                ServerSummary("Backups", backupServer = true, storages = 2, problems = 1),
+                // Storages: local and local-zfs on the two online nodes, plus the shared nas-nfs and pbs.
+                ServerSummary("Homelab", nodesOnline = 2, nodes = 3, guestsRunning = 5, guests = 8, storages = 6, problems = 2),
+            ),
+            first.servers,
+        )
         // The same state again: nothing new.
         now += 900
         assertEquals(emptyList(), s.alerts.kinds())
@@ -141,6 +152,7 @@ class AlertTest {
         val check = s.alerts.check(settings)
         assertEquals(1, check.checked)
         assertEquals(listOf("Backups"), check.unreachable)
+        assertEquals(ServerSummary("Backups", reachable = false, backupServer = true), check.servers.first())
         Unit
     }
 }

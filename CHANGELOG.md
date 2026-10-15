@@ -51,6 +51,12 @@ All notable changes to AnProx are documented here. The format follows
 
 - **App shortcuts**: long-press the launcher icon for Resources, Tasks or Alerts.
 
+- **Quick Settings tile** "Proxmox": what the last background check found ("OK at 14:32",
+  "2 new alerts", "1 unreachable"); tap it to open the dashboard.
+
+- **Home-screen widget** "Proxmox status": each server with nodes online, guests running and
+  current problems, as of the last background check; tap it to open the dashboard.
+
 ### Changed
 - The bulk-action summary on the Resources list stays on screen longer.
 

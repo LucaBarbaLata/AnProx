@@ -19,6 +19,7 @@ Actions, so the chosen versions had to be ones known to exist and to work togeth
 | Compose BOM | 2025.06.00 | Compose 1.8 / Material 3 1.3, known compatible with AGP 8.12. |
 | OkHttp | **5.4.0** (pinned) | 5.5.0's Android artifact requires compileSdk 37, which AGP 8.12 doesn't support. |
 | Koin | 4.1.1 | Matches the Compose 1.8 generation (4.2 pulls newer AndroidX). |
+| Glance (app widgets) | 1.1.1 | Stable, needs compileSdk 34+ and works with the Compose 1.8 runtime; added for the M3 widget. |
 | JVM target | 17 | Android-supported bytecode level. Builds run on JDK 21. |
 
 Dependabot (`.github/dependabot.yml`) proposes updates weekly.
