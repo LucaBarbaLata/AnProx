@@ -14,6 +14,13 @@ ktor = "3.6.0"
 koin = "4.1.1"
 junit = "5.10.1"
 slf4j = "2.0.20"
+# SSH client (questionnaire Q15). JSch takes Ed25519, Curve25519 and ChaCha20 from Bouncy Castle,
+# since Android's own providers lack them before API 33.
+jsch = "2.28.4"
+bouncycastle = "1.85"
+# SSH server for the mock (JVM only); eddsa gives it Ed25519 keys.
+sshd = "2.19.0"
+eddsa = "0.3.0"
 
 # AndroidX (Google Maven)
 composeBom = "2025.06.00"
@@ -38,6 +45,10 @@ kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serializa
 
 # Networking (client)
 okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
+jsch = { module = "com.github.mwiede:jsch", version.ref = "jsch" }
+bouncycastle-prov = { module = "org.bouncycastle:bcprov-jdk18on", version.ref = "bouncycastle" }
+sshd-core = { module = "org.apache.sshd:sshd-core", version.ref = "sshd" }
+eddsa = { module = "net.i2p.crypto:eddsa", version.ref = "eddsa" }
 okhttp-logging = { module = "com.squareup.okhttp3:logging-interceptor", version.ref = "okhttp" }
 retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
 retrofit-kotlinx-serialization = { module = "com.squareup.retrofit2:converter-kotlinx-serialization", version.ref = "retrofit" }

@@ -101,6 +101,8 @@ import io.github.lucabarbalata.anprox.ui.navigation.ServerEditorRoute
 import io.github.lucabarbalata.anprox.ui.navigation.ServersRoute
 import io.github.lucabarbalata.anprox.ui.navigation.SettingsRoute
 import io.github.lucabarbalata.anprox.ui.navigation.SnapshotsRoute
+import io.github.lucabarbalata.anprox.ui.navigation.SshKeysRoute
+import io.github.lucabarbalata.anprox.ui.navigation.SshRoute
 import io.github.lucabarbalata.anprox.ui.navigation.StorageContentRoute
 import io.github.lucabarbalata.anprox.ui.navigation.StorageEditorRoute
 import io.github.lucabarbalata.anprox.ui.navigation.StorageListRoute
@@ -124,6 +126,8 @@ import io.github.lucabarbalata.anprox.ui.settings.AboutScreen
 import io.github.lucabarbalata.anprox.ui.settings.MoreScreen
 import io.github.lucabarbalata.anprox.ui.settings.SettingsScreen
 import io.github.lucabarbalata.anprox.ui.snapshots.SnapshotsScreen
+import io.github.lucabarbalata.anprox.ui.ssh.SshKeysScreen
+import io.github.lucabarbalata.anprox.ui.ssh.SshScreen
 import io.github.lucabarbalata.anprox.ui.tasks.TaskLogScreen
 import io.github.lucabarbalata.anprox.ui.tasks.TasksScreen
 import org.koin.compose.koinInject
@@ -186,6 +190,7 @@ fun AnProxApp() {
                 val kind = if (ref.type == GuestType.QEMU) ConsoleKind.VM else ConsoleKind.CONTAINER
                 nav.navigate(ConsoleRoute(ref.serverId, ref.node, kind.name, ref.vmid, name))
             }
+            GuestTool.SSH -> nav.navigate(SshRoute(ref.serverId, ref.node, ref.vmid, type, name))
             GuestTool.CLONE -> nav.navigate(CloneRoute(ref.serverId, ref.node, type, ref.vmid, name))
             GuestTool.MIGRATE -> nav.navigate(MigrateRoute(ref.serverId, ref.node, type, ref.vmid, name))
         }
@@ -465,6 +470,7 @@ fun AnProxApp() {
                     onBack = back,
                     onGuest = openGuest,
                     onShell = { nav.navigate(ConsoleRoute(r.serverId, r.node, ConsoleKind.NODE.name, 0, r.node)) },
+                    onSsh = { nav.navigate(SshRoute(r.serverId, r.node, 0, "", r.node)) },
                     onCreate = { type -> nav.navigate(CreateGuestRoute(r.serverId, r.node, type.apiName)) },
                     onFirewall = { nav.navigate(FirewallRoute(r.serverId, "node", r.node, r.node)) },
                     onAdmin = { page -> nav.navigate(NodeAdminRoute(r.serverId, r.node, page.name)) },
@@ -493,7 +499,12 @@ fun AnProxApp() {
                 val r = entry.toRoute<TaskLogRoute>()
                 TaskLogScreen(serverId = r.serverId, node = r.node, upid = r.upid, onBack = back)
             }
-            composable<SettingsRoute> { SettingsScreen(onBack = back) }
+            composable<SettingsRoute> { SettingsScreen(onBack = back, onSshKeys = { nav.navigate(SshKeysRoute) }) }
+            composable<SshRoute> { entry ->
+                val r = entry.toRoute<SshRoute>()
+                SshScreen(r.serverId, r.node, r.vmid, r.type, r.name, onBack = back, onKeys = { nav.navigate(SshKeysRoute) })
+            }
+            composable<SshKeysRoute> { SshKeysScreen(onBack = back) }
             composable<AlertsRoute> { AlertsScreen(onBack = back) }
             composable<AboutRoute> { AboutScreen(onBack = back) }
         }

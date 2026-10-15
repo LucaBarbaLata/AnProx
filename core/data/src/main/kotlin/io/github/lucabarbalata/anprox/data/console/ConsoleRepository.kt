@@ -39,12 +39,30 @@ sealed interface ConsoleEvent {
 }
 
 /**
- * One live console. Events arrive on [events] (collect it once); input goes the other way through
+ * A live console the console screen drives: a Proxmox console ([ConsoleSession]) or an SSH
+ * shell. Events arrive on [events] (collect it once); input goes the other way through
  * [sendInput] / [resize] for terminals and [sendBinary] for VNC.
- *
- * @property vncPassword VMs only: the password noVNC answers the VNC challenge with.
  */
-class ConsoleSession internal constructor(val target: ConsoleTarget, val vncPassword: String?) {
+interface ConsoleConnection {
+    val events: Flow<ConsoleEvent>
+
+    /** VMs only: the password noVNC answers the VNC challenge with. */
+    val vncPassword: String? get() = null
+
+    /** Terminals: what the user typed (or an extra key's bytes). */
+    fun sendInput(text: String)
+
+    /** Terminals: the visible size in characters. */
+    fun resize(cols: Int, rows: Int)
+
+    /** VNC: raw RFB bytes from noVNC. */
+    fun sendBinary(bytes: ByteArray) = Unit
+
+    fun close()
+}
+
+/** One live Proxmox console, over the `vncwebsocket`. */
+class ConsoleSession internal constructor(val target: ConsoleTarget, override val vncPassword: String?) : ConsoleConnection {
     private val channel = Channel<ConsoleEvent>(Channel.UNLIMITED)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
@@ -52,24 +70,21 @@ class ConsoleSession internal constructor(val target: ConsoleTarget, val vncPass
 
     @Volatile private var accepted = false
 
-    val events: Flow<ConsoleEvent> = channel.receiveAsFlow()
+    override val events: Flow<ConsoleEvent> = channel.receiveAsFlow()
 
-    /** Terminals: what the user typed (or an extra key's bytes). */
-    fun sendInput(text: String) {
+    override fun sendInput(text: String) {
         if (accepted) socket?.send(TermProxyProtocol.input(text))
     }
 
-    /** Terminals: the visible size in characters. */
-    fun resize(cols: Int, rows: Int) {
+    override fun resize(cols: Int, rows: Int) {
         if (accepted && cols > 0 && rows > 0) socket?.send(TermProxyProtocol.resize(cols, rows))
     }
 
-    /** VNC: raw RFB bytes from noVNC. */
-    fun sendBinary(bytes: ByteArray) {
+    override fun sendBinary(bytes: ByteArray) {
         socket?.send(bytes.toByteString())
     }
 
-    fun close() {
+    override fun close() {
         socket?.close(NORMAL_CLOSURE, null)
         scope.cancel()
     }

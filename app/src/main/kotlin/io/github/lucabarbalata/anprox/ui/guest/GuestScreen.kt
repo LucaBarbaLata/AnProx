@@ -13,26 +13,27 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.outlined.Backup
+import androidx.compose.material.icons.outlined.Bolt
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.CloudQueue
-import androidx.compose.material.icons.outlined.PauseCircle
+import androidx.compose.material.icons.outlined.ContentCopy
+import androidx.compose.material.icons.outlined.Key
 import androidx.compose.material.icons.outlined.Memory
 import androidx.compose.material.icons.outlined.Monitor
+import androidx.compose.material.icons.outlined.PauseCircle
 import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.PowerSettingsNew
 import androidx.compose.material.icons.outlined.RestartAlt
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.Shield
-import androidx.compose.material.icons.outlined.StopCircle
-import androidx.compose.material.icons.outlined.Terminal
 import androidx.compose.material.icons.outlined.StarOutline
-import androidx.compose.material.icons.outlined.Tune
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.outlined.ContentCopy
+import androidx.compose.material.icons.outlined.StopCircle
 import androidx.compose.material.icons.outlined.SwapHoriz
-import androidx.compose.material.icons.outlined.Backup
-import androidx.compose.material.icons.outlined.Bolt
+import androidx.compose.material.icons.outlined.Terminal
+import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -45,8 +46,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.lucabarbalata.anprox.R
@@ -72,12 +73,12 @@ import io.github.lucabarbalata.anprox.model.pve.PowerAction
 import io.github.lucabarbalata.anprox.ui.common.AnProxScaffold
 import io.github.lucabarbalata.anprox.ui.common.ConfirmActionDialog
 import io.github.lucabarbalata.anprox.ui.common.MenuRow
-import io.github.lucabarbalata.anprox.ui.console.rememberSpiceLauncher
 import io.github.lucabarbalata.anprox.ui.common.TaskResultSnackbar
 import io.github.lucabarbalata.anprox.ui.common.asString
 import io.github.lucabarbalata.anprox.ui.common.contentPadding
 import io.github.lucabarbalata.anprox.ui.common.formatDuration
 import io.github.lucabarbalata.anprox.ui.common.statusAppearance
+import io.github.lucabarbalata.anprox.ui.console.rememberSpiceLauncher
 import io.github.lucabarbalata.anprox.ui.metrics.PerformanceSection
 import kotlinx.coroutines.launch
 import org.koin.compose.viewmodel.koinViewModel
@@ -164,6 +165,11 @@ fun GuestDetail(
                                 stringResource(R.string.console_title),
                                 stringResource(if (ref.type == GuestType.QEMU) R.string.console_open_body_vm else R.string.console_open_body_ct),
                             ) { onTool(GuestTool.CONSOLE, ref, state.title) }
+                            MenuRow(
+                                Icons.Outlined.Key,
+                                stringResource(R.string.ssh_title),
+                                stringResource(R.string.ssh_open_body_guest),
+                            ) { onTool(GuestTool.SSH, ref, state.title) }
                         }
                         // SPICE needs a running VM with a SPICE display; Proxmox explains otherwise.
                         if (ref.type == GuestType.QEMU && status.isRunning) {

@@ -1,22 +1,6 @@
 package io.github.lucabarbalata.anprox.ui.node
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.PowerSettingsNew
-import androidx.compose.material.icons.outlined.RestartAlt
-import androidx.compose.material.icons.outlined.Computer
-import androidx.compose.material.icons.outlined.Inventory2
-import androidx.compose.material.icons.outlined.Shield
-import androidx.compose.material.icons.outlined.Terminal
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
-import io.github.lucabarbalata.anprox.core.designsystem.component.AnProxButton
-import io.github.lucabarbalata.anprox.core.designsystem.component.ButtonStyle
-import io.github.lucabarbalata.anprox.model.pve.NodePowerAction
-import io.github.lucabarbalata.anprox.security.LocalDangerousActionGuard
-import io.github.lucabarbalata.anprox.ui.common.ConfirmActionDialog
-import io.github.lucabarbalata.anprox.ui.common.MenuRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -24,10 +8,21 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Computer
+import androidx.compose.material.icons.outlined.Inventory2
+import androidx.compose.material.icons.outlined.Key
+import androidx.compose.material.icons.outlined.PowerSettingsNew
+import androidx.compose.material.icons.outlined.RestartAlt
+import androidx.compose.material.icons.outlined.Shield
+import androidx.compose.material.icons.outlined.Terminal
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -35,6 +30,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.lucabarbalata.anprox.R
+import io.github.lucabarbalata.anprox.core.designsystem.component.AnProxButton
+import io.github.lucabarbalata.anprox.core.designsystem.component.ButtonStyle
 import io.github.lucabarbalata.anprox.core.designsystem.component.ErrorBanner
 import io.github.lucabarbalata.anprox.core.designsystem.component.GlassCard
 import io.github.lucabarbalata.anprox.core.designsystem.component.InfoRow
@@ -47,8 +44,12 @@ import io.github.lucabarbalata.anprox.data.guest.GuestRef
 import io.github.lucabarbalata.anprox.data.metrics.MetricsSource
 import io.github.lucabarbalata.anprox.model.format.Formatters
 import io.github.lucabarbalata.anprox.model.pve.GuestType
+import io.github.lucabarbalata.anprox.model.pve.NodePowerAction
 import io.github.lucabarbalata.anprox.model.pve.NodeStatus
+import io.github.lucabarbalata.anprox.security.LocalDangerousActionGuard
 import io.github.lucabarbalata.anprox.ui.common.AnProxScaffold
+import io.github.lucabarbalata.anprox.ui.common.ConfirmActionDialog
+import io.github.lucabarbalata.anprox.ui.common.MenuRow
 import io.github.lucabarbalata.anprox.ui.common.asString
 import io.github.lucabarbalata.anprox.ui.common.contentPadding
 import io.github.lucabarbalata.anprox.ui.common.formatDuration
@@ -64,6 +65,7 @@ fun NodeScreen(
     onBack: () -> Unit,
     onGuest: (GuestRef) -> Unit,
     onShell: () -> Unit,
+    onSsh: () -> Unit,
     onCreate: (GuestType) -> Unit,
     onFirewall: () -> Unit,
     onAdmin: (NodeAdminPage) -> Unit,
@@ -89,6 +91,7 @@ fun NodeScreen(
                     item {
                         GlassCard(contentPadding = PaddingValues(vertical = 6.dp)) {
                             MenuRow(Icons.Outlined.Terminal, stringResource(R.string.node_shell), stringResource(R.string.node_shell_body), onShell)
+                            MenuRow(Icons.Outlined.Key, stringResource(R.string.ssh_title), stringResource(R.string.ssh_open_body_node), onSsh)
                             MenuRow(Icons.Outlined.Computer, stringResource(R.string.node_create_vm), stringResource(R.string.node_create_vm_body)) {
                                 onCreate(GuestType.QEMU)
                             }

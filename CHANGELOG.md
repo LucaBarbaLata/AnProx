@@ -57,6 +57,15 @@ All notable changes to AnProx are documented here. The format follows
 - **Home-screen widget** "Proxmox status": each server with nodes online, guests running and
   current problems, as of the last background check; tap it to open the dashboard.
 
+- **SSH client** built in (Node → SSH, Guest → SSH): connects straight to the node, or to the
+  address the guest agent reports, with a password or a key, in the same terminal as the
+  Proxmox shell. The first connection shows the server's host key fingerprint to trust; a
+  changed key is refused unless you accept it again. After signing in with a password, **Add
+  key** puts one of your keys on the server (like `ssh-copy-id`), and the next connection uses it.
+  Settings → **SSH keys**: create keys on the phone (Ed25519, ECDSA, RSA 4096) or import them
+  (OpenSSH, PEM, PuTTY, with passphrase), copy or share the public key, see and forget trusted
+  servers. Private keys are encrypted with the Android Keystore.
+
 - **Home-screen widget** "Favourite guests": the guests you starred, with their state and a
   button to start, resume or shut them down (tap **Shut down**, then **Tap again** within a few
   seconds). With the app lock on, the button opens the guest in the app instead. It refreshes

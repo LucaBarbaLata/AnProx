@@ -24,6 +24,8 @@ import io.github.lucabarbalata.anprox.data.metrics.MetricsSource
 import io.github.lucabarbalata.anprox.data.node.NodeAdminRepository
 import io.github.lucabarbalata.anprox.data.security.AppLock
 import io.github.lucabarbalata.anprox.data.snapshot.SnapshotRepository
+import io.github.lucabarbalata.anprox.data.ssh.SshClient
+import io.github.lucabarbalata.anprox.data.ssh.SshTargets
 import io.github.lucabarbalata.anprox.data.store.ProfileStore
 import io.github.lucabarbalata.anprox.data.store.SecretStore
 import io.github.lucabarbalata.anprox.data.transfer.ProfileTransfer
@@ -36,11 +38,13 @@ import io.github.lucabarbalata.anprox.storage.AlertStore
 import io.github.lucabarbalata.anprox.storage.DataStoreProfileStore
 import io.github.lucabarbalata.anprox.storage.KeystoreSecretStore
 import io.github.lucabarbalata.anprox.storage.SettingsRepository
+import io.github.lucabarbalata.anprox.storage.SshStore
 import io.github.lucabarbalata.anprox.storage.WidgetStore
 import io.github.lucabarbalata.anprox.ui.alerts.AlertsViewModel
 import io.github.lucabarbalata.anprox.ui.backups.BackupScope
 import io.github.lucabarbalata.anprox.ui.backups.BackupsViewModel
 import io.github.lucabarbalata.anprox.ui.cloudinit.CloudInitViewModel
+import io.github.lucabarbalata.anprox.ui.console.ConsoleOpener
 import io.github.lucabarbalata.anprox.ui.console.ConsoleViewModel
 import io.github.lucabarbalata.anprox.ui.create.CreateGuestViewModel
 import io.github.lucabarbalata.anprox.ui.dashboard.DashboardViewModel
@@ -80,6 +84,8 @@ import io.github.lucabarbalata.anprox.ui.servers.ServersViewModel
 import io.github.lucabarbalata.anprox.ui.settings.SettingsViewModel
 import io.github.lucabarbalata.anprox.ui.settings.TransferViewModel
 import io.github.lucabarbalata.anprox.ui.snapshots.SnapshotsViewModel
+import io.github.lucabarbalata.anprox.ui.ssh.SshKeysViewModel
+import io.github.lucabarbalata.anprox.ui.ssh.SshViewModel
 import io.github.lucabarbalata.anprox.ui.tasks.TaskLogViewModel
 import io.github.lucabarbalata.anprox.ui.tasks.TasksViewModel
 import kotlinx.coroutines.CoroutineScope
@@ -142,6 +148,9 @@ val appModule = module {
     // Background alerts
     single { AlertStore(androidContext()) }
     single { WidgetStore(androidContext()) }
+    single { SshStore(androidContext()) }
+    single { SshClient(get<SshStore>(), get<SshStore>()) }
+    single { SshTargets(get(), get()) }
     single { AlertRepository(get(), get(), get<AlertStore>()) }
     single { AlertNotifier(androidContext()) }
     single { AlertScheduler(androidContext()) }
@@ -159,7 +168,19 @@ val appModule = module {
     viewModel { (ref: GuestRef) -> CloudInitViewModel(ref, get(), get()) }
     viewModel { (serverId: String, node: String, type: GuestType) -> CreateGuestViewModel(serverId, node, type, get(), get()) }
     viewModel { (ref: GuestRef, name: String) -> CloneViewModel(ref, name, get()) }
-    viewModel { (serverId: String, target: ConsoleTarget) -> ConsoleViewModel(serverId, target, get()) }
+    viewModel { SshKeysViewModel(get()) }
+    viewModel { (serverId: String, node: String, vmid: Int, type: String, label: String) ->
+        SshViewModel(serverId, node, vmid, type, label, get(), get(), get())
+    }
+    viewModel { (serverId: String, target: ConsoleTarget) ->
+        val consoles: ConsoleRepository = get()
+        ConsoleViewModel(
+            target,
+            object : ConsoleOpener {
+                override suspend fun open() = consoles.open(serverId, target)
+            },
+        )
+    }
     viewModel { (ref: GuestRef, name: String) -> MigrateViewModel(ref, name, get()) }
     viewModel { (ref: GuestRef, name: String) -> SnapshotsViewModel(ref, name, get()) }
     viewModel { (source: MetricsSource) -> PerformanceViewModel(source, get()) }

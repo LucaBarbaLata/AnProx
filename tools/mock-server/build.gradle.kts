@@ -33,6 +33,8 @@ dependencies {
     implementation(libs.ktor.server.websockets)
     implementation(libs.ktor.serialization.kotlinx.json)
     implementation(libs.ktor.network.tls.certificates)
+    implementation(libs.sshd.core)
+    implementation(libs.eddsa)
     runtimeOnly(libs.slf4j.simple)
 
     testImplementation(kotlin("test"))

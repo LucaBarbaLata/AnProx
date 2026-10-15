@@ -32,6 +32,9 @@ import kotlinx.serialization.Serializable
 /** [kind] is a [io.github.lucabarbalata.anprox.model.pve.ConsoleKind] name; [vmid] is 0 for a node shell. */
 // command: node shells only, e.g. "upgrade" (empty: a login shell).
 @Serializable data class ConsoleRoute(val serverId: String, val node: String, val kind: String, val vmid: Int, val name: String, val command: String = "")
+/** SSH with the app's own client: [vmid] is 0 for the node itself, [type] is `qemu`/`lxc` for a guest. */
+@Serializable data class SshRoute(val serverId: String, val node: String, val vmid: Int, val type: String, val name: String)
+@Serializable data object SshKeysRoute
 // page: a NodeAdminPage name.
 @Serializable data class NodeAdminRoute(val serverId: String, val node: String, val page: String)
 @Serializable data class CloneRoute(val serverId: String, val node: String, val type: String, val vmid: Int, val name: String)

@@ -15,6 +15,7 @@ internal val Context.secretsDataStore: DataStore<Preferences> by preferencesData
 internal val Context.settingsDataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 internal val Context.alertsDataStore: DataStore<Preferences> by preferencesDataStore(name = "alerts")
 internal val Context.widgetsDataStore: DataStore<Preferences> by preferencesDataStore(name = "widgets")
+internal val Context.sshDataStore: DataStore<Preferences> by preferencesDataStore(name = "ssh")
 
 /**
  * JSON used for on-device storage. Unlike the API's ProxmoxJson it writes default values, so

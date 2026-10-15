@@ -2,14 +2,13 @@ package io.github.lucabarbalata.anprox.ui.console
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import io.github.lucabarbalata.anprox.data.console.ConsoleConnection
 import io.github.lucabarbalata.anprox.data.console.ConsoleEvent
-import io.github.lucabarbalata.anprox.data.console.ConsoleRepository
-import io.github.lucabarbalata.anprox.data.console.ConsoleSession
 import io.github.lucabarbalata.anprox.model.pve.ConsoleTarget
 import io.github.lucabarbalata.anprox.model.pve.TerminalKey
-import io.github.lucabarbalata.anprox.network.ApiException
 import io.github.lucabarbalata.anprox.ui.common.UiText
 import io.github.lucabarbalata.anprox.ui.common.toUiText
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -49,18 +48,23 @@ sealed interface PageCommand {
     data class Closed(override val page: Int) : PageCommand
 }
 
+/** Opens the connection a console screen shows: a Proxmox console, or an SSH shell. */
+fun interface ConsoleOpener {
+    suspend fun open(): ConsoleConnection
+}
+
 /**
  * A console (questionnaire Q15). The page (xterm.js or noVNC, bundled in the app) only draws and
- * takes input; this ViewModel owns the connection to Proxmox, which goes through the app's own
- * HTTP client so certificates, custom headers and failover behave like everywhere else.
+ * takes input; this ViewModel owns the connection, which goes through the app's own HTTP client
+ * (Proxmox consoles, so certificates, custom headers and failover behave like everywhere else)
+ * or its SSH client.
  *
  * The page is created again on rotation. A live terminal keeps its session and the new page gets
  * the recent output; noVNC can't take over a running RFB session, so the VM screen reconnects.
  */
 class ConsoleViewModel(
-    private val serverId: String,
     private val target: ConsoleTarget,
-    private val consoles: ConsoleRepository,
+    private val opener: ConsoleOpener,
 ) : ViewModel() {
 
     private val ui = MutableStateFlow(ConsoleState(target))
@@ -73,7 +77,7 @@ class ConsoleViewModel(
     @Volatile var currentPage = 0
         private set
 
-    @Volatile private var session: ConsoleSession? = null
+    @Volatile private var session: ConsoleConnection? = null
     private var job: Job? = null
 
     /** Terminal output kept for a page created again (main thread only). */
@@ -99,6 +103,12 @@ class ConsoleViewModel(
         ui.update { it.copy(generation = it.generation + 1, status = ConsoleStatus.CONNECTING, message = null) }
     }
 
+    /** Ends the session without opening another (the SSH screen going back to its form). */
+    fun disconnect() {
+        stop()
+        ui.update { it.copy(status = ConsoleStatus.CLOSED, message = null) }
+    }
+
     private fun stop() {
         job?.cancel()
         job = null
@@ -113,8 +123,10 @@ class ConsoleViewModel(
         ui.update { it.copy(status = ConsoleStatus.CONNECTING, desktopName = null, message = null) }
         job = viewModelScope.launch {
             val opened = try {
-                consoles.open(serverId, target)
-            } catch (e: ApiException) {
+                opener.open()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
                 ui.update { it.copy(status = ConsoleStatus.FAILED, message = e.toUiText()) }
                 return@launch
             }

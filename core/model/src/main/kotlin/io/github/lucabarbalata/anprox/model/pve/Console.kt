@@ -14,6 +14,9 @@ enum class ConsoleKind {
 
     /** A root shell on the node as a terminal (needs Sys.Console). */
     NODE,
+
+    /** The app's own SSH client: no Proxmox proxy involved, [ConsoleTarget.node] is the host. */
+    SSH,
     ;
 
     val isTerminal: Boolean get() = this != VM
@@ -45,11 +48,16 @@ data class ConsoleTarget(
             ConsoleKind.VM -> "$guestPath/vncproxy"
             ConsoleKind.CONTAINER -> "$guestPath/termproxy"
             ConsoleKind.NODE -> "nodes/$node/termproxy"
+            ConsoleKind.SSH -> error("SSH doesn't go through Proxmox")
         }
 
     /** `GET` upgraded to a WebSocket, with `port` and `vncticket` from the proxy call. */
     val websocketPath: String
-        get() = if (kind == ConsoleKind.NODE) "nodes/$node/vncwebsocket" else "$guestPath/vncwebsocket"
+        get() = when (kind) {
+            ConsoleKind.NODE -> "nodes/$node/vncwebsocket"
+            ConsoleKind.SSH -> error("SSH doesn't go through Proxmox")
+            else -> "$guestPath/vncwebsocket"
+        }
 }
 
 /**

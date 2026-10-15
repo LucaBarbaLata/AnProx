@@ -4,6 +4,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
@@ -11,6 +12,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Download
+import androidx.compose.material.icons.outlined.Key
 import androidx.compose.material.icons.outlined.Upload
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
@@ -47,16 +49,22 @@ import io.github.lucabarbalata.anprox.security.AuthAvailability
 import io.github.lucabarbalata.anprox.security.LocalAuthenticator
 import io.github.lucabarbalata.anprox.storage.AppSettings
 import io.github.lucabarbalata.anprox.ui.common.AnProxScaffold
+import io.github.lucabarbalata.anprox.ui.common.MenuRow
 import io.github.lucabarbalata.anprox.ui.common.asString
 import io.github.lucabarbalata.anprox.ui.common.contentPadding
-import java.time.LocalDate
 import org.koin.compose.viewmodel.koinViewModel
+import java.time.LocalDate
 
 private val REFRESH_OPTIONS = listOf(2_000L, 5_000L, 10_000L, 30_000L)
 private val LOCK_AFTER_OPTIONS = listOf(0L, 60_000L, 300_000L)
 
 @Composable
-fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = koinViewModel(), transfer: TransferViewModel = koinViewModel()) {
+fun SettingsScreen(
+    onBack: () -> Unit,
+    onSshKeys: () -> Unit,
+    viewModel: SettingsViewModel = koinViewModel(),
+    transfer: TransferViewModel = koinViewModel(),
+) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val transferState by transfer.state.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }
@@ -106,6 +114,11 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = koinViewMo
             }
             item { SectionHeader(stringResource(R.string.settings_security)) }
             item { AppLockCard(settings, viewModel) }
+            item {
+                GlassCard(contentPadding = PaddingValues(vertical = 6.dp)) {
+                    MenuRow(Icons.Outlined.Key, stringResource(R.string.ssh_keys_title), stringResource(R.string.ssh_keys_settings_body), onSshKeys)
+                }
+            }
             item { SectionHeader(stringResource(R.string.transfer_title)) }
             item { TransferCard(transferState, transfer) }
         }

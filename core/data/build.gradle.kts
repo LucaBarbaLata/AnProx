@@ -21,6 +21,8 @@ dependencies {
     api(project(":core:model"))
     api(project(":core:network"))
     api(libs.kotlinx.coroutines.core)
+    implementation(libs.jsch)
+    implementation(libs.bouncycastle.prov)
 
     testImplementation(project(":tools:mock-server"))
     testImplementation(kotlin("test"))

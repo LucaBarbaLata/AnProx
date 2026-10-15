@@ -12,7 +12,7 @@ testing debug builds on **real hardware**.
 | Integration: multi-server hub, sessions, dashboard snapshots, guest actions, guest snapshots, performance history, app lock rules, backup and restore, guest network info, guest options, clone/template/migrate, console sessions (terminal and VNC handshake), node power, hardware (disks, drives, network, pending changes, container volumes), creating VMs and containers, cloud-init, SPICE, alerts, task notifications, backup jobs, storage, firewall, high availability, replication, pools, storage setup, encrypted server export, firewall groups, aliases, IP sets and log, node updates, repositories, services, journal, DNS, hosts, time, network and disks | `core/data/src/test` | JVM | 104 |
 | Android lint | `:app:lintDebug` | CI | — |
 | Build: debug and R8-minified release | `:app:assemble*` | CI | — |
-| **End-to-end tour** of the minified release APK on emulators against the mock server | `scripts/e2e/tour.py` | CI (Android 8.0 + 14), Release workflow | 27 steps |
+| **End-to-end tour** of the minified release APK on emulators against the mock server | `scripts/e2e/tour.py` | CI (Android 8.0 + 14), Release workflow | 28 steps |
 | UI / screenshot tests | planned (M1) | — | — |
 | Manual on real hardware | [checklist below](#manual-test-checklist-real-hardware) | owner | — |
 
@@ -77,8 +77,10 @@ PVE realms offered: `pam`, `pve`, `corp` (AD) and `sso` (OpenID, to exercise the
 ./gradlew :tools:mock-server:run
 ```
 
-This starts PVE on **8006** and PBS on **8007**, listening on all interfaces, with tasks taking
-about 2 s.
+This starts PVE on **8006**, PBS on **8007** and an SSH server on **2222**, listening on all
+interfaces, with tasks taking about 2 s. The SSH server takes any user with the password
+`anprox`, and keys added with the app's **Add key**; its shell answers `hostname`, `whoami`,
+`uname -a`, `echo` and `exit`.
 
 | Device | Address to add in AnProx |
 |---|---|
@@ -136,7 +138,8 @@ so no test code is compiled into the app. `scripts/e2e/run.sh` starts the mock s
 24. Datacenter → **Replication** → `103 · k8s-master → pve1` and the failing job to the offline pve3 → **Add replication job** → **Add** → `100 · web → pve2` is listed.
 25. Datacenter → **Resource pools** → `prod` ("Guests: 3 · Storages: 1") → `lab` (`104 · lab-vm`) → **Add guests** → `103 · k8s-master` → **Add (1)** → it is listed in the pool.
 26. Resources → `pve1` → **Updates** (pve-manager is upgradable) → **Repositories** shows the enterprise warning → add **No-Subscription** → **Services** → start `ksmtuned` → **Network** → a new bridge is pending → **Revert** → **System log** shows the journal.
-27. Settings → Light theme; turning on the app lock explains that the emulator has no screen lock → dashboard in light mode, with the starred VM under Favourites.
+27. Settings → **SSH keys** → **New key** "Tour phone" → Resources → `pve1` → **SSH** → host `10.0.2.2`, port `2222`, password → **Trust this server?** → **Trust** → "Connected" → **Add key** → "Tour phone" → **Change connection** → **Connect** with the key, without a host key question.
+28. Settings → Light theme; turning on the app lock explains that the emulator has no screen lock → dashboard in light mode, with the starred VM under Favourites.
 
 After every step the script checks that the app process is alive and that logcat has no
 `FATAL EXCEPTION` for the app. Screenshots of each step, plus UI dumps and logcat on failure,

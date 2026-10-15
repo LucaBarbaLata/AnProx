@@ -282,6 +282,26 @@ Needs two nodes and a guest whose disks are on local ZFS storage that exists on 
 8. **DNS, hosts and time**: values match the web UI's System → DNS / Hosts / Time; change the
    time zone and back; add a comment line to /etc/hosts and remove it again.
 
+### D15. SSH client (Node → SSH, Guest → SSH, Settings → SSH keys), new after beta.2
+1. **Settings → SSH keys → New key**, name it after the phone, Ed25519 → it is listed with its
+   fingerprint. **Copy** the public key and paste it somewhere: it starts with `ssh-ed25519` and
+   ends with `anprox-<name>`.
+2. **Node → SSH**: the host is the node's address from the cluster (check it), port 22, user
+   root. Choose **Password**, type root's password → **Connect** → **Trust this server?** shows a
+   fingerprint: compare it with `ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub` in the node's
+   Shell (the type shown says which file) → **Trust** → a root prompt. Try `htop`, the arrows and
+   Ctrl+C from the key row, and rotate the phone (the session stays).
+3. In that session tap **Add key** → your key → "… was added". Check `~/.ssh/authorized_keys` on
+   the node: one new line, ending with `anprox-<name>`. Do it again: no second line.
+4. **Change connection** (pencil) → the form now uses the key → **Connect**: no host key question,
+   no password.
+5. Settings → SSH keys → **Trusted servers** lists the node; **Forget** it → the next connection
+   asks again. With a wrong password: "The server refused the sign-in".
+6. **Import key**: paste (or choose the file of) a key you use on your computer, with its
+   passphrase if it has one → a wrong passphrase is refused → right one → it signs in.
+7. **Guest → SSH** on a running VM with the guest agent (or a container): its address is filled
+   in. With PVE 9, say whether anything differs.
+
 ### E. Snapshots (Tools → Snapshots)
 1. **Take snapshot** on the running test VM with **Include RAM** → "VM snapshot finished"; it
    appears in the tree with a RAM badge.

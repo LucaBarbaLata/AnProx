@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -30,6 +31,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -73,6 +75,22 @@ private const val MIN_WEBVIEW_MAJOR = 80
 fun ConsoleScreen(serverId: String, target: ConsoleTarget, onBack: () -> Unit) {
     val vmKey = "console-$serverId-${target.kind}-${target.node}-${target.vmid}"
     val viewModel: ConsoleViewModel = koinViewModel(key = vmKey) { parametersOf(serverId, target) }
+    ConsoleView(viewModel, target, onBack)
+}
+
+/**
+ * The console page with its status, error banner and key row, for [ConsoleScreen] and the SSH
+ * screen. [actions] go in the top bar before Reconnect; [extra] sits above the page.
+ */
+@Composable
+fun ConsoleView(
+    viewModel: ConsoleViewModel,
+    target: ConsoleTarget,
+    onBack: () -> Unit,
+    actions: @Composable RowScope.() -> Unit = {},
+    extra: @Composable () -> Unit = {},
+    snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     var webView by remember { mutableStateOf<WebView?>(null) }
     val webViewVersion = remember { webViewVersion() }
@@ -98,7 +116,9 @@ fun ConsoleScreen(serverId: String, target: ConsoleTarget, onBack: () -> Unit) {
         title = target.name?.takeIf { it.isNotBlank() } ?: target.node,
         subtitle = statusText(state, target.kind),
         onBack = onBack,
+        snackbarHostState = snackbarHostState,
         actions = {
+            actions()
             IconButton(onClick = viewModel::reconnect, enabled = supported) {
                 Icon(Icons.Outlined.Refresh, contentDescription = stringResource(R.string.console_reconnect))
             }
@@ -117,6 +137,7 @@ fun ConsoleScreen(serverId: String, target: ConsoleTarget, onBack: () -> Unit) {
                 )
                 return@Column
             }
+            extra()
             if (state.status == ConsoleStatus.FAILED || state.status == ConsoleStatus.CLOSED) {
                 ErrorBanner(
                     state.message?.asString() ?: stringResource(R.string.console_closed),
@@ -164,6 +185,7 @@ private fun statusText(state: ConsoleState, kind: ConsoleKind): String = when (s
             ConsoleKind.VM -> R.string.console_failed_vm
             ConsoleKind.CONTAINER -> R.string.console_failed_ct
             ConsoleKind.NODE -> R.string.console_failed_node
+            ConsoleKind.SSH -> R.string.ssh_failed
         },
     )
 }

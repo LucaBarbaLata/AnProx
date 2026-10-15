@@ -135,4 +135,5 @@ just as welcome. See [CONTRIBUTING.md](CONTRIBUTING.md).
 Copyright © 2026 the AnProx contributors.
 Licensed under the [GNU General Public License v3.0](LICENSE).
 Bundled fonts (Inter, JetBrains Mono) are under the SIL Open Font License. See
-[docs/third-party](docs/third-party).
+[docs/third-party](docs/third-party). The consoles bundle xterm.js (MIT) and noVNC (MPL 2.0); the
+SSH client uses JSch (BSD) and Bouncy Castle (MIT), whose licenses ship inside the app.

@@ -37,3 +37,14 @@
 
 # Small @Serializable records the app keeps on the device.
 -keep @kotlinx.serialization.Serializable class io.github.lucabarbalata.anprox.storage.** { *; }
+
+# JSch (the SSH client) creates its algorithm classes by name from its configuration.
+-keep class com.jcraft.jsch.** { *; }
+# Optional integrations JSch and Bouncy Castle refer to but the app doesn't use (agents, logging
+# frameworks, Kerberos, LDAP certificate stores).
+-dontwarn com.sun.jna.**
+-dontwarn org.apache.logging.log4j.**
+-dontwarn org.slf4j.**
+-dontwarn org.newsclub.net.unix.**
+-dontwarn org.ietf.jgss.**
+-dontwarn javax.naming.**

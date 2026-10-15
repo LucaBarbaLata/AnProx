@@ -44,6 +44,8 @@ API tokens are **not** supported by design (Q9). OpenID Connect sign-in arrives 
 | Passwords (only if "Remember password" is on) | DataStore `secrets` | AES-256-GCM, key in the Android Keystore |
 | Session tickets + CSRF tokens | DataStore `secrets` | AES-256-GCM, key in the Android Keystore |
 | Settings (theme, refresh interval) | DataStore `settings` | App sandbox (not sensitive) |
+| SSH private keys and their passphrases | DataStore `ssh` | AES-256-GCM, key `anprox_ssh_v1` in the Android Keystore |
+| SSH public keys, trusted host keys, last SSH connection per node/guest (no password) | DataStore `ssh` | App sandbox (not secret) |
 
 - The Keystore key (`anprox_secrets_v1`) is generated on the device, can't be exported, and lives
   in the TEE/StrongBox where the hardware has one.
@@ -73,6 +75,22 @@ API tokens are **not** supported by design (Q9). OpenID Connect sign-in arrives 
   storage permission). Delete it once imported.
 - Import adds new servers and replaces a saved server with the same internal id (an export of
   this phone, or of the phone it came from); it never deletes servers.
+
+## SSH (Q15)
+
+- The built-in SSH client connects straight to the node's or guest's address, not through
+  Proxmox ([ADR 0015](adr/0015-ssh-client.md)).
+- **Host keys are trusted on first use.** The first connection to a `host:port` shows the key's
+  SHA-256 fingerprint; a different key later is shown with the old one and a warning, and is
+  refused unless the user accepts it. Compare with `ssh-keygen -lf /etc/ssh/ssh_host_*_key.pub`
+  on the server. Settings → SSH keys lists trusted servers and can forget them.
+- SSH passwords are never stored. Keys made on the phone never leave it; only the public half
+  can be copied or shared. An imported key's passphrase is stored, encrypted with the key, so
+  it isn't asked for at every connection.
+- "Add key" appends the public key to the signed-in user's `~/.ssh/authorized_keys` with a
+  command built only from a validated key line (type, Base64, a comment made of letters, digits
+  and dashes).
+- SSH keys and trusted hosts aren't part of the server export.
 
 ## The "Allow insecure certificate" switch (Q10)
 

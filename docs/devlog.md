@@ -231,6 +231,21 @@ from the start of the file; the first call asks for one line to learn `total`, t
 the last 500 (`ApiEnvelope` gained `total`, and `ProxmoxConnection.pveEnvelope` returns the
 whole envelope). That completes M4.
 
+**M2: the SSH client.** JSch (mwiede fork) with Bouncy Castle, see [ADR 0015](adr/0015-ssh-client.md).
+Two surprises: JSch chooses between its JDK and Bouncy Castle classes by Java version, and
+Android's `java.specification.version` reads as an old one, so `JschSetup` picks the Bouncy
+Castle ones everywhere, to make the JVM tests run what the phone runs; and JSch throws
+`UnsupportedOperationException` when asked to write an Ed25519 private key, so `SshKeys` writes
+new ones itself in OpenSSH's `openssh-key-v1` format (no cipher, no KDF) and reads them back
+through JSch to check. Host keys: JSch asks a `HostKeyRepository` during the key exchange, on the
+thread that called `connect`, so `TrustOnFirstUse` blocks that thread until the user answers in
+the dialog. A known host's key type is put first in `server_host_key`, so a server with several
+host keys keeps showing the one that was trusted. The console screen now takes any
+`ConsoleConnection`, so the SSH shell gets the xterm.js page, key row and rotation handling for
+free. The mock gained an Apache MINA SSHD server (port 2222 when run by hand) with a toy shell and
+the `ssh-copy-id`-like command, so the tests cover password and key sign-in, a changed host key,
+a wrong password and a closed port. With this, M2 is complete.
+
 **M3: favourites on the home screen.** A second Glance widget, `FavouritesWidget`, lists the
 starred guests. `FavouriteRepository` (`:core:data`) asks each server for `cluster/resources?type=vm`
 once, in parallel, and marks a favourite gone, unreachable or signed out when that's all it can

@@ -920,6 +920,67 @@ def node_admin():
     back()                                       # to Resources
 
 
+def replace_field(label, value, fallback_index=None):
+    """Like [fill], for a field that already holds text: deletes it first."""
+    root = dump()
+    found = matches(root, label, exact=True)
+    fields = [n for n in root.iter("node") if n.get("class") == "android.widget.EditText"]
+    node = found[0] if found else (fields[fallback_index] if fallback_index is not None and len(fields) > fallback_index else None)
+    if node is None:
+        save_dump(root, f"field-{slug(label)}")
+        raise AssertionError(f"text field '{label}' not found")
+    tap_node(node)
+    adb("shell", "input", "keyevent", "KEYCODE_MOVE_END")
+    adb("shell", "input", "keyevent", *(["KEYCODE_DEL"] * 24))
+    adb("shell", "input", "text", value)
+    time.sleep(0.6)
+    complete_typing(label, value)
+
+
+@step("SSH: a key made on the phone, password sign-in with the host key check, then the key")
+def ssh():
+    tap("More")
+    tap("Settings")
+    tap_node(scroll_to("SSH keys", exact=True))
+    tap("New key")
+    fill("Name", "Tour phone", fallback_index=0)
+    tap("Create")
+    find("Tour phone", timeout=30)
+    screenshot("16-ssh-keys")
+    back()                                        # Settings
+    back()                                        # More
+    tap("Resources")
+    tap_node(scroll_to("pve1", exact=True))       # the node
+    tap_node(scroll_to("SSH", exact=True))
+    find("Host or IP address", timeout=30)
+    # The mock's cluster says 10.0.0.11; the emulator reaches the mock's SSH server on the host.
+    wait_until(lambda: not visible("Looking up the address"), "the address lookup", timeout=30)
+    replace_field("Host or IP address", "10.0.2.2", fallback_index=0)
+    replace_field("Port", "2222", fallback_index=2)
+    tap("Password")                               # a key exists, so the form starts on SSH key
+    fill("Password", "anprox", password=True)
+    tap("Connect")
+    node = find_any(["Trust this server?", "Android System WebView"], timeout=45)
+    if "Android System WebView" in " ".join(labels(node)):
+        screenshot("16b-ssh-webview-too-old")
+        back()
+        back()
+        return
+    screenshot("16b-ssh-host-key")
+    tap("Trust", timeout=10)
+    find("Connected", timeout=45)
+    tap("Add key")                                # the banner: signed in with a password
+    tap_node(find("Tour phone", timeout=15))
+    find_any(["was added"], timeout=30)
+    screenshot("16c-ssh-connected")
+    tap("Change connection")
+    find("Connect", timeout=15)                   # the form, now on the key just added
+    tap("Connect")
+    find("Connected", timeout=45)                 # no host key question the second time
+    leave_console()
+    back()                                        # the node, back to Resources
+
+
 @step("Light theme, the app lock without a screen lock, favourites on the dashboard")
 def light_theme():
     tap("More")
@@ -957,7 +1018,8 @@ def main():
     try:
         for s in (launch, add_pve, add_pbs, resources, performance, guest_start, snapshots, backups,
                   options, hardware, console, vm_console, cloud_init, bulk, clone_migrate, tasks, create_vm, alerts,
-                  backup_jobs, storage, storage_setup, firewall, high_availability, replication, pools, node_admin, light_theme):
+                  backup_jobs, storage, storage_setup, firewall, high_availability, replication, pools, node_admin, ssh,
+                  light_theme):
             s()
         ok = True
     finally:

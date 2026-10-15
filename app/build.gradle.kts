@@ -112,6 +112,8 @@ android {
             excludes += setOf(
                 "/META-INF/{AL2.0,LGPL2.1}",
                 "/META-INF/versions/9/previous-compilation-data.bin",
+                // Multi-release jars (JSch, Bouncy Castle) carry these per Java version; Android uses none.
+                "/META-INF/versions/*/OSGI-INF/MANIFEST.MF",
                 "/META-INF/INDEX.LIST",
                 "/META-INF/DEPENDENCIES",
             )

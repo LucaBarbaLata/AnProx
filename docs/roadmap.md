@@ -10,7 +10,7 @@ Status legend: ✅ done · 🚧 in progress · 🗓 planned
 |---|---|---|
 | [M0](#m0--foundation) | Foundation: servers, login, dashboard, resources, power, tasks | ✅ released as **0.1.0-beta.1** (M1 work so far: **0.1.0-beta.2**) |
 | [M1](#m1--daily-driver) | Daily driver: app lock, SSO, snapshots, backups, charts, notifications | 🚧 snapshots, charts, app lock, backups, guest IPs, bulk actions, favourites done |
-| [M2](#m2--consoles--guest-configuration) | Consoles and guest configuration | 🚧 all but the built-in SSH client |
+| [M2](#m2--consoles--guest-configuration) | Consoles and guest configuration | ✅ (beta.3 candidate) |
 | [M3](#m3--alerts--android-integration) | Alerts and Android integration | ✅ (beta.3 candidate) |
 | [M4](#m4--datacenter) | Datacenter: storage, backup jobs, HA, replication, firewall | ✅ (beta.3 candidate) |
 | [M5](#m5--node-administration) | Node administration | ✅ (beta.3 candidate) |
@@ -85,7 +85,10 @@ Everything marked ✅ in M1 and M2 below. Gates:
   connects through its own HTTP client and both front ends are bundled
   ([ADR 0014](adr/0014-consoles-through-the-app.md)).
 - ✅ **SPICE handoff**: the `.vv` file opens in aSPICE or another SPICE viewer (Q15).
-- **Built-in SSH client** with key management (Q15).
+- ✅ **Built-in SSH client** with key management (Q15, [ADR 0015](adr/0015-ssh-client.md)): Node →
+  SSH and Guest → SSH (the guest agent's address), password or key, trust on first use for host
+  keys, "Add key" after a password sign-in; Settings → SSH keys creates (Ed25519, ECDSA, RSA) and
+  imports keys and lists trusted servers. Port forwarding, agent forwarding and SFTP come later.
 - ✅ **Hardware editing**, common settings first (Q19): CPU, memory/balloon, disks
   (add/grow/move/detach, unused volumes), network devices, CD/DVD, boot order; container
   resources, root disk and mount points, network with IPv4/IPv6. Changes a running VM only picks
