@@ -151,6 +151,13 @@ lists it with empty bounds; on Android 14 the **Open it** button after creating 
 under the result snackbar at the end of the form. The create and clone screens now scroll to
 their result, and the tour waits for the snackbar to close.
 
+**Text fields dropped keystrokes on Android 14.** The tour typed a URL into the download dialog
+and the last character went missing. Screens keep form values in a ViewModel's StateFlow, which
+reaches Compose a frame later, and that late value fed back into the field overwrote what had
+just been typed. `GlassTextField` now keeps its own copy while the user types and takes the
+screen's value once typing pauses for 300 ms, so app-made changes (a suggested file name, a
+filtered number, a cleared password) still appear. Every form in the app uses it.
+
 Not alerted on purpose: a server that can't be reached. A phone that leaves the home network
 would otherwise notify every 15 minutes; the Alerts screen lists unreachable servers instead.
 A session that stops working is notified once ("Sign in to … again").

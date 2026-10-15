@@ -21,7 +21,12 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -31,8 +36,17 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import io.github.lucabarbalata.anprox.core.designsystem.theme.AnProxTheme
+import kotlinx.coroutines.delay
 
-/** Outlined text field styled for glass surfaces. */
+/**
+ * Outlined text field styled for glass surfaces.
+ *
+ * The field keeps its own copy of the text while the user types. Screens usually hold the value
+ * in a ViewModel's StateFlow, which reaches the screen a frame later; feeding that late value
+ * straight back into the field drops keystrokes when typing is fast (seen on Android 14). The
+ * [value] from the screen is taken over once typing pauses, so changes the app makes itself (a
+ * suggested file name, a filtered number, a cleared password) still show.
+ */
 @Composable
 fun GlassTextField(
     value: String,
@@ -51,9 +65,21 @@ fun GlassTextField(
     trailingIcon: (@Composable () -> Unit)? = null,
 ) {
     val c = AnProxTheme.colors
+    var text by remember { mutableStateOf(value) }
+    var edits by remember { mutableIntStateOf(0) }
+    LaunchedEffect(value, edits) {
+        if (value == text) return@LaunchedEffect
+        // Restarted by every keystroke, so it only lands once the user stops typing.
+        delay(SYNC_DELAY_MILLIS)
+        text = value
+    }
     OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
+        value = text,
+        onValueChange = {
+            text = it
+            edits++
+            onValueChange(it)
+        },
         modifier = modifier.fillMaxWidth(),
         label = { Text(label) },
         placeholder = placeholder?.let { { Text(it, color = c.textTertiary) } },
@@ -82,6 +108,8 @@ fun GlassTextField(
         ),
     )
 }
+
+private const val SYNC_DELAY_MILLIS = 300L
 
 /** A full-width row with title, optional description and a switch; the whole row toggles. */
 @Composable

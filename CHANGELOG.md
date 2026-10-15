@@ -73,6 +73,7 @@ All notable changes to AnProx are documented here. The format follows
 - After creating or cloning a guest, the form scrolls to the result and its **Open it** button.
 
 ### Fixed
+- Text fields no longer lose characters when typing fast (seen on Android 14).
 - **Consoles work on real servers.** In 0.1.0-beta.2 the VM screen reconnected endlessly and node
   and container terminals stayed empty, without a keyboard. The app now connects to the console
   itself, through the same connection as everything else, so self-signed certificates, custom
