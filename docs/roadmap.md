@@ -55,7 +55,7 @@ Release engineering is in place ([releasing.md](releasing.md)). Gates:
 
 ### Beta 0.1.0-beta.2: ✅ released 2026-10-15, owner testing on real hardware
 Everything marked ✅ in M1 and M2 below. Gates:
-- [x] CI green: tests, lint, debug and release builds, and the emulator tour (14 steps) on Android 8.0 and 14
+- [x] CI green: tests, lint, debug and release builds, and the emulator tour on Android 8.0 and 14 (10 steps: the steps for options, consoles, bulk actions and clone/migrate were written but not run until after beta.2, see the devlog)
 - [x] `CHANGELOG.md` section, store changelog (`fastlane/…/changelogs/10022.txt`), README
 - [x] [Test guide](beta2-test-guide.md) for the owner, Proxmox VE focused (no Backup Server available)
 - [ ] Owner: run the test guide on real hardware (Proxmox VE 8; 9 later)

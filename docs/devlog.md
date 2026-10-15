@@ -40,6 +40,13 @@ keyboard, and noVNC reconnected in an endless loop on every VM.
   (terminal echo, VNC handshake and frame). The Android screen is verified by CI and the emulator
   tour, which now opens a container console and a VM console.
 
+**The tour skipped five steps.** Reading the CI log of the console fix showed 10 steps, not 15.
+The steps for options, the two consoles, bulk actions and clone/migrate were defined in
+`tour.py` (since the options commit, `2d8076f`) but never added to the list `main()` runs. CI
+was green without running them, and beta.2 shipped with those features tested only by JVM tests
+and by hand. They are in the list now. Lesson: when adding a step, check the step count in the CI
+log.
+
 ---
 
 ## 2026-10-14 — Session 3: M1 starts with snapshots

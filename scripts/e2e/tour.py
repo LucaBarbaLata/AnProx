@@ -576,7 +576,8 @@ def main():
     print("Tour:", flush=True)
     ok = False
     try:
-        for s in (launch, add_pve, add_pbs, resources, performance, guest_start, snapshots, backups, tasks, light_theme):
+        for s in (launch, add_pve, add_pbs, resources, performance, guest_start, snapshots, backups,
+                  options, console, vm_console, bulk, clone_migrate, tasks, light_theme):
             s()
         ok = True
     finally:
