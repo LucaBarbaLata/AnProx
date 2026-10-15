@@ -123,7 +123,11 @@ Everything marked ✅ in M1 and M2 below. Gates:
   node; what it holds by type (ISO images, CT templates, VM disks, CT volumes, snippets, import,
   backups); the node downloads ISO images and templates from a URL (with a checksum); upload from
   the phone with progress; delete ISO images and templates.
-- Storage configuration: add/edit/remove every storage type.
+- ✅ **Storage configuration** (Datacenter → Storage → Add storage, or the pencil on a storage):
+  directory, NFS, SMB/CIFS, Proxmox Backup Server, LVM, LVM-thin and ZFS, with the node's scans
+  to find exports, shares, datastores, volume groups, thin pools and ZFS pools; content, nodes,
+  enabled, shared, backup retention; remove any storage. Other types (iSCSI, Ceph, ESXi) can
+  be removed but are edited in the web interface for now.
 - ✅ **High availability** (Q21, Datacenter → High availability): the manager's and each
   node's status and quorum; add a guest, set its requested state (started, stopped, disabled,
   ignored), group, restart and relocate limits and comment; move it to another node through the

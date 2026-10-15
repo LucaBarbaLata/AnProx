@@ -2,7 +2,6 @@ package io.github.lucabarbalata.anprox.mock
 
 import io.github.lucabarbalata.anprox.model.pve.NotBackedUp
 import io.github.lucabarbalata.anprox.model.pve.ScheduledRun
-import io.github.lucabarbalata.anprox.model.pve.StorageConfig
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import java.time.Instant
@@ -107,12 +106,6 @@ internal class MockJobs(
             .flatMap { o -> selected(o, guests, o["node"]) }
             .map { it.vmid }.toSet()
         return guests.filter { !it.template && it.vmid !in covered }.map { NotBackedUp(it.vmid, it.name, it.type) }
-    }
-
-    fun storageConfigs(): List<StorageConfig> = storages.groupBy { it.id }.map { (id, list) ->
-        val s = list.first()
-        // Every mock node has each storage, so none is limited to some nodes.
-        StorageConfig(id, s.plugin, s.content, s.shared)
     }
 
     private fun ids(text: String?) = text.orEmpty().split(',', ' ', ';').mapNotNull { it.trim().toIntOrNull() }.toSet()

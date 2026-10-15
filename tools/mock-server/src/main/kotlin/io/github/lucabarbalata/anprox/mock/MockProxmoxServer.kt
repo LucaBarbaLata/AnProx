@@ -363,6 +363,46 @@ class MockProxmoxServer(
             call.authed() ?: return@get
             call.ok(state.storageConfigs())
         }
+        get("storage/{storage}") {
+            call.authed() ?: return@get
+            val id = call.parameters["storage"]!!
+            call.ok(state.storageConfig(id) ?: return@get call.fail(500, "storage '$id' does not exist"))
+        }
+        post("storage") {
+            val s = call.authed() ?: return@post
+            if (state.isReadOnly(s.user)) return@post call.fail(403, "Permission check failed (/storage, Datastore.Allocate)")
+            val p = call.receiveParameters()
+            val error = state.createStorage(p.names().associateWith { p[it].orEmpty() })
+            if (error != null) call.fail(400, error) else call.ok(JsonNull)
+        }
+        put("storage/{storage}") {
+            val s = call.authed() ?: return@put
+            if (state.isReadOnly(s.user)) return@put call.fail(403, "Permission check failed (/storage, Datastore.Allocate)")
+            val p = call.receiveParameters()
+            val error = state.updateStorage(call.parameters["storage"]!!, p.names().associateWith { p[it].orEmpty() })
+            if (error != null) call.fail(400, error) else call.ok(JsonNull)
+        }
+        delete("storage/{storage}") {
+            val s = call.authed() ?: return@delete
+            if (state.isReadOnly(s.user)) return@delete call.fail(403, "Permission check failed (/storage, Datastore.Allocate)")
+            val error = state.deleteStorage(call.parameters["storage"]!!)
+            if (error != null) call.fail(400, error) else call.ok(JsonNull)
+        }
+        get("nodes/{node}/scan/{kind}") {
+            call.authed() ?: return@get
+            val node = state.node(call.parameters["node"]!!) ?: return@get call.fail(404, "no such node")
+            if (!node.online) return@get call.fail(595, "Connection refused")
+            val q = call.request.queryParameters
+            when (call.parameters["kind"]) {
+                "nfs" -> state.scanNfs(q["server"].orEmpty()).fold({ call.ok(it) }, { call.fail(500, it.message ?: "error") })
+                "cifs" -> state.scanCifs(q["server"].orEmpty()).fold({ call.ok(it) }, { call.fail(500, it.message ?: "error") })
+                "pbs" -> state.scanPbs(q["server"].orEmpty(), q["password"]).fold({ call.ok(it) }, { call.fail(500, it.message ?: "error") })
+                "lvm" -> call.ok(state.scanLvm())
+                "lvmthin" -> call.ok(state.scanLvmThin(q["vg"].orEmpty()) ?: return@get call.fail(500, "no such volume group '${q["vg"]}'"))
+                "zfs" -> call.ok(state.scanZfs())
+                else -> call.fail(501, "Method 'GET /nodes/${node.name}/scan/${call.parameters["kind"]}' not implemented")
+            }
+        }
         get("pools") {
             call.authed() ?: return@get
             // Proxmox VE 8.1+: one pool with its members.

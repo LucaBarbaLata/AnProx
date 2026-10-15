@@ -57,6 +57,7 @@ import io.github.lucabarbalata.anprox.ui.datacenter.PoolScreen
 import io.github.lucabarbalata.anprox.ui.datacenter.PoolsScreen
 import io.github.lucabarbalata.anprox.ui.datacenter.ReplicationScreen
 import io.github.lucabarbalata.anprox.ui.datacenter.StorageContentScreen
+import io.github.lucabarbalata.anprox.ui.datacenter.StorageEditorScreen
 import io.github.lucabarbalata.anprox.ui.datacenter.StorageListScreen
 import io.github.lucabarbalata.anprox.ui.guest.CloneScreen
 import io.github.lucabarbalata.anprox.ui.guest.GuestScreen
@@ -95,6 +96,7 @@ import io.github.lucabarbalata.anprox.ui.navigation.ServersRoute
 import io.github.lucabarbalata.anprox.ui.navigation.SettingsRoute
 import io.github.lucabarbalata.anprox.ui.navigation.SnapshotsRoute
 import io.github.lucabarbalata.anprox.ui.navigation.StorageContentRoute
+import io.github.lucabarbalata.anprox.ui.navigation.StorageEditorRoute
 import io.github.lucabarbalata.anprox.ui.navigation.StorageListRoute
 import io.github.lucabarbalata.anprox.ui.navigation.StorageRoute
 import io.github.lucabarbalata.anprox.ui.navigation.TaskLogRoute
@@ -275,7 +277,16 @@ fun AnProxApp() {
             }
             composable<StorageListRoute> { entry ->
                 val route = entry.toRoute<StorageListRoute>()
-                StorageListScreen(route.serverId, onBack = back, onOpen = { node, storage -> nav.navigate(StorageContentRoute(route.serverId, node, storage)) })
+                StorageListScreen(
+                    route.serverId,
+                    onBack = back,
+                    onOpen = { node, storage -> nav.navigate(StorageContentRoute(route.serverId, node, storage)) },
+                    onEdit = { id -> nav.navigate(StorageEditorRoute(route.serverId, id.orEmpty())) },
+                )
+            }
+            composable<StorageEditorRoute> { entry ->
+                val route = entry.toRoute<StorageEditorRoute>()
+                StorageEditorScreen(route.serverId, route.storageId.ifEmpty { null }, onDone = back)
             }
             composable<StorageContentRoute> { entry ->
                 val r = entry.toRoute<StorageContentRoute>()

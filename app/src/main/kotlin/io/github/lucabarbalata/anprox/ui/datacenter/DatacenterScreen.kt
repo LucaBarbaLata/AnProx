@@ -55,7 +55,6 @@ fun DatacenterScreen(title: String, onBack: () -> Unit, onBackupJobs: () -> Unit
 private fun Planned() {
     val c = AnProxTheme.colors
     val items = listOf(
-        R.string.datacenter_storage_config,
         R.string.datacenter_firewall_more,
     )
     GlassCard(contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)) {

@@ -90,6 +90,13 @@ All notable changes to AnProx are documented here. The format follows
   guests and storages to it or take them out, change its comment, delete it once empty. Tap a
   guest to open it.
 
+- **Add and edit storages** (Datacenter → Storage → **Add storage**, or the pencil on a
+  storage): directory, NFS, SMB/CIFS, Proxmox Backup Server, LVM, LVM-thin and ZFS. **Find**
+  buttons ask a node for the NFS exports, SMB shares, Backup Server datastores, volume groups,
+  thin pools or ZFS pools it can see. Choose what the storage holds, which nodes may use it,
+  whether it is enabled or shared, and how many backups to keep. **Remove storage** takes it
+  out of the configuration without deleting its data (type its name to confirm).
+
 ### Changed
 - The bulk-action summary on the Resources list stays on screen longer.
 - After creating or cloning a guest, the form scrolls to the result and its **Open it** button.

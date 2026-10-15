@@ -13,6 +13,7 @@ import io.github.lucabarbalata.anprox.data.datacenter.HaRepository
 import io.github.lucabarbalata.anprox.data.datacenter.PoolRepository
 import io.github.lucabarbalata.anprox.data.datacenter.ReplicationRepository
 import io.github.lucabarbalata.anprox.data.datacenter.StorageRepository
+import io.github.lucabarbalata.anprox.data.datacenter.StorageSetupRepository
 import io.github.lucabarbalata.anprox.data.guest.GuestRef
 import io.github.lucabarbalata.anprox.data.guest.GuestRepository
 import io.github.lucabarbalata.anprox.data.hardware.HardwareRepository
@@ -47,6 +48,7 @@ import io.github.lucabarbalata.anprox.ui.datacenter.PoolViewModel
 import io.github.lucabarbalata.anprox.ui.datacenter.PoolsViewModel
 import io.github.lucabarbalata.anprox.ui.datacenter.ReplicationViewModel
 import io.github.lucabarbalata.anprox.ui.datacenter.StorageContentViewModel
+import io.github.lucabarbalata.anprox.ui.datacenter.StorageEditorViewModel
 import io.github.lucabarbalata.anprox.ui.datacenter.StorageListViewModel
 import io.github.lucabarbalata.anprox.ui.guest.CloneViewModel
 import io.github.lucabarbalata.anprox.ui.guest.GuestViewModel
@@ -116,6 +118,7 @@ val appModule = module {
     single { HaRepository(get()) }
     single { ReplicationRepository(get()) }
     single { PoolRepository(get()) }
+    single { StorageSetupRepository(get()) }
 
     // Background alerts
     single { AlertStore(androidContext()) }
@@ -155,5 +158,7 @@ val appModule = module {
     viewModel { (serverId: String) -> ReplicationViewModel(serverId, get()) }
     viewModel { (serverId: String) -> PoolsViewModel(serverId, get()) }
     viewModel { (serverId: String, poolId: String) -> PoolViewModel(serverId, poolId, get()) }
+    // storageId "" adds a new storage.
+    viewModel { (serverId: String, storageId: String) -> StorageEditorViewModel(serverId, storageId.ifEmpty { null }, get()) }
     viewModel { (serverId: String, node: String, storage: String) -> StorageContentViewModel(serverId, node, storage, get(), get()) }
 }

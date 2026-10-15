@@ -52,7 +52,7 @@ import io.github.lucabarbalata.anprox.ui.common.contentPadding
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 
-private enum class RetentionChoice { STORAGE, CUSTOM, KEEP_ALL }
+internal enum class RetentionChoice { STORAGE, CUSTOM, KEEP_ALL }
 
 /** Creates or edits a backup job (questionnaire Q20). [jobId] is null for a new one. */
 @Composable
@@ -258,21 +258,26 @@ private fun GuestCheckRow(label: String, checked: Boolean, onToggle: () -> Unit)
     }
 }
 
+/**
+ * Which backups to keep. With [inherit] (a backup job) "Storage" leaves it to the storage; without
+ * (a storage's own setting) null means keep all, Proxmox's default for a storage.
+ */
 @Composable
-private fun RetentionCard(retention: Retention?, labels: Map<RetentionChoice, String>, onChange: (Retention?) -> Unit) {
+internal fun RetentionCard(retention: Retention?, labels: Map<RetentionChoice, String>, inherit: Boolean = true, onChange: (Retention?) -> Unit) {
     val choice = when {
-        retention == null -> RetentionChoice.STORAGE
+        retention == null -> if (inherit) RetentionChoice.STORAGE else RetentionChoice.KEEP_ALL
         retention.keepAll -> RetentionChoice.KEEP_ALL
         else -> RetentionChoice.CUSTOM
     }
+    val choices = if (inherit) RetentionChoice.entries else listOf(RetentionChoice.KEEP_ALL, RetentionChoice.CUSTOM)
     GlassCard {
         FormLabel(stringResource(R.string.backupjob_retention))
         Spacer(Modifier.height(8.dp))
-        SegmentedPicker(RetentionChoice.entries, choice, { labels.getValue(it) }, { c ->
+        SegmentedPicker(choices, choice, { labels.getValue(it) }, { c ->
             onChange(
                 when (c) {
                     RetentionChoice.STORAGE -> null
-                    RetentionChoice.KEEP_ALL -> Retention(keepAll = true)
+                    RetentionChoice.KEEP_ALL -> if (inherit) Retention(keepAll = true) else null
                     RetentionChoice.CUSTOM -> retention?.takeIf { !it.keepAll } ?: Retention(daily = 7, weekly = 4)
                 },
             )

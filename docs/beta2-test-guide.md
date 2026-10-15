@@ -180,6 +180,18 @@ Compare everything with Datacenter → Backup in the web UI.
    open; the file appears after the task. Say how fast it was over Wi-Fi.
 5. Delete the test ISO (trash icon) → gone in the web UI too.
 
+### D8b. Adding and editing storages (Datacenter → Storage), new after beta.2
+Use a test share; removing a storage never deletes its data, but guests on it stop working.
+1. **Add storage** → NFS (or SMB/CIFS) → an ID → your NAS's address → **Find exports** (or
+   user, password and **Find shares**) → pick one → choose the content → **Create storage**.
+   It appears in the list and in the web UI with the same settings, mounted on each node.
+2. Tap its pencil: the server and export are read-only; untick a node under "Nodes and
+   options", set retention to Custom (keep daily 3) → **Save** → compare with the web UI.
+3. With a Backup Server: **Add storage** → Backup Server → address, `root@pam` and password,
+   the fingerprint from the PBS dashboard → **Find datastores** → pick → create.
+4. On a node with spare disks: LVM / LVM-thin / ZFS → **Find …** lists what `pvesm scan` shows.
+5. **Remove storage** → type its name → gone from the configuration; the data is still there.
+
 ### D9. Firewall (Datacenter → Firewall, Node → Firewall, Tools → Firewall), new after beta.2
 Careful: a wrong firewall rule can lock you out of the web UI or SSH. Test on a guest first.
 1. Open a guest's firewall: the rules match the web UI's VM → Firewall, in the same order.

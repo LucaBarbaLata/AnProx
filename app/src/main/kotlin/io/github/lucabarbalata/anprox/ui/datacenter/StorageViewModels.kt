@@ -35,10 +35,6 @@ class StorageListViewModel(private val serverId: String, private val repo: Stora
     private val ui = MutableStateFlow(StorageListState())
     val state: StateFlow<StorageListState> = ui.asStateFlow()
 
-    init {
-        refresh()
-    }
-
     fun refresh() {
         ui.update { it.copy(loading = true) }
         viewModelScope.launch {

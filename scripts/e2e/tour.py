@@ -721,6 +721,28 @@ def storage():
     back()
 
 
+@step("Datacenter: add an NFS storage, finding its exports on the server")
+def storage_setup():
+    tap("Overview")
+    tap_node(scroll_to("Datacenter", exact=True))
+    tap_node(scroll_to("Storage", exact=True))
+    tap("Add storage")
+    tap("NFS")
+    fill("ID", "media", fallback_index=0)
+    fill("Server", "10.0.0.50", fallback_index=1)
+    tap_node(scroll_to("Find exports"))
+    tap_node(scroll_to("/export/media"))          # the mock NAS's second export
+    find("/export/media", timeout=10)
+    screenshot("13d-storage-editor")
+    tap_node(scroll_to("Create storage"))
+    wait_until(lambda: not visible("Create storage"), "the editor to close", timeout=30)
+    tap_node(scroll_to("Edit media", exact=True))  # listed; open it to check it saved
+    find("/export/media", timeout=30)
+    back()
+    back()
+    back()
+
+
 @step("Datacenter: firewall, add a rule and switch the firewall on")
 def firewall():
     tap("Overview")
@@ -831,7 +853,7 @@ def main():
     try:
         for s in (launch, add_pve, add_pbs, resources, performance, guest_start, snapshots, backups,
                   options, hardware, console, vm_console, cloud_init, bulk, clone_migrate, tasks, create_vm, alerts,
-                  backup_jobs, storage, firewall, high_availability, replication, pools, light_theme):
+                  backup_jobs, storage, storage_setup, firewall, high_availability, replication, pools, light_theme):
             s()
         ok = True
     finally:

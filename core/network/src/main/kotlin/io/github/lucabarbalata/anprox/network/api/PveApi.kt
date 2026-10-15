@@ -5,6 +5,7 @@ import io.github.lucabarbalata.anprox.model.pve.AgentInterface
 import io.github.lucabarbalata.anprox.model.pve.AgentOsInfo
 import io.github.lucabarbalata.anprox.model.pve.AgentResult
 import io.github.lucabarbalata.anprox.model.pve.CephStatus
+import io.github.lucabarbalata.anprox.model.pve.CifsShare
 import io.github.lucabarbalata.anprox.model.pve.ClusterResource
 import io.github.lucabarbalata.anprox.model.pve.ClusterStatusEntry
 import io.github.lucabarbalata.anprox.model.pve.ConsoleProxy
@@ -15,14 +16,18 @@ import io.github.lucabarbalata.anprox.model.pve.GuestStatus
 import io.github.lucabarbalata.anprox.model.pve.HaGroup
 import io.github.lucabarbalata.anprox.model.pve.HaResource
 import io.github.lucabarbalata.anprox.model.pve.HaStatusEntry
+import io.github.lucabarbalata.anprox.model.pve.LvmThinPool
+import io.github.lucabarbalata.anprox.model.pve.LvmVolumeGroup
 import io.github.lucabarbalata.anprox.model.pve.LxcInterface
 import io.github.lucabarbalata.anprox.model.pve.MigrationCheck
+import io.github.lucabarbalata.anprox.model.pve.NfsExport
 import io.github.lucabarbalata.anprox.model.pve.NodeNetwork
 import io.github.lucabarbalata.anprox.model.pve.NodeStatus
 import io.github.lucabarbalata.anprox.model.pve.NodeStorage
 import io.github.lucabarbalata.anprox.model.pve.NotBackedUp
-import io.github.lucabarbalata.anprox.model.pve.PoolDetail
+import io.github.lucabarbalata.anprox.model.pve.PbsDatastore
 import io.github.lucabarbalata.anprox.model.pve.PendingEntry
+import io.github.lucabarbalata.anprox.model.pve.PoolDetail
 import io.github.lucabarbalata.anprox.model.pve.ResourcePool
 import io.github.lucabarbalata.anprox.model.pve.RrdPoint
 import io.github.lucabarbalata.anprox.model.pve.ScheduledRun
@@ -33,6 +38,7 @@ import io.github.lucabarbalata.anprox.model.pve.TaskLogLine
 import io.github.lucabarbalata.anprox.model.pve.TaskStatus
 import io.github.lucabarbalata.anprox.model.pve.TaskSummary
 import io.github.lucabarbalata.anprox.model.pve.UrlMetadata
+import io.github.lucabarbalata.anprox.model.pve.ZfsPoolName
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import okhttp3.MultipartBody
@@ -43,11 +49,12 @@ import retrofit2.http.FieldMap
 import retrofit2.http.FormUrlEncoded
 import retrofit2.http.GET
 import retrofit2.http.Multipart
-import retrofit2.http.PUT
 import retrofit2.http.POST
+import retrofit2.http.PUT
 import retrofit2.http.Part
 import retrofit2.http.Path
 import retrofit2.http.Query
+import retrofit2.http.QueryMap
 
 /**
  * Proxmox VE endpoints used so far. docs/api-coverage.md tracks every endpoint of the
@@ -94,6 +101,44 @@ interface PveApi {
 
     @GET("pools")
     suspend fun pools(): ApiEnvelope<List<ResourcePool>>
+
+    // Storage configuration (Datacenter → Storage)
+
+    /** One storage's configuration as flat values, with its digest. */
+    @GET("storage/{storage}")
+    suspend fun storageConfig(@Path("storage") storage: String): ApiEnvelope<JsonObject>
+
+    @FormUrlEncoded
+    @POST("storage")
+    suspend fun createStorage(@FieldMap params: Map<String, String>): ApiEnvelope<JsonElement>
+
+    @FormUrlEncoded
+    @PUT("storage/{storage}")
+    suspend fun updateStorage(@Path("storage") storage: String, @FieldMap params: Map<String, String>): ApiEnvelope<JsonElement>
+
+    /** Removes the storage from the configuration; the data on it stays. */
+    @DELETE("storage/{storage}")
+    suspend fun deleteStorage(@Path("storage") storage: String): ApiEnvelope<JsonElement>
+
+    @GET("nodes/{node}/scan/nfs")
+    suspend fun scanNfs(@Path("node") node: String, @Query("server") server: String): ApiEnvelope<List<NfsExport>>
+
+    /** [params]: `server`, and `username`, `password`, `domain` when the server needs them. */
+    @GET("nodes/{node}/scan/cifs")
+    suspend fun scanCifs(@Path("node") node: String, @QueryMap params: Map<String, String>): ApiEnvelope<List<CifsShare>>
+
+    /** [params]: `server`, `username`, `password`, and `fingerprint` for a self-signed certificate. */
+    @GET("nodes/{node}/scan/pbs")
+    suspend fun scanPbs(@Path("node") node: String, @QueryMap params: Map<String, String>): ApiEnvelope<List<PbsDatastore>>
+
+    @GET("nodes/{node}/scan/lvm")
+    suspend fun scanLvm(@Path("node") node: String): ApiEnvelope<List<LvmVolumeGroup>>
+
+    @GET("nodes/{node}/scan/lvmthin")
+    suspend fun scanLvmThin(@Path("node") node: String, @Query("vg") vg: String): ApiEnvelope<List<LvmThinPool>>
+
+    @GET("nodes/{node}/scan/zfs")
+    suspend fun scanZfs(@Path("node") node: String): ApiEnvelope<List<ZfsPoolName>>
 
     // Resource pools. Proxmox VE 8.1 moved them to `/pools?poolid=…` (pool names may then contain
     // slashes); the `/pools/{poolid}` forms are for older versions.

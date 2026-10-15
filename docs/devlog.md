@@ -181,6 +181,17 @@ and older react. The mock's pools moved out of `MockJobs` into `MockPools`; back
 selecting a pool read its members from there, guests carry their pool in `/cluster/resources`
 and each pool is listed there too, as Proxmox does.
 
+**M4: storage configuration.** `StorageSetupForm` covers the seven common types; values Proxmox
+fixes once a storage exists (path, server, export, share, datastore, volume group, thin pool,
+pool) are only sent on create and shown read-only on edit, as the web UI does. Edits send the
+digest and delete only keys that are set, so Proxmox doesn't reject a `delete` of an unknown
+key. A storage's own retention has no "inherit" choice: no `prune-backups` means keep all, so
+the backup-job `RetentionCard` gained an `inherit` switch. Passwords are never read back; an
+empty field keeps the stored one. The scan endpoints take the server's password as a query
+parameter (that's Proxmox's API); it only travels over the app's TLS connection. In the mock,
+storages became a mutable list (`CopyOnWriteArrayList`, as some readers aren't under the lock)
+rebuilt from `MockStorageConfig` when a storage is added, edited or removed.
+
 **Tour, again.** On Android 8 the alerts screen's last card is below the fold, and uiautomator
 lists it with empty bounds; on Android 14 the **Open it** button after creating a VM ended up
 under the result snackbar at the end of the form. The create and clone screens now scroll to

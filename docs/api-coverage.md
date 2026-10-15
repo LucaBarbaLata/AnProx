@@ -86,7 +86,8 @@ Code: `core/network/src/main/kotlin/.../network/api/` (`AccessApi`, `PveApi`, `P
 | `/nodes/{node}/sdn/*` | Node SDN status | 🗓 M6 |
 | `/nodes/{node}/replication/*` | Replication status / run now | 🗓 M4 |
 | `/nodes/{node}/aplinfo` | Container template catalogue | 🗓 M4 |
-| `/nodes/{node}/scan/*` | Storage discovery (NFS, CIFS, iSCSI, ZFS, LVM, PBS) | 🗓 M4 |
+| `GET /nodes/{node}/scan/{nfs,cifs,pbs,lvm,lvmthin,zfs}` | Storage discovery for the storage editor | ✅ |
+| `GET /nodes/{node}/scan/iscsi` | iSCSI discovery | 🗓 (with iSCSI storages) |
 | `/nodes/{node}/hardware/{pci,usb}` | Passthrough device lists | 🗓 M9 |
 | `/nodes/{node}/capabilities/*` | CPU models, machine types | 🗓 M2 |
 | `/nodes/{node}/query-url-metadata` | Download-from-URL helper | 🗓 M4 |
@@ -125,7 +126,8 @@ Code: `core/network/src/main/kotlin/.../network/api/` (`AccessApi`, `PveApi`, `P
 |---|---|---|
 | storage rows in `/cluster/resources` | Usage on dashboard/resources | ✅ |
 | `GET /storage` | Storage configuration (backup targets for jobs) | ✅ |
-| `/storage` (create, edit, delete) | Storage configuration | 🗓 M4 |
+| `GET /storage/{storage}`, `POST /storage`, `PUT /storage/{storage}`, `DELETE /storage/{storage}` | Add, edit and remove directory, NFS, SMB/CIFS, Backup Server, LVM, LVM-thin and ZFS storages; remove any type | ✅ |
+| The same for iSCSI, Ceph RBD/CephFS, ESXi import and others | Editing those types | 🗓 later |
 | `GET /nodes/{node}/storage` | Storages a node can use (backup targets) | ✅ |
 | `GET /nodes/{node}/storage/{storage}/content` | Browse ISOs, templates, backups, disks | ✅ |
 | `DELETE /nodes/{node}/storage/{storage}/content/{volume}` | Delete ISO images, templates, snippets (backups from their screen) | ✅ |

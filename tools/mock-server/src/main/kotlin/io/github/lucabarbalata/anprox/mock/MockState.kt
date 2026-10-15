@@ -206,14 +206,18 @@ class MockState(
         Guest(202, "lxc", "pve2", "backup-client", "stopped", 1, 1 * GIB, 16 * GIB),
     )
 
-    val storages = nodes.flatMap { n ->
-        listOf(
-            Storage(n.name, "local", "dir", "iso,vztmpl,backup", shared = false, total = 100 * GIB, used = 38 * GIB),
-            Storage(n.name, "local-zfs", "zfspool", "images,rootdir", shared = false, total = 1800 * GIB, used = (if (n.name == "pve1") 1650 else 700) * GIB),
-            Storage(n.name, "nas-nfs", "nfs", "images,backup,iso", shared = true, total = 8000 * GIB, used = 5100 * GIB),
-            Storage(n.name, "pbs", "pbs", "backup", shared = true, total = 12000 * GIB, used = 7300 * GIB),
-        )
-    }
+    /** Per node; changes with the storage configuration. */
+    val storages: MutableList<Storage> = java.util.concurrent.CopyOnWriteArrayList(
+        nodes.flatMap { n ->
+            listOf(
+                Storage(n.name, "local", "dir", "iso,vztmpl,backup", shared = false, total = 100 * GIB, used = 38 * GIB),
+                Storage(n.name, "local-zfs", "zfspool", "images,rootdir", shared = false, total = 1800 * GIB, used = (if (n.name == "pve1") 1650 else 700) * GIB),
+                Storage(n.name, "nas-nfs", "nfs", "images,backup,iso", shared = true, total = 8000 * GIB, used = 5100 * GIB),
+                Storage(n.name, "pbs", "pbs", "backup", shared = true, total = 12000 * GIB, used = 7300 * GIB),
+            )
+        },
+    )
+    private val storageSetup = MockStorageConfig()
 
     private val hardware = MockHardware(storages, nodes)
     private val poolsManager = MockPools()
@@ -1026,7 +1030,34 @@ class MockState(
     fun deleteBackupJob(id: String): String? = synchronized(lock) { jobs.delete(id) }
     fun backupJob(id: String): Map<String, String>? = synchronized(lock) { jobs.job(id) }
     fun notBackedUp() = synchronized(lock) { jobs.notBackedUp(guests) }
-    fun storageConfigs() = jobs.storageConfigs()
+    fun storageConfigs() = synchronized(lock) { storageSetup.list() }
+    fun storageConfig(id: String) = synchronized(lock) { storageSetup.get(id) }
+    fun createStorage(params: Map<String, String>): String? = synchronized(lock) {
+        val error = storageSetup.create(params)
+        if (error == null) storages += storageSetup.entries(params["storage"]!!, nodes.map { it.name })
+        error
+    }
+    fun updateStorage(id: String, params: Map<String, String>): String? = synchronized(lock) {
+        val error = storageSetup.update(id, params)
+        if (error == null) {
+            // Content, sharing and the node list may have changed: rebuild its entries, keeping usage.
+            val before = storages.filter { it.id == id }.associateBy { it.node }
+            storages.removeAll { it.id == id }
+            storages += storageSetup.entries(id, nodes.map { it.name }).map { s -> before[s.node]?.let { s.copy(total = it.total, used = it.used) } ?: s }
+        }
+        error
+    }
+    fun deleteStorage(id: String): String? = synchronized(lock) {
+        val error = storageSetup.delete(id)
+        if (error == null) storages.removeAll { it.id == id }
+        error
+    }
+    fun scanNfs(server: String) = storageSetup.scanNfs(server)
+    fun scanCifs(server: String) = storageSetup.scanCifs(server)
+    fun scanPbs(server: String, password: String?) = storageSetup.scanPbs(server, password)
+    fun scanLvm() = storageSetup.scanLvm()
+    fun scanLvmThin(vg: String) = storageSetup.scanLvmThin(vg)
+    fun scanZfs() = storageSetup.scanZfs()
     fun pools() = synchronized(lock) { poolsManager.list() }
     fun pool(id: String) = synchronized(lock) { poolsManager.detail(id, guests, storages) }
     fun createPool(params: Map<String, String>) = synchronized(lock) { poolsManager.create(params) }

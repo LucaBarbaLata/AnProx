@@ -23,9 +23,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Backup
 import androidx.compose.material.icons.outlined.CloudDownload
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.FolderOpen
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Storage
@@ -49,6 +51,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.lucabarbalata.anprox.R
 import io.github.lucabarbalata.anprox.core.designsystem.component.AnProxButton
@@ -87,9 +90,19 @@ import org.koin.core.parameter.parametersOf
 
 /** Datacenter → Storage: every configured storage; tap a node's row to browse it there. */
 @Composable
-fun StorageListScreen(serverId: String, onBack: () -> Unit, onOpen: (node: String, storage: String) -> Unit) {
+fun StorageListScreen(
+    serverId: String,
+    onBack: () -> Unit,
+    onOpen: (node: String, storage: String) -> Unit,
+    onEdit: (storageId: String?) -> Unit,
+) {
     val viewModel: StorageListViewModel = koinViewModel(key = "storages-$serverId") { parametersOf(serverId) }
     val state by viewModel.state.collectAsStateWithLifecycle()
+    // Also after coming back from the editor.
+    LifecycleResumeEffect(Unit) {
+        viewModel.refresh()
+        onPauseOrDispose { }
+    }
     AnProxScaffold(
         title = stringResource(R.string.storage_title),
         onBack = onBack,
@@ -100,6 +113,15 @@ fun StorageListScreen(serverId: String, onBack: () -> Unit, onOpen: (node: Strin
         },
     ) { inner ->
         LazyColumn(contentPadding = contentPadding(inner), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            item {
+                AnProxButton(
+                    stringResource(R.string.storage_add),
+                    onClick = { onEdit(null) },
+                    icon = Icons.Outlined.Add,
+                    enabled = state.error == null,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
             state.error?.let { error ->
                 item { ErrorBanner(error.asString(), actionLabel = stringResource(R.string.action_retry), onAction = viewModel::refresh) }
             }
@@ -110,13 +132,13 @@ fun StorageListScreen(serverId: String, onBack: () -> Unit, onOpen: (node: Strin
                     }
                 }
             }
-            items(state.storages, key = { it.config.storage }) { s -> StorageCard(s, onOpen) }
+            items(state.storages, key = { it.config.storage }) { s -> StorageCard(s, onOpen) { onEdit(s.config.storage) } }
         }
     }
 }
 
 @Composable
-private fun StorageCard(s: StorageOverview, onOpen: (node: String, storage: String) -> Unit) {
+private fun StorageCard(s: StorageOverview, onOpen: (node: String, storage: String) -> Unit, onEdit: () -> Unit) {
     val c = AnProxTheme.colors
     val config = s.config
     GlassCard(contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 8.dp)) {
@@ -132,6 +154,9 @@ private fun StorageCard(s: StorageOverview, onOpen: (node: String, storage: Stri
                 )
             }
             if (config.disable) TagChip(stringResource(R.string.storage_disabled))
+            IconButton(onClick = onEdit) {
+                Icon(Icons.Outlined.Edit, contentDescription = stringResource(R.string.storage_edit, config.storage), tint = c.textSecondary)
+            }
         }
         Spacer(Modifier.height(6.dp))
         val contents = ContentType.parse(config.content).map { contentLabel(it) }
@@ -406,7 +431,7 @@ private fun downloadProblem(problem: DownloadUrlForm.Problem): String = stringRe
 )
 
 @Composable
-private fun contentLabel(type: ContentType): String = stringResource(contentLabelRes(type))
+internal fun contentLabel(type: ContentType): String = stringResource(contentLabelRes(type))
 
 private fun contentLabelRes(type: ContentType): Int = when (type) {
     ContentType.ISO -> R.string.content_iso
