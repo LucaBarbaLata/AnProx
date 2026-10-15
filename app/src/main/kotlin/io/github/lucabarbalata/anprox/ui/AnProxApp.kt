@@ -18,8 +18,8 @@ import androidx.compose.material.icons.outlined.Task
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavDestination
 import androidx.navigation.NavDestination.Companion.hasRoute
@@ -42,6 +42,8 @@ import io.github.lucabarbalata.anprox.model.pve.ConsoleTarget
 import io.github.lucabarbalata.anprox.model.pve.FirewallScope
 import io.github.lucabarbalata.anprox.model.pve.GuestType
 import io.github.lucabarbalata.anprox.ui.alerts.AlertsScreen
+import io.github.lucabarbalata.anprox.ui.backups.BackupScope
+import io.github.lucabarbalata.anprox.ui.backups.BackupsScreen
 import io.github.lucabarbalata.anprox.ui.cloudinit.CloudInitScreen
 import io.github.lucabarbalata.anprox.ui.console.ConsoleScreen
 import io.github.lucabarbalata.anprox.ui.create.CreateGuestScreen
@@ -51,6 +53,7 @@ import io.github.lucabarbalata.anprox.ui.datacenter.BackupJobsScreen
 import io.github.lucabarbalata.anprox.ui.datacenter.DatacenterScreen
 import io.github.lucabarbalata.anprox.ui.datacenter.FirewallScreen
 import io.github.lucabarbalata.anprox.ui.datacenter.HaScreen
+import io.github.lucabarbalata.anprox.ui.datacenter.ReplicationScreen
 import io.github.lucabarbalata.anprox.ui.datacenter.StorageContentScreen
 import io.github.lucabarbalata.anprox.ui.datacenter.StorageListScreen
 import io.github.lucabarbalata.anprox.ui.guest.CloneScreen
@@ -60,29 +63,28 @@ import io.github.lucabarbalata.anprox.ui.guest.MigrateScreen
 import io.github.lucabarbalata.anprox.ui.guest.OptionsScreen
 import io.github.lucabarbalata.anprox.ui.hardware.HardwareScreen
 import io.github.lucabarbalata.anprox.ui.login.LoginScreen
-import io.github.lucabarbalata.anprox.ui.backups.BackupScope
-import io.github.lucabarbalata.anprox.ui.backups.BackupsScreen
 import io.github.lucabarbalata.anprox.ui.navigation.AboutRoute
 import io.github.lucabarbalata.anprox.ui.navigation.AlertsRoute
 import io.github.lucabarbalata.anprox.ui.navigation.AppLinks
 import io.github.lucabarbalata.anprox.ui.navigation.BackupJobEditorRoute
 import io.github.lucabarbalata.anprox.ui.navigation.BackupJobsRoute
 import io.github.lucabarbalata.anprox.ui.navigation.BackupsRoute
-import io.github.lucabarbalata.anprox.ui.navigation.DashboardRoute
 import io.github.lucabarbalata.anprox.ui.navigation.CloneRoute
 import io.github.lucabarbalata.anprox.ui.navigation.CloudInitRoute
 import io.github.lucabarbalata.anprox.ui.navigation.ConsoleRoute
 import io.github.lucabarbalata.anprox.ui.navigation.CreateGuestRoute
+import io.github.lucabarbalata.anprox.ui.navigation.DashboardRoute
 import io.github.lucabarbalata.anprox.ui.navigation.DatacenterRoute
 import io.github.lucabarbalata.anprox.ui.navigation.FirewallRoute
 import io.github.lucabarbalata.anprox.ui.navigation.GuestRoute
 import io.github.lucabarbalata.anprox.ui.navigation.HaRoute
-import io.github.lucabarbalata.anprox.ui.navigation.LoginRoute
-import io.github.lucabarbalata.anprox.ui.navigation.MoreRoute
-import io.github.lucabarbalata.anprox.ui.navigation.MigrateRoute
-import io.github.lucabarbalata.anprox.ui.navigation.NodeRoute
 import io.github.lucabarbalata.anprox.ui.navigation.HardwareRoute
+import io.github.lucabarbalata.anprox.ui.navigation.LoginRoute
+import io.github.lucabarbalata.anprox.ui.navigation.MigrateRoute
+import io.github.lucabarbalata.anprox.ui.navigation.MoreRoute
+import io.github.lucabarbalata.anprox.ui.navigation.NodeRoute
 import io.github.lucabarbalata.anprox.ui.navigation.OptionsRoute
+import io.github.lucabarbalata.anprox.ui.navigation.ReplicationRoute
 import io.github.lucabarbalata.anprox.ui.navigation.ResourcesRoute
 import io.github.lucabarbalata.anprox.ui.navigation.ServerEditorRoute
 import io.github.lucabarbalata.anprox.ui.navigation.ServersRoute
@@ -234,10 +236,14 @@ fun AnProxApp() {
                     onStorage = { nav.navigate(StorageListRoute(route.serverId)) },
                     onFirewall = { nav.navigate(FirewallRoute(route.serverId, "dc", route.title)) },
                     onHa = { nav.navigate(HaRoute(route.serverId)) },
+                    onReplication = { nav.navigate(ReplicationRoute(route.serverId)) },
                 )
             }
             composable<HaRoute> { entry ->
                 HaScreen(entry.toRoute<HaRoute>().serverId, onBack = back, onTask = openTask)
+            }
+            composable<ReplicationRoute> { entry ->
+                ReplicationScreen(entry.toRoute<ReplicationRoute>().serverId, onBack = back, onTask = openTask)
             }
             composable<FirewallRoute> { entry ->
                 val r = entry.toRoute<FirewallRoute>()

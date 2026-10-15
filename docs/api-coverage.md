@@ -40,7 +40,8 @@ Code: `core/network/src/main/kotlin/.../network/api/` (`AccessApi`, `PveApi`, `P
 | `/cluster/options` | Datacenter options | 🗓 M4 |
 | `/cluster/backup` (list, create, edit, delete) | Backup jobs | ✅ (run now uses `POST /nodes/{node}/vzdump` per node, like the web UI) |
 | `GET /cluster/backup-info/not-backed-up` | Guests no enabled job covers | ✅ |
-| `/cluster/replication` | Storage replication jobs | 🗓 M4 |
+| `/cluster/replication` (list, create, edit, delete with `keep`) | Storage replication jobs | ✅ |
+| `GET /nodes/{node}/replication`, `POST …/{id}/schedule_now`, `GET …/{id}/log` | Last and next sync, failures, run now, last run's log | ✅ |
 | `/cluster/ha/resources` (list, add, edit, remove), `POST …/{sid}/migrate` | Guests managed by HA, requested state, limits, moving | ✅ |
 | `GET /cluster/ha/groups`, `GET /cluster/ha/status/current` | Groups (Proxmox VE 8) to pick from, manager and node status | ✅ |
 | `/cluster/ha/groups` (editing), `/cluster/ha/rules` (Proxmox VE 9) | Node affinity | 🗓 M4 |

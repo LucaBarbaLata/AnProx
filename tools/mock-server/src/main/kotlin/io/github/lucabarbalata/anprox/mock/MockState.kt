@@ -219,6 +219,7 @@ class MockState(
     private val jobs = MockJobs(storages, clockMillis)
     private val firewall = MockFirewall()
     private val haManager = MockHa(guests)
+    private val replication = MockReplication(clockMillis)
 
     /** Accepted `POST /nodes/{node}/status` calls (node, command); the mock nodes keep running. */
     val nodePowerRequests: MutableList<Pair<String, String>> = java.util.Collections.synchronizedList(mutableListOf())
@@ -973,6 +974,17 @@ class MockState(
     private val DISK_KEY = Regex("^(scsi|virtio|sata|ide|efidisk|tpmstate|unused|mp)\\d+$|^rootfs$")
 
     // ------------------------------------------------------------------ high availability
+
+    fun replicationJobs() = synchronized(lock) { replication.list() }
+    fun replicationStatus(nodeName: String) = synchronized(lock) { replication.status(nodeName, ::guestNode) }
+    fun createReplicationJob(params: Map<String, String>) = synchronized(lock) {
+        replication.create(params, ::guestNode) { name -> nodes.any { it.name == name } }
+    }
+    fun updateReplicationJob(id: String, params: Map<String, String>) = synchronized(lock) { replication.update(id, params) }
+    fun deleteReplicationJob(id: String) = synchronized(lock) { replication.delete(id) }
+    fun runReplicationNow(id: String) = synchronized(lock) { replication.runNow(id) { name -> nodes.any { it.name == name && it.online } } }
+    fun replicationLog(id: String) = synchronized(lock) { replication.log(id) }
+    private fun guestNode(vmid: Int): String? = guests.firstOrNull { it.vmid == vmid && !it.template }?.node
 
     fun haResources() = synchronized(lock) { haManager.list() }
     fun haGroups() = haManager.groups

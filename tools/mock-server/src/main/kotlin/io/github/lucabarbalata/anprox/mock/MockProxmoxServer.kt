@@ -367,6 +367,49 @@ class MockProxmoxServer(
             call.authed() ?: return@get
             call.ok(state.pools())
         }
+        get("cluster/replication") {
+            call.authed() ?: return@get
+            call.ok(state.replicationJobs())
+        }
+        post("cluster/replication") {
+            val s = call.authed() ?: return@post
+            if (state.isReadOnly(s.user)) return@post call.fail(403, "Permission check failed (/, Sys.Modify)")
+            val p = call.receiveParameters()
+            val error = state.createReplicationJob(p.names().associateWith { p[it].orEmpty() })
+            if (error != null) call.fail(400, error) else call.ok(JsonNull)
+        }
+        put("cluster/replication/{id}") {
+            val s = call.authed() ?: return@put
+            if (state.isReadOnly(s.user)) return@put call.fail(403, "Permission check failed (/, Sys.Modify)")
+            val p = call.receiveParameters()
+            val error = state.updateReplicationJob(call.parameters["id"]!!, p.names().associateWith { p[it].orEmpty() })
+            if (error != null) call.fail(400, error) else call.ok(JsonNull)
+        }
+        delete("cluster/replication/{id}") {
+            val s = call.authed() ?: return@delete
+            if (state.isReadOnly(s.user)) return@delete call.fail(403, "Permission check failed (/, Sys.Modify)")
+            val error = state.deleteReplicationJob(call.parameters["id"]!!)
+            if (error != null) call.fail(400, error) else call.ok(JsonNull)
+        }
+        get("nodes/{node}/replication") {
+            call.authed() ?: return@get
+            val node = state.node(call.parameters["node"]!!) ?: return@get call.fail(404, "no such node")
+            if (!node.online) return@get call.fail(595, "Connection refused")
+            call.ok(state.replicationStatus(node.name))
+        }
+        post("nodes/{node}/replication/{id}/schedule_now") {
+            val s = call.authed() ?: return@post
+            if (state.isReadOnly(s.user)) return@post call.fail(403, "Permission check failed (/vms/${call.parameters["id"]!!.substringBefore('-')}, VM.Replicate)")
+            val node = state.node(call.parameters["node"]!!) ?: return@post call.fail(404, "no such node")
+            if (!node.online) return@post call.fail(595, "Connection refused")
+            val error = state.runReplicationNow(call.parameters["id"]!!)
+            if (error != null) call.fail(400, error) else call.ok(JsonNull)
+        }
+        get("nodes/{node}/replication/{id}/log") {
+            call.authed() ?: return@get
+            val log = state.replicationLog(call.parameters["id"]!!) ?: return@get call.fail(500, "replication job '${call.parameters["id"]}' does not exist")
+            call.ok(log)
+        }
         get("cluster/ha/resources") {
             call.authed() ?: return@get
             call.ok(state.haResources())

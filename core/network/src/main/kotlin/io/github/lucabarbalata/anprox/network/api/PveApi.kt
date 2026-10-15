@@ -195,6 +195,35 @@ interface PveApi {
     @GET("cluster/ha/status/current")
     suspend fun haStatus(): ApiEnvelope<List<HaStatusEntry>>
 
+    // Storage replication (questionnaire Q21); raw objects because numbers come as text too.
+
+    @GET("cluster/replication")
+    suspend fun replicationJobs(): ApiEnvelope<List<JsonObject>>
+
+    @FormUrlEncoded
+    @POST("cluster/replication")
+    suspend fun createReplicationJob(@FieldMap params: Map<String, String>): ApiEnvelope<JsonElement>
+
+    @FormUrlEncoded
+    @PUT("cluster/replication/{id}")
+    suspend fun updateReplicationJob(@Path("id") id: String, @FieldMap params: Map<String, String>): ApiEnvelope<JsonElement>
+
+    /** Marks the job for removal; the next run deletes the copies on the target unless [keep] is 1. */
+    @DELETE("cluster/replication/{id}")
+    suspend fun deleteReplicationJob(@Path("id") id: String, @Query("keep") keep: Int?): ApiEnvelope<JsonElement>
+
+    /** The runs of the jobs whose guests live on [node]. */
+    @GET("nodes/{node}/replication")
+    suspend fun replicationStatus(@Path("node") node: String): ApiEnvelope<List<JsonObject>>
+
+    /** Runs the job as soon as possible (within a minute); no task to follow. */
+    @POST("nodes/{node}/replication/{id}/schedule_now")
+    suspend fun runReplicationNow(@Path("node") node: String, @Path("id") id: String): ApiEnvelope<JsonElement>
+
+    /** The last run's log. */
+    @GET("nodes/{node}/replication/{id}/log")
+    suspend fun replicationLog(@Path("node") node: String, @Path("id") id: String, @Query("limit") limit: Int = 500): ApiEnvelope<List<TaskLogLine>>
+
     /** Ceph health; fails on a cluster without Ceph. */
     @GET("cluster/ceph/status")
     suspend fun cephStatus(): ApiEnvelope<CephStatus>

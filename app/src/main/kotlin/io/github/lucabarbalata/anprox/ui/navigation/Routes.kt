@@ -47,6 +47,7 @@ import kotlinx.serialization.Serializable
 @Serializable data class StorageListRoute(val serverId: String)
 @Serializable data class StorageContentRoute(val serverId: String, val node: String, val storage: String)
 @Serializable data class HaRoute(val serverId: String)
+@Serializable data class ReplicationRoute(val serverId: String)
 // kind: "dc", "node" or "guest"; node, type and vmid as far as the kind needs them.
 @Serializable data class FirewallRoute(val serverId: String, val kind: String, val title: String, val node: String = "", val type: String = "", val vmid: Int = 0)
 

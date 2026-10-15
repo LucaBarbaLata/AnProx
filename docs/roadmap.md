@@ -130,7 +130,10 @@ Everything marked ✅ in M1 and M2 below. Gates:
   HA manager; remove it.
 - **High availability, the rest** (Q21): editing groups (PVE 8) and node affinity rules
   (PVE 9), node maintenance mode.
-- **Storage replication** (Q21): jobs, schedule, status, run now.
+- ✅ **Storage replication** (Q21, Datacenter → Replication): every job with its state (in
+  sync, failed with the error, never run, off), last and next sync; add (guest, target node,
+  schedule presets or any calendar event, rate limit, comment), edit, switch off, run now, the
+  last run's log, delete (optionally keeping the copy on the target).
 - ✅ **Firewall rules and options** (Q24) for the datacenter (Datacenter → Firewall), nodes
   (Node → Firewall) and guests (Tools → Firewall): add, edit, enable, reorder and delete rules
   (direction, action or security group, macro, protocol, addresses, ports, interface, log);

@@ -203,6 +203,18 @@ Needs a cluster. With a single node the screen shows the status and an empty lis
 4. **Move to another node** → pick a node → the guest moves (follow it in Tasks or the web UI).
 5. **Remove from HA** → confirm → gone from the list; the guest itself is unchanged.
 
+### D11. Replication (Datacenter → Replication), new after beta.2
+Needs two nodes and a guest whose disks are on local ZFS storage that exists on both.
+1. Existing jobs match the web UI's Datacenter → Replication: target, schedule, state, last
+   sync and duration, the error of a failing job.
+2. **Add replication job**: the ZFS guest, the other node, Every 15 minutes → **Add**. Tap
+   **Run now** (the play button): within a minute the state becomes Syncing, then In sync.
+3. Tap the job: change the schedule to a calendar event of your own (the next runs are
+   previewed), set a rate limit, **Save**; open **Last run's log**.
+4. Switch it off and on with the switch on the card.
+5. **Delete job** without keeping the copy → in the web UI the job is marked for removal and
+   the copy on the target disappears after its run.
+
 ### E. Snapshots (Tools → Snapshots)
 1. **Take snapshot** on the running test VM with **Include RAM** → "VM snapshot finished"; it
    appears in the tree with a RAM badge.

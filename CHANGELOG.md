@@ -81,6 +81,11 @@ All notable changes to AnProx are documented here. The format follows
   often it is restarted or moved, move it to another node through the HA manager, or remove it
   from HA.
 
+- **Replication** (Datacenter → Replication): which guests are copied to which node, whether
+  the last copy worked (with Proxmox's error when it didn't), when it ran and runs next. Add a
+  job (guest, node, every 15 or 30 minutes, every 2 hours, nightly or any schedule, a speed
+  limit), edit it, switch it off, run it now, read the last run's log, or delete it.
+
 ### Changed
 - The bulk-action summary on the Resources list stays on screen longer.
 - After creating or cloning a guest, the form scrolls to the result and its **Open it** button.

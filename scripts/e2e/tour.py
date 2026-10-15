@@ -759,6 +759,22 @@ def high_availability():
     back()
 
 
+@step("Datacenter: replication, a synced and a failing job, add one")
+def replication():
+    tap("Overview")
+    tap_node(scroll_to("Datacenter", exact=True))
+    tap_node(scroll_to("Replication", exact=True))
+    find("103 · k8s-master → pve1", timeout=30)    # in sync in the mock
+    find("Failed (3)", timeout=10)                 # nginx-proxy to the offline pve3
+    tap("Add replication job")
+    find("Copy to", timeout=10)
+    tap("Add", pick="lowest")                      # the dialog's button: web (on pve1) to pve2
+    find("100 · web → pve2", timeout=30)
+    screenshot("13g-replication")
+    back()
+    back()
+
+
 @step("Light theme, the app lock without a screen lock, favourites on the dashboard")
 def light_theme():
     tap("More")
@@ -796,7 +812,7 @@ def main():
     try:
         for s in (launch, add_pve, add_pbs, resources, performance, guest_start, snapshots, backups,
                   options, hardware, console, vm_console, cloud_init, bulk, clone_migrate, tasks, create_vm, alerts,
-                  backup_jobs, storage, firewall, high_availability, light_theme):
+                  backup_jobs, storage, firewall, high_availability, replication, light_theme):
             s()
         ok = True
     finally:

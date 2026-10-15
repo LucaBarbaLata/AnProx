@@ -164,6 +164,15 @@ follow). The mock's HA manager lives in `MockHa`; a managed guest's `hastate` in
 `/cluster/resources` now comes from it. The field was first called `ha`, which shadowed
 `Guest.ha` inside `MockState`'s `with` blocks and broke the build of the mock.
 
+**M4: storage replication.** Jobs and their runs come from two places: `/cluster/replication`
+holds the configuration, and each node reports the runs of the guests it hosts
+(`/nodes/{node}/replication`), so the repository asks the online nodes that run a replicated
+guest, in parallel, and tolerates one that fails. Both are read from raw JSON objects because
+numbers arrive as numbers or text. A new job's id is `<guest>-<n>` with the guest's lowest
+free number. "Run now" (`schedule_now`) has no task: Proxmox starts the job within a minute,
+so the screen says so and shows the log on request. The mock seeds a synced job and one that
+fails because its target (pve3) is offline.
+
 **Tour, again.** On Android 8 the alerts screen's last card is below the fold, and uiautomator
 lists it with empty bounds; on Android 14 the **Open it** button after creating a VM ended up
 under the result snackbar at the end of the form. The create and clone screens now scroll to
