@@ -48,12 +48,31 @@ API tokens are **not** supported by design (Q9). OpenID Connect sign-in arrives 
 - The Keystore key (`anprox_secrets_v1`) is generated on the device, can't be exported, and lives
   in the TEE/StrongBox where the hardware has one.
 - `android:allowBackup="false"`: nothing goes to cloud or ADB backups. Backed-up ciphertext would be
-  useless anyway, since the key never leaves the device. A deliberate, encrypted
-  **export/import of server profiles** is on the roadmap.
+  useless anyway, since the key never leaves the device. To move to a new phone, use the
+  deliberate, encrypted export (below).
 - Removing a server deletes its password and session too.
 
 > Planned (M1): move custom headers into the encrypted secret store. Today they are plain
 > text inside the app sandbox, which is fine for routing headers but not ideal for secrets.
+
+## Exporting servers (More → Settings → Move to another phone)
+
+- The file holds the server profiles (custom headers included) and, only if the user ticks
+  **Include saved passwords**, the remembered passwords. Session tickets are never exported.
+- Encryption: a key derived from the passphrase with **PBKDF2-HMAC-SHA256** (600,000 iterations,
+  16-byte random salt) encrypts with **AES-256-GCM** (12-byte random nonce). The JSON header
+  (format, version, KDF, cost, salt, nonce) is authenticated as additional data, so changing the
+  cost or any other field makes the file fail to open. An import refuses a cost above 10
+  million iterations instead of spinning on a crafted file.
+- The passphrase must be at least 8 characters; nothing checks its strength beyond that, so the
+  dialog suggests a few unrelated words. A wrong passphrase and a damaged file look the same to
+  GCM; the app reports both as "wrong passphrase".
+- Exporting saved passwords asks for the fingerprint/face/screen lock first when the phone has
+  one, since they leave the Keystore's protection.
+- The file is written where the user chooses with the system file picker (the app needs no
+  storage permission). Delete it once imported.
+- Import adds new servers and replaces a saved server with the same internal id (an export of
+  this phone, or of the phone it came from); it never deletes servers.
 
 ## The "Allow insecure certificate" switch (Q10)
 

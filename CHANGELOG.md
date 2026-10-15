@@ -97,6 +97,10 @@ All notable changes to AnProx are documented here. The format follows
   whether it is enabled or shared, and how many backups to keep. **Remove storage** takes it
   out of the configuration without deleting its data (type its name to confirm).
 
+- **Move to another phone** (More → Settings): export your servers to a file protected with a
+  passphrase, optionally with saved passwords (after the fingerprint or screen lock), and import
+  it on the new phone. Servers already there are replaced, the rest added.
+
 ### Changed
 - The bulk-action summary on the Resources list stays on screen longer.
 - After creating or cloning a guest, the form scrolls to the result and its **Open it** button.

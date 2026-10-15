@@ -236,6 +236,16 @@ Needs two nodes and a guest whose disks are on local ZFS storage that exists on 
 4. Remove the guest and the storage (minus icons) → **Delete pool** becomes available → delete
    it → gone in the web UI too.
 
+### D13. Move to another phone (More → Settings), new after beta.2
+1. **Export** → a passphrase twice (try a mismatch first) → leave **Include saved passwords**
+   off → **Choose where to save** → Downloads. Open the file in a text editor: no server name or
+   address is readable.
+2. **Import** that file → a wrong passphrase says so → the right one lists your servers →
+   **Import** → "0 added, N replaced"; nothing changes in the server list.
+3. Export again with saved passwords: the fingerprint/screen lock is asked first.
+4. On a second phone or emulator (or after removing a server): import → the servers appear;
+   with passwords included, they sign in without asking.
+
 ### E. Snapshots (Tools → Snapshots)
 1. **Take snapshot** on the running test VM with **Include RAM** → "VM snapshot finished"; it
    appears in the tree with a RAM badge.

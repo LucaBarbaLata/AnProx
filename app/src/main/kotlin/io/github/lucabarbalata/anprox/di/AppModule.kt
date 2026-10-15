@@ -24,6 +24,7 @@ import io.github.lucabarbalata.anprox.data.security.AppLock
 import io.github.lucabarbalata.anprox.data.snapshot.SnapshotRepository
 import io.github.lucabarbalata.anprox.data.store.ProfileStore
 import io.github.lucabarbalata.anprox.data.store.SecretStore
+import io.github.lucabarbalata.anprox.data.transfer.ProfileTransfer
 import io.github.lucabarbalata.anprox.diagnostics.CrashReporter
 import io.github.lucabarbalata.anprox.model.pve.ConsoleTarget
 import io.github.lucabarbalata.anprox.model.pve.FirewallScope
@@ -63,6 +64,7 @@ import io.github.lucabarbalata.anprox.ui.resources.ResourcesViewModel
 import io.github.lucabarbalata.anprox.ui.servers.ServerEditorViewModel
 import io.github.lucabarbalata.anprox.ui.servers.ServersViewModel
 import io.github.lucabarbalata.anprox.ui.settings.SettingsViewModel
+import io.github.lucabarbalata.anprox.ui.settings.TransferViewModel
 import io.github.lucabarbalata.anprox.ui.snapshots.SnapshotsViewModel
 import io.github.lucabarbalata.anprox.ui.tasks.TaskLogViewModel
 import io.github.lucabarbalata.anprox.ui.tasks.TasksViewModel
@@ -119,6 +121,7 @@ val appModule = module {
     single { ReplicationRepository(get()) }
     single { PoolRepository(get()) }
     single { StorageSetupRepository(get()) }
+    single { ProfileTransfer(get(), get()) }
 
     // Background alerts
     single { AlertStore(androidContext()) }
@@ -148,6 +151,7 @@ val appModule = module {
     viewModel { TasksViewModel(get()) }
     viewModel { (serverId: String, node: String, upid: String) -> TaskLogViewModel(serverId, node, upid, get()) }
     viewModel { SettingsViewModel(get()) }
+    viewModel { TransferViewModel(get()) }
     viewModel { AlertsViewModel(get(), get(), get()) }
     viewModel { (serverId: String) -> BackupJobsViewModel(serverId, get(), get()) }
     // "" = a new job

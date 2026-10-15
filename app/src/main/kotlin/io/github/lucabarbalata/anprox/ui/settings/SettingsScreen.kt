@@ -1,23 +1,42 @@
 package io.github.lucabarbalata.anprox.ui.settings
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Download
+import androidx.compose.material.icons.outlined.Upload
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.lucabarbalata.anprox.R
+import io.github.lucabarbalata.anprox.core.designsystem.component.AnProxButton
+import io.github.lucabarbalata.anprox.core.designsystem.component.ButtonStyle
 import io.github.lucabarbalata.anprox.core.designsystem.component.ErrorBanner
 import io.github.lucabarbalata.anprox.core.designsystem.component.GlassCard
+import io.github.lucabarbalata.anprox.core.designsystem.component.GlassTextField
 import io.github.lucabarbalata.anprox.core.designsystem.component.SectionHeader
 import io.github.lucabarbalata.anprox.core.designsystem.component.SegmentedPicker
 import io.github.lucabarbalata.anprox.core.designsystem.component.SwitchRow
@@ -28,22 +47,33 @@ import io.github.lucabarbalata.anprox.security.AuthAvailability
 import io.github.lucabarbalata.anprox.security.LocalAuthenticator
 import io.github.lucabarbalata.anprox.storage.AppSettings
 import io.github.lucabarbalata.anprox.ui.common.AnProxScaffold
+import io.github.lucabarbalata.anprox.ui.common.asString
 import io.github.lucabarbalata.anprox.ui.common.contentPadding
+import java.time.LocalDate
 import org.koin.compose.viewmodel.koinViewModel
 
 private val REFRESH_OPTIONS = listOf(2_000L, 5_000L, 10_000L, 30_000L)
 private val LOCK_AFTER_OPTIONS = listOf(0L, 60_000L, 300_000L)
 
 @Composable
-fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = koinViewModel()) {
+fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = koinViewModel(), transfer: TransferViewModel = koinViewModel()) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
+    val transferState by transfer.state.collectAsStateWithLifecycle()
+    val snackbar = remember { SnackbarHostState() }
+    val message = transferState.message?.asString()
+    LaunchedEffect(message) {
+        if (message != null) {
+            snackbar.showSnackbar(message)
+            transfer.consumeMessage()
+        }
+    }
     val themeLabels = mapOf(
         ThemeMode.SYSTEM to stringResource(R.string.settings_theme_system),
         ThemeMode.LIGHT to stringResource(R.string.settings_theme_light),
         ThemeMode.DARK to stringResource(R.string.settings_theme_dark),
     )
     val refreshLabels = REFRESH_OPTIONS.associateWith { stringResource(R.string.settings_refresh_seconds, it / 1000) }
-    AnProxScaffold(title = stringResource(R.string.settings_title), onBack = onBack) { inner ->
+    AnProxScaffold(title = stringResource(R.string.settings_title), onBack = onBack, snackbarHostState = snackbar) { inner ->
         LazyColumn(contentPadding = contentPadding(inner), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             item { SectionHeader(stringResource(R.string.settings_appearance)) }
             item {
@@ -76,6 +106,8 @@ fun SettingsScreen(onBack: () -> Unit, viewModel: SettingsViewModel = koinViewMo
             }
             item { SectionHeader(stringResource(R.string.settings_security)) }
             item { AppLockCard(settings, viewModel) }
+            item { SectionHeader(stringResource(R.string.transfer_title)) }
+            item { TransferCard(transferState, transfer) }
         }
     }
 }
@@ -147,5 +179,149 @@ private fun AppLockCard(settings: AppSettings, viewModel: SettingsViewModel) {
                 },
             )
         }
+    }
+}
+
+/**
+ * Moving the saved servers to another phone (milestone M4): an export encrypted with a
+ * passphrase, written where the user chooses, and the import that reads it back.
+ */
+@Composable
+private fun TransferCard(state: TransferState, viewModel: TransferViewModel) {
+    val c = AnProxTheme.colors
+    val context = LocalContext.current
+    val authenticator = LocalAuthenticator.current
+    val promptExport = stringResource(R.string.transfer_prompt_passwords)
+    val fileName = stringResource(R.string.transfer_file_name, LocalDate.now().toString())
+    val save = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
+        viewModel.exportTo(uri, context.contentResolver)
+    }
+    val open = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        viewModel.picked(uri, context.contentResolver)
+    }
+    LaunchedEffect(state.exportReady) {
+        if (state.exportReady != null) save.launch(fileName)
+    }
+
+    GlassCard {
+        Text(stringResource(R.string.transfer_body), style = MaterialTheme.typography.bodySmall, color = c.textSecondary)
+        Spacer(Modifier.height(10.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            AnProxButton(
+                stringResource(R.string.transfer_export),
+                onClick = viewModel::startExport,
+                style = ButtonStyle.SECONDARY,
+                icon = Icons.Outlined.Upload,
+                enabled = !state.busy,
+                modifier = Modifier.weight(1f),
+            )
+            AnProxButton(
+                stringResource(R.string.transfer_import),
+                onClick = { open.launch(arrayOf("application/json", "application/octet-stream", "text/plain", "*/*")) },
+                style = ButtonStyle.SECONDARY,
+                icon = Icons.Outlined.Download,
+                enabled = !state.busy,
+                modifier = Modifier.weight(1f),
+            )
+        }
+    }
+
+    state.exporting?.let { form ->
+        AlertDialog(
+            onDismissRequest = viewModel::closeExport,
+            containerColor = c.surfaceSolid,
+            title = { Text(stringResource(R.string.transfer_export_title)) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(stringResource(R.string.transfer_export_body), style = MaterialTheme.typography.bodySmall, color = c.textSecondary)
+                    GlassTextField(
+                        value = form.passphrase,
+                        onValueChange = { v -> viewModel.editExport { copy(passphrase = v) } },
+                        label = stringResource(R.string.transfer_passphrase),
+                        supportingText = stringResource(R.string.transfer_passphrase_hint, ExportForm.MIN_PASSPHRASE),
+                        visualTransformation = PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                    )
+                    GlassTextField(
+                        value = form.repeat,
+                        onValueChange = { v -> viewModel.editExport { copy(repeat = v) } },
+                        label = stringResource(R.string.transfer_passphrase_repeat),
+                        isError = form.mismatch,
+                        supportingText = if (form.mismatch) stringResource(R.string.transfer_passphrase_mismatch) else null,
+                        visualTransformation = PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                    )
+                    SwitchRow(
+                        title = stringResource(R.string.transfer_include_passwords),
+                        description = stringResource(R.string.transfer_include_passwords_body),
+                        checked = form.includePasswords,
+                        onCheckedChange = { on -> viewModel.editExport { copy(includePasswords = on) } },
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        // Saved passwords leave the phone's keystore: confirm it's the owner first.
+                        val auth = authenticator
+                        if (form.includePasswords && auth != null && auth.availability() == AuthAvailability.READY) {
+                            auth.authenticate(promptExport, null) { ok -> if (ok) viewModel.confirmExport() }
+                        } else {
+                            viewModel.confirmExport()
+                        }
+                    },
+                    enabled = form.ready,
+                ) { Text(stringResource(R.string.transfer_export_confirm)) }
+            },
+            dismissButton = { TextButton(onClick = viewModel::closeExport) { Text(stringResource(R.string.action_cancel)) } },
+        )
+    }
+
+    state.importing?.let { form ->
+        val bundle = form.bundle
+        AlertDialog(
+            onDismissRequest = viewModel::closeImport,
+            containerColor = c.surfaceSolid,
+            title = { Text(stringResource(R.string.transfer_import_title)) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    if (bundle == null) {
+                        GlassTextField(
+                            value = form.passphrase,
+                            onValueChange = viewModel::editImportPassphrase,
+                            label = stringResource(R.string.transfer_passphrase),
+                            isError = form.error != null,
+                            visualTransformation = PasswordVisualTransformation(),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        )
+                        form.error?.let { Text(it.asString(), style = MaterialTheme.typography.bodySmall, color = c.danger) }
+                        if (state.busy) CircularProgressIndicator(color = c.accent)
+                    } else {
+                        Text(
+                            stringResource(R.string.transfer_import_found, bundle.servers.size),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = c.textPrimary,
+                        )
+                        bundle.servers.forEach { server ->
+                            val withPassword = if (server.password != null) stringResource(R.string.transfer_with_password) else null
+                            Text(
+                                listOfNotNull(server.profile.name, server.profile.userId, withPassword).joinToString(" · "),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = c.textSecondary,
+                            )
+                        }
+                        Text(stringResource(R.string.transfer_import_replace), style = MaterialTheme.typography.bodySmall, color = c.textTertiary)
+                    }
+                }
+            },
+            confirmButton = {
+                if (bundle == null) {
+                    TextButton(onClick = viewModel::openImport, enabled = form.passphrase.isNotEmpty() && !state.busy) { Text(stringResource(R.string.transfer_open)) }
+                } else {
+                    TextButton(onClick = viewModel::confirmImport, enabled = !state.busy) { Text(stringResource(R.string.transfer_import_confirm)) }
+                }
+            },
+            dismissButton = { TextButton(onClick = viewModel::closeImport) { Text(stringResource(R.string.action_cancel)) } },
+        )
     }
 }

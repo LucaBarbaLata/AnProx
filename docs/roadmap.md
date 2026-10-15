@@ -146,7 +146,9 @@ Everything marked ✅ in M1 and M2 below. Gates:
 - ✅ **Resource pools** (Datacenter → Resource pools): every pool with its guests and storages;
   create, add and remove guests and storages, edit the comment, delete an empty pool. Tags are
   edited per guest (Tools → Options).
-- Encrypted export/import of server profiles (move to a new phone without retyping everything).
+- ✅ **Encrypted export/import of servers** (More → Settings → Move to another phone):
+  passphrase-protected file (PBKDF2 + AES-GCM, see [security](security.md)), saved passwords
+  optional and behind the screen lock, sessions never exported.
 
 ## M5 — Node administration
 - **Updates and repositories** (Q22): refresh, upgradable list with changelogs, upgrade in a terminal, repository management.

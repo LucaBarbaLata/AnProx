@@ -192,6 +192,14 @@ parameter (that's Proxmox's API); it only travels over the app's TLS connection.
 storages became a mutable list (`CopyOnWriteArrayList`, as some readers aren't under the lock)
 rebuilt from `MockStorageConfig` when a storage is added, edited or removed.
 
+**M4: moving servers to another phone.** `ProfileCrypto` (`:core:data`, plain JVM) uses only
+what Android 8.0 ships: `PBKDF2WithHmacSHA256` (added in API 26), AES/GCM and `java.util.Base64`
+(also API 26). The envelope's header is the GCM additional data, so a file with a lowered cost
+doesn't open; the cost read from a file is capped. Tests run with 1,000 iterations through a
+constructor parameter; the app uses 600,000. The UI uses the system file pickers
+(`CreateDocument` / `OpenDocument`), so no storage permission. Not in the emulator tour: the
+system pickers' UI differs between Android versions.
+
 **Tour, again.** On Android 8 the alerts screen's last card is below the fold, and uiautomator
 lists it with empty bounds; on Android 14 the **Open it** button after creating a VM ended up
 under the result snackbar at the end of the form. The create and clone screens now scroll to
