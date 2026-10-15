@@ -67,7 +67,7 @@ Code: `core/network/src/main/kotlin/.../network/api/` (`AccessApi`, `PveApi`, `P
 | `/nodes/{node}/{termproxy,vncshell,vncwebsocket}` | Node shell | ✅ `termproxy` + `vncwebsocket` through the app's connection, bundled xterm.js ([ADR 0014](adr/0014-consoles-through-the-app.md)) |
 | `/nodes/{node}/apt/*` | Updates, changelog, repositories | 🗓 M5 |
 | `/nodes/{node}/disks/*` | SMART, wipe, GPT, ZFS, LVM, LVM-thin, directory | 🗓 M5 |
-| `/nodes/{node}/network` | Interfaces, bridges, bonds, VLANs, apply/revert | 🗓 M5 |
+| `/nodes/{node}/network` | Interfaces, bridges, bonds, VLANs, apply/revert | 🔸 `GET ?type=any_bridge` ✅ (bridges for network devices); editing 🗓 M5 |
 | `/nodes/{node}/services`, `/syslog`, `/journal` | Services and logs | 🗓 M5 |
 | `/nodes/{node}/{dns,hosts,time}` | System settings | 🗓 M5 |
 | `/nodes/{node}/subscription` | Subscription status | 🗓 M5 |
@@ -97,8 +97,8 @@ Code: `core/network/src/main/kotlin/.../network/api/` (`AccessApi`, `PveApi`, `P
 | `GET/PUT …/snapshot/{snap}/config` | Edit a snapshot's description | 🗓 M1 |
 | `/qemu/{vmid}/agent/*` | Guest agent: IPs, OS info, fs-freeze, set password, exec | 🔸 `network-get-interfaces`, `get-osinfo` ✅; the rest later |
 | `GET /lxc/{vmid}/interfaces` | A running container's IP addresses (PVE 7.2+) | ✅ |
-| `GET/POST/PUT …/config`, `GET …/pending` | Hardware & options | 🔸 options ✅ (name/hostname, tags, notes, start at boot, protection, QEMU agent; sent with the config digest); hardware 🗓 M2 (common), M9 (advanced: passthrough, NUMA, CPU flags) |
-| `PUT …/resize`, `POST …/move_disk` / `move_volume`, `POST …/unlink` | Disks | 🗓 M2 |
+| `GET/POST/PUT …/config`, `GET …/pending` | Hardware & options | 🔸 options ✅ (name/hostname, tags, notes, start at boot, protection, QEMU agent); common hardware ✅ (VM: sockets, cores, CPU type, memory and ballooning, disks, CD/DVD, network devices, boot order; container: cores, memory, swap, mount points, network). Every change is sent with the config digest; `POST` for allocating VM disks as a task; pending keys are shown as "After restart". Advanced (passthrough, NUMA, CPU flags, cloud-init) 🗓 M2/M9 |
+| `PUT …/resize`, `POST …/move_disk` / `move_volume`, `POST …/unlink` | Disks | ✅ resize (grow only), move to another storage (keep or delete the source), detach and delete unused volumes through `config`; `unlink` not needed |
 | `POST …/clone`, `POST …/template` | Clone (full/linked, any node, target storage) / convert to template | ✅ |
 | `/qemu/{vmid}/cloudinit` (+ `/dump`) | Cloud-init | 🗓 M2 |
 | `POST …/migrate` (+ `GET` precondition check) | Migration: live for VMs (with local disks), restart mode for containers, offline when stopped | ✅ |

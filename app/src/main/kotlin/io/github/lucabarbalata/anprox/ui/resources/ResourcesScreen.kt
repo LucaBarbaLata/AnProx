@@ -37,6 +37,7 @@ import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -103,7 +104,8 @@ fun ResourcesScreen(
     LaunchedEffect(bulk.result) {
         if (bulkResult != null) {
             viewModel.consumeBulkResult()
-            snackbar.showSnackbar(bulkResult)
+            // A summary of several tasks: keep it up long enough to read.
+            snackbar.showSnackbar(bulkResult, duration = SnackbarDuration.Long)
         }
     }
     BackHandler(enabled = bulk.active) { viewModel.clearSelection() }

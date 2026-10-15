@@ -3,6 +3,7 @@ package io.github.lucabarbalata.anprox.di
 import io.github.lucabarbalata.anprox.BuildConfig
 import io.github.lucabarbalata.anprox.data.backup.BackupRepository
 import io.github.lucabarbalata.anprox.data.console.ConsoleRepository
+import io.github.lucabarbalata.anprox.data.hardware.HardwareRepository
 import io.github.lucabarbalata.anprox.data.guest.GuestRef
 import io.github.lucabarbalata.anprox.data.guest.GuestRepository
 import io.github.lucabarbalata.anprox.data.hub.ServerHub
@@ -19,6 +20,7 @@ import io.github.lucabarbalata.anprox.storage.DataStoreProfileStore
 import io.github.lucabarbalata.anprox.storage.KeystoreSecretStore
 import io.github.lucabarbalata.anprox.storage.SettingsRepository
 import io.github.lucabarbalata.anprox.ui.console.ConsoleViewModel
+import io.github.lucabarbalata.anprox.ui.hardware.HardwareViewModel
 import io.github.lucabarbalata.anprox.ui.backups.BackupScope
 import io.github.lucabarbalata.anprox.ui.backups.BackupsViewModel
 import io.github.lucabarbalata.anprox.ui.dashboard.DashboardViewModel
@@ -78,6 +80,7 @@ val appModule = module {
     single { MetricsRepository(get()) }
     single { BackupRepository(get()) }
     single { ConsoleRepository(get()) }
+    single { HardwareRepository(get()) }
 
     // Screens
     viewModel { ServersViewModel(get()) }
@@ -88,6 +91,7 @@ val appModule = module {
     viewModel { ResourcesViewModel(get(), get(), get(), get()) }
     viewModel { (ref: GuestRef) -> GuestViewModel(ref, get(), get(), get()) }
     viewModel { (ref: GuestRef) -> OptionsViewModel(ref, get()) }
+    viewModel { (ref: GuestRef) -> HardwareViewModel(ref, get(), get()) }
     viewModel { (ref: GuestRef, name: String) -> CloneViewModel(ref, name, get()) }
     viewModel { (serverId: String, target: ConsoleTarget) -> ConsoleViewModel(serverId, target, get()) }
     viewModel { (ref: GuestRef, name: String) -> MigrateViewModel(ref, name, get()) }

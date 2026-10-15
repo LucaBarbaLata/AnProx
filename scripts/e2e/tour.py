@@ -144,6 +144,21 @@ def visible(text):
     return bool(matches(root, text, exact=True) or matches(root, text, exact=False))
 
 
+def wait_until(condition, what, timeout=30):
+    """
+    Waits for [condition] (checked against fresh UI dumps). Prefer this over waiting for a
+    snackbar: a short one (4 s) can come and go between two dumps on a slow emulator.
+    """
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        if condition():
+            return
+        time.sleep(1)
+    root = dump()
+    save_dump(root, f"timeout-{slug(what)}")
+    raise AssertionError(f"Timed out after {timeout}s waiting for {what}.\n{describe(root)}")
+
+
 def tap_node(node):
     x, y = center(node)
     print(f"    tap {(labels(node) or [node.get('class')])[0]!r} at ({x}, {y})", flush=True)
@@ -461,12 +476,37 @@ def options():
     tap_node(scroll_to("nginx-proxy"))
     tap_node(scroll_to("Options"))
     find("Hostname", timeout=30)           # containers call their name a hostname
+    find("No unsaved changes.", timeout=15)
     tap_node(scroll_to("Start at boot"))
+    wait_until(lambda: not visible("No unsaved changes."), "the switch to make the form dirty", timeout=15)
     tap_node(scroll_to("Save"))
-    find("Options saved", timeout=30)
+    # Saved and reloaded: the form is clean again (the "Options saved" snackbar is short).
+    wait_until(lambda: visible("No unsaved changes."), "the options to be saved", timeout=30)
     screenshot("11e-options")
     back()
     scroll_to("Name, tags, notes, start at boot, protection")  # back on the guest screen
+    back()
+
+
+@step("VM hardware: add a disk, and a memory change that waits for the next start")
+def hardware():
+    tap_node(scroll_to("win11"))           # running since the start step
+    tap_node(scroll_to("Hardware"))
+    find("Processor and memory", timeout=30)
+    find("SCSI 0", timeout=30)             # the seeded system disk
+    tap_node(scroll_to("Add disk"))
+    find("Bus", timeout=15)                # the dialog: SCSI on the first storage, 32 GiB
+    screenshot("11e2-add-disk")
+    tap("Add", pick="lowest")              # the dialog's button
+    scroll_to("SCSI 1")                    # the new disk, once the task has finished
+    tap_node(scroll_to("Memory"))
+    tap_node(scroll_to("Ballooning"))      # turn it off
+    tap("Save", pick="lowest")
+    # The VM is running: Proxmox keeps the change for the next start.
+    find("After restart", timeout=30)
+    screenshot("11e3-hardware")
+    back()
+    scroll_to("CPU, memory, disks, CD/DVD, network, boot order")  # back on the guest screen
     back()
 
 
@@ -509,7 +549,9 @@ def bulk():
     find("Start these guests?", timeout=10)
     screenshot("11g-bulk")
     tap("Start", pick="lowest")              # the dialog's button
-    find("Started 1 of 1 guests", timeout=60)
+    # The selection clears when every task has finished; then the summary shows.
+    wait_until(lambda: not visible("2 selected"), "the bulk start to finish", timeout=60)
+    find("Started 1 of 1 guests", timeout=20)
 
 
 @step("Clone the template, then migrate the clone to another node")
@@ -577,7 +619,7 @@ def main():
     ok = False
     try:
         for s in (launch, add_pve, add_pbs, resources, performance, guest_start, snapshots, backups,
-                  options, console, vm_console, bulk, clone_migrate, tasks, light_theme):
+                  options, hardware, console, vm_console, bulk, clone_migrate, tasks, light_theme):
             s()
         ok = True
     finally:

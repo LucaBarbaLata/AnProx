@@ -40,6 +40,20 @@ keyboard, and noVNC reconnected in an endless loop on every VM.
   (terminal echo, VNC handshake and frame). The Android screen is verified by CI and the emulator
   tour, which now opens a container console and a VM console.
 
+**M2: hardware editing.** Built along the architecture recipe:
+| Layer | What |
+|---|---|
+| Model | `PropertyString` (Proxmox's `key=value,…` format; keeps order and unknown keys so writing back changes only what was edited), `DiskSize`, `VmHardware` (CPU, memory and ballooning, disks by bus, CD/DVD, cloud-init, EFI/TPM, unused volumes, network, boot order including the legacy `cdn` form) and `CtHardware` (cores, memory, swap, root disk, mount points, network). Forms: `VmCpuMemory`, `NewVmDisk`, `VmDiskOps`, `VmNetSettings`, `CtResources`, `NewMountPoint`, `CtVolumeOps`, `CtNetSettings`, each validating like Proxmox and sending only changed keys with the digest. `IpAddress` checks IPv4/IPv6 with prefixes without `InetAddress` (which may resolve names). |
+| API | `pending`, `POST …/config` (disk allocation as a task), `resize`, `move_disk` / `move_volume`, node bridges |
+| Mock | `MockHardware`: a per-guest config with allocation (`storage:size`), detach to `unusedN`, delete, attach, resize, move, generated MACs, bridges, ISO images, and cold-plug keys of running VMs kept as pending until the next start |
+| Data | `HardwareRepository`: config plus pending keys, apply / resize / move, bridges, ISO images across storages, host CPU count |
+| UI | `ui/hardware/`: sections with "After restart" badges, a busy card, and dialogs for each change |
+| Tests | +11 model, +6 against the mock (127 JVM tests); a tour step adds a disk and leaves a pending memory change |
+
+Gotcha: a test ending in `assertFailsWith` returns the exception, so JUnit skipped it (the
+pitfall in `testing.md`). A small script now compares the `@Test` count in each class with the
+number of tests that ran.
+
 **The tour skipped five steps.** Reading the CI log of the console fix showed 10 steps, not 15.
 The steps for options, the two consoles, bulk actions and clone/migrate were defined in
 `tour.py` (since the options commit, `2d8076f`) but never added to the list `main()` runs. CI

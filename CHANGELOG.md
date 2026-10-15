@@ -6,6 +6,23 @@ All notable changes to AnProx are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+- **Hardware** for VMs and containers (Guest → Tools → Hardware).
+  - VMs: sockets, cores and CPU type; memory and ballooning; disks (add on any storage with
+    SCSI/VirtIO/SATA/IDE, IO thread, discard, SSD emulation; grow; move to another storage; detach;
+    attach or delete unused disks); CD/DVD drives (pick an ISO image from the node's storages,
+    eject, add or remove a drive); network devices (model, bridge, VLAN, firewall, disconnected,
+    rate limit); boot order.
+  - Containers: cores, memory and swap; grow or move the root disk and mount points; add and
+    detach mount points; network devices with DHCP, static or no IPv4 and DHCPv6, SLAAC or static
+    IPv6.
+  - Every change sends the config digest, so a concurrent edit in the web interface is refused
+    instead of overwritten. Changes a running VM only picks up at its next start are marked
+    **After restart**. Deleting an unused disk asks you to type its name.
+
+### Changed
+- The bulk-action summary on the Resources list stays on screen longer.
+
 ### Fixed
 - **Consoles work on real servers.** In 0.1.0-beta.2 the VM screen reconnected endlessly and node
   and container terminals stayed empty, without a keyboard. The app now connects to the console

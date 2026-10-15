@@ -74,6 +74,27 @@ newer than beta.2 (section 1). The subtitle under the title says **Connecting…
 6. If a console shows "Android System WebView is too old", update **Android System WebView** in
    the Play Store (or your store) and try again.
 
+### D2. Hardware (Tools → Hardware), new after beta.2
+Use the test VM and the test container. Changes are sent with the config's checksum, so if you
+edit the same guest in the web interface at the same time, the app refuses instead of
+overwriting (try it once: open Hardware, change something in the web UI, then save in the app).
+1. VM, **stopped**: tap **Processor** → change cores and the CPU type → **Save**. Check the
+   web UI (VM → Hardware) shows the same.
+2. VM, **running**: change **Memory** or turn off **Ballooning** → **Save** → the row says
+   **After restart** and a yellow note appears. Shut the VM down and start it: the note goes away.
+3. **Add disk** → SCSI, a storage, 8 GiB → after the task an "SCSI 1 · 8.00 GiB" row appears
+   (in the VM: `lsblk`). Tap it → **Grow** by 2 GiB → 10 GiB. **Move** it to another storage
+   (if you have one). **Detach** → it becomes "Unused disk 0" → tap it → **Delete** (type
+   `unused0`).
+4. **CD/DVD**: tap the IDE 2 drive → pick an ISO → **Save**; then **Empty** to eject.
+5. **Network**: tap net0 → change the VLAN tag or tick **Disconnected** → **Save**; the MAC
+   address must stay the same. **Add network device** on another bridge, then **Remove** it.
+6. **Boot order**: put the CD/DVD first → **Save** (running VMs: after restart).
+7. Container: **Resources** → change memory and swap (applies at once, even while running).
+   **Add mount point** (8 GiB at `/srv/data`) → inside the container `df -h /srv/data`. Tap the
+   root disk → **Grow** by 1 GiB. **Move** works only while the container is stopped; the app
+   says so. Edit net0: switch IPv4 between DHCP and static (`192.168.x.y/24` + gateway).
+
 ### E. Snapshots (Tools → Snapshots)
 1. **Take snapshot** on the running test VM with **Include RAM** → "VM snapshot finished"; it
    appears in the tree with a RAM badge.

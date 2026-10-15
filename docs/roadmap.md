@@ -86,8 +86,10 @@ Everything marked ✅ in M1 and M2 below. Gates:
   ([ADR 0014](adr/0014-consoles-through-the-app.md)).
 - **SPICE handoff**: download the `.vv` file and open it in aSPICE or another SPICE viewer (Q15).
 - **Built-in SSH client** with key management (Q15).
-- **Hardware editing**, common settings first (Q19): CPU, memory/balloon, disks
-  (add/resize/move), network devices, CD-ROM, boot order. Container resources and mount points.
+- ✅ **Hardware editing**, common settings first (Q19): CPU, memory/balloon, disks
+  (add/grow/move/detach, unused volumes), network devices, CD/DVD, boot order; container
+  resources, root disk and mount points, network with IPv4/IPv6. Changes a running VM only picks
+  up at its next start are marked "After restart".
 - ✅ **Options** (pulled into 0.1.0-beta.2): name, start at boot, protection, tags, description, QEMU agent.
   (Start order and the remaining options are still to do.)
 - ✅ **Clone and templates** (Q18, pulled into 0.1.0-beta.2): full and linked clones to any node and storage, convert to template.

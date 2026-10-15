@@ -44,6 +44,7 @@ import io.github.lucabarbalata.anprox.ui.guest.GuestScreen
 import io.github.lucabarbalata.anprox.ui.guest.GuestTool
 import io.github.lucabarbalata.anprox.ui.guest.MigrateScreen
 import io.github.lucabarbalata.anprox.ui.guest.OptionsScreen
+import io.github.lucabarbalata.anprox.ui.hardware.HardwareScreen
 import io.github.lucabarbalata.anprox.ui.login.LoginScreen
 import io.github.lucabarbalata.anprox.ui.backups.BackupScope
 import io.github.lucabarbalata.anprox.ui.backups.BackupsScreen
@@ -57,6 +58,7 @@ import io.github.lucabarbalata.anprox.ui.navigation.LoginRoute
 import io.github.lucabarbalata.anprox.ui.navigation.MoreRoute
 import io.github.lucabarbalata.anprox.ui.navigation.MigrateRoute
 import io.github.lucabarbalata.anprox.ui.navigation.NodeRoute
+import io.github.lucabarbalata.anprox.ui.navigation.HardwareRoute
 import io.github.lucabarbalata.anprox.ui.navigation.OptionsRoute
 import io.github.lucabarbalata.anprox.ui.navigation.ResourcesRoute
 import io.github.lucabarbalata.anprox.ui.navigation.ServerEditorRoute
@@ -127,6 +129,7 @@ fun AnProxApp() {
         when (tool) {
             GuestTool.SNAPSHOTS -> nav.navigate(SnapshotsRoute(ref.serverId, ref.node, type, ref.vmid, name))
             GuestTool.BACKUPS -> nav.navigate(BackupsRoute(ref.serverId, ref.node, type, ref.vmid, name))
+            GuestTool.HARDWARE -> nav.navigate(HardwareRoute(ref.serverId, ref.node, type, ref.vmid, name))
             GuestTool.OPTIONS -> nav.navigate(OptionsRoute(ref.serverId, ref.node, type, ref.vmid, name))
             GuestTool.CONSOLE -> {
                 val kind = if (ref.type == GuestType.QEMU) ConsoleKind.VM else ConsoleKind.CONTAINER
@@ -229,6 +232,11 @@ fun AnProxApp() {
                 val r = entry.toRoute<OptionsRoute>()
                 val ref = GuestRef(r.serverId, r.node, GuestType.fromApi(r.type) ?: GuestType.QEMU, r.vmid)
                 OptionsScreen(ref, guestName = r.name, onBack = back)
+            }
+            composable<HardwareRoute> { entry ->
+                val r = entry.toRoute<HardwareRoute>()
+                val ref = GuestRef(r.serverId, r.node, GuestType.fromApi(r.type) ?: GuestType.QEMU, r.vmid)
+                HardwareScreen(ref, guestName = r.name, onBack = back, onTask = openTask)
             }
             composable<CloneRoute> { entry ->
                 val r = entry.toRoute<CloneRoute>()
