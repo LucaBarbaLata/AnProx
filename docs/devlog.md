@@ -208,6 +208,12 @@ null means not configured, so it can be added); changes send the digest. Service
 tasks, and the app waits for them like guest actions. The journal endpoint wraps its lines in
 `-- cursor:` markers, which `Journal.lines` drops.
 
+**M5: disks.** `disks/list` says what holds each disk (`used`), so only unused ones are
+offered for new storage; ZFS layouts check their minimum disk counts before Proxmox would.
+Wiping asks for the device path typed out. SMART comes as attributes for ATA disks and as text
+for NVMe. In the mock, creating storage marks the disks used when the task ends and, with
+`add_storage`, adds the storage to the configuration limited to that node, as Proxmox does.
+
 **M5: network.** Proxmox writes edits to `/etc/network/interfaces.new` and `GET …/network`
 returns the interfaces as they will be, with the unified diff in the envelope's `changes`
 (`ApiEnvelope.changes`). Apply is `PUT …/network` (ifreload, a task); revert is `DELETE`. An

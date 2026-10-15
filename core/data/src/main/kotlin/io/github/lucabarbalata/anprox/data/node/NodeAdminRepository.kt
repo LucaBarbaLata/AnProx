@@ -3,9 +3,11 @@ package io.github.lucabarbalata.anprox.data.node
 import io.github.lucabarbalata.anprox.data.hub.ServerHub
 import io.github.lucabarbalata.anprox.model.pve.AptRepositories
 import io.github.lucabarbalata.anprox.model.pve.AptUpdate
+import io.github.lucabarbalata.anprox.model.pve.DiskStorageForm
 import io.github.lucabarbalata.anprox.model.pve.Journal
 import io.github.lucabarbalata.anprox.model.pve.NetworkConfig
 import io.github.lucabarbalata.anprox.model.pve.NetworkInterfaceForm
+import io.github.lucabarbalata.anprox.model.pve.NodeDisk
 import io.github.lucabarbalata.anprox.model.pve.NodeDns
 import io.github.lucabarbalata.anprox.model.pve.NodeDnsForm
 import io.github.lucabarbalata.anprox.model.pve.NodeHosts
@@ -15,6 +17,7 @@ import io.github.lucabarbalata.anprox.model.pve.NodeSubscription
 import io.github.lucabarbalata.anprox.model.pve.NodeTime
 import io.github.lucabarbalata.anprox.model.pve.PackageVersion
 import io.github.lucabarbalata.anprox.model.pve.ServiceAction
+import io.github.lucabarbalata.anprox.model.pve.SmartData
 import io.github.lucabarbalata.anprox.network.ApiException
 
 /**
@@ -90,6 +93,19 @@ class NodeAdminRepository(private val hub: ServerHub) {
     suspend fun revertNetwork(serverId: String, node: String) {
         hub.use(serverId) { it.pveNoData { revertNetwork(node) } }
     }
+
+    suspend fun disks(serverId: String, node: String): List<NodeDisk> =
+        hub.use(serverId) { it.pve { disks(node) } }.sortedBy { it.devpath }
+
+    suspend fun smart(serverId: String, node: String, disk: NodeDisk): SmartData = hub.use(serverId) { it.pve { smart(node, disk.devpath) } }
+
+    /** These return the task's UPID. */
+    suspend fun wipe(serverId: String, node: String, disk: NodeDisk): String = hub.use(serverId) { it.pve { wipeDisk(node, disk.devpath) } }
+
+    suspend fun initGpt(serverId: String, node: String, disk: NodeDisk): String = hub.use(serverId) { it.pve { initGpt(node, disk.devpath) } }
+
+    suspend fun createStorage(serverId: String, node: String, form: DiskStorageForm): String =
+        hub.use(serverId) { it.pve { createDiskStorage(node, form.kind.apiName, form.params()) } }
 
     suspend fun dns(serverId: String, node: String): NodeDns = hub.use(serverId) { it.pve { nodeDns(node) } }
 

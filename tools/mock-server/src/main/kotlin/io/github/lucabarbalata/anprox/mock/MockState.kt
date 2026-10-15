@@ -1004,6 +1004,48 @@ class MockState(
         nodeAdmin.services(node)
     }
     fun journal(node: String, last: Int) = nodeAdmin.journal(node, last)
+    fun disks(node: String) = synchronized(lock) {
+        settleTasks()
+        nodeAdmin.disks(node)
+    }
+    fun smart(node: String, disk: String) = synchronized(lock) { nodeAdmin.smart(node, disk) }
+
+    fun wipeDisk(node: String, disk: String, user: String): Result<String> {
+        synchronized(lock) { nodeAdmin.checkDisks(node, listOf(disk), mustBeUnused = false) }?.let { return Result.failure(IllegalArgumentException(it)) }
+        val inUse = synchronized(lock) { nodeAdmin.disks(node)?.firstOrNull { it.devpath == disk }?.used }
+        if (inUse in setOf("LVM", "ZFS", "mounted")) return Result.failure(IllegalArgumentException("disk '$disk' is in use ($inUse)"))
+        return Result.success(startTask(node, "wipedisk", disk.substringAfterLast('/'), user) { nodeAdmin.markWiped(node, disk, gpt = false) })
+    }
+
+    fun initGpt(node: String, disk: String, user: String): Result<String> {
+        synchronized(lock) { nodeAdmin.checkDisks(node, listOf(disk), mustBeUnused = true) }?.let { return Result.failure(IllegalArgumentException(it)) }
+        return Result.success(startTask(node, "diskinit", disk.substringAfterLast('/'), user) { nodeAdmin.markWiped(node, disk, gpt = true) })
+    }
+
+    /** `POST /nodes/{node}/disks/{kind}`: formats the disks and, with `add_storage`, adds a storage. */
+    fun createDiskStorage(node: String, kind: String, p: Map<String, String>, user: String): Result<String> {
+        val devices = (p["devices"] ?: p["device"]).orEmpty().split(',', ' ').filter { it.isNotBlank() }
+        val name = p["name"].orEmpty()
+        synchronized(lock) { nodeAdmin.checkDisks(node, devices, mustBeUnused = true) }?.let { return Result.failure(IllegalArgumentException(it)) }
+        if (!Regex("^[a-zA-Z][a-zA-Z0-9\\-_.]*[a-zA-Z0-9]$").matches(name)) return Result.failure(IllegalArgumentException("name: invalid format"))
+        val (taskType, used, storage) = when (kind) {
+            "zfs" -> Triple("zfscreate", "ZFS", mapOf("type" to "zfspool", "pool" to name, "content" to "images,rootdir"))
+            "lvm" -> Triple("lvmcreate", "LVM", mapOf("type" to "lvm", "vgname" to name, "content" to "images,rootdir"))
+            "lvmthin" -> Triple("lvmthincreate", "LVM", mapOf("type" to "lvmthin", "vgname" to name, "thinpool" to name, "content" to "images,rootdir"))
+            "directory" -> Triple("dircreate", "mounted", mapOf("type" to "dir", "path" to "/mnt/pve/$name", "content" to "iso,vztmpl,backup"))
+            else -> return Result.failure(IllegalArgumentException("unknown storage kind '$kind'"))
+        }
+        if (p["add_storage"] == "1" && storageConfigs().any { it.storage == name }) return Result.failure(IllegalArgumentException("storage ID '$name' already defined"))
+        return Result.success(
+            startTask(node, taskType, name, user) {
+                nodeAdmin.markUsed(node, devices, used)
+                if (p["add_storage"] == "1") {
+                    storageSetup.create(storage + mapOf("storage" to name, "nodes" to node))
+                    storages += storageSetup.entries(name, nodes.map { it.name })
+                }
+            },
+        )
+    }
     fun nodeDns(node: String) = synchronized(lock) { nodeAdmin.dns(node) }
     fun setNodeDns(node: String, params: Map<String, String>) = synchronized(lock) { nodeAdmin.setDns(node, params) }
     fun nodeHosts(node: String) = synchronized(lock) { nodeAdmin.hosts(node) }

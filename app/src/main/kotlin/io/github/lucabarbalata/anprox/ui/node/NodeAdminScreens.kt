@@ -18,6 +18,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -29,9 +30,11 @@ import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.SettingsEthernet
+import androidx.compose.material.icons.outlined.Storage
 import androidx.compose.material.icons.outlined.SystemUpdateAlt
 import androidx.compose.material.icons.outlined.Terminal
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -51,6 +54,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -68,7 +72,10 @@ import io.github.lucabarbalata.anprox.core.designsystem.component.SwitchRow
 import io.github.lucabarbalata.anprox.core.designsystem.component.TagChip
 import io.github.lucabarbalata.anprox.core.designsystem.component.Tone
 import io.github.lucabarbalata.anprox.core.designsystem.theme.AnProxTheme
+import io.github.lucabarbalata.anprox.model.format.Formatters
 import io.github.lucabarbalata.anprox.model.pve.DangerLevel
+import io.github.lucabarbalata.anprox.model.pve.DiskStorageForm
+import io.github.lucabarbalata.anprox.model.pve.DiskStorageKind
 import io.github.lucabarbalata.anprox.model.pve.NetworkInterfaceForm
 import io.github.lucabarbalata.anprox.model.pve.NetworkKind
 import io.github.lucabarbalata.anprox.model.pve.NodeDnsForm
@@ -522,6 +529,7 @@ fun NodeAdminCard(onOpen: (NodeAdminPage) -> Unit) {
                         NodeAdminPage.JOURNAL -> Icons.Outlined.Description
                         NodeAdminPage.SYSTEM -> Icons.Outlined.Language
                         NodeAdminPage.NETWORK -> Icons.Outlined.SettingsEthernet
+                        NodeAdminPage.DISKS -> Icons.Outlined.Storage
                     },
                     contentDescription = null,
                     tint = c.accent,
@@ -543,6 +551,7 @@ private fun pageTitle(page: NodeAdminPage): Int = when (page) {
     NodeAdminPage.JOURNAL -> R.string.journal_title
     NodeAdminPage.SYSTEM -> R.string.system_title
     NodeAdminPage.NETWORK -> R.string.network_title
+    NodeAdminPage.DISKS -> R.string.disks_title
 }
 
 private fun pageBody(page: NodeAdminPage): Int = when (page) {
@@ -552,6 +561,7 @@ private fun pageBody(page: NodeAdminPage): Int = when (page) {
     NodeAdminPage.JOURNAL -> R.string.journal_open_body
     NodeAdminPage.SYSTEM -> R.string.system_open_body
     NodeAdminPage.NETWORK -> R.string.network_open_body
+    NodeAdminPage.DISKS -> R.string.disks_open_body
 }
 
 // ------------------------------------------------------------------------------ DNS, hosts, time
@@ -907,5 +917,206 @@ private fun networkProblem(p: NetworkInterfaceForm.Problem): Int = when (p) {
     NetworkInterfaceForm.Problem.MTU -> R.string.network_problem_mtu
     NetworkInterfaceForm.Problem.SLAVES -> R.string.network_problem_slaves
     NetworkInterfaceForm.Problem.VLAN -> R.string.network_problem_vlan
+}
+
+// ------------------------------------------------------------------------------ disks
+
+/** Node → Disks (questionnaire Q22): health and wear, SMART, and storage on unused disks. */
+@Composable
+fun DisksScreen(
+    serverId: String,
+    node: String,
+    onBack: () -> Unit,
+    onTask: (serverId: String, node: String, upid: String) -> Unit,
+) {
+    val viewModel: DisksViewModel = koinViewModel(key = "disks-$serverId-$node") { parametersOf(serverId, node) }
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    val c = AnProxTheme.colors
+    val snackbar = remember { SnackbarHostState() }
+    TaskResultSnackbar(state.result, snackbar, serverId, node, onTask, viewModel::consumeResult)
+    AnProxScaffold(
+        title = stringResource(R.string.disks_title),
+        subtitle = node,
+        onBack = onBack,
+        snackbarHostState = snackbar,
+        actions = {
+            IconButton(onClick = viewModel::load, enabled = !state.loading) {
+                Icon(Icons.Outlined.Refresh, contentDescription = stringResource(R.string.action_refresh))
+            }
+        },
+    ) { inner ->
+        LazyColumn(contentPadding = contentPadding(inner), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            state.error?.let { error ->
+                item { ErrorBanner(error.asString(), actionLabel = stringResource(R.string.action_retry), onAction = viewModel::load) }
+            }
+            state.running?.let { item { BusyCard(stringResource(R.string.disks_running, it)) } }
+            item {
+                AnProxButton(
+                    stringResource(R.string.disks_create),
+                    onClick = { viewModel.startCreate(null) },
+                    icon = Icons.Outlined.Add,
+                    enabled = state.running == null && state.unused.isNotEmpty(),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+            if (state.loading && state.disks.isEmpty()) {
+                item {
+                    Box(Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = c.accent)
+                    }
+                }
+            }
+            items(state.disks, key = { it.devpath }) { disk ->
+                GlassCard(contentPadding = PaddingValues(0.dp)) {
+                    Column(
+                        Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(20.dp))
+                            .clickable(enabled = state.running == null) { viewModel.open(disk) }
+                            .padding(16.dp),
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(disk.devpath, style = MaterialTheme.typography.titleMedium, color = c.textPrimary, modifier = Modifier.weight(1f))
+                            val healthy = disk.healthy
+                            StatusPill(disk.health ?: stringResource(R.string.disks_health_unknown), if (healthy == true) Tone.SUCCESS else if (healthy == false) Tone.DANGER else Tone.NEUTRAL)
+                        }
+                        Text(
+                            listOfNotNull(disk.model, Formatters.bytes(disk.size), disk.type?.uppercase()).joinToString(" · "),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = c.textSecondary,
+                        )
+                        Text(
+                            listOfNotNull(
+                                disk.used?.takeIf { it.isNotBlank() }?.let { stringResource(R.string.disks_used_by, it) } ?: stringResource(R.string.disks_unused),
+                                disk.wearoutPercent?.let { stringResource(R.string.disks_wearout, it) },
+                            ).joinToString(" · "),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = if (disk.unused) c.accent else c.textTertiary,
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    state.detail?.let { detail -> DiskDialog(detail, state.running == null, viewModel) }
+    state.creating?.let { form -> CreateDiskStorageDialog(form, state, viewModel) }
+    state.confirmWipe?.let { disk ->
+        ConfirmActionDialog(
+            title = stringResource(R.string.disks_wipe_title, disk.devpath),
+            message = stringResource(R.string.disks_wipe_body),
+            confirmLabel = stringResource(R.string.disks_wipe),
+            danger = DangerLevel.TYPE_TO_CONFIRM,
+            onConfirm = viewModel::wipe,
+            onDismiss = viewModel::dismissWipe,
+            confirmText = disk.devpath,
+        )
+    }
+}
+
+@Composable
+private fun DiskDialog(detail: DiskDetail, enabled: Boolean, viewModel: DisksViewModel) {
+    val c = AnProxTheme.colors
+    val disk = detail.disk
+    AlertDialog(
+        onDismissRequest = viewModel::closeDetail,
+        containerColor = c.surfaceSolid,
+        title = { Text(disk.devpath) },
+        text = {
+            Column(Modifier.heightIn(max = 480.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(listOfNotNull(disk.model, disk.serial).joinToString(" · "), style = MaterialTheme.typography.bodySmall, color = c.textSecondary)
+                val smart = detail.smart
+                when {
+                    detail.error != null -> FormHint(detail.error.asString(), error = true)
+                    smart == null -> CircularProgressIndicator(color = c.accent)
+                    smart.attributes.isNotEmpty() -> smart.attributes.forEach { a ->
+                        Row {
+                            Text(a.name, style = MaterialTheme.typography.bodySmall, color = c.textPrimary, modifier = Modifier.weight(1f))
+                            Text(a.raw.orEmpty(), style = MaterialTheme.typography.bodySmall, fontFamily = FontFamily.Monospace, color = c.textSecondary)
+                        }
+                    }
+                    !smart.text.isNullOrBlank() -> Text(smart.text.orEmpty(), style = MaterialTheme.typography.bodySmall, fontFamily = FontFamily.Monospace, color = c.textPrimary)
+                    else -> FormHint(stringResource(R.string.disks_no_smart))
+                }
+                Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    if (disk.unused) {
+                        TextButton(onClick = { viewModel.startCreate(disk) }, enabled = enabled) { Text(stringResource(R.string.disks_create_short)) }
+                        if (!disk.gpt) TextButton(onClick = { viewModel.initGpt(disk) }, enabled = enabled) { Text(stringResource(R.string.disks_init_gpt)) }
+                    }
+                    TextButton(onClick = { viewModel.requestWipe(disk) }, enabled = enabled) { Text(stringResource(R.string.disks_wipe), color = c.danger) }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = viewModel::closeDetail) { Text(stringResource(R.string.action_close)) } },
+    )
+}
+
+@Composable
+private fun CreateDiskStorageDialog(form: DiskStorageForm, state: DisksState, viewModel: DisksViewModel) {
+    val c = AnProxTheme.colors
+    val kindLabels = mapOf(
+        DiskStorageKind.DIRECTORY to stringResource(R.string.storage_kind_dir),
+        DiskStorageKind.LVM to stringResource(R.string.storage_kind_lvm),
+        DiskStorageKind.LVMTHIN to stringResource(R.string.storage_kind_lvmthin),
+        DiskStorageKind.ZFS to stringResource(R.string.storage_kind_zfs),
+    )
+    val problem = form.problem()
+    AlertDialog(
+        onDismissRequest = viewModel::closeCreate,
+        containerColor = c.surfaceSolid,
+        title = { Text(stringResource(R.string.disks_create)) },
+        text = {
+            Column(Modifier.heightIn(max = 520.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                ChoiceChips(DiskStorageKind.entries, form.kind, { kindLabels.getValue(it) }) { k ->
+                    viewModel.editCreate { copy(kind = k, devices = if (k == DiskStorageKind.ZFS) devices else devices.take(1)) }
+                }
+                GlassTextField(value = form.name, onValueChange = { v -> viewModel.editCreate { copy(name = v) } }, label = stringResource(R.string.disks_name))
+                FormLabel(stringResource(if (form.kind == DiskStorageKind.ZFS) R.string.disks_devices else R.string.disks_device))
+                state.unused.forEach { disk ->
+                    val checked = disk.devpath in form.devices
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .toggleable(value = checked, role = Role.Checkbox, onValueChange = { viewModel.toggleDevice(disk.devpath) })
+                            .padding(vertical = 2.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Checkbox(checked = checked, onCheckedChange = null)
+                        Spacer(Modifier.width(8.dp))
+                        Text("${disk.devpath} · ${Formatters.bytes(disk.size)}", style = MaterialTheme.typography.bodyMedium, color = c.textPrimary)
+                    }
+                }
+                when (form.kind) {
+                    DiskStorageKind.DIRECTORY -> {
+                        FormLabel(stringResource(R.string.disks_filesystem))
+                        ChoiceChips(DiskStorageForm.FILESYSTEMS, form.filesystem, { it }) { f -> viewModel.editCreate { copy(filesystem = f) } }
+                    }
+                    DiskStorageKind.ZFS -> {
+                        FormLabel(stringResource(R.string.disks_raid))
+                        ChoiceChips(DiskStorageForm.RAID_LEVELS, form.raidLevel, { it }) { r -> viewModel.editCreate { copy(raidLevel = r) } }
+                        FormLabel(stringResource(R.string.disks_compression))
+                        ChoiceChips(DiskStorageForm.COMPRESSIONS, form.compression, { it }) { z -> viewModel.editCreate { copy(compression = z) } }
+                    }
+                    else -> Unit
+                }
+                SwitchRow(stringResource(R.string.disks_add_storage), form.addStorage, { on -> viewModel.editCreate { copy(addStorage = on) } })
+                FormHint(stringResource(R.string.disks_create_warning))
+                problem?.let {
+                    FormHint(
+                        stringResource(
+                            when (it) {
+                                DiskStorageForm.Problem.NAME -> R.string.disks_problem_name
+                                DiskStorageForm.Problem.DEVICES -> R.string.disks_problem_devices
+                                DiskStorageForm.Problem.RAID -> R.string.disks_problem_raid
+                            },
+                        ),
+                        error = true,
+                    )
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = viewModel::create, enabled = problem == null) { Text(stringResource(R.string.disks_create_short)) } },
+        dismissButton = { TextButton(onClick = viewModel::closeCreate) { Text(stringResource(R.string.action_cancel)) } },
+    )
 }
 

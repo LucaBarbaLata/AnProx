@@ -9,6 +9,8 @@ import io.github.lucabarbalata.anprox.mock.MockProxmoxServer
 import io.github.lucabarbalata.anprox.model.ProxmoxProduct
 import io.github.lucabarbalata.anprox.model.profile.Endpoint
 import io.github.lucabarbalata.anprox.model.profile.ServerProfile
+import io.github.lucabarbalata.anprox.model.pve.DiskStorageForm
+import io.github.lucabarbalata.anprox.model.pve.DiskStorageKind
 import io.github.lucabarbalata.anprox.model.pve.NetworkInterfaceForm
 import io.github.lucabarbalata.anprox.model.pve.NodeDns
 import io.github.lucabarbalata.anprox.model.pve.NodeDnsForm
@@ -149,6 +151,27 @@ class NodeAdminTest {
         config = repo.network("pve", "pve1")
         assertFalse(config.pending)
         assertEquals("Storage", config.interfaces.single { it.iface == "vmbr1" }.comments)
+        Unit
+    }
+
+    @Test
+    fun `disks, SMART, and a ZFS mirror on the two free ones`() = runBlocking {
+        val hub = hub()
+        val repo = NodeAdminRepository(hub)
+        val guests = GuestRepository(hub)
+        val disks = repo.disks("pve", "pve1")
+        assertEquals(listOf("/dev/sdb", "/dev/sdc"), disks.filter { it.unused }.map { it.devpath })
+        assertEquals(97, disks.single { it.devpath == "/dev/nvme0n1" }.wearoutPercent)
+        assertTrue(repo.smart("pve", "pve1", disks.first { it.devpath == "/dev/sda" }).attributes.any { it.name == "Power_On_Hours" })
+        assertTrue(repo.smart("pve", "pve1", disks.first { it.type == "nvme" }).text.orEmpty().contains("Percentage Used"))
+
+        val form = DiskStorageForm(DiskStorageKind.ZFS, "tank2", listOf("/dev/sdb", "/dev/sdc"), raidLevel = "mirror")
+        assertEquals(null, form.problem())
+        assertEquals(DiskStorageForm.Problem.RAID, form.copy(raidLevel = "raidz2").problem())
+        assertTrue(guests.awaitTask("pve", "pve1", repo.createStorage("pve", "pve1", form)).succeeded)
+        assertTrue(repo.disks("pve", "pve1").none { it.unused })
+        // The disks are in use now.
+        assertFailsWith<ApiException> { repo.createStorage("pve", "pve1", form.copy(name = "tank3")) }
         Unit
     }
 }

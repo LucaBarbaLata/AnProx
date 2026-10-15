@@ -26,6 +26,7 @@ import io.github.lucabarbalata.anprox.model.pve.LvmVolumeGroup
 import io.github.lucabarbalata.anprox.model.pve.LxcInterface
 import io.github.lucabarbalata.anprox.model.pve.MigrationCheck
 import io.github.lucabarbalata.anprox.model.pve.NfsExport
+import io.github.lucabarbalata.anprox.model.pve.NodeDisk
 import io.github.lucabarbalata.anprox.model.pve.NodeDns
 import io.github.lucabarbalata.anprox.model.pve.NodeHosts
 import io.github.lucabarbalata.anprox.model.pve.NodeNetwork
@@ -43,6 +44,7 @@ import io.github.lucabarbalata.anprox.model.pve.ResourcePool
 import io.github.lucabarbalata.anprox.model.pve.RrdPoint
 import io.github.lucabarbalata.anprox.model.pve.ScheduledRun
 import io.github.lucabarbalata.anprox.model.pve.SecurityGroup
+import io.github.lucabarbalata.anprox.model.pve.SmartData
 import io.github.lucabarbalata.anprox.model.pve.StorageConfig
 import io.github.lucabarbalata.anprox.model.pve.StorageContentItem
 import io.github.lucabarbalata.anprox.model.pve.TaskLogLine
@@ -624,6 +626,26 @@ interface PveApi {
     /** Drops the pending configuration. */
     @DELETE("nodes/{node}/network")
     suspend fun revertNetwork(@Path("node") node: String): ApiEnvelope<JsonElement>
+
+    @GET("nodes/{node}/disks/list")
+    suspend fun disks(@Path("node") node: String, @Query("include-partitions") partitions: Int = 0): ApiEnvelope<List<NodeDisk>>
+
+    @GET("nodes/{node}/disks/smart")
+    suspend fun smart(@Path("node") node: String, @Query("disk") disk: String): ApiEnvelope<SmartData>
+
+    /** Wipes the partition table and signatures; returns a UPID. */
+    @FormUrlEncoded
+    @PUT("nodes/{node}/disks/wipedisk")
+    suspend fun wipeDisk(@Path("node") node: String, @Field("disk") disk: String): ApiEnvelope<String>
+
+    @FormUrlEncoded
+    @POST("nodes/{node}/disks/initgpt")
+    suspend fun initGpt(@Path("node") node: String, @Field("disk") disk: String): ApiEnvelope<String>
+
+    /** [kind]: `directory`, `lvm`, `lvmthin`, `zfs`. Returns a UPID. */
+    @FormUrlEncoded
+    @POST("nodes/{node}/disks/{kind}")
+    suspend fun createDiskStorage(@Path("node") node: String, @Path("kind") kind: String, @FieldMap params: Map<String, String>): ApiEnvelope<String>
 
     @GET("nodes/{node}/dns")
     suspend fun nodeDns(@Path("node") node: String): ApiEnvelope<NodeDns>

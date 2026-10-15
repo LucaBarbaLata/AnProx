@@ -80,7 +80,9 @@ Code: `core/network/src/main/kotlin/.../network/api/` (`AccessApi`, `PveApi`, `P
 | `GET/POST /nodes/{node}/apt/update`, `GET …/apt/changelog`, `GET …/apt/versions` | Upgradable packages, refreshing the index (a task), changelogs, installed versions | ✅ |
 | `GET/POST/PUT /nodes/{node}/apt/repositories` | Repositories with Proxmox's warnings; switch on/off; add a standard repository | ✅ |
 | `POST /nodes/{node}/termproxy` with `cmd=upgrade` | The upgrade in a terminal, like the web UI | ✅ |
-| `/nodes/{node}/disks/*` | SMART, wipe, GPT, ZFS, LVM, LVM-thin, directory | 🗓 M5 |
+| `GET /nodes/{node}/disks/list`, `GET …/disks/smart` | Disks with health, wear and use; SMART attributes or text | ✅ |
+| `PUT …/disks/wipedisk`, `POST …/disks/initgpt`, `POST …/disks/{directory,lvm,lvmthin,zfs}` | Wipe, initialize GPT, create storage (with `add_storage`) | ✅ |
+| `GET …/disks/{zfs,lvm,lvmthin,directory}` | Listing pools, volume groups and mounts | 🗓 later |
 | `GET /nodes/{node}/network` (with the `changes` diff), `POST`, `PUT …/{iface}`, `DELETE …/{iface}` | Interfaces: bridges, bonds, VLANs, ports; addresses, gateways, MTU, comments | ✅ |
 | `PUT /nodes/{node}/network` (apply, a task), `DELETE /nodes/{node}/network` (revert) | Pending network changes | ✅ |
 | OVS bridges, bonds and ports | Open vSwitch | 🗓 later (shown, edited in the web UI) |

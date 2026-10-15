@@ -64,6 +64,7 @@ import io.github.lucabarbalata.anprox.ui.hardware.HardwareViewModel
 import io.github.lucabarbalata.anprox.ui.login.LoginViewModel
 import io.github.lucabarbalata.anprox.ui.metrics.PerformanceViewModel
 import io.github.lucabarbalata.anprox.ui.navigation.AppLinks
+import io.github.lucabarbalata.anprox.ui.node.DisksViewModel
 import io.github.lucabarbalata.anprox.ui.node.JournalViewModel
 import io.github.lucabarbalata.anprox.ui.node.NetworkViewModel
 import io.github.lucabarbalata.anprox.ui.node.NodeViewModel
@@ -166,6 +167,7 @@ val appModule = module {
     viewModel { (serverId: String, node: String) -> JournalViewModel(serverId, node, get()) }
     viewModel { (serverId: String, node: String) -> SystemSettingsViewModel(serverId, node, get()) }
     viewModel { (serverId: String, node: String) -> NetworkViewModel(serverId, node, get(), get()) }
+    viewModel { (serverId: String, node: String) -> DisksViewModel(serverId, node, get(), get()) }
     viewModel { TasksViewModel(get()) }
     viewModel { (serverId: String, node: String, upid: String) -> TaskLogViewModel(serverId, node, upid, get()) }
     viewModel { SettingsViewModel(get()) }

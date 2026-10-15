@@ -708,6 +708,36 @@ class MockProxmoxServer(
                 onFailure = { call.fail(400, it.message ?: "error") },
             )
         }
+        get("nodes/{node}/disks/list") {
+            call.authed() ?: return@get
+            val node = state.node(call.parameters["node"]!!) ?: return@get call.fail(404, "no such node")
+            if (!node.online) return@get call.fail(595, "Connection refused")
+            call.ok(state.disks(node.name).orEmpty())
+        }
+        get("nodes/{node}/disks/smart") {
+            call.authed() ?: return@get
+            val disk = call.request.queryParameters["disk"].orEmpty()
+            call.ok(state.smart(call.parameters["node"]!!, disk) ?: return@get call.fail(500, "disk '$disk' not found"))
+        }
+        put("nodes/{node}/disks/wipedisk") {
+            val s = call.authed() ?: return@put
+            if (state.isReadOnly(s.user)) return@put call.fail(403, "Permission check failed (/, Sys.Modify)")
+            state.wipeDisk(call.parameters["node"]!!, call.receiveParameters()["disk"].orEmpty(), s.user)
+                .fold({ call.ok(it) }, { call.fail(400, it.message ?: "error") })
+        }
+        post("nodes/{node}/disks/initgpt") {
+            val s = call.authed() ?: return@post
+            if (state.isReadOnly(s.user)) return@post call.fail(403, "Permission check failed (/, Sys.Modify)")
+            state.initGpt(call.parameters["node"]!!, call.receiveParameters()["disk"].orEmpty(), s.user)
+                .fold({ call.ok(it) }, { call.fail(400, it.message ?: "error") })
+        }
+        post("nodes/{node}/disks/{kind}") {
+            val s = call.authed() ?: return@post
+            if (state.isReadOnly(s.user)) return@post call.fail(403, "Permission check failed (/, Sys.Modify)")
+            val p = call.receiveParameters()
+            state.createDiskStorage(call.parameters["node"]!!, call.parameters["kind"]!!, p.names().associateWith { p[it].orEmpty() }, s.user)
+                .fold({ call.ok(it) }, { call.fail(400, it.message ?: "error") })
+        }
         get("nodes/{node}/dns") {
             call.authed() ?: return@get
             call.ok(state.nodeDns(call.parameters["node"]!!) ?: return@get call.fail(404, "no such node"))

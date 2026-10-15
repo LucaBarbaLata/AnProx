@@ -7,9 +7,12 @@ import io.github.lucabarbalata.anprox.data.guest.GuestRepository
 import io.github.lucabarbalata.anprox.data.node.NodeAdminRepository
 import io.github.lucabarbalata.anprox.model.pve.AptRepositories
 import io.github.lucabarbalata.anprox.model.pve.AptUpdate
+import io.github.lucabarbalata.anprox.model.pve.DiskStorageForm
+import io.github.lucabarbalata.anprox.model.pve.DiskStorageKind
 import io.github.lucabarbalata.anprox.model.pve.NetworkConfig
 import io.github.lucabarbalata.anprox.model.pve.NetworkInterfaceForm
 import io.github.lucabarbalata.anprox.model.pve.NetworkKind
+import io.github.lucabarbalata.anprox.model.pve.NodeDisk
 import io.github.lucabarbalata.anprox.model.pve.NodeDnsForm
 import io.github.lucabarbalata.anprox.model.pve.NodeHosts
 import io.github.lucabarbalata.anprox.model.pve.NodeNetwork
@@ -18,6 +21,7 @@ import io.github.lucabarbalata.anprox.model.pve.NodeSubscription
 import io.github.lucabarbalata.anprox.model.pve.NodeTime
 import io.github.lucabarbalata.anprox.model.pve.PackageVersion
 import io.github.lucabarbalata.anprox.model.pve.ServiceAction
+import io.github.lucabarbalata.anprox.model.pve.SmartData
 import io.github.lucabarbalata.anprox.network.ApiException
 import io.github.lucabarbalata.anprox.ui.common.TaskResult
 import io.github.lucabarbalata.anprox.ui.common.UiText
@@ -31,7 +35,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /** The node pages under Node → Administration (milestone M5). */
-enum class NodeAdminPage { UPDATES, REPOSITORIES, SERVICES, NETWORK, SYSTEM, JOURNAL }
+enum class NodeAdminPage { UPDATES, REPOSITORIES, SERVICES, NETWORK, DISKS, SYSTEM, JOURNAL }
 
 // ------------------------------------------------------------------------------ updates
 
@@ -580,6 +584,129 @@ class NetworkViewModel(
                 TaskResult(e.toUiText(), null, ok = false)
             }
             ui.update { it.copy(busy = false, result = result) }
+            load()
+        }
+    }
+}
+
+// ------------------------------------------------------------------------------ disks
+
+/** A disk's details: SMART data once loaded. */
+data class DiskDetail(val disk: NodeDisk, val smart: SmartData? = null, val error: UiText? = null)
+
+data class DisksState(
+    val loading: Boolean = true,
+    val error: UiText? = null,
+    val disks: List<NodeDisk> = emptyList(),
+    val detail: DiskDetail? = null,
+    val creating: DiskStorageForm? = null,
+    val confirmWipe: NodeDisk? = null,
+    val running: String? = null,
+    val result: TaskResult? = null,
+) {
+    val unused: List<NodeDisk> get() = disks.filter { it.unused }
+}
+
+/** Node → Disks: health, SMART, and turning unused disks into storage. */
+class DisksViewModel(
+    private val serverId: String,
+    private val node: String,
+    private val repo: NodeAdminRepository,
+    private val guests: GuestRepository,
+) : ViewModel() {
+    private val ui = MutableStateFlow(DisksState())
+    val state: StateFlow<DisksState> = ui.asStateFlow()
+
+    init {
+        load()
+    }
+
+    fun load() {
+        ui.update { it.copy(loading = true, error = null) }
+        viewModelScope.launch {
+            try {
+                val disks = repo.disks(serverId, node)
+                ui.update { it.copy(loading = false, disks = disks) }
+            } catch (e: ApiException) {
+                ui.update { it.copy(loading = false, error = e.toUiText()) }
+            }
+        }
+    }
+
+    fun open(disk: NodeDisk) {
+        ui.update { it.copy(detail = DiskDetail(disk)) }
+        viewModelScope.launch {
+            val detail = try {
+                DiskDetail(disk, repo.smart(serverId, node, disk))
+            } catch (e: ApiException) {
+                DiskDetail(disk, SmartData(), e.toUiText())
+            }
+            ui.update { s -> if (s.detail?.disk == disk) s.copy(detail = detail) else s }
+        }
+    }
+
+    fun closeDetail() {
+        ui.update { it.copy(detail = null) }
+    }
+
+    fun startCreate(disk: NodeDisk?) {
+        ui.update { it.copy(detail = null, creating = DiskStorageForm(devices = listOfNotNull(disk?.devpath))) }
+    }
+
+    fun editCreate(change: DiskStorageForm.() -> DiskStorageForm) {
+        ui.update { s -> s.copy(creating = s.creating?.change()) }
+    }
+
+    fun toggleDevice(devpath: String) = editCreate {
+        copy(devices = if (devpath in devices) devices - devpath else if (kind == DiskStorageKind.ZFS) devices + devpath else listOf(devpath))
+    }
+
+    fun closeCreate() {
+        ui.update { it.copy(creating = null) }
+    }
+
+    fun create() {
+        val form = ui.value.creating ?: return
+        if (form.problem() != null) return
+        ui.update { it.copy(creating = null) }
+        runTask(form.name.trim(), UiText.res(R.string.disks_created, form.name.trim())) { repo.createStorage(serverId, node, form) }
+    }
+
+    fun initGpt(disk: NodeDisk) {
+        ui.update { it.copy(detail = null) }
+        runTask(disk.devpath, UiText.res(R.string.disks_gpt_done, disk.devpath)) { repo.initGpt(serverId, node, disk) }
+    }
+
+    fun requestWipe(disk: NodeDisk) {
+        ui.update { it.copy(detail = null, confirmWipe = disk) }
+    }
+
+    fun dismissWipe() {
+        ui.update { it.copy(confirmWipe = null) }
+    }
+
+    fun wipe() {
+        val disk = ui.value.confirmWipe ?: return
+        ui.update { it.copy(confirmWipe = null) }
+        runTask(disk.devpath, UiText.res(R.string.disks_wiped, disk.devpath)) { repo.wipe(serverId, node, disk) }
+    }
+
+    fun consumeResult() {
+        ui.update { it.copy(result = null) }
+    }
+
+    private fun runTask(what: String, done: UiText, call: suspend () -> String) {
+        if (ui.value.running != null) return
+        ui.update { it.copy(running = what) }
+        viewModelScope.launch {
+            val result = try {
+                val upid = call()
+                val ok = guests.awaitTask(serverId, node, upid).succeeded
+                TaskResult(if (ok) done else UiText.res(R.string.disks_failed), upid, ok)
+            } catch (e: ApiException) {
+                TaskResult(e.toUiText(), null, ok = false)
+            }
+            ui.update { it.copy(running = null, result = result) }
             load()
         }
     }

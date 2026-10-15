@@ -114,6 +114,9 @@ All notable changes to AnProx are documented here. The format follows
   - **Network**: bridges, bonds, VLANs and ports with their addresses, gateways, ports, VLAN
     awareness, bond mode, MTU and comment. Changes wait as pending (with the diff) until you
     **Apply** them (type the node's name, since a mistake can cut the node off) or **Revert**.
+  - **Disks**: health, wear and what uses each disk; SMART data; **Initialize with GPT**, **Wipe**
+    (type the device), and **Create storage** on unused disks: directory, LVM, LVM-thin or ZFS
+    (RAID level, compression), added as a storage if you like.
 
 - **Move to another phone** (More → Settings): export your servers to a file protected with a
   passphrase, optionally with saved passwords (after the fingerprint or screen lock), and import

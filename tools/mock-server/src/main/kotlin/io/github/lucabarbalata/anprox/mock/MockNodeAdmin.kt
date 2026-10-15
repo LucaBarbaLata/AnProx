@@ -5,7 +5,10 @@ import io.github.lucabarbalata.anprox.model.pve.AptRepository
 import io.github.lucabarbalata.anprox.model.pve.AptRepositoryFile
 import io.github.lucabarbalata.anprox.model.pve.AptRepositoryInfo
 import io.github.lucabarbalata.anprox.model.pve.AptUpdate
+import io.github.lucabarbalata.anprox.model.pve.NodeDisk
 import io.github.lucabarbalata.anprox.model.pve.NodeDns
+import io.github.lucabarbalata.anprox.model.pve.SmartAttribute
+import io.github.lucabarbalata.anprox.model.pve.SmartData
 import io.github.lucabarbalata.anprox.model.pve.NodeHosts
 import io.github.lucabarbalata.anprox.model.pve.NodeTime
 import io.github.lucabarbalata.anprox.model.pve.NodeService
@@ -30,6 +33,12 @@ internal class MockNodeAdmin(nodes: List<String>) {
         var hosts: String = "",
         var hostsVersion: Int = 1,
         var timezone: String = "Europe/Bucharest",
+        val disks: MutableList<NodeDisk> = mutableListOf(
+            NodeDisk("/dev/nvme0n1", 1_000_204_886_016, "Samsung SSD 980 PRO 1TB", "S5GXNF0R123456", type = "nvme", health = "PASSED", wearout = kotlinx.serialization.json.JsonPrimitive(97), used = "LVM", gpt = true),
+            NodeDisk("/dev/sda", 4_000_787_030_016, "WDC WD40EFRX-68N32N0", "WD-WCC7K1234567", type = "hdd", health = "PASSED", used = "ZFS", gpt = true, rpm = kotlinx.serialization.json.JsonPrimitive(5400)),
+            NodeDisk("/dev/sdb", 1_000_204_886_016, "CT1000MX500SSD1", "2033E1234567", type = "ssd", health = "PASSED", wearout = kotlinx.serialization.json.JsonPrimitive(88)),
+            NodeDisk("/dev/sdc", 2_000_398_934_016, "ST2000DM008-2FR102", "ZFL1ABCD", type = "hdd", health = "PASSED", gpt = true, rpm = kotlinx.serialization.json.JsonPrimitive(7200)),
+        ),
     )
 
     private val data = nodes.associateWith { node ->
@@ -222,5 +231,48 @@ internal class MockNodeAdmin(nodes: List<String>) {
         if (timezone !in java.util.TimeZone.getAvailableIDs()) return "timezone: invalid time zone '$timezone'"
         d.timezone = timezone
         return null
+    }
+
+    fun disks(node: String): List<NodeDisk>? = node(node)?.disks?.toList()
+
+    fun smart(node: String, devpath: String): SmartData? {
+        val disk = node(node)?.disks?.firstOrNull { it.devpath == devpath } ?: return null
+        return if (disk.type == "nvme") {
+            SmartData("PASSED", "text", text = "SMART/Health Information (NVMe Log 0x02)\nCritical Warning: 0x00\nTemperature: 41 Celsius\nAvailable Spare: 100%\nPercentage Used: 3%\nPower On Hours: 8,214\nUnsafe Shutdowns: 12\nMedia and Data Integrity Errors: 0\n")
+        } else {
+            fun attr(id: Int, name: String, value: Int, raw: String) =
+                SmartAttribute(kotlinx.serialization.json.JsonPrimitive(id), name, kotlinx.serialization.json.JsonPrimitive(value), kotlinx.serialization.json.JsonPrimitive(value), kotlinx.serialization.json.JsonPrimitive(10), raw, "-")
+            SmartData(
+                "PASSED", "ata",
+                listOf(
+                    attr(5, "Reallocated_Sector_Ct", 100, "0"),
+                    attr(9, "Power_On_Hours", 91, "8214"),
+                    attr(194, "Temperature_Celsius", 64, "36"),
+                    attr(197, "Current_Pending_Sector", 100, "0"),
+                    attr(199, "UDMA_CRC_Error_Count", 100, "0"),
+                ),
+            )
+        }
+    }
+
+    /** Validates a disk operation; the change itself happens when its task ends ([markUsed], [markWiped]). */
+    fun checkDisks(node: String, devices: List<String>, mustBeUnused: Boolean): String? {
+        val d = node(node) ?: return "no such node"
+        devices.forEach { dev ->
+            val disk = d.disks.firstOrNull { it.devpath == dev } ?: return "disk '$dev' not found"
+            if (mustBeUnused && !disk.unused) return "disk '$dev' is already in use (${disk.used})"
+        }
+        if (devices.isEmpty()) return "no disk given"
+        return null
+    }
+
+    fun markUsed(node: String, devices: List<String>, how: String) {
+        val d = node(node) ?: return
+        d.disks.replaceAll { if (it.devpath in devices) it.copy(used = how, gpt = true) else it }
+    }
+
+    fun markWiped(node: String, dev: String, gpt: Boolean) {
+        val d = node(node) ?: return
+        d.disks.replaceAll { if (it.devpath == dev) it.copy(used = null, gpt = gpt) else it }
     }
 }

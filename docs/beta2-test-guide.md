@@ -265,7 +265,10 @@ Needs two nodes and a guest whose disks are on local ZFS storage that exists on 
    pending banner and **Show changes** (compare with the web UI's Network → Pending changes) →
    **Revert**. Then the same and **Apply** (type the node's name) → vmbr2 exists; remove it and
    apply again.
-7. **DNS, hosts and time**: values match the web UI's System → DNS / Hosts / Time; change the
+7. **Disks**: health and wear match the web UI's Disks; tap one → SMART. Only on a spare disk:
+   **Create storage** → ZFS single (or directory ext4) with **Add as storage** → it appears under
+   Datacenter → Storage. **Wipe** asks for the device typed out.
+8. **DNS, hosts and time**: values match the web UI's System → DNS / Hosts / Time; change the
    time zone and back; add a comment line to /etc/hosts and remove it again.
 
 ### E. Snapshots (Tools → Snapshots)

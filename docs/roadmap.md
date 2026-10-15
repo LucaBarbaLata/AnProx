@@ -13,7 +13,7 @@ Status legend: ✅ done · 🚧 in progress · 🗓 planned
 | [M2](#m2--consoles--guest-configuration) | Consoles and guest configuration | 🚧 all but the built-in SSH client |
 | [M3](#m3--alerts--android-integration) | Alerts and Android integration | 🚧 alerts, links, shortcuts, tile, widget done |
 | [M4](#m4--datacenter) | Datacenter: storage, backup jobs, HA, replication, firewall | 🚧 all but editing HA groups/rules and maintenance mode |
-| [M5](#m5--node-administration) | Node administration | 🚧 all but disks and entering a subscription key |
+| [M5](#m5--node-administration) | Node administration | 🚧 all but entering a subscription key |
 | [M6](#m6--ceph--sdn) | Ceph and SDN | 🗓 |
 | [M7](#m7--access-control) | Users, groups, roles, ACLs, realms, tokens, TFA | 🗓 |
 | [M8](#m8--backup-server-complete) | Proxmox Backup Server complete | 🗓 |
@@ -153,13 +153,14 @@ Everything marked ✅ in M1 and M2 below. Gates:
   optional and behind the screen lock, sessions never exported.
 
 ## M5 — Node administration
-*Status: 🚧 in progress.* Node → Administration.
+*Status: 🚧 nearly done (entering a subscription key is left).* Node → Administration.
 - ✅ **Updates and repositories** (Q22): subscription status, refresh the package lists (a
   task), upgradable packages with changelogs, installed versions, the upgrade in a terminal;
   repositories with Proxmox's warnings, switch on/off, add no-subscription/enterprise/test.
 - ✅ **Services** (start, stop, restart, reload; the ones the connection depends on ask first)
   and the **system log** (newest 500 journal lines, filter).
-- **Disks** (Q22): SMART, wipe, initialise GPT, create ZFS/LVM/LVM-thin/directory storage.
+- ✅ **Disks** (Q22): health, wear, SMART, wipe (type the device), initialize GPT, create
+  directory/LVM/LVM-thin/ZFS storage (ZFS with RAID level and compression).
 - ✅ **Network interfaces** (Q22): bridges, bonds, VLANs and ports (addresses, gateways, ports,
   VLAN awareness, bond mode and hash policy, MTU, comment); the pending diff; apply (type the
   node's name) and revert.
