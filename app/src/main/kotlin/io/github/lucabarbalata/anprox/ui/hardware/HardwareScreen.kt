@@ -153,10 +153,10 @@ private fun VmSections(hw: VmHardware, state: HardwareState, open: (HardwareDial
         HardwareRow(
             Icons.Outlined.Memory,
             stringResource(R.string.hardware_memory),
-            when (hw.balloonMiB) {
+            when (val balloon = hw.balloonMiB) {
                 0 -> stringResource(R.string.hardware_memory_fixed, mib(hw.memoryMiB))
                 null -> stringResource(R.string.hardware_memory_balloon, mib(hw.memoryMiB), mib(hw.memoryMiB))
-                else -> stringResource(R.string.hardware_memory_balloon, mib(hw.memoryMiB), mib(hw.balloonMiB))
+                else -> stringResource(R.string.hardware_memory_balloon, mib(hw.memoryMiB), mib(balloon))
             },
             pending = "memory" in pending || "balloon" in pending,
             enabled = enabled,
@@ -218,10 +218,12 @@ private fun VmSections(hw: VmHardware, state: HardwareState, open: (HardwareDial
     }
 
     SectionHeader(stringResource(R.string.hardware_boot_order))
+    // joinToString's lambda isn't inline, so it can't call composables: resolve the labels first.
+    val bootLabels = hw.bootOrder.map { bootLabel(hw, it) }
     GlassCard(contentPadding = PaddingValues(vertical = 6.dp)) {
         HardwareRow(
             Icons.Outlined.FormatListNumbered,
-            if (hw.bootOrder.isEmpty()) stringResource(R.string.hardware_boot_none) else hw.bootOrder.joinToString(" → ") { bootLabel(hw, it) },
+            if (bootLabels.isEmpty()) stringResource(R.string.hardware_boot_none) else bootLabels.joinToString(" → "),
             stringResource(R.string.hardware_boot_change),
             "boot" in pending,
             enabled,
