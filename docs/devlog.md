@@ -104,6 +104,12 @@ snapshot it already polls. Bulk actions keep the selection in `ResourcesViewMode
 action (Start only takes stopped guests, Shut down only running ones), run four power calls at a
 time and wait for every task before summarising. `GlassCard` got an optional long-click.
 
+**0.1.0-beta.2 released (2026-10-15).** The owner started the Release workflow (run 3) from
+`4881937`; tests, the signed build (same certificate as beta.1) and the emulator tour passed, and it
+was published as a pre-release. This session could not start it itself: workflow dispatch answers
+403 for the integration, and pushing a release tag is blocked by the session's permissions. The
+owner is now running `docs/beta2-test-guide.md` on Proxmox VE 8.
+
 Gotchas: one new data test ended in `assertNotNull(...)`, which returns a value, so JUnit silently
 skipped it (the CLAUDE.md pitfall again, caught because the test count was one short). The tour's
 `scroll_to` now turns around at the end of a list, since the guest screen got longer. Chart touch

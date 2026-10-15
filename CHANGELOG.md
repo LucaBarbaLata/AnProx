@@ -6,7 +6,7 @@ All notable changes to AnProx are documented here. The format follows
 
 ## [Unreleased]
 
-## [0.1.0-beta.2] — not released yet (milestone M1 "Daily driver", plus consoles and guest management from M2)
+## [0.1.0-beta.2] — 2026-10-15 (milestone M1 "Daily driver", plus consoles and guest management from M2)
 
 Second beta, focused on everyday Proxmox VE work: consoles, snapshots, backups, charts, guest
 options, clone and migrate, bulk actions and an optional app lock.

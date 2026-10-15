@@ -15,9 +15,9 @@ The goal is every function of the web UI in a fast, beautiful, native app.
 | Design | "Midnight Glass", a bespoke dark-first design with light, dark and AMOLED themes |
 | Privacy | No analytics, no ads, no Google services. The app only talks to your own servers. |
 | License | [GPL-3.0](LICENSE) |
-| Status | **Beta**: [0.1.0-beta.1](https://github.com/LucaBarbaLata/AnProx/releases/tag/v0.1.0-beta.1) (milestone M0, foundation). M1 is in progress. See the [roadmap](docs/roadmap.md). |
+| Status | **Beta**: [0.1.0-beta.2](https://github.com/LucaBarbaLata/AnProx/releases/tag/v0.1.0-beta.2) (milestone M1, daily driver, plus consoles and guest management). See the [roadmap](docs/roadmap.md). |
 
-## What works today (M0)
+## What works today
 
 - **Many servers, one overview.** Add any number of PVE clusters and PBS servers. The dashboard
   totals guests and nodes across all of them and flags what needs attention: lost quorum,
@@ -31,20 +31,20 @@ The goal is every function of the web UI in a fast, beautiful, native app.
   On tablets the list and the detail sit side by side.
 - **Guests.** Live CPU, RAM and disk gauges, details, and power actions (start, shut down, reboot,
   stop, pause, resume, reset). Dangerous actions need confirmation.
-- **Snapshots** *(next beta)*. The snapshot tree of every VM and container: take one (with RAM
+- **Snapshots** *(new in beta.2)*. The snapshot tree of every VM and container: take one (with RAM
   for running VMs), roll back, or delete.
-- **Backups** *(next beta)*. Back up a VM or container now, browse backups per guest or storage,
+- **Backups** *(new in beta.2)*. Back up a VM or container now, browse backups per guest or storage,
   and restore as a new guest or over the original.
-- **App lock** *(next beta)*. Optional fingerprint, face or screen lock check on opening the app
+- **App lock** *(new in beta.2)*. Optional fingerprint, face or screen lock check on opening the app
   and before rollbacks.
-- **Performance charts** *(next beta)*. CPU, memory, network and disk history of every node and
+- **Performance charts** *(new in beta.2)*. CPU, memory, network and disk history of every node and
   guest, from the last hour to the last year, with touch to read exact values.
-- **Consoles** *(next beta)*. The VM's screen (noVNC), container and node terminals (xterm.js)
+- **Consoles** *(new in beta.2)*. The VM's screen (noVNC), container and node terminals (xterm.js)
   with an extra key row for Esc, Tab, Ctrl+C and the arrows.
-- **Guest management** *(next beta)*. IP addresses and OS from the guest agent; edit name, tags,
+- **Guest management** *(new in beta.2)*. IP addresses and OS from the guest agent; edit name, tags,
   notes, start at boot and protection; clone (full or linked), convert to template, and migrate
   to another node (live for VMs).
-- **Bulk actions and favourites** *(next beta)*. Select several guests to start, shut down or
+- **Bulk actions and favourites** *(new in beta.2)*. Select several guests to start, shut down or
   stop them together; star guests to pin them to the overview.
 - **Nodes.** Live usage, hardware and kernel info, and the guests running on the node.
 - **Tasks.** A merged timeline of every server's tasks with live, auto-scrolling logs.
