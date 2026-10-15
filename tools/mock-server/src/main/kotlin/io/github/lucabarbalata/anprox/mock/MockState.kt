@@ -1020,7 +1020,21 @@ class MockState(
     fun firewallOptions(scope: String) = synchronized(lock) { firewall.options(scope) }
     fun updateFirewallOptions(scope: String, params: Map<String, String>) = synchronized(lock) { firewall.updateOptions(scope, params) }
     fun firewallMacros() = firewall.macros
-    fun securityGroups() = firewall.groups
+    fun securityGroups() = synchronized(lock) { firewall.groups() }
+    fun createSecurityGroup(params: Map<String, String>) = synchronized(lock) { firewall.createGroup(params) }
+    fun deleteSecurityGroup(name: String) = synchronized(lock) { firewall.deleteGroup(name) }
+    fun securityGroupExists(name: String) = synchronized(lock) { firewall.groupExists(name) }
+    fun firewallAliases(scope: String) = synchronized(lock) { firewall.aliases(scope) }
+    fun createFirewallAlias(scope: String, params: Map<String, String>) = synchronized(lock) { firewall.createAlias(scope, params) }
+    fun updateFirewallAlias(scope: String, name: String, params: Map<String, String>) = synchronized(lock) { firewall.updateAlias(scope, name, params) }
+    fun deleteFirewallAlias(scope: String, name: String, digest: String?) = synchronized(lock) { firewall.deleteAlias(scope, name, digest) }
+    fun firewallIpSets(scope: String) = synchronized(lock) { firewall.ipSets(scope) }
+    fun firewallIpSetEntries(scope: String, name: String) = synchronized(lock) { firewall.ipSetEntries(scope, name) }
+    fun createFirewallIpSet(scope: String, params: Map<String, String>) = synchronized(lock) { firewall.createIpSet(scope, params) }
+    fun deleteFirewallIpSet(scope: String, name: String, force: Boolean) = synchronized(lock) { firewall.deleteIpSet(scope, name, force) }
+    fun addIpSetEntry(scope: String, name: String, params: Map<String, String>) = synchronized(lock) { firewall.addIpSetEntry(scope, name, params) }
+    fun removeIpSetEntry(scope: String, name: String, cidr: String, digest: String?) = synchronized(lock) { firewall.removeIpSetEntry(scope, name, cidr, digest) }
+    fun firewallLog(scope: String, start: Int, limit: Int) = firewall.log(scope, start, limit)
 
     // ------------------------------------------------------------------ backup jobs, pools, storage config
 

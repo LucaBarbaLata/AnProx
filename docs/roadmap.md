@@ -10,9 +10,9 @@ Status legend: ✅ done · 🚧 in progress · 🗓 planned
 |---|---|---|
 | [M0](#m0--foundation) | Foundation: servers, login, dashboard, resources, power, tasks | ✅ released as **0.1.0-beta.1** (M1 work so far: **0.1.0-beta.2**) |
 | [M1](#m1--daily-driver) | Daily driver: app lock, SSO, snapshots, backups, charts, notifications | 🚧 snapshots, charts, app lock, backups, guest IPs, bulk actions, favourites done |
-| [M2](#m2--consoles--guest-configuration) | Consoles and guest configuration | 🚧 consoles, options, clone, templates, migration done |
-| [M3](#m3--alerts--android-integration) | Alerts and Android integration | 🚧 |
-| [M4](#m4--datacenter) | Datacenter: storage, backup jobs, HA, replication, firewall | 🚧 |
+| [M2](#m2--consoles--guest-configuration) | Consoles and guest configuration | 🚧 all but the built-in SSH client |
+| [M3](#m3--alerts--android-integration) | Alerts and Android integration | 🚧 alerts, links, shortcuts, tile, widget done |
+| [M4](#m4--datacenter) | Datacenter: storage, backup jobs, HA, replication, firewall | 🚧 all but editing HA groups/rules and maintenance mode |
 | [M5](#m5--node-administration) | Node administration | 🗓 |
 | [M6](#m6--ceph--sdn) | Ceph and SDN | 🗓 |
 | [M7](#m7--access-control) | Users, groups, roles, ACLs, realms, tokens, TFA | 🗓 |
@@ -114,7 +114,7 @@ Everything marked ✅ in M1 and M2 below. Gates:
 - ✅ **Quick Settings tile** (Q28): the last check at a glance; opens the dashboard.
 
 ## M4 — Datacenter
-*Status: 🚧 in progress.* Dashboard → a cluster's **Datacenter** button.
+*Status: 🚧 nearly done: everything below except editing HA groups/rules and node maintenance mode.* Dashboard → a cluster's **Datacenter** button.
 - ✅ **Backup jobs** (Q20): list with next run, enable/disable, run now, create/edit/delete
   (schedule presets or any calendar event with Proxmox's preview of the next runs, storage,
   node, all/selected/all-but/pool, mode, compression, retention, notes template, comment), and
@@ -142,7 +142,9 @@ Everything marked ✅ in M1 and M2 below. Gates:
   (Node → Firewall) and guests (Tools → Firewall): add, edit, enable, reorder and delete rules
   (direction, action or security group, macro, protocol, addresses, ports, interface, log);
   enable, policies, log levels, DHCP/NDP/RA and MAC/IP filters.
-- **Firewall, the rest** (Q24): editing security groups, IP sets and aliases; the firewall log.
+- ✅ **Firewall, the rest** (Q24): security groups (create, delete, edit their rules),
+  aliases and IP sets (datacenter and guests), the firewall log of nodes and guests (filter,
+  dropped and rejected packets highlighted). Below a firewall's rules.
 - ✅ **Resource pools** (Datacenter → Resource pools): every pool with its guests and storages;
   create, add and remove guests and storages, edit the comment, delete an empty pool. Tags are
   edited per guest (Tools → Options).

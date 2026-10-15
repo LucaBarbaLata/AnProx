@@ -82,6 +82,7 @@ fun FirewallScreen(
     subtitle: String,
     onBack: () -> Unit,
     onTask: (serverId: String, node: String, upid: String) -> Unit,
+    onExtra: (FirewallExtra) -> Unit = {},
 ) {
     val viewModel: FirewallViewModel = koinViewModel(key = "firewall-$serverId-${scope.path}") { parametersOf(serverId, scope) }
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -93,7 +94,7 @@ fun FirewallScreen(
     )
 
     AnProxScaffold(
-        title = stringResource(R.string.firewall_title),
+        title = if (scope is FirewallScope.Group) stringResource(R.string.firewall_group_title, scope.group) else stringResource(R.string.firewall_title),
         subtitle = subtitle,
         onBack = onBack,
         snackbarHostState = snackbar,
@@ -104,11 +105,11 @@ fun FirewallScreen(
         },
     ) { inner ->
         LazyColumn(contentPadding = contentPadding(inner), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            item { SegmentedPicker(FirewallTab.entries, state.tab, { tabLabels.getValue(it) }, viewModel::selectTab) }
+            if (scope.hasOptions) item { SegmentedPicker(FirewallTab.entries, state.tab, { tabLabels.getValue(it) }, viewModel::selectTab) }
             state.error?.let { error ->
                 item { ErrorBanner(error.asString(), actionLabel = stringResource(R.string.action_retry), onAction = viewModel::load) }
             }
-            if (state.loading && state.options == null) {
+            if (state.loading && state.rules.isEmpty() && state.options == null) {
                 item {
                     Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
                         CircularProgressIndicator(color = AnProxTheme.colors.accent)
@@ -144,6 +145,7 @@ fun FirewallScreen(
                                 onMove = { by -> viewModel.move(rule, by) },
                             )
                         }
+                        item { FirewallExtrasCard(scope, onExtra) }
                     }
                     FirewallTab.OPTIONS -> item { OptionsCard(state, viewModel) }
                 }
@@ -238,6 +240,8 @@ private fun OptionsCard(state: FirewallState, viewModel: FirewallViewModel) {
                     FirewallScope.Datacenter -> R.string.firewall_enabled_dc
                     is FirewallScope.Node -> R.string.firewall_enabled_node
                     is FirewallScope.Guest -> R.string.firewall_enabled_guest
+                    // A security group has no options; this card isn't shown for one.
+                    is FirewallScope.Group -> R.string.firewall_enabled_dc
                 },
             ),
             checked = state.option("enable") == "1",
@@ -296,7 +300,8 @@ private fun RuleDialog(edit: RuleEdit, state: FirewallState, viewModel: Firewall
     val problem = form.problem()
     val none = stringResource(R.string.firewall_none)
     val any = stringResource(R.string.firewall_any)
-    val types = listOf("in", "out", "group")
+    // A security group can't insert another one.
+    val types = if (state.scope is FirewallScope.Group) listOf("in", "out") else listOf("in", "out", "group")
     val typeLabels = mapOf(
         "in" to stringResource(R.string.firewall_in),
         "out" to stringResource(R.string.firewall_out),

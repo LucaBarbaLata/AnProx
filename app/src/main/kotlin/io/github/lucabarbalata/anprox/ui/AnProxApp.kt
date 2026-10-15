@@ -39,7 +39,6 @@ import io.github.lucabarbalata.anprox.diagnostics.CrashReportDialog
 import io.github.lucabarbalata.anprox.model.link.AppLink
 import io.github.lucabarbalata.anprox.model.pve.ConsoleKind
 import io.github.lucabarbalata.anprox.model.pve.ConsoleTarget
-import io.github.lucabarbalata.anprox.model.pve.FirewallScope
 import io.github.lucabarbalata.anprox.model.pve.GuestType
 import io.github.lucabarbalata.anprox.ui.alerts.AlertsScreen
 import io.github.lucabarbalata.anprox.ui.backups.BackupScope
@@ -51,11 +50,16 @@ import io.github.lucabarbalata.anprox.ui.dashboard.DashboardScreen
 import io.github.lucabarbalata.anprox.ui.datacenter.BackupJobEditorScreen
 import io.github.lucabarbalata.anprox.ui.datacenter.BackupJobsScreen
 import io.github.lucabarbalata.anprox.ui.datacenter.DatacenterScreen
+import io.github.lucabarbalata.anprox.ui.datacenter.FirewallAliasesScreen
+import io.github.lucabarbalata.anprox.ui.datacenter.FirewallExtra
+import io.github.lucabarbalata.anprox.ui.datacenter.FirewallIpSetsScreen
+import io.github.lucabarbalata.anprox.ui.datacenter.FirewallLogScreen
 import io.github.lucabarbalata.anprox.ui.datacenter.FirewallScreen
 import io.github.lucabarbalata.anprox.ui.datacenter.HaScreen
 import io.github.lucabarbalata.anprox.ui.datacenter.PoolScreen
 import io.github.lucabarbalata.anprox.ui.datacenter.PoolsScreen
 import io.github.lucabarbalata.anprox.ui.datacenter.ReplicationScreen
+import io.github.lucabarbalata.anprox.ui.datacenter.SecurityGroupsScreen
 import io.github.lucabarbalata.anprox.ui.datacenter.StorageContentScreen
 import io.github.lucabarbalata.anprox.ui.datacenter.StorageEditorScreen
 import io.github.lucabarbalata.anprox.ui.datacenter.StorageListScreen
@@ -78,6 +82,7 @@ import io.github.lucabarbalata.anprox.ui.navigation.ConsoleRoute
 import io.github.lucabarbalata.anprox.ui.navigation.CreateGuestRoute
 import io.github.lucabarbalata.anprox.ui.navigation.DashboardRoute
 import io.github.lucabarbalata.anprox.ui.navigation.DatacenterRoute
+import io.github.lucabarbalata.anprox.ui.navigation.FirewallExtraRoute
 import io.github.lucabarbalata.anprox.ui.navigation.FirewallRoute
 import io.github.lucabarbalata.anprox.ui.navigation.GuestRoute
 import io.github.lucabarbalata.anprox.ui.navigation.HaRoute
@@ -101,6 +106,7 @@ import io.github.lucabarbalata.anprox.ui.navigation.StorageListRoute
 import io.github.lucabarbalata.anprox.ui.navigation.StorageRoute
 import io.github.lucabarbalata.anprox.ui.navigation.TaskLogRoute
 import io.github.lucabarbalata.anprox.ui.navigation.TasksRoute
+import io.github.lucabarbalata.anprox.ui.navigation.firewallScope
 import io.github.lucabarbalata.anprox.ui.node.NodeScreen
 import io.github.lucabarbalata.anprox.ui.resources.ResourcesScreen
 import io.github.lucabarbalata.anprox.ui.servers.ServerEditorScreen
@@ -268,12 +274,30 @@ fun AnProxApp() {
             }
             composable<FirewallRoute> { entry ->
                 val r = entry.toRoute<FirewallRoute>()
-                val scope = when (r.kind) {
-                    "node" -> FirewallScope.Node(r.node)
-                    "guest" -> FirewallScope.Guest(r.node, GuestType.fromApi(r.type) ?: GuestType.QEMU, r.vmid)
-                    else -> FirewallScope.Datacenter
+                FirewallScreen(
+                    r.serverId,
+                    firewallScope(r.kind, r.node, r.type, r.vmid, r.group),
+                    r.title,
+                    onBack = back,
+                    onTask = openTask,
+                    onExtra = { extra -> nav.navigate(FirewallExtraRoute(r.serverId, extra.name, r.kind, r.title, r.node, r.type, r.vmid)) },
+                )
+            }
+            composable<FirewallExtraRoute> { entry ->
+                val r = entry.toRoute<FirewallExtraRoute>()
+                val scope = firewallScope(r.kind, r.node, r.type, r.vmid)
+                when (FirewallExtra.valueOf(r.what)) {
+                    FirewallExtra.GROUPS -> SecurityGroupsScreen(
+                        r.serverId,
+                        r.title,
+                        onBack = back,
+                        onGroup = { group -> nav.navigate(FirewallRoute(r.serverId, "group", r.title, group = group)) },
+                        onTask = openTask,
+                    )
+                    FirewallExtra.ALIASES -> FirewallAliasesScreen(r.serverId, scope, r.title, onBack = back, onTask = openTask)
+                    FirewallExtra.IPSETS -> FirewallIpSetsScreen(r.serverId, scope, r.title, onBack = back, onTask = openTask)
+                    FirewallExtra.LOG -> FirewallLogScreen(r.serverId, scope, r.title, onBack = back, onTask = openTask)
                 }
-                FirewallScreen(r.serverId, scope, r.title, onBack = back, onTask = openTask)
             }
             composable<StorageListRoute> { entry ->
                 val route = entry.toRoute<StorageListRoute>()

@@ -41,13 +41,17 @@ import io.github.lucabarbalata.anprox.ui.cloudinit.CloudInitViewModel
 import io.github.lucabarbalata.anprox.ui.console.ConsoleViewModel
 import io.github.lucabarbalata.anprox.ui.create.CreateGuestViewModel
 import io.github.lucabarbalata.anprox.ui.dashboard.DashboardViewModel
+import io.github.lucabarbalata.anprox.ui.datacenter.AliasesViewModel
 import io.github.lucabarbalata.anprox.ui.datacenter.BackupJobEditorViewModel
 import io.github.lucabarbalata.anprox.ui.datacenter.BackupJobsViewModel
+import io.github.lucabarbalata.anprox.ui.datacenter.FirewallLogViewModel
 import io.github.lucabarbalata.anprox.ui.datacenter.FirewallViewModel
 import io.github.lucabarbalata.anprox.ui.datacenter.HaViewModel
+import io.github.lucabarbalata.anprox.ui.datacenter.IpSetsViewModel
 import io.github.lucabarbalata.anprox.ui.datacenter.PoolViewModel
 import io.github.lucabarbalata.anprox.ui.datacenter.PoolsViewModel
 import io.github.lucabarbalata.anprox.ui.datacenter.ReplicationViewModel
+import io.github.lucabarbalata.anprox.ui.datacenter.SecurityGroupsViewModel
 import io.github.lucabarbalata.anprox.ui.datacenter.StorageContentViewModel
 import io.github.lucabarbalata.anprox.ui.datacenter.StorageEditorViewModel
 import io.github.lucabarbalata.anprox.ui.datacenter.StorageListViewModel
@@ -158,6 +162,10 @@ val appModule = module {
     viewModel { (serverId: String, jobId: String) -> BackupJobEditorViewModel(serverId, jobId.ifEmpty { null }, get()) }
     viewModel { (serverId: String) -> StorageListViewModel(serverId, get()) }
     viewModel { (serverId: String, scope: FirewallScope) -> FirewallViewModel(serverId, scope, get()) }
+    viewModel { (serverId: String) -> SecurityGroupsViewModel(serverId, get()) }
+    viewModel { (serverId: String, scope: FirewallScope) -> AliasesViewModel(serverId, scope, get()) }
+    viewModel { (serverId: String, scope: FirewallScope) -> IpSetsViewModel(serverId, scope, get()) }
+    viewModel { (serverId: String, scope: FirewallScope) -> FirewallLogViewModel(serverId, scope, get()) }
     viewModel { (serverId: String) -> HaViewModel(serverId, get()) }
     viewModel { (serverId: String) -> ReplicationViewModel(serverId, get()) }
     viewModel { (serverId: String) -> PoolsViewModel(serverId, get()) }

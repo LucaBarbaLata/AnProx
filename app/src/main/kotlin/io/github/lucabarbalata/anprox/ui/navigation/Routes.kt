@@ -1,5 +1,7 @@
 package io.github.lucabarbalata.anprox.ui.navigation
 
+import io.github.lucabarbalata.anprox.model.pve.FirewallScope
+import io.github.lucabarbalata.anprox.model.pve.GuestType
 import kotlinx.serialization.Serializable
 
 /*
@@ -53,7 +55,17 @@ import kotlinx.serialization.Serializable
 @Serializable data class PoolsRoute(val serverId: String)
 @Serializable data class PoolRoute(val serverId: String, val poolId: String)
 // kind: "dc", "node" or "guest"; node, type and vmid as far as the kind needs them.
-@Serializable data class FirewallRoute(val serverId: String, val kind: String, val title: String, val node: String = "", val type: String = "", val vmid: Int = 0)
+@Serializable data class FirewallRoute(val serverId: String, val kind: String, val title: String, val node: String = "", val type: String = "", val vmid: Int = 0, val group: String = "")
+// what: a FirewallExtra name (GROUPS, ALIASES, IPSETS, LOG) of the firewall described like FirewallRoute.
+@Serializable data class FirewallExtraRoute(val serverId: String, val what: String, val kind: String, val title: String, val node: String = "", val type: String = "", val vmid: Int = 0)
+
+/** The firewall a [FirewallRoute] or [FirewallExtraRoute] is about. */
+fun firewallScope(kind: String, node: String, type: String, vmid: Int, group: String = ""): FirewallScope = when (kind) {
+    "node" -> FirewallScope.Node(node)
+    "guest" -> FirewallScope.Guest(node, GuestType.fromApi(type) ?: GuestType.QEMU, vmid)
+    "group" -> FirewallScope.Group(group)
+    else -> FirewallScope.Datacenter
+}
 
 // Settings
 @Serializable data object SettingsRoute

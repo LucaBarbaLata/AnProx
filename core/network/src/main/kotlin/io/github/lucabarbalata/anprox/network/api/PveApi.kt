@@ -9,6 +9,8 @@ import io.github.lucabarbalata.anprox.model.pve.CifsShare
 import io.github.lucabarbalata.anprox.model.pve.ClusterResource
 import io.github.lucabarbalata.anprox.model.pve.ClusterStatusEntry
 import io.github.lucabarbalata.anprox.model.pve.ConsoleProxy
+import io.github.lucabarbalata.anprox.model.pve.FirewallAlias
+import io.github.lucabarbalata.anprox.model.pve.FirewallIpSet
 import io.github.lucabarbalata.anprox.model.pve.FirewallMacro
 import io.github.lucabarbalata.anprox.model.pve.FirewallRule
 import io.github.lucabarbalata.anprox.model.pve.GuestSnapshot
@@ -16,6 +18,7 @@ import io.github.lucabarbalata.anprox.model.pve.GuestStatus
 import io.github.lucabarbalata.anprox.model.pve.HaGroup
 import io.github.lucabarbalata.anprox.model.pve.HaResource
 import io.github.lucabarbalata.anprox.model.pve.HaStatusEntry
+import io.github.lucabarbalata.anprox.model.pve.IpSetEntry
 import io.github.lucabarbalata.anprox.model.pve.LvmThinPool
 import io.github.lucabarbalata.anprox.model.pve.LvmVolumeGroup
 import io.github.lucabarbalata.anprox.model.pve.LxcInterface
@@ -204,27 +207,28 @@ interface PveApi {
         @Path("volume") volume: String,
     ): ApiEnvelope<JsonElement>
 
-    // Firewall (questionnaire Q24). [scope] is FirewallScope.path, e.g. `nodes/pve1/firewall`.
+    // Firewall (questionnaire Q24). [scope] is FirewallScope.path, e.g. `nodes/pve1/firewall`;
+    // [rules] is FirewallScope.rulesPath (a security group lists its rules at its own path).
 
-    @GET("{scope}/rules")
-    suspend fun firewallRules(@Path(value = "scope", encoded = true) scope: String): ApiEnvelope<List<FirewallRule>>
+    @GET("{rules}")
+    suspend fun firewallRules(@Path(value = "rules", encoded = true) rules: String): ApiEnvelope<List<FirewallRule>>
 
     @FormUrlEncoded
-    @POST("{scope}/rules")
-    suspend fun createFirewallRule(@Path(value = "scope", encoded = true) scope: String, @FieldMap params: Map<String, String>): ApiEnvelope<JsonElement>
+    @POST("{rules}")
+    suspend fun createFirewallRule(@Path(value = "rules", encoded = true) rules: String, @FieldMap params: Map<String, String>): ApiEnvelope<JsonElement>
 
     /** Edits a rule; `moveto` moves it to another position. */
     @FormUrlEncoded
-    @PUT("{scope}/rules/{pos}")
+    @PUT("{rules}/{pos}")
     suspend fun updateFirewallRule(
-        @Path(value = "scope", encoded = true) scope: String,
+        @Path(value = "rules", encoded = true) rules: String,
         @Path("pos") pos: Int,
         @FieldMap params: Map<String, String>,
     ): ApiEnvelope<JsonElement>
 
-    @DELETE("{scope}/rules/{pos}")
+    @DELETE("{rules}/{pos}")
     suspend fun deleteFirewallRule(
-        @Path(value = "scope", encoded = true) scope: String,
+        @Path(value = "rules", encoded = true) rules: String,
         @Path("pos") pos: Int,
         @Query("digest") digest: String?,
     ): ApiEnvelope<JsonElement>
@@ -241,6 +245,82 @@ interface PveApi {
 
     @GET("cluster/firewall/groups")
     suspend fun securityGroups(): ApiEnvelope<List<SecurityGroup>>
+
+    /** [params]: `group`, `comment`. */
+    @FormUrlEncoded
+    @POST("cluster/firewall/groups")
+    suspend fun createSecurityGroup(@FieldMap params: Map<String, String>): ApiEnvelope<JsonElement>
+
+    /** Only a group without rules can be deleted. */
+    @DELETE("cluster/firewall/groups/{group}")
+    suspend fun deleteSecurityGroup(@Path("group") group: String): ApiEnvelope<JsonElement>
+
+    @GET("{scope}/aliases")
+    suspend fun firewallAliases(@Path(value = "scope", encoded = true) scope: String): ApiEnvelope<List<FirewallAlias>>
+
+    @FormUrlEncoded
+    @POST("{scope}/aliases")
+    suspend fun createFirewallAlias(@Path(value = "scope", encoded = true) scope: String, @FieldMap params: Map<String, String>): ApiEnvelope<JsonElement>
+
+    @FormUrlEncoded
+    @PUT("{scope}/aliases/{name}")
+    suspend fun updateFirewallAlias(
+        @Path(value = "scope", encoded = true) scope: String,
+        @Path("name") name: String,
+        @FieldMap params: Map<String, String>,
+    ): ApiEnvelope<JsonElement>
+
+    @DELETE("{scope}/aliases/{name}")
+    suspend fun deleteFirewallAlias(
+        @Path(value = "scope", encoded = true) scope: String,
+        @Path("name") name: String,
+        @Query("digest") digest: String?,
+    ): ApiEnvelope<JsonElement>
+
+    @GET("{scope}/ipset")
+    suspend fun firewallIpSets(@Path(value = "scope", encoded = true) scope: String): ApiEnvelope<List<FirewallIpSet>>
+
+    /** [params]: `name`, `comment`. */
+    @FormUrlEncoded
+    @POST("{scope}/ipset")
+    suspend fun createFirewallIpSet(@Path(value = "scope", encoded = true) scope: String, @FieldMap params: Map<String, String>): ApiEnvelope<JsonElement>
+
+    /** [force] 1 deletes the set with its entries. */
+    @DELETE("{scope}/ipset/{name}")
+    suspend fun deleteFirewallIpSet(
+        @Path(value = "scope", encoded = true) scope: String,
+        @Path("name") name: String,
+        @Query("force") force: Int?,
+    ): ApiEnvelope<JsonElement>
+
+    @GET("{scope}/ipset/{name}")
+    suspend fun firewallIpSetEntries(@Path(value = "scope", encoded = true) scope: String, @Path("name") name: String): ApiEnvelope<List<IpSetEntry>>
+
+    /** [params]: `cidr`, `comment`, `nomatch`. */
+    @FormUrlEncoded
+    @POST("{scope}/ipset/{name}")
+    suspend fun addIpSetEntry(
+        @Path(value = "scope", encoded = true) scope: String,
+        @Path("name") name: String,
+        @FieldMap params: Map<String, String>,
+    ): ApiEnvelope<JsonElement>
+
+    /** [cidr] is path-encoded (`10.0.0.0%2F24`). */
+    @DELETE("{scope}/ipset/{name}/{cidr}")
+    suspend fun deleteIpSetEntry(
+        @Path(value = "scope", encoded = true) scope: String,
+        @Path("name") name: String,
+        @Path("cidr") cidr: String,
+        @Query("digest") digest: String?,
+    ): ApiEnvelope<JsonElement>
+
+    /** Lines [start] … of the firewall log of a node or guest; the envelope's `total` counts them all. */
+    @GET("{scope}/log")
+    suspend fun firewallLog(
+        @Path(value = "scope", encoded = true) scope: String,
+        @Query("start") start: Int,
+        @Query("limit") limit: Int,
+    ): ApiEnvelope<List<TaskLogLine>>
 
     // High availability (questionnaire Q21)
 

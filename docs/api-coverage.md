@@ -47,7 +47,11 @@ Code: `core/network/src/main/kotlin/.../network/api/` (`AccessApi`, `PveApi`, `P
 | `/cluster/ha/groups` (editing), `/cluster/ha/rules` (Proxmox VE 9) | Node affinity | 🗓 M4 |
 | `/cluster/firewall/rules`, `/cluster/firewall/options` | Datacenter firewall rules (add, edit, enable, move, delete) and options | ✅ |
 | `GET /cluster/firewall/macros`, `GET /cluster/firewall/groups` | Macros and security groups for the rule editor | ✅ |
-| `/cluster/firewall/{groups/*, aliases, ipset, refs}` (editing) | Security groups' rules, aliases, IP sets | 🗓 M4 |
+| `POST/DELETE /cluster/firewall/groups`, `/cluster/firewall/groups/{group}` (rules, as for other firewalls) | Security groups and their rules | ✅ |
+| `…/firewall/aliases` (list, add, edit with `rename`, delete) for the datacenter and guests | Aliases | ✅ |
+| `…/firewall/ipset` (sets: list, create, delete with `force`; entries: list, add with `nomatch`, delete) for the datacenter and guests | IP sets | ✅ |
+| `GET /nodes/{node}/firewall/log`, `GET /nodes/{node}/{type}/{vmid}/firewall/log` | Firewall log (newest 500 lines, via the response's `total`) | ✅ |
+| `GET /cluster/firewall/refs` | Alias and IP set suggestions in the rule editor | 🗓 later |
 | `/cluster/sdn/*` | Zones, VNets, subnets, IPAM, DHCP, controllers, fabrics | 🗓 M6 |
 | `GET /cluster/ceph/status` | Ceph health for background alerts | ✅ (health only; full status 🗓 M6) |
 | `/cluster/ceph/*` (flags, metadata) | Cluster-wide Ceph flags | 🗓 M6 |

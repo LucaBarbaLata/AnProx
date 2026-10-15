@@ -83,7 +83,7 @@ class FirewallViewModel(
             try {
                 coroutineScope {
                     val rulesCall = async { repo.rules(serverId, scope) }
-                    val optionsCall = async { repo.options(serverId, scope) }
+                    val optionsCall = async { if (scope.hasOptions) repo.options(serverId, scope) else null }
                     // Macros and groups only help the rule editor; a server that hides them still works.
                     val macrosCall = async { optional { repo.macros(serverId) } }
                     val groupsCall = async { optional { repo.securityGroups(serverId) } }

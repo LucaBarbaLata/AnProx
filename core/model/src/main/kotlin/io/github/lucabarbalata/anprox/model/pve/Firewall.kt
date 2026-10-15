@@ -12,6 +12,18 @@ sealed interface FirewallScope {
     /** API path of the firewall, e.g. `nodes/pve1/qemu/100/firewall`. */
     val path: String
 
+    /** Where its rules are listed; rule `n` is `rulesPath/n`. */
+    val rulesPath: String get() = "$path/rules"
+
+    /** Firewalls with options (a security group has none). */
+    val hasOptions: Boolean get() = this !is Group
+
+    /** The datacenter and guests have their own aliases and IP sets. */
+    val hasAliases: Boolean get() = this is Datacenter || this is Guest
+
+    /** Nodes and guests keep a log of what the rules logged. */
+    val hasLog: Boolean get() = this is Node || this is Guest
+
     data object Datacenter : FirewallScope {
         override val path: String get() = "cluster/firewall"
     }
@@ -22,6 +34,12 @@ sealed interface FirewallScope {
 
     data class Guest(val node: String, val type: GuestType, val vmid: Int) : FirewallScope {
         override val path: String get() = "nodes/$node/${type.apiName}/$vmid/firewall"
+    }
+
+    /** A security group: rules only, inserted into other firewalls with a `group` rule. */
+    data class Group(val group: String) : FirewallScope {
+        override val path: String get() = "cluster/firewall/groups/$group"
+        override val rulesPath: String get() = path
     }
 }
 

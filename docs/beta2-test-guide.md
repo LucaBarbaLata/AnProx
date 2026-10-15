@@ -203,6 +203,12 @@ Careful: a wrong firewall rule can lock you out of the web UI or SSH. Test on a 
    off → **Save** → compare with the web UI's Firewall → Options.
 5. Change a rule in the web UI while the app shows the list, then edit the same rule in the
    app: it must refuse ("modified configuration") rather than overwrite; pull to refresh.
+6. Datacenter → Firewall → **Security groups** → add `anprox-test` → open it → add a rule →
+   compare with the web UI's Firewall → Security Group. Delete the rule, then the group.
+7. **Aliases**: add `nas` = your NAS's address; edit it (rename it); delete it. **IP sets**: add
+   a set, add an address and a network, mark one "Except", remove one, delete the set.
+8. Node → Firewall → **Firewall log** (and a guest's): matches `/var/log/pve-firewall.log`
+   (only rules or policies with a log level other than nolog write there).
 
 ### D10. High availability (Datacenter → High availability), new after beta.2
 Needs a cluster. With a single node the screen shows the status and an empty list.

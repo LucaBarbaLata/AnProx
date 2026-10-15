@@ -538,6 +538,20 @@ class MockProxmoxServer(
             call.authed() ?: return@get
             call.ok(state.securityGroups())
         }
+        post("cluster/firewall/groups") {
+            val s = call.authed() ?: return@post
+            if (state.isReadOnly(s.user)) return@post call.fail(403, "Permission check failed (Sys.Modify)")
+            val p = call.receiveParameters()
+            val error = state.createSecurityGroup(p.names().associateWith { p[it].orEmpty() })
+            if (error != null) call.fail(400, error) else call.ok(JsonNull)
+        }
+        delete("cluster/firewall/groups/{group}") {
+            val s = call.authed() ?: return@delete
+            if (state.isReadOnly(s.user)) return@delete call.fail(403, "Permission check failed (Sys.Modify)")
+            val error = state.deleteSecurityGroup(call.parameters["group"]!!)
+            if (error != null) call.fail(400, error) else call.ok(JsonNull)
+        }
+        firewallRules("cluster/firewall/groups/{group}") { "cluster/firewall/groups/${it.parameters["group"]}" }
         firewall("cluster/firewall") { "cluster/firewall" }
         firewall("nodes/{node}/firewall") { "nodes/${it.parameters["node"]}/firewall" }
         firewall("nodes/{node}/{type}/{vmid}/firewall") { "nodes/${it.parameters["node"]}/${it.parameters["type"]}/${it.parameters["vmid"]}/firewall" }
@@ -744,30 +758,7 @@ class MockProxmoxServer(
     /** Checks the ticket cookie (and CSRF header for writes). Responds 401 and returns null if invalid. */
     /** Rules and options of one firewall scope; [scopeOf] gives its key, like Proxmox's API path. */
     private fun Route.firewall(path: String, scopeOf: (ApplicationCall) -> String) {
-        get("$path/rules") {
-            call.authed() ?: return@get
-            call.ok(state.firewallRules(scopeOf(call)))
-        }
-        post("$path/rules") {
-            val s = call.authed() ?: return@post
-            if (state.isReadOnly(s.user)) return@post call.fail(403, "Permission check failed (Sys.Modify)")
-            val p = call.receiveParameters()
-            val error = state.createFirewallRule(scopeOf(call), p.names().associateWith { p[it].orEmpty() })
-            if (error != null) call.fail(400, error) else call.ok(JsonNull)
-        }
-        put("$path/rules/{pos}") {
-            val s = call.authed() ?: return@put
-            if (state.isReadOnly(s.user)) return@put call.fail(403, "Permission check failed (Sys.Modify)")
-            val p = call.receiveParameters()
-            val error = state.updateFirewallRule(scopeOf(call), call.parameters["pos"]!!.toInt(), p.names().associateWith { p[it].orEmpty() })
-            if (error != null) call.fail(400, error) else call.ok(JsonNull)
-        }
-        delete("$path/rules/{pos}") {
-            val s = call.authed() ?: return@delete
-            if (state.isReadOnly(s.user)) return@delete call.fail(403, "Permission check failed (Sys.Modify)")
-            val error = state.deleteFirewallRule(scopeOf(call), call.parameters["pos"]!!.toInt(), call.request.queryParameters["digest"])
-            if (error != null) call.fail(400, error) else call.ok(JsonNull)
-        }
+        firewallRules("$path/rules", scopeOf)
         get("$path/options") {
             call.authed() ?: return@get
             call.ok(JsonObject(state.firewallOptions(scopeOf(call)).mapValues { (k, v) -> if (k == "digest") JsonPrimitive(v) else v.toIntOrNull()?.let(::JsonPrimitive) ?: JsonPrimitive(v) }))
@@ -777,6 +768,102 @@ class MockProxmoxServer(
             if (state.isReadOnly(s.user)) return@put call.fail(403, "Permission check failed (Sys.Modify)")
             val p = call.receiveParameters()
             val error = state.updateFirewallOptions(scopeOf(call), p.names().associateWith { p[it].orEmpty() })
+            if (error != null) call.fail(400, error) else call.ok(JsonNull)
+        }
+        get("$path/aliases") {
+            call.authed() ?: return@get
+            call.ok(state.firewallAliases(scopeOf(call)))
+        }
+        post("$path/aliases") {
+            val s = call.authed() ?: return@post
+            if (state.isReadOnly(s.user)) return@post call.fail(403, "Permission check failed (Sys.Modify)")
+            val p = call.receiveParameters()
+            val error = state.createFirewallAlias(scopeOf(call), p.names().associateWith { p[it].orEmpty() })
+            if (error != null) call.fail(400, error) else call.ok(JsonNull)
+        }
+        put("$path/aliases/{name}") {
+            val s = call.authed() ?: return@put
+            if (state.isReadOnly(s.user)) return@put call.fail(403, "Permission check failed (Sys.Modify)")
+            val p = call.receiveParameters()
+            val error = state.updateFirewallAlias(scopeOf(call), call.parameters["name"]!!, p.names().associateWith { p[it].orEmpty() })
+            if (error != null) call.fail(400, error) else call.ok(JsonNull)
+        }
+        delete("$path/aliases/{name}") {
+            val s = call.authed() ?: return@delete
+            if (state.isReadOnly(s.user)) return@delete call.fail(403, "Permission check failed (Sys.Modify)")
+            val error = state.deleteFirewallAlias(scopeOf(call), call.parameters["name"]!!, call.request.queryParameters["digest"])
+            if (error != null) call.fail(400, error) else call.ok(JsonNull)
+        }
+        get("$path/ipset") {
+            call.authed() ?: return@get
+            call.ok(state.firewallIpSets(scopeOf(call)))
+        }
+        post("$path/ipset") {
+            val s = call.authed() ?: return@post
+            if (state.isReadOnly(s.user)) return@post call.fail(403, "Permission check failed (Sys.Modify)")
+            val p = call.receiveParameters()
+            val error = state.createFirewallIpSet(scopeOf(call), p.names().associateWith { p[it].orEmpty() })
+            if (error != null) call.fail(400, error) else call.ok(JsonNull)
+        }
+        get("$path/ipset/{name}") {
+            call.authed() ?: return@get
+            val name = call.parameters["name"]!!
+            call.ok(state.firewallIpSetEntries(scopeOf(call), name) ?: return@get call.fail(500, "no such IPSet '$name'"))
+        }
+        post("$path/ipset/{name}") {
+            val s = call.authed() ?: return@post
+            if (state.isReadOnly(s.user)) return@post call.fail(403, "Permission check failed (Sys.Modify)")
+            val p = call.receiveParameters()
+            val error = state.addIpSetEntry(scopeOf(call), call.parameters["name"]!!, p.names().associateWith { p[it].orEmpty() })
+            if (error != null) call.fail(400, error) else call.ok(JsonNull)
+        }
+        delete("$path/ipset/{name}") {
+            val s = call.authed() ?: return@delete
+            if (state.isReadOnly(s.user)) return@delete call.fail(403, "Permission check failed (Sys.Modify)")
+            val error = state.deleteFirewallIpSet(scopeOf(call), call.parameters["name"]!!, call.request.queryParameters["force"] == "1")
+            if (error != null) call.fail(400, error) else call.ok(JsonNull)
+        }
+        delete("$path/ipset/{name}/{cidr}") {
+            val s = call.authed() ?: return@delete
+            if (state.isReadOnly(s.user)) return@delete call.fail(403, "Permission check failed (Sys.Modify)")
+            val error = state.removeIpSetEntry(scopeOf(call), call.parameters["name"]!!, call.parameters["cidr"]!!, call.request.queryParameters["digest"])
+            if (error != null) call.fail(400, error) else call.ok(JsonNull)
+        }
+        get("$path/log") {
+            call.authed() ?: return@get
+            val q = call.request.queryParameters
+            val (lines, total) = state.firewallLog(scopeOf(call), q["start"]?.toIntOrNull() ?: 0, q["limit"]?.toIntOrNull() ?: 50)
+            call.respondText(
+                ProxmoxJson.encodeToString(ApiEnvelope(lines, total = total)),
+                ContentType.Application.Json,
+            )
+        }
+    }
+
+    /** A rule list at [rulesPath] (`…/rules`, or a security group's own path). */
+    private fun Route.firewallRules(rulesPath: String, scopeOf: (ApplicationCall) -> String) {
+        get(rulesPath) {
+            call.authed() ?: return@get
+            call.ok(state.firewallRules(scopeOf(call)))
+        }
+        post(rulesPath) {
+            val s = call.authed() ?: return@post
+            if (state.isReadOnly(s.user)) return@post call.fail(403, "Permission check failed (Sys.Modify)")
+            val p = call.receiveParameters()
+            val error = state.createFirewallRule(scopeOf(call), p.names().associateWith { p[it].orEmpty() })
+            if (error != null) call.fail(400, error) else call.ok(JsonNull)
+        }
+        put("$rulesPath/{pos}") {
+            val s = call.authed() ?: return@put
+            if (state.isReadOnly(s.user)) return@put call.fail(403, "Permission check failed (Sys.Modify)")
+            val p = call.receiveParameters()
+            val error = state.updateFirewallRule(scopeOf(call), call.parameters["pos"]!!.toInt(), p.names().associateWith { p[it].orEmpty() })
+            if (error != null) call.fail(400, error) else call.ok(JsonNull)
+        }
+        delete("$rulesPath/{pos}") {
+            val s = call.authed() ?: return@delete
+            if (state.isReadOnly(s.user)) return@delete call.fail(403, "Permission check failed (Sys.Modify)")
+            val error = state.deleteFirewallRule(scopeOf(call), call.parameters["pos"]!!.toInt(), call.request.queryParameters["digest"])
             if (error != null) call.fail(400, error) else call.ok(JsonNull)
         }
     }

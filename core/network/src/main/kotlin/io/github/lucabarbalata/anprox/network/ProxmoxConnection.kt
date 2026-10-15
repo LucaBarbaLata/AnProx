@@ -197,6 +197,12 @@ class ProxmoxConnection(
         envelope { pveApi.call() }
     }
 
+    /** Like [pve], with the whole envelope (for `total` of a paged log). */
+    suspend fun <T> pveEnvelope(call: suspend PveApi.() -> ApiEnvelope<T>): ApiEnvelope<T> {
+        check(product == ProxmoxProduct.PVE) { "${profile.name} is not a Proxmox VE server" }
+        return envelope { pveApi.call() }
+    }
+
     /** Like [pve] for calls whose `data` may be `null`, such as converting a container to a template. */
     suspend fun <T> pveOrNull(call: suspend PveApi.() -> ApiEnvelope<T>): T? {
         check(product == ProxmoxProduct.PVE) { "${profile.name} is not a Proxmox VE server" }

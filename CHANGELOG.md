@@ -74,6 +74,9 @@ All notable changes to AnProx are documented here. The format follows
   source, destination, ports, interface, log, comment). Options: switch the firewall on or off,
   the policies for unmatched traffic, log levels, and a guest's DHCP, NDP, router advertisement
   and MAC/IP filters. Edits made elsewhere in the meantime are refused instead of overwritten.
+  Below the rules: **Security groups** (create one, edit its rules, delete it once empty),
+  **Aliases** and **IP sets** (datacenter and guests), and the **Firewall log** of a node or
+  guest, newest lines last, with a filter and dropped/rejected packets highlighted.
 
 - **High availability** (Datacenter → High availability): the HA manager's status, quorum and
   each node's state; the guests HA manages with their requested and current state. Add a guest,

@@ -765,7 +765,7 @@ def storage_setup():
     back()
 
 
-@step("Datacenter: firewall, add a rule and switch the firewall on")
+@step("Datacenter: firewall, add a rule, open a security group and the IP sets, switch the firewall on")
 def firewall():
     tap("Overview")
     tap_node(scroll_to("Datacenter", exact=True))
@@ -780,7 +780,15 @@ def firewall():
     wait_until(lambda: not visible("Destination port"), "the rule dialog to close", timeout=10)
     find("port 9100", timeout=30)                  # the new rule, first in the list
     screenshot("13e-firewall")
-    tap("Options")
+    tap_node(scroll_to("Security groups", exact=True))
+    tap_node(scroll_to("webserver", exact=True))
+    find("HTTPS", timeout=30)                      # the group's own rules
+    back()
+    back()
+    tap_node(scroll_to("IP sets", exact=True))
+    find("203.0.113.0/24", timeout=30)             # the mock's blocklist
+    back()
+    tap_node(scroll_to("Options", exact=True))
     tap_node(scroll_to("Firewall on"))
     tap_node(scroll_to("Save", exact=True))
     find("Firewall options saved", timeout=20)

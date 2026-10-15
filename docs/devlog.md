@@ -200,6 +200,15 @@ constructor parameter; the app uses 600,000. The UI uses the system file pickers
 (`CreateDocument` / `OpenDocument`), so no storage permission. Not in the emulator tour: the
 system pickers' UI differs between Android versions.
 
+**M4: the rest of the firewall.** A security group's rules sit at the group's own path
+(`/cluster/firewall/groups/{group}/{pos}`), not under `…/rules`, so `FirewallScope` gained a
+`rulesPath` and a `Group` case, and the rules screen serves groups unchanged (minus options, and
+minus inserting another group). IP set entries are addressed by CIDR in the path, so
+`10.0.0.0/24` travels as `10.0.0.0%2F24` (Retrofit encodes `@Path` values). The log API pages
+from the start of the file; the first call asks for one line to learn `total`, then fetches
+the last 500 (`ApiEnvelope` gained `total`, and `ProxmoxConnection.pveEnvelope` returns the
+whole envelope). That completes M4.
+
 **Tour, again.** On Android 8 the alerts screen's last card is below the fold, and uiautomator
 lists it with empty bounds; on Android 14 the **Open it** button after creating a VM ended up
 under the result snackbar at the end of the form. The create and clone screens now scroll to
