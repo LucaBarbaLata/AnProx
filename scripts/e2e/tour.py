@@ -671,9 +671,8 @@ def alerts():
         adb("shell", "pm", "grant", PKG, "android.permission.POST_NOTIFICATIONS", check=False)
     # Opened the way notifications and shortcuts do: an anprox:// link for the main activity.
     adb("shell", "am", "start", "-n", f"{PKG}/{ACTIVITY}", "-a", "android.intent.action.VIEW", "-d", "anprox://alerts")
-    scroll_to("No check has run yet.")     # the last card, below the settings
-    tap("Background alerts")
-    tap_node(scroll_to("Check now"))
+    tap_node(scroll_to("Background alerts"))  # the switch at the top
+    tap_node(scroll_to("Check now"))          # the last card, below the settings
     # Both servers answer; the mock's offline node pve3 and two full storages are reported.
     wait_until(lambda: visible("Servers checked: 2"), "the alert check to finish", timeout=90)
     screenshot("13-alerts")
