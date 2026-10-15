@@ -42,7 +42,9 @@ Code: `core/network/src/main/kotlin/.../network/api/` (`AccessApi`, `PveApi`, `P
 | `GET /cluster/backup-info/not-backed-up` | Guests no enabled job covers | ✅ |
 | `/cluster/replication` | Storage replication jobs | 🗓 M4 |
 | `/cluster/ha/{resources,groups,rules,status}` | High availability | 🗓 M4 |
-| `/cluster/firewall/*` | Datacenter firewall, groups, IP sets, aliases, options | 🗓 M4 |
+| `/cluster/firewall/rules`, `/cluster/firewall/options` | Datacenter firewall rules (add, edit, enable, move, delete) and options | ✅ |
+| `GET /cluster/firewall/macros`, `GET /cluster/firewall/groups` | Macros and security groups for the rule editor | ✅ |
+| `/cluster/firewall/{groups/*, aliases, ipset, refs}` (editing) | Security groups' rules, aliases, IP sets | 🗓 M4 |
 | `/cluster/sdn/*` | Zones, VNets, subnets, IPAM, DHCP, controllers, fabrics | 🗓 M6 |
 | `GET /cluster/ceph/status` | Ceph health for background alerts | ✅ (health only; full status 🗓 M6) |
 | `/cluster/ceph/*` (flags, metadata) | Cluster-wide Ceph flags | 🗓 M6 |
@@ -75,7 +77,8 @@ Code: `core/network/src/main/kotlin/.../network/api/` (`AccessApi`, `PveApi`, `P
 | `/nodes/{node}/{dns,hosts,time}` | System settings | 🗓 M5 |
 | `/nodes/{node}/subscription` | Subscription status | 🗓 M5 |
 | `/nodes/{node}/certificates/*` | Certificates, ACME orders | 🗓 M9 |
-| `/nodes/{node}/firewall/*` | Node firewall | 🗓 M4 |
+| `/nodes/{node}/firewall/{rules,options}` | Node firewall | ✅ |
+| `/nodes/{node}/firewall/log` | Node firewall log | 🗓 M4 |
 | `/nodes/{node}/ceph/*` | OSDs, pools, monitors, managers, MDS, FS, config, crush, log | 🗓 M6 |
 | `/nodes/{node}/sdn/*` | Node SDN status | 🗓 M6 |
 | `/nodes/{node}/replication/*` | Replication status / run now | 🗓 M4 |
@@ -109,7 +112,8 @@ Code: `core/network/src/main/kotlin/.../network/api/` (`AccessApi`, `PveApi`, `P
 | `DELETE …/{vmid}` | Destroy guest (type-to-confirm) | 🗓 M2 |
 | `…/vncproxy`, `…/vncwebsocket`, `…/termproxy` | noVNC / terminal console | ✅ through the app's connection (`generate-password=1` for VMs), bundled noVNC and xterm.js ([ADR 0014](adr/0014-consoles-through-the-app.md)) |
 | `POST /qemu/{vmid}/spiceproxy` | SPICE `.vv` handoff | ✅ `proxy` = the address the app uses; the `.vv` file goes to a viewer app (aSPICE…) through a FileProvider |
-| `…/firewall/*` | Guest firewall | 🗓 M4 |
+| `…/firewall/{rules,options}` | Guest firewall rules, policies, DHCP/NDP/RA and MAC/IP filters | ✅ |
+| `…/firewall/{aliases,ipset,log,refs}` | Guest aliases, IP sets, log | 🗓 M4 |
 | `POST /nodes/{node}/qemu` (`archive=`) / `lxc` (`restore=1`) | Restore from backup | ✅ (as new with `unique=1`, or replace with `force=1`; target storage choice 🗓) |
 
 ### `/storage`, `/pools`, `/nodes/{node}/storage`

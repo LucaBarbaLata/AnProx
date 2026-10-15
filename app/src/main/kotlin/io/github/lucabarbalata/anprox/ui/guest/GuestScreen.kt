@@ -23,6 +23,7 @@ import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.PowerSettingsNew
 import androidx.compose.material.icons.outlined.RestartAlt
 import androidx.compose.material.icons.outlined.Schedule
+import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material.icons.outlined.StopCircle
 import androidx.compose.material.icons.outlined.Terminal
 import androidx.compose.material.icons.outlined.StarOutline
@@ -202,6 +203,11 @@ fun GuestDetail(
                             stringResource(R.string.options_title),
                             stringResource(R.string.options_open_body),
                         ) { onTool(GuestTool.OPTIONS, ref, state.title) }
+                        MenuRow(
+                            Icons.Outlined.Shield,
+                            stringResource(R.string.firewall_title),
+                            stringResource(R.string.firewall_open_body_guest),
+                        ) { onTool(GuestTool.FIREWALL, ref, state.title) }
                         MenuRow(
                             Icons.Outlined.ContentCopy,
                             stringResource(R.string.clone_title),

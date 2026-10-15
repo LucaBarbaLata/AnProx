@@ -6,6 +6,7 @@ import androidx.compose.material.icons.outlined.PowerSettingsNew
 import androidx.compose.material.icons.outlined.RestartAlt
 import androidx.compose.material.icons.outlined.Computer
 import androidx.compose.material.icons.outlined.Inventory2
+import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material.icons.outlined.Terminal
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.LaunchedEffect
@@ -64,6 +65,7 @@ fun NodeScreen(
     onGuest: (GuestRef) -> Unit,
     onShell: () -> Unit,
     onCreate: (GuestType) -> Unit,
+    onFirewall: () -> Unit,
     viewModel: NodeViewModel = koinViewModel(key = "node-$serverId-$node") { parametersOf(serverId, node) },
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -92,6 +94,7 @@ fun NodeScreen(
                             MenuRow(Icons.Outlined.Inventory2, stringResource(R.string.node_create_ct), stringResource(R.string.node_create_ct_body)) {
                                 onCreate(GuestType.LXC)
                             }
+                            MenuRow(Icons.Outlined.Shield, stringResource(R.string.firewall_title), stringResource(R.string.firewall_open_body_node), onFirewall)
                         }
                     }
                 }

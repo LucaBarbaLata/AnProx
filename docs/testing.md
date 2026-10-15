@@ -12,7 +12,7 @@ testing debug builds on **real hardware**.
 | Integration: multi-server hub, sessions, dashboard snapshots, guest actions, guest snapshots, performance history, app lock rules, backup and restore, guest network info, guest options, clone/template/migrate, console sessions (terminal and VNC handshake), node power, hardware (disks, drives, network, pending changes, container volumes), creating VMs and containers, cloud-init, SPICE | `core/data/src/test` | JVM | 62 |
 | Android lint | `:app:lintDebug` | CI | — |
 | Build: debug and R8-minified release | `:app:assemble*` | CI | — |
-| **End-to-end tour** of the minified release APK on emulators against the mock server | `scripts/e2e/tour.py` | CI (Android 8.0 + 14), Release workflow | 21 steps |
+| **End-to-end tour** of the minified release APK on emulators against the mock server | `scripts/e2e/tour.py` | CI (Android 8.0 + 14), Release workflow | 22 steps |
 | UI / screenshot tests | planned (M1) | — | — |
 | Manual on real hardware | [checklist below](#manual-test-checklist-real-hardware) | owner | — |
 
@@ -130,7 +130,8 @@ so no test code is compiled into the app. `scripts/e2e/run.sh` starts the mock s
 18. `anprox://alerts` (the link notifications and shortcuts use) opens **Alerts** → switch on **Background alerts** → **Check now** → "Servers checked: 2" → a notification "Node pve3 is offline" is posted (read with `dumpsys notification`; on Android 13+ the tour grants the notification permission first).
 19. Dashboard → **Datacenter** → **Backup jobs** → the mock's nightly job ("Every day at 21:00") → **Add backup job** → Proxmox's preview of the next runs → **Weekdays at 21:00** → **Create job** → it is listed → **Run now** on the nightly job → "Backup job finished".
 20. Datacenter → **Storage** → `local` on `pve1` → its ISO images → **From URL** → a URL (the file name is filled in) → **Download** → the new ISO is listed once the node's task ends.
-21. Settings → Light theme; turning on the app lock explains that the emulator has no screen lock → dashboard in light mode, with the starred VM under Favourites.
+21. Datacenter → **Firewall** → the mock's rules → **Add rule** (TCP, port 9100) → it is listed first → **Options** → **Firewall on** → **Save**.
+22. Settings → Light theme; turning on the app lock explains that the emulator has no screen lock → dashboard in light mode, with the starred VM under Favourites.
 
 After every step the script checks that the app process is alive and that logcat has no
 `FATAL EXCEPTION` for the app. Screenshots of each step, plus UI dumps and logcat on failure,

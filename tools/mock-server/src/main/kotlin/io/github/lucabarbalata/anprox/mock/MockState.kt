@@ -217,6 +217,7 @@ class MockState(
 
     private val hardware = MockHardware(storages, nodes)
     private val jobs = MockJobs(storages, clockMillis)
+    private val firewall = MockFirewall()
 
     /** Accepted `POST /nodes/{node}/status` calls (node, command); the mock nodes keep running. */
     val nodePowerRequests: MutableList<Pair<String, String>> = java.util.Collections.synchronizedList(mutableListOf())
@@ -969,6 +970,17 @@ class MockState(
     }
 
     private val DISK_KEY = Regex("^(scsi|virtio|sata|ide|efidisk|tpmstate|unused|mp)\\d+$|^rootfs$")
+
+    // ------------------------------------------------------------------ firewall
+
+    fun firewallRules(scope: String) = synchronized(lock) { firewall.rules(scope) }
+    fun createFirewallRule(scope: String, params: Map<String, String>) = synchronized(lock) { firewall.create(scope, params) }
+    fun updateFirewallRule(scope: String, pos: Int, params: Map<String, String>) = synchronized(lock) { firewall.update(scope, pos, params) }
+    fun deleteFirewallRule(scope: String, pos: Int, digest: String?) = synchronized(lock) { firewall.delete(scope, pos, digest) }
+    fun firewallOptions(scope: String) = synchronized(lock) { firewall.options(scope) }
+    fun updateFirewallOptions(scope: String, params: Map<String, String>) = synchronized(lock) { firewall.updateOptions(scope, params) }
+    fun firewallMacros() = firewall.macros
+    fun securityGroups() = firewall.groups
 
     // ------------------------------------------------------------------ backup jobs, pools, storage config
 

@@ -180,6 +180,18 @@ Compare everything with Datacenter → Backup in the web UI.
    open; the file appears after the task. Say how fast it was over Wi-Fi.
 5. Delete the test ISO (trash icon) → gone in the web UI too.
 
+### D9. Firewall (Datacenter → Firewall, Node → Firewall, Tools → Firewall), new after beta.2
+Careful: a wrong firewall rule can lock you out of the web UI or SSH. Test on a guest first.
+1. Open a guest's firewall: the rules match the web UI's VM → Firewall, in the same order.
+2. **Add rule**: In, ACCEPT, protocol tcp, port 8080, a comment → it appears first; check the
+   web UI.
+3. Switch a rule off and on; move it down and up with the arrows; edit it into a macro rule (the
+   protocol and port disappear); delete it.
+4. **Options**: switch the guest firewall on, set the incoming policy, switch the MAC filter
+   off → **Save** → compare with the web UI's Firewall → Options.
+5. Change a rule in the web UI while the app shows the list, then edit the same rule in the
+   app: it must refuse ("modified configuration") rather than overwrite; pull to refresh.
+
 ### E. Snapshots (Tools → Snapshots)
 1. **Take snapshot** on the running test VM with **Include RAM** → "VM snapshot finished"; it
    appears in the tree with a RAM badge.

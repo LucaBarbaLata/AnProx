@@ -146,6 +146,14 @@ goes before the file part, which Proxmox requires. VM disks and container volume
 but not deletable here (that is the Hardware screen's job). A mock bug turned up on the way: the
 Windows VM's seeded config took its ISO by list index, which broke once a test deleted an ISO.
 
+**M4: firewall.** The datacenter, node and guest firewalls share one API shape, so a
+`FirewallScope` (its API path) drives one repository and one screen; Retrofit takes the path as an
+encoded `@Path`. Rules carry the firewall's digest: every edit, toggle, move (`moveto`) and delete
+sends it back, so a change made in the web UI meanwhile is refused. The rule form deletes cleared
+fields on edit (a rule switched to a macro drops its protocol and port) and checks what Proxmox
+would refuse (ports without a protocol or macro). Options are kept as key/value pairs with
+Proxmox's defaults filled in for display; only changed ones are sent.
+
 **Tour, again.** On Android 8 the alerts screen's last card is below the fold, and uiautomator
 lists it with empty bounds; on Android 14 the **Open it** button after creating a VM ended up
 under the result snackbar at the end of the form. The create and clone screens now scroll to

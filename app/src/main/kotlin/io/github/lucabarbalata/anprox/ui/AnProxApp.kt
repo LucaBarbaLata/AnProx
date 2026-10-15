@@ -39,6 +39,7 @@ import io.github.lucabarbalata.anprox.diagnostics.CrashReportDialog
 import io.github.lucabarbalata.anprox.model.link.AppLink
 import io.github.lucabarbalata.anprox.model.pve.ConsoleKind
 import io.github.lucabarbalata.anprox.model.pve.ConsoleTarget
+import io.github.lucabarbalata.anprox.model.pve.FirewallScope
 import io.github.lucabarbalata.anprox.model.pve.GuestType
 import io.github.lucabarbalata.anprox.ui.alerts.AlertsScreen
 import io.github.lucabarbalata.anprox.ui.cloudinit.CloudInitScreen
@@ -48,6 +49,7 @@ import io.github.lucabarbalata.anprox.ui.dashboard.DashboardScreen
 import io.github.lucabarbalata.anprox.ui.datacenter.BackupJobEditorScreen
 import io.github.lucabarbalata.anprox.ui.datacenter.BackupJobsScreen
 import io.github.lucabarbalata.anprox.ui.datacenter.DatacenterScreen
+import io.github.lucabarbalata.anprox.ui.datacenter.FirewallScreen
 import io.github.lucabarbalata.anprox.ui.datacenter.StorageContentScreen
 import io.github.lucabarbalata.anprox.ui.datacenter.StorageListScreen
 import io.github.lucabarbalata.anprox.ui.guest.CloneScreen
@@ -71,6 +73,7 @@ import io.github.lucabarbalata.anprox.ui.navigation.CloudInitRoute
 import io.github.lucabarbalata.anprox.ui.navigation.ConsoleRoute
 import io.github.lucabarbalata.anprox.ui.navigation.CreateGuestRoute
 import io.github.lucabarbalata.anprox.ui.navigation.DatacenterRoute
+import io.github.lucabarbalata.anprox.ui.navigation.FirewallRoute
 import io.github.lucabarbalata.anprox.ui.navigation.GuestRoute
 import io.github.lucabarbalata.anprox.ui.navigation.LoginRoute
 import io.github.lucabarbalata.anprox.ui.navigation.MoreRoute
@@ -153,6 +156,7 @@ fun AnProxApp() {
             GuestTool.HARDWARE -> nav.navigate(HardwareRoute(ref.serverId, ref.node, type, ref.vmid, name))
             GuestTool.CLOUD_INIT -> nav.navigate(CloudInitRoute(ref.serverId, ref.node, ref.vmid, name))
             GuestTool.OPTIONS -> nav.navigate(OptionsRoute(ref.serverId, ref.node, type, ref.vmid, name))
+            GuestTool.FIREWALL -> nav.navigate(FirewallRoute(ref.serverId, "guest", name, ref.node, type, ref.vmid))
             GuestTool.CONSOLE -> {
                 val kind = if (ref.type == GuestType.QEMU) ConsoleKind.VM else ConsoleKind.CONTAINER
                 nav.navigate(ConsoleRoute(ref.serverId, ref.node, kind.name, ref.vmid, name))
@@ -226,7 +230,17 @@ fun AnProxApp() {
                     onBack = back,
                     onBackupJobs = { nav.navigate(BackupJobsRoute(route.serverId)) },
                     onStorage = { nav.navigate(StorageListRoute(route.serverId)) },
+                    onFirewall = { nav.navigate(FirewallRoute(route.serverId, "dc", route.title)) },
                 )
+            }
+            composable<FirewallRoute> { entry ->
+                val r = entry.toRoute<FirewallRoute>()
+                val scope = when (r.kind) {
+                    "node" -> FirewallScope.Node(r.node)
+                    "guest" -> FirewallScope.Guest(r.node, GuestType.fromApi(r.type) ?: GuestType.QEMU, r.vmid)
+                    else -> FirewallScope.Datacenter
+                }
+                FirewallScreen(r.serverId, scope, r.title, onBack = back, onTask = openTask)
             }
             composable<StorageListRoute> { entry ->
                 val route = entry.toRoute<StorageListRoute>()
@@ -377,6 +391,7 @@ fun AnProxApp() {
                     onGuest = openGuest,
                     onShell = { nav.navigate(ConsoleRoute(r.serverId, r.node, ConsoleKind.NODE.name, 0, r.node)) },
                     onCreate = { type -> nav.navigate(CreateGuestRoute(r.serverId, r.node, type.apiName)) },
+                    onFirewall = { nav.navigate(FirewallRoute(r.serverId, "node", r.node, r.node)) },
                 )
             }
             composable<TaskLogRoute> { entry ->

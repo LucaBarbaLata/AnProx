@@ -721,6 +721,29 @@ def storage():
     back()
 
 
+@step("Datacenter: firewall, add a rule and switch the firewall on")
+def firewall():
+    tap("Overview")
+    tap_node(scroll_to("Datacenter", exact=True))
+    tap_node(scroll_to("Firewall", exact=True))
+    find("Admin network", timeout=30)              # the mock's SSH rule
+    tap("Add rule")
+    find("Destination port", timeout=10)
+    tap("tcp")
+    scroll_to("Destination port")
+    fill("Destination port", "9100", fallback_index=2)
+    tap("Add", pick="lowest")                      # the dialog's button
+    wait_until(lambda: not visible("Destination port"), "the rule dialog to close", timeout=10)
+    find("port 9100", timeout=30)                  # the new rule, first in the list
+    screenshot("13e-firewall")
+    tap("Options")
+    tap_node(scroll_to("Firewall on"))
+    tap_node(scroll_to("Save", exact=True))
+    find("Firewall options saved", timeout=20)
+    back()
+    back()
+
+
 @step("Light theme, the app lock without a screen lock, favourites on the dashboard")
 def light_theme():
     tap("More")
@@ -758,7 +781,7 @@ def main():
     try:
         for s in (launch, add_pve, add_pbs, resources, performance, guest_start, snapshots, backups,
                   options, hardware, console, vm_console, cloud_init, bulk, clone_migrate, tasks, create_vm, alerts,
-                  backup_jobs, storage, light_theme):
+                  backup_jobs, storage, firewall, light_theme):
             s()
         ok = True
     finally:

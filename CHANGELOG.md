@@ -68,6 +68,13 @@ All notable changes to AnProx are documented here. The format follows
   a URL (optionally checked against a checksum), you can upload one from the phone, and delete
   ISO images and templates you no longer need.
 
+- **Firewall** for the datacenter (Datacenter → Firewall), each node (Node → Firewall) and each
+  guest (Tools → Firewall): rules in the order they apply, with a switch per rule, arrows to
+  reorder, and an editor (in/out or a security group; accept, drop or reject; macro, protocol,
+  source, destination, ports, interface, log, comment). Options: switch the firewall on or off,
+  the policies for unmatched traffic, log levels, and a guest's DHCP, NDP, router advertisement
+  and MAC/IP filters. Edits made elsewhere in the meantime are refused instead of overwritten.
+
 ### Changed
 - The bulk-action summary on the Resources list stays on screen longer.
 - After creating or cloning a guest, the form scrolls to the result and its **Open it** button.

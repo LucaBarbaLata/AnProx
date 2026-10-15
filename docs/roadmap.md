@@ -126,7 +126,11 @@ Everything marked ✅ in M1 and M2 below. Gates:
 - Storage configuration: add/edit/remove every storage type.
 - **High Availability** (Q21): resources, node affinity rules/groups, CRM/LRM status, maintenance mode.
 - **Storage replication** (Q21): jobs, schedule, status, run now.
-- **Firewall, full management** (Q24): datacenter/node/guest rules, security groups, IP sets, aliases, options, log.
+- ✅ **Firewall rules and options** (Q24) for the datacenter (Datacenter → Firewall), nodes
+  (Node → Firewall) and guests (Tools → Firewall): add, edit, enable, reorder and delete rules
+  (direction, action or security group, macro, protocol, addresses, ports, interface, log);
+  enable, policies, log levels, DHCP/NDP/RA and MAC/IP filters.
+- **Firewall, the rest** (Q24): editing security groups, IP sets and aliases; the firewall log.
 - Resource pools and tags.
 - Encrypted export/import of server profiles (move to a new phone without retyping everything).
 

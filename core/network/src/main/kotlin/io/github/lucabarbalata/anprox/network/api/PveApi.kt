@@ -8,6 +8,8 @@ import io.github.lucabarbalata.anprox.model.pve.CephStatus
 import io.github.lucabarbalata.anprox.model.pve.ClusterResource
 import io.github.lucabarbalata.anprox.model.pve.ClusterStatusEntry
 import io.github.lucabarbalata.anprox.model.pve.ConsoleProxy
+import io.github.lucabarbalata.anprox.model.pve.FirewallMacro
+import io.github.lucabarbalata.anprox.model.pve.FirewallRule
 import io.github.lucabarbalata.anprox.model.pve.GuestSnapshot
 import io.github.lucabarbalata.anprox.model.pve.GuestStatus
 import io.github.lucabarbalata.anprox.model.pve.LxcInterface
@@ -20,6 +22,7 @@ import io.github.lucabarbalata.anprox.model.pve.PendingEntry
 import io.github.lucabarbalata.anprox.model.pve.ResourcePool
 import io.github.lucabarbalata.anprox.model.pve.RrdPoint
 import io.github.lucabarbalata.anprox.model.pve.ScheduledRun
+import io.github.lucabarbalata.anprox.model.pve.SecurityGroup
 import io.github.lucabarbalata.anprox.model.pve.StorageConfig
 import io.github.lucabarbalata.anprox.model.pve.StorageContentItem
 import io.github.lucabarbalata.anprox.model.pve.TaskLogLine
@@ -122,6 +125,44 @@ interface PveApi {
         @Path("storage") storage: String,
         @Path("volume") volume: String,
     ): ApiEnvelope<JsonElement>
+
+    // Firewall (questionnaire Q24). [scope] is FirewallScope.path, e.g. `nodes/pve1/firewall`.
+
+    @GET("{scope}/rules")
+    suspend fun firewallRules(@Path(value = "scope", encoded = true) scope: String): ApiEnvelope<List<FirewallRule>>
+
+    @FormUrlEncoded
+    @POST("{scope}/rules")
+    suspend fun createFirewallRule(@Path(value = "scope", encoded = true) scope: String, @FieldMap params: Map<String, String>): ApiEnvelope<JsonElement>
+
+    /** Edits a rule; `moveto` moves it to another position. */
+    @FormUrlEncoded
+    @PUT("{scope}/rules/{pos}")
+    suspend fun updateFirewallRule(
+        @Path(value = "scope", encoded = true) scope: String,
+        @Path("pos") pos: Int,
+        @FieldMap params: Map<String, String>,
+    ): ApiEnvelope<JsonElement>
+
+    @DELETE("{scope}/rules/{pos}")
+    suspend fun deleteFirewallRule(
+        @Path(value = "scope", encoded = true) scope: String,
+        @Path("pos") pos: Int,
+        @Query("digest") digest: String?,
+    ): ApiEnvelope<JsonElement>
+
+    @GET("{scope}/options")
+    suspend fun firewallOptions(@Path(value = "scope", encoded = true) scope: String): ApiEnvelope<JsonObject>
+
+    @FormUrlEncoded
+    @PUT("{scope}/options")
+    suspend fun updateFirewallOptions(@Path(value = "scope", encoded = true) scope: String, @FieldMap params: Map<String, String>): ApiEnvelope<JsonElement>
+
+    @GET("cluster/firewall/macros")
+    suspend fun firewallMacros(): ApiEnvelope<List<FirewallMacro>>
+
+    @GET("cluster/firewall/groups")
+    suspend fun securityGroups(): ApiEnvelope<List<SecurityGroup>>
 
     /** Ceph health; fails on a cluster without Ceph. */
     @GET("cluster/ceph/status")
