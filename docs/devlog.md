@@ -248,7 +248,14 @@ reads the field back and types whatever is missing (and says so in the log). The
 stays, since the overwrite it prevents is real.
 The next run lost it again *after* the check had seen the whole URL, so the check now wants the
 text right twice, 1.5 s apart, retries when a dump catches no text fields at all, and the
-download step waits for the file name the app derives from the URL before tapping Download. The
+download step waits for the file name the app derives from the URL before tapping Download.
+The run after that still saw it: the file name read `tiny-test.iso` (so the ViewModel had the
+whole URL), and a second or two later both fields went back to `tiny-test.is`. Only the URL
+field's own change callback writes the URL, so something replayed an older text-field state.
+It shows up only with `adb shell input text` (key events, with every keyboard app disabled) on
+the Android 14 emulator, never on Android 8, and hasn't been reproduced with a real keyboard. It
+stays on the list to look into; the download step now puts the letter back and retries (and logs
+that it did) instead of failing the whole tour. The
 same run showed `SectionHeader` draws its text in capitals ("GUESTS (1)"), so the pools step looks
 for guest rows instead of headers.
 

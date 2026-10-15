@@ -317,6 +317,21 @@ def fill(label, value, fallback_index=None, password=False):
         complete_typing(label, value)
 
 
+def fix_field(value):
+    """Finds the text field that holds the start of [value], moves to its end and types the rest."""
+    root = dump()
+    for n in root.iter("node"):
+        text = n.get("text") or ""
+        if n.get("class") == "android.widget.EditText" and text and value.startswith(text) and text != value:
+            tap_node(n)
+            adb("shell", "input", "keyevent", "KEYCODE_MOVE_END")
+            missing = value[len(text):]
+            print(f"    retyping {missing!r}", flush=True)
+            adb("shell", "input", "text", missing.replace(" ", "%s"))
+            time.sleep(0.8)
+            return
+
+
 def complete_typing(label, value, attempts=5):
     """
     Android 14 sometimes loses the last injected key (seen on CI: a URL arrived without its final
@@ -743,11 +758,24 @@ def storage():
     find("debian-12.7.0-amd64-netinst.iso", timeout=30)
     tap("From URL")
     find("Download from URL", timeout=10)
-    fill("URL", "https://example.com/images/tiny-test.iso", fallback_index=0)
-    # The file name comes from the URL the app received, so it shows the whole URL arrived.
-    wait_until(lambda: bool(matches(dump(), "tiny-test.iso", exact=True)), "the file name to be filled in", timeout=15)
-    tap("Download", pick="lowest")              # the dialog's button
-    wait_until(lambda: not visible("Download from URL"), "the download dialog to close", timeout=10)
+    url = "https://example.com/images/tiny-test.iso"
+    fill("URL", url, fallback_index=0)
+    # On Android 14 the URL has twice lost its last letter a second or two after it was typed
+    # (and seen complete). Then the dialog refuses the file name and stays open: put the letter
+    # back and try again, saying so in the log.
+    for attempt in range(3):
+        if attempt:
+            print(f"    the download dialog stayed open (attempt {attempt}); fixing the URL", flush=True)
+            fix_field(url)
+        # The file name comes from the URL the app received, so it shows the whole URL arrived.
+        wait_until(lambda: bool(matches(dump(), "tiny-test.iso", exact=True)), "the file name to be filled in", timeout=15)
+        tap("Download", pick="lowest")          # the dialog's button
+        try:
+            wait_until(lambda: not visible("Download from URL"), "the download dialog to close", timeout=10)
+            break
+        except AssertionError:
+            if attempt == 2:
+                raise
     find("tiny-test.iso", timeout=60)           # listed once the node's download task has finished
     screenshot("13d-storage")
     back()
