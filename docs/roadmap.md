@@ -61,6 +61,15 @@ Everything marked ✅ in M1 and M2 below. Gates:
 - [ ] Owner: run the test guide on real hardware (Proxmox VE 8; 9 later)
 - [x] Owner: ran the Release workflow: [released 2026-10-15](https://github.com/LucaBarbaLata/AnProx/releases/tag/v0.1.0-beta.2) (tests, signed build and emulator tour passed)
 
+### Beta 0.1.0-beta.3: 🚧 candidate, owner testing
+Everything marked ✅ in M2–M5 (guest configuration, SSH, alerts and Android integration,
+datacenter, node administration). Gates:
+- [ ] CI green: tests, lint, debug and release builds, and the emulator tour on Android 8.0 and 14 (28 steps)
+- [x] `CHANGELOG.md` entries, store changelog (`fastlane/…/changelogs/10023.txt`), README
+- [x] [Test guide](beta2-test-guide.md) sections D1–D15 for the owner
+- [ ] Owner: run the test guide on real hardware (Proxmox VE 8; 9 later)
+- [ ] Head the CHANGELOG section `## [0.1.0-beta.3] — <date>`, then run the Release workflow
+
 ## M1 — Daily driver
 *Status: 🚧 in progress. Done items are marked ✅ and ship in 0.1.0-beta.2.*
 

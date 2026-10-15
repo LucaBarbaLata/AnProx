@@ -1,8 +1,9 @@
-# Testing 0.1.0-beta.2 (Proxmox VE)
+# Testing 0.1.0-beta.2 and beta.3 (Proxmox VE)
 
-This is the checklist for the owner's test run before 0.1.0-beta.2 is published. It covers
-everything new since beta.1, written for **Proxmox VE** (no Backup Server needed). Each step says
-what to do and what you should see. Note anything that differs, with a screenshot if you can.
+This is the checklist for the owner's test runs before a beta is published. It started with
+everything new since beta.1 (sections A–I); the **D** sections marked "new after beta.2" are
+what 0.1.0-beta.3 adds. It is written for **Proxmox VE** (no Backup Server needed). Each step
+says what to do and what you should see. Note anything that differs, with a screenshot if you can.
 
 The general [manual checklist](testing.md#manual-test-checklist-real-hardware) and the
 [beta testing guide](beta-testing.md) still apply. This page is the short, ordered version.
@@ -12,8 +13,8 @@ The general [manual checklist](testing.md#manual-test-checklist-real-hardware) a
 1. On GitHub, open **Actions → CI**, pick the newest **green** run on the branch
    `ccr-ca586193-f4zcbm`, and download the **`anprox-debug-apk`** artifact (a zip).
 2. Unzip it and install `app-debug.apk` on your phone.
-3. It installs as **AnProx Debug**, a separate app next to your AnProx beta.1. Your beta.1 and its
-   data stay untouched; add your server again in AnProx Debug (Overview → **+**).
+3. It installs as **AnProx Debug**, a separate app next to your installed AnProx beta. The beta
+   and its data stay untouched; add your server again in AnProx Debug (Overview → **+**).
 
 The debug build has the same features as the release. The R8-minified release build is tested by
 CI on Android 8.0 and 14 emulators against the mock server.

@@ -959,7 +959,7 @@ def ssh():
     replace_field("Port", "2222", fallback_index=2)
     tap("Password")                               # a key exists, so the form starts on SSH key
     fill("Password", "anprox", password=True)
-    tap("Connect")
+    tap_node(scroll_to("Connect", exact=True))
     node = find_any(["Trust this server?", "Android System WebView"], timeout=45)
     if "Android System WebView" in " ".join(labels(node)):
         screenshot("16b-ssh-webview-too-old")
@@ -974,8 +974,7 @@ def ssh():
     find_any(["was added"], timeout=30)
     screenshot("16c-ssh-connected")
     tap("Change connection")
-    find("Connect", timeout=15)                   # the form, now on the key just added
-    tap("Connect")
+    tap_node(scroll_to("Connect", exact=True))   # the form, now on the key just added
     find("Connected", timeout=45)                 # no host key question the second time
     leave_console()
     back()                                        # the node, back to Resources

@@ -50,9 +50,24 @@ The goal is every function of the web UI in a fast, beautiful, native app.
 - **Tasks.** A merged timeline of every server's tasks with live, auto-scrolling logs.
 - **Themes.** System, light or dark, plus pure-black AMOLED and an adjustable live refresh rate.
 
-Everything else, from hardware editing and VM creation to Ceph, SDN, firewall, permissions and
-widgets, is planned in milestones. See the [roadmap](docs/roadmap.md) and the
-[API coverage tracker](docs/api-coverage.md).
+Coming in **0.1.0-beta.3** (in the CI test builds now):
+
+- **Guest configuration.** Hardware (CPU, memory, disks, CD/DVD, network, boot order; container
+  resources and mount points), cloud-init, and a wizard to create VMs and containers.
+- **SSH client.** Sign in to nodes and guests with a password or a key made on the phone, with
+  host key checks; SPICE hand-off to a viewer app.
+- **Alerts and Android integration.** Background checks with notifications (node or guest down,
+  failed backups and tasks, thresholds, Ceph), live task notifications, two home-screen widgets
+  (status, and favourite guests with power buttons), a Quick Settings tile and app shortcuts.
+- **Datacenter.** Backup jobs, storage (browse, upload, download from URL, add and edit
+  storages), firewall (rules, security groups, aliases, IP sets, log), high availability,
+  replication, resource pools, and moving your servers to another phone.
+- **Node administration.** Updates and repositories, services, the system log, network
+  (bridges, bonds, VLANs with apply/revert), disks with SMART and storage creation, DNS, hosts,
+  time zone and subscription.
+
+Ceph, SDN, permissions and the full Backup Server come next. See the
+[roadmap](docs/roadmap.md) and the [API coverage tracker](docs/api-coverage.md).
 
 ## Try it
 
