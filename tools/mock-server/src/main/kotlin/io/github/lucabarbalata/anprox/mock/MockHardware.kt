@@ -38,14 +38,30 @@ internal class MockHardware(
     )
 
     val isos = listOf(
-        Iso("local", "debian-12.7.0-amd64-netinst.iso", 631 * MIB),
-        Iso("local", "ubuntu-24.04.1-live-server-amd64.iso", 2_640 * MIB),
-        Iso("nas-nfs", "virtio-win-0.1.262.iso", 708 * MIB),
+        StoredFile("local", "iso", "debian-12.7.0-amd64-netinst.iso", 631 * MIB),
+        StoredFile("local", "iso", "ubuntu-24.04.1-live-server-amd64.iso", 2_640 * MIB),
+        StoredFile("nas-nfs", "iso", "virtio-win-0.1.262.iso", 708 * MIB),
     )
 
-    data class Iso(val storage: String, val file: String, val size: Long) {
-        val volid get() = "$storage:iso/$file"
-        fun item(ctime: Long) = StorageContentItem(volid = volid, content = "iso", ctime = ctime, size = size, format = "iso")
+    val templates = listOf(
+        StoredFile("local", "vztmpl", "debian-12-standard_12.7-1_amd64.tar.zst", 126 * MIB),
+        StoredFile("local", "vztmpl", "ubuntu-24.04-standard_24.04-2_amd64.tar.zst", 141 * MIB),
+        StoredFile("local", "vztmpl", "alpine-3.20-default_20240908_amd64.tar.xz", 3 * MIB),
+    )
+
+    /** An ISO image or a container template on a storage. */
+    data class StoredFile(val storage: String, val content: String, val file: String, val size: Long) {
+        val volid get() = "$storage:$content/$file"
+        fun item(ctime: Long) = StorageContentItem(volid = volid, content = content, ctime = ctime, size = size, format = file.substringAfterLast('.'))
+    }
+
+    /** A new guest's config from `POST /nodes/{node}/{qemu|lxc}`. Returns an error message, or null. */
+    fun create(g: MockState.Guest, params: Map<String, String>): String? {
+        current[g.vmid] = LinkedHashMap()
+        pending.remove(g.vmid)
+        val error = update(g, params, emptyList(), creating = true)
+        if (error != null) current.remove(g.vmid)
+        return error
     }
 
     fun forget(vmid: Int) {
@@ -88,7 +104,7 @@ internal class MockHardware(
     // ------------------------------------------------------------------ config changes
 
     /** Validates and applies the hardware keys of a config change. Returns an error message, or null. */
-    fun update(g: MockState.Guest, set: Map<String, String>, delete: List<String>): String? {
+    fun update(g: MockState.Guest, set: Map<String, String>, delete: List<String>, creating: Boolean = false): String? {
         val config = LinkedHashMap(effective(g))
         val qemu = g.type == "qemu"
         val node = nodes.first { it.name == g.node }
@@ -112,6 +128,7 @@ internal class MockHardware(
                 DISK.matches(key) && qemu -> disk(g, node, key, value, config) { nextDisk++ } ?: return lastError
                 key.startsWith("mp") && !qemu -> mountPoint(g, value) { nextDisk++ } ?: return lastError
                 NET.matches(key) -> (if (qemu) vmNet(g, key, value) else ctNet(g, key, value)) ?: return lastError
+                key == "rootfs" && creating && !qemu -> mountPoint(g, value, root = true) { nextDisk++ } ?: return lastError
                 key == "rootfs" -> return "unable to modify read-only option: 'rootfs'"
                 key == "sockets" || key == "cores" -> value.toIntOrNull()?.takeIf { it >= 1 }?.toString() ?: return "$key: value must have a minimum value of 1"
                 key == "memory" || key == "swap" || key == "balloon" -> value.toIntOrNull()?.toString() ?: return "$key: type check ('integer') failed - got '$value'"
@@ -199,11 +216,13 @@ internal class MockHardware(
         return value
     }
 
-    private fun mountPoint(g: MockState.Guest, value: String, next: () -> Int): String? {
+    private fun mountPoint(g: MockState.Guest, value: String, root: Boolean = false, next: () -> Int): String? {
         val props = PropertyString.parse(value, "volume")
         val volume = props["volume"].orEmpty()
-        val path = props["mp"] ?: return error("missing mount point path (mp)")
-        if (!path.startsWith("/") || path == "/") return error("invalid mount point path '$path'")
+        if (!root) {
+            val path = props["mp"] ?: return error("missing mount point path (mp)")
+            if (!path.startsWith("/") || path == "/") return error("invalid mount point path '$path'")
+        }
         val allocation = ALLOCATION.matchEntire(volume) ?: return value
         val (storageId, size) = allocation.destructured
         val storage = storage(g.node, storageId) ?: return error("storage '$storageId' does not exist")

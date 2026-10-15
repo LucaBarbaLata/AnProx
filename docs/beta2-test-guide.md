@@ -95,6 +95,20 @@ overwriting (try it once: open Hardware, change something in the web UI, then sa
    root disk → **Grow** by 1 GiB. **Move** works only while the container is stopped; the app
    says so. Edit net0: switch IPv4 between DHCP and static (`192.168.x.y/24` + gateway).
 
+### D3. Create VMs and containers (Node → Create VM / Create container), new after beta.2
+1. Node → **Create VM**: the next free ID is filled in. Give it a name, pick an ISO you have,
+   keep the rest → **Create VM** → after the task, **Open it** → **Start** → **Console**: the
+   installer boots. Compare with the web UI (VM → Hardware).
+2. Try **Windows** as the OS: the hint explains SATA, E1000E, UEFI and TPM. Create it and check
+   the web UI shows an EFI disk and a TPM.
+3. Open **Advanced** and change a few things (CPU type `host`, VLAN tag, no ballooning).
+4. Node → **Create container**: pick a template (download one in the web UI first if the list is
+   empty), set a root password (twice), 4 GiB, DHCP → **Create container** → **Open it** →
+   **Start** → **Console** → log in as root.
+5. Try a static address (`192.168.x.y/24` and the gateway) and an SSH key instead of a password.
+6. Wrong input is explained before you can press Create: an ID that exists, a too-short
+   password, a disk bigger than the free space.
+
 ### E. Snapshots (Tools → Snapshots)
 1. **Take snapshot** on the running test VM with **Include RAM** → "VM snapshot finished"; it
    appears in the tree with a RAM badge.

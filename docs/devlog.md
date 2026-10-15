@@ -54,6 +54,19 @@ Gotcha: a test ending in `assertFailsWith` returns the exception, so JUnit skipp
 pitfall in `testing.md`). A small script now compares the `@Test` count in each class with the
 number of tests that ran.
 
+**M2: creating VMs and containers.** `NewVm` and `NewContainer` (`:core:model`) hold the form,
+check it like Proxmox (ID in use, name, free space, vCPUs per node, password length, SSH key
+format, network) and build the `POST /nodes/{node}/{qemu,lxc}` form with the Proxmox VE 8
+wizard's defaults; Windows gets SATA, e1000e, OVMF, q35, an EFI disk and a TPM. The mock creates
+guests through the same hardware code as config changes (allocation, generated MACs) and lists
+container templates. The form lives on `ui/create/` and is opened from a node's Tools. Shared
+form pieces (chips, number fields, storage and bridge pickers) moved to `ui/common/FormParts.kt`.
++5 model and +4 data tests; the tour creates a VM with the suggested settings.
+
+**Tour, again.** With the five steps wired in, two waited for snackbars that are only 4 s long
+(missed between two UI dumps on the slow emulator) and one looked for a section header, which is
+drawn in upper case. The steps now wait for something that stays on screen.
+
 **The tour skipped five steps.** Reading the CI log of the console fix showed 10 steps, not 15.
 The steps for options, the two consoles, bulk actions and clone/migrate were defined in
 `tour.py` (since the options commit, `2d8076f`) but never added to the list `main()` runs. CI

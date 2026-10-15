@@ -38,6 +38,7 @@ import io.github.lucabarbalata.anprox.model.pve.ConsoleKind
 import io.github.lucabarbalata.anprox.model.pve.ConsoleTarget
 import io.github.lucabarbalata.anprox.model.pve.GuestType
 import io.github.lucabarbalata.anprox.ui.console.ConsoleScreen
+import io.github.lucabarbalata.anprox.ui.create.CreateGuestScreen
 import io.github.lucabarbalata.anprox.ui.dashboard.DashboardScreen
 import io.github.lucabarbalata.anprox.ui.guest.CloneScreen
 import io.github.lucabarbalata.anprox.ui.guest.GuestScreen
@@ -53,6 +54,7 @@ import io.github.lucabarbalata.anprox.ui.navigation.BackupsRoute
 import io.github.lucabarbalata.anprox.ui.navigation.DashboardRoute
 import io.github.lucabarbalata.anprox.ui.navigation.CloneRoute
 import io.github.lucabarbalata.anprox.ui.navigation.ConsoleRoute
+import io.github.lucabarbalata.anprox.ui.navigation.CreateGuestRoute
 import io.github.lucabarbalata.anprox.ui.navigation.GuestRoute
 import io.github.lucabarbalata.anprox.ui.navigation.LoginRoute
 import io.github.lucabarbalata.anprox.ui.navigation.MoreRoute
@@ -233,6 +235,20 @@ fun AnProxApp() {
                 val ref = GuestRef(r.serverId, r.node, GuestType.fromApi(r.type) ?: GuestType.QEMU, r.vmid)
                 OptionsScreen(ref, guestName = r.name, onBack = back)
             }
+            composable<CreateGuestRoute> { entry ->
+                val r = entry.toRoute<CreateGuestRoute>()
+                CreateGuestScreen(
+                    serverId = r.serverId,
+                    node = r.node,
+                    type = GuestType.fromApi(r.type) ?: GuestType.QEMU,
+                    onBack = back,
+                    onTask = openTask,
+                    onOpenGuest = { ref ->
+                        nav.popBackStack()
+                        openGuest(ref)
+                    },
+                )
+            }
             composable<HardwareRoute> { entry ->
                 val r = entry.toRoute<HardwareRoute>()
                 val ref = GuestRef(r.serverId, r.node, GuestType.fromApi(r.type) ?: GuestType.QEMU, r.vmid)
@@ -275,6 +291,7 @@ fun AnProxApp() {
                     onBack = back,
                     onGuest = openGuest,
                     onShell = { nav.navigate(ConsoleRoute(r.serverId, r.node, ConsoleKind.NODE.name, 0, r.node)) },
+                    onCreate = { type -> nav.navigate(CreateGuestRoute(r.serverId, r.node, type.apiName)) },
                 )
             }
             composable<TaskLogRoute> { entry ->

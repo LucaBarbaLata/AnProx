@@ -34,6 +34,8 @@ import kotlinx.serialization.Serializable
 /** A storage's backups, seen from [node]. */
 @Serializable data class StorageRoute(val serverId: String, val node: String, val storage: String)
 @Serializable data class NodeRoute(val serverId: String, val node: String)
+/** [type] is `qemu` or `lxc`. */
+@Serializable data class CreateGuestRoute(val serverId: String, val node: String, val type: String)
 @Serializable data class TaskLogRoute(val serverId: String, val node: String, val upid: String)
 
 // Settings

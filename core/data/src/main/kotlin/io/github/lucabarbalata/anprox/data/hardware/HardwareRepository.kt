@@ -76,24 +76,27 @@ class HardwareRepository(private val hub: ServerHub) {
     suspend fun bridges(serverId: String, node: String): List<NodeNetwork> =
         hub.use(serverId) { it.pve { nodeNetworks(node, "any_bridge") } }.filter { it.isBridge }.sortedBy { it.iface }
 
-    /**
-     * ISO images on every storage of [node] that holds them, by file name. A storage that can't be
-     * listed (offline NFS, for example) is skipped.
-     */
-    suspend fun isoImages(serverId: String, node: String): List<StorageContentItem> {
-        val storages = hub.use(serverId) { it.pve { nodeStorages(node, ISO, 1) } }
-            .filter { it.enabled && it.active && ISO in it.content.split(',') }
+    /** ISO images on every storage of [node] that holds them, by file name. */
+    suspend fun isoImages(serverId: String, node: String): List<StorageContentItem> = files(serverId, node, ISO)
+
+    /** Container templates on every storage of [node] that holds them, by file name. */
+    suspend fun containerTemplates(serverId: String, node: String): List<StorageContentItem> = files(serverId, node, TEMPLATE)
+
+    /** Files of one [content] type across the node's storages. A storage that can't be listed (offline NFS…) is skipped. */
+    private suspend fun files(serverId: String, node: String, content: String): List<StorageContentItem> {
+        val storages = hub.use(serverId) { it.pve { nodeStorages(node, content, 1) } }
+            .filter { it.enabled && it.active && content in it.content.split(',') }
         return coroutineScope {
             storages.map { s ->
                 async {
                     try {
-                        hub.use(serverId) { it.pve { storageContent(node, s.storage, ISO, null) } }
+                        hub.use(serverId) { it.pve { storageContent(node, s.storage, content, null) } }
                     } catch (_: ApiException) {
                         emptyList()
                     }
                 }
             }.awaitAll()
-        }.flatten().filter { it.content == ISO }.sortedBy { it.volid.substringAfterLast('/').lowercase() }
+        }.flatten().filter { it.content == content }.sortedBy { it.volid.substringAfterLast('/').lowercase() }
     }
 
     /** The node's CPU threads (the limit for a guest's vCPUs), or null if unknown. */
@@ -105,5 +108,6 @@ class HardwareRepository(private val hub: ServerHub) {
 
     private companion object {
         const val ISO = "iso"
+        const val TEMPLATE = "vztmpl"
     }
 }

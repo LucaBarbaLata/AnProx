@@ -20,6 +20,13 @@ All notable changes to AnProx are documented here. The format follows
     instead of overwritten. Changes a running VM only picks up at its next start are marked
     **After restart**. Deleting an unused disk asks you to type its name.
 
+- **Create VMs and containers** (Node → Create VM / Create container): a short form with the
+  choices most people need and an **Advanced** switch for the rest. VMs: name, operating system
+  (Windows gets SATA, an Intel network card, UEFI and a TPM), installation ISO, disk, cores,
+  memory and bridge. Containers: template, root password and/or SSH keys, disk, cores, memory,
+  and DHCP or a static address. The next free ID is filled in; problems are explained before
+  Proxmox would refuse them. **Open it** goes to the new guest.
+
 ### Changed
 - The bulk-action summary on the Resources list stays on screen longer.
 

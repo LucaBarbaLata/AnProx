@@ -820,15 +820,17 @@ class MockState(
     fun storageContent(n: Node, storage: String, content: String?, vmid: Int?): List<StorageContentItem>? = synchronized(lock) {
         settleTasks()
         val s = storages.firstOrNull { it.node == n.name && it.id == storage } ?: return null
-        val isos = if ((content == null || content == "iso") && vmid == null) {
-            hardware.isos.filter { it.storage == storage }.map { it.item(bootMillis / 1000 - 40 * DAY / 1000) }
+        val files = if (vmid == null) {
+            (hardware.isos + hardware.templates)
+                .filter { it.storage == storage && (content == null || it.content == content) }
+                .map { it.item(bootMillis / 1000 - 40 * DAY / 1000) }
         } else {
             emptyList()
         }
-        if (content != null && content != "backup") return isos
+        if (content != null && content != "backup") return files
         backups
             .filter { it.storage == storage && (s.shared || it.node == n.name) && (vmid == null || it.vmid == vmid) }
-            .map { it.toItem() } + isos
+            .map { it.toItem() } + files
     }
 
     /** `vzdump` for one guest. Returns a UPID, or an error message (500). */
@@ -875,6 +877,44 @@ class MockState(
                 }
                 hardware.forget(vmid)
                 guests += Guest(vmid, type, nodeName, b.guestName, "stopped", b.cpus, b.maxmem, b.maxdisk, tags = existing?.tags)
+            },
+        )
+    }
+
+    /**
+     * `POST /nodes/{node}/{qemu|lxc}` without a backup: a new guest. Disks are allocated, the
+     * guest exists at once (stopped), and `start=1` starts it when the task ends.
+     */
+    fun createGuest(nodeName: String, type: String, params: Map<String, String>, user: String): Result<String> = synchronized(lock) {
+        settleTasks()
+        fun fail(msg: String) = Result.failure<String>(IllegalStateException(msg))
+        val qemu = type == "qemu"
+        val label = if (qemu) "VM" else "CT"
+        val vmid = params["vmid"]?.toIntOrNull() ?: return fail("vmid: property is missing and it is not optional")
+        guests.firstOrNull { it.vmid == vmid }?.let { return fail("unable to create $label $vmid: config file already exists") }
+        val node = node(nodeName) ?: return fail("no such cluster node '$nodeName'")
+        if (!node.online) return fail("node '$nodeName' seems to be offline")
+        if (!qemu) {
+            val template = params["ostemplate"] ?: return fail("ostemplate: property is missing and it is not optional")
+            if (hardware.templates.none { it.volid == template }) return fail("volume '$template' does not exist")
+            params["password"]?.let { if (it.length < 5) return fail("password: value must be at least 5 characters long") }
+        }
+        val name = params[if (qemu) "name" else "hostname"] ?: if (qemu) "VM$vmid" else "CT$vmid"
+        val firstStorage = params.values.firstNotNullOfOrNull { ALLOCATED.find(it)?.groupValues?.get(1) } ?: "local-zfs"
+        val g = Guest(
+            vmid, type, nodeName, name, "stopped", cpus = 1, maxmem = 512 * MIB, maxdisk = 0,
+            agent = params["agent"]?.startsWith("1") == true, onBoot = params["onboot"] == "1", diskStorage = firstStorage,
+        )
+        val notConfig = setOf("vmid", "start", "password", "ssh-public-keys", "ostemplate", "name", "hostname", "onboot", "agent", "description", "tags", "pool")
+        hardware.create(g, params.filterKeys { it !in notConfig })?.let { return fail(it) }
+        guests += g
+        val start = params["start"] == "1"
+        Result.success(
+            startTask(nodeName, if (qemu) "qmcreate" else "vzcreate", vmid.toString(), user) {
+                if (start) {
+                    g.status = "running"
+                    g.startedAtMillis = clockMillis()
+                }
             },
         )
     }
@@ -989,6 +1029,7 @@ class MockState(
 
     companion object {
         const val PASSWORD = "anprox"
+        private val ALLOCATED = Regex("^([A-Za-z0-9][A-Za-z0-9_.-]*):\\d+(?:,|$)")
         const val RRD_SAMPLES = 70
         const val MIB = 1024L * 1024
         const val GIB = 1024L * MIB

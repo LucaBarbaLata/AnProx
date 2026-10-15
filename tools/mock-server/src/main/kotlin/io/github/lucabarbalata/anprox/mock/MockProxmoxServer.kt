@@ -292,8 +292,8 @@ class MockProxmoxServer(
             call.authed() ?: return@get
             call.ok(state.nextId().toString())
         }
-        post("nodes/{node}/qemu") { call.restore("qemu") }
-        post("nodes/{node}/lxc") { call.restore("lxc") }
+        post("nodes/{node}/qemu") { call.createOrRestore("qemu") }
+        post("nodes/{node}/lxc") { call.createOrRestore("lxc") }
         post("nodes/{node}/termproxy") { call.consoleProxy(type = null) }
         post("nodes/{node}/lxc/{vmid}/termproxy") { call.consoleProxy(type = "lxc") }
         post("nodes/{node}/qemu/{vmid}/vncproxy") { call.consoleProxy(type = "qemu") }
@@ -455,19 +455,20 @@ class MockProxmoxServer(
         return session
     }
 
-    /** `POST /nodes/{node}/{qemu|lxc}` — the mock supports only restores (`archive=` / `ostemplate=` + `restore=1`). */
-    private suspend fun ApplicationCall.restore(type: String) {
+    /** `POST /nodes/{node}/{qemu|lxc}`: a restore (`archive=` / `ostemplate=` + `restore=1`) or a new guest. */
+    private suspend fun ApplicationCall.createOrRestore(type: String) {
         val s = authed() ?: return
         val p = receiveParameters()
         val vmid = p["vmid"]?.toIntOrNull()
             ?: return fail(400, "Parameter verification failed.", mapOf("vmid" to "property is missing and it is not optional"))
-        val volid = (if (type == "qemu") p["archive"] else p["ostemplate"]?.takeIf { p["restore"] == "1" })
-            ?: return fail(501, "the mock server can only restore guests, not create new ones")
         if (state.isReadOnly(s.user)) return fail(403, "Permission check failed (/vms/$vmid, VM.Allocate)")
-        state.restore(parameters["node"]!!, type, vmid, volid, p["force"] == "1", s.user).fold(
-            onSuccess = { ok(it) },
-            onFailure = { fail(500, it.message ?: "error") },
-        )
+        val backup = if (type == "qemu") p["archive"] else p["ostemplate"]?.takeIf { p["restore"] == "1" }
+        val result = if (backup != null) {
+            state.restore(parameters["node"]!!, type, vmid, backup, p["force"] == "1", s.user)
+        } else {
+            state.createGuest(parameters["node"]!!, type, p.entries().associate { it.key to it.value.first() }, s.user)
+        }
+        result.fold(onSuccess = { ok(it) }, onFailure = { fail(500, it.message ?: "error") })
     }
 
     /** `termproxy` (node shell when [type] is null, containers) and `vncproxy` (VMs). */

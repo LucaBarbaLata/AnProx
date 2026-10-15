@@ -155,7 +155,8 @@ private fun VmSections(hw: VmHardware, state: HardwareState, open: (HardwareDial
             stringResource(R.string.hardware_memory),
             when (val balloon = hw.balloonMiB) {
                 0 -> stringResource(R.string.hardware_memory_fixed, mib(hw.memoryMiB))
-                null -> stringResource(R.string.hardware_memory_balloon, mib(hw.memoryMiB), mib(hw.memoryMiB))
+                // Proxmox's default: the balloon device is there, but the minimum is all the memory.
+                null -> mib(hw.memoryMiB)
                 else -> stringResource(R.string.hardware_memory_balloon, mib(hw.memoryMiB), mib(balloon))
             },
             pending = "memory" in pending || "balloon" in pending,

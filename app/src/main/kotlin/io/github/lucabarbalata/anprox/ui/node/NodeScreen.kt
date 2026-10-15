@@ -4,6 +4,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.PowerSettingsNew
 import androidx.compose.material.icons.outlined.RestartAlt
+import androidx.compose.material.icons.outlined.Computer
+import androidx.compose.material.icons.outlined.Inventory2
 import androidx.compose.material.icons.outlined.Terminal
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.LaunchedEffect
@@ -61,6 +63,7 @@ fun NodeScreen(
     onBack: () -> Unit,
     onGuest: (GuestRef) -> Unit,
     onShell: () -> Unit,
+    onCreate: (GuestType) -> Unit,
     viewModel: NodeViewModel = koinViewModel(key = "node-$serverId-$node") { parametersOf(serverId, node) },
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -83,6 +86,12 @@ fun NodeScreen(
                     item {
                         GlassCard(contentPadding = PaddingValues(vertical = 6.dp)) {
                             MenuRow(Icons.Outlined.Terminal, stringResource(R.string.node_shell), stringResource(R.string.node_shell_body), onShell)
+                            MenuRow(Icons.Outlined.Computer, stringResource(R.string.node_create_vm), stringResource(R.string.node_create_vm_body)) {
+                                onCreate(GuestType.QEMU)
+                            }
+                            MenuRow(Icons.Outlined.Inventory2, stringResource(R.string.node_create_ct), stringResource(R.string.node_create_ct_body)) {
+                                onCreate(GuestType.LXC)
+                            }
                         }
                     }
                 }

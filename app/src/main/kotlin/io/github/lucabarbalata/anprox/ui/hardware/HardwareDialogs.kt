@@ -1,16 +1,11 @@
 package io.github.lucabarbalata.anprox.ui.hardware
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.selectable
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -38,9 +33,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import io.github.lucabarbalata.anprox.R
@@ -67,9 +60,15 @@ import io.github.lucabarbalata.anprox.model.pve.VmDiskOps
 import io.github.lucabarbalata.anprox.model.pve.VmHardware
 import io.github.lucabarbalata.anprox.model.pve.VmNet
 import io.github.lucabarbalata.anprox.model.pve.VmNetSettings
+import io.github.lucabarbalata.anprox.ui.common.BridgePicker
+import io.github.lucabarbalata.anprox.ui.common.ChoiceChips
 import io.github.lucabarbalata.anprox.ui.common.ConfirmActionDialog
+import io.github.lucabarbalata.anprox.ui.common.FormHint
+import io.github.lucabarbalata.anprox.ui.common.FormLabel
 import io.github.lucabarbalata.anprox.ui.common.MenuRow
+import io.github.lucabarbalata.anprox.ui.common.NumberField
 import io.github.lucabarbalata.anprox.ui.common.RadioRow
+import io.github.lucabarbalata.anprox.ui.common.StoragePicker
 
 /** The dialog [HardwareState.dialog] asks for, if any. */
 @Composable
@@ -172,68 +171,6 @@ private fun FormDialog(
     )
 }
 
-@Composable
-private fun Label(text: String) {
-    Text(text, style = MaterialTheme.typography.titleSmall, color = AnProxTheme.colors.textPrimary)
-}
-
-@Composable
-private fun Hint(text: String, error: Boolean = false) {
-    val c = AnProxTheme.colors
-    Text(text, style = MaterialTheme.typography.bodySmall, color = if (error) c.danger else c.textSecondary)
-}
-
-@Composable
-private fun NumberField(value: String, onValueChange: (String) -> Unit, label: String, supportingText: String? = null, isError: Boolean = false) {
-    GlassTextField(
-        value = value,
-        onValueChange = { v -> onValueChange(v.filter(Char::isDigit).take(9)) },
-        label = label,
-        supportingText = supportingText,
-        isError = isError,
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-    )
-}
-
-/** A row of tappable chips; the selected one is highlighted. */
-@Composable
-private fun <T> ChoiceChips(options: List<T>, selected: T, label: (T) -> String, onSelect: (T) -> Unit) {
-    val c = AnProxTheme.colors
-    Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-        options.forEach { option ->
-            val isSelected = option == selected
-            Text(
-                label(option),
-                style = MaterialTheme.typography.labelLarge,
-                color = if (isSelected) c.textPrimary else c.textSecondary,
-                modifier = Modifier
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(if (isSelected) c.accent.copy(alpha = 0.28f) else c.glassStrong)
-                    .selectable(selected = isSelected, role = Role.RadioButton) { onSelect(option) }
-                    .padding(horizontal = 12.dp, vertical = 8.dp),
-            )
-        }
-    }
-}
-
-/** Storage choices with their free space; the first is preselected. */
-@Composable
-private fun StoragePicker(storages: List<NodeStorage>?, selected: String?, onSelect: (String) -> Unit, exclude: String? = null) {
-    val c = AnProxTheme.colors
-    val choices = storages?.filter { it.storage != exclude }
-    when {
-        choices == null -> CircularProgressIndicator(Modifier.size(24.dp), color = c.accent, strokeWidth = 2.dp)
-        choices.isEmpty() -> Hint(stringResource(R.string.hardware_no_storage))
-        else -> choices.forEach { s ->
-            RadioRow(
-                selected = s.storage == selected,
-                title = s.storage,
-                body = stringResource(R.string.hardware_storage_free, s.type, Formatters.bytes(s.avail)),
-            ) { onSelect(s.storage) }
-        }
-    }
-}
-
 // ------------------------------------------------------------------------------------ VM processor and memory
 
 @Composable
@@ -278,7 +215,7 @@ private fun CpuMemoryDialog(
                 NumberField(cores, { cores = it }, stringResource(R.string.hardware_cores_per_socket), isError = problem == VmCpuMemory.Problem.CORES)
             }
         }
-        Hint(
+        FormHint(
             when (problem) {
                 VmCpuMemory.Problem.TOO_MANY_CPUS -> stringResource(R.string.hardware_too_many_cpus, hostCpus ?: 0)
                 VmCpuMemory.Problem.SOCKETS -> stringResource(R.string.hardware_sockets_error, VmCpuMemory.MAX_SOCKETS)
@@ -286,9 +223,9 @@ private fun CpuMemoryDialog(
             },
             error = problem == VmCpuMemory.Problem.TOO_MANY_CPUS || problem == VmCpuMemory.Problem.SOCKETS,
         )
-        Label(stringResource(R.string.hardware_cpu_type))
+        FormLabel(stringResource(R.string.hardware_cpu_type))
         ChoiceChips(types, cpuType, { it ?: defaultLabel }, { cpuType = it })
-        Hint(stringResource(R.string.hardware_cpu_type_help))
+        FormHint(stringResource(R.string.hardware_cpu_type_help))
         NumberField(
             memory,
             { memory = it },
@@ -319,7 +256,7 @@ private fun CpuMemoryDialog(
                 isError = problem == VmCpuMemory.Problem.MIN_MEMORY,
             )
         }
-        if (running) Hint(stringResource(R.string.hardware_cold_plug_note))
+        if (running) FormHint(stringResource(R.string.hardware_cold_plug_note))
     }
 }
 
@@ -373,7 +310,7 @@ private fun CtResourcesDialog(hw: CtHardware, hostCpus: Int?, onSave: (Map<Strin
             isError = problem == CtResources.Problem.MEMORY,
         )
         NumberField(swap, { swap = it }, stringResource(R.string.hardware_swap_mib), supportingText = swap.toIntOrNull()?.let { mib(it) })
-        Hint(stringResource(R.string.hardware_ct_live_note))
+        FormHint(stringResource(R.string.hardware_ct_live_note))
     }
 }
 
@@ -397,9 +334,9 @@ private fun AddDiskDialog(hw: VmHardware, storages: List<NodeStorage>?, onAdd: (
         onConfirm = { onAdd(form.params(hw)) },
         onDismiss = onDismiss,
     ) {
-        Label(stringResource(R.string.hardware_bus))
+        FormLabel(stringResource(R.string.hardware_bus))
         SegmentedPicker(DiskBus.entries, bus, ::busName, { bus = it })
-        Hint(
+        FormHint(
             if (problem == NewVmDisk.Problem.NO_SLOT) {
                 stringResource(R.string.hardware_bus_full, busName(bus))
             } else {
@@ -407,7 +344,7 @@ private fun AddDiskDialog(hw: VmHardware, storages: List<NodeStorage>?, onAdd: (
             },
             error = problem == NewVmDisk.Problem.NO_SLOT,
         )
-        Label(stringResource(R.string.hardware_storage))
+        FormLabel(stringResource(R.string.hardware_storage))
         StoragePicker(storages, chosen?.storage, { storage = it })
         NumberField(
             size,
@@ -454,7 +391,7 @@ private fun AddMountPointDialog(hw: CtHardware, storages: List<NodeStorage>?, on
             isError = problem == NewMountPoint.Problem.PATH || problem == NewMountPoint.Problem.PATH_IN_USE,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
         )
-        Label(stringResource(R.string.hardware_storage))
+        FormLabel(stringResource(R.string.hardware_storage))
         StoragePicker(storages, chosen?.storage, { storage = it })
         NumberField(
             size,
@@ -541,7 +478,7 @@ private fun GrowDialog(key: String, state: HardwareState, onGrow: (Map<String, S
             stringResource(R.string.hardware_grow_by_gib),
             supportingText = current?.let { stringResource(R.string.hardware_grow_result, Formatters.bytes(it), Formatters.bytes(it + gib * DiskSize.GIB)) },
         )
-        Hint(stringResource(if (vmDisk != null) R.string.hardware_grow_note_vm else R.string.hardware_grow_note_ct))
+        FormHint(stringResource(if (vmDisk != null) R.string.hardware_grow_note_vm else R.string.hardware_grow_note_ct))
     }
 }
 
@@ -569,8 +506,8 @@ private fun MoveDialog(key: String, state: HardwareState, onMove: (Map<String, S
         },
         onDismiss = onDismiss,
     ) {
-        if (blocked) Hint(stringResource(R.string.hardware_move_ct_running), error = true)
-        Hint(stringResource(R.string.hardware_move_from, currentStorage ?: "—"))
+        if (blocked) FormHint(stringResource(R.string.hardware_move_ct_running), error = true)
+        FormHint(stringResource(R.string.hardware_move_from, currentStorage ?: "—"))
         StoragePicker(state.storages, chosen?.storage, { storage = it }, exclude = currentStorage)
         SwitchRow(
             title = stringResource(R.string.hardware_move_delete),
@@ -578,7 +515,7 @@ private fun MoveDialog(key: String, state: HardwareState, onMove: (Map<String, S
             checked = deleteSource,
             onCheckedChange = { deleteSource = it },
         )
-        if (vmDisk != null && state.running) Hint(stringResource(R.string.hardware_move_live))
+        if (vmDisk != null && state.running) FormHint(stringResource(R.string.hardware_move_live))
     }
 }
 
@@ -593,10 +530,10 @@ private fun AttachDialog(disk: VmDisk, hw: VmHardware, onAttach: (Map<String, St
         onConfirm = { onAttach(VmDiskOps.attach(disk, bus, hw)) },
         onDismiss = onDismiss,
     ) {
-        Hint(disk.volume)
-        Label(stringResource(R.string.hardware_bus))
+        FormHint(disk.volume)
+        FormLabel(stringResource(R.string.hardware_bus))
         SegmentedPicker(buses.ifEmpty { listOf(DiskBus.SCSI) }, bus, ::busName, { bus = it })
-        hw.freeSlot(bus)?.let { Hint(stringResource(R.string.hardware_attach_as, busLabel(it))) }
+        hw.freeSlot(bus)?.let { FormHint(stringResource(R.string.hardware_attach_as, busLabel(it))) }
     }
 }
 
@@ -634,7 +571,7 @@ private fun DriveDialog(
         }
         when {
             isos == null -> CircularProgressIndicator(Modifier.size(24.dp), color = c.accent, strokeWidth = 2.dp)
-            isos.isEmpty() -> Hint(stringResource(R.string.hardware_no_isos))
+            isos.isEmpty() -> FormHint(stringResource(R.string.hardware_no_isos))
             else -> isos.forEach { iso ->
                 RadioRow(
                     selected = selected == iso.volid,
@@ -647,21 +584,6 @@ private fun DriveDialog(
 }
 
 // ------------------------------------------------------------------------------------ network
-
-@Composable
-private fun BridgePicker(bridges: List<NodeNetwork>?, bridge: String, onBridge: (String) -> Unit) {
-    val c = AnProxTheme.colors
-    Label(stringResource(R.string.hardware_bridge))
-    when {
-        bridges == null -> CircularProgressIndicator(Modifier.size(24.dp), color = c.accent, strokeWidth = 2.dp)
-        bridges.isEmpty() -> GlassTextField(value = bridge, onValueChange = { onBridge(it.trim()) }, label = stringResource(R.string.hardware_bridge))
-        else -> {
-            val names = (bridges.map { it.iface } + bridge).filter { it.isNotBlank() }.distinct()
-            ChoiceChips(names, bridge, { it }, onBridge)
-            bridges.firstOrNull { it.iface == bridge }?.comments?.trim()?.takeIf { it.isNotEmpty() }?.let { Hint(it) }
-        }
-    }
-}
 
 @Composable
 private fun VmNetDialog(
@@ -702,8 +624,8 @@ private fun VmNetDialog(
             null
         },
     ) {
-        net?.mac?.let { Hint(stringResource(R.string.hardware_mac, it)) }
-        Label(stringResource(R.string.hardware_model))
+        net?.mac?.let { FormHint(stringResource(R.string.hardware_mac, it)) }
+        FormLabel(stringResource(R.string.hardware_model))
         ChoiceChips(VmNet.MODELS, model, { NET_MODEL_NAMES[it] ?: it }, { model = it })
         BridgePicker(bridges, bridge) { bridge = it }
         NumberField(
@@ -787,7 +709,7 @@ private fun CtNetDialog(
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Ascii),
         )
         BridgePicker(bridges, bridge) { bridge = it }
-        Label(stringResource(R.string.hardware_ipv4))
+        FormLabel(stringResource(R.string.hardware_ipv4))
         SegmentedPicker(CtNetSettings.Ipv4Mode.entries, ipv4, { v4Labels.getValue(it) }, { ipv4 = it })
         if (ipv4 == CtNetSettings.Ipv4Mode.STATIC) {
             GlassTextField(
@@ -807,7 +729,7 @@ private fun CtNetDialog(
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
             )
         }
-        Label(stringResource(R.string.hardware_ipv6))
+        FormLabel(stringResource(R.string.hardware_ipv6))
         SegmentedPicker(CtNetSettings.Ipv6Mode.entries, ipv6, { v6Labels.getValue(it) }, { ipv6 = it })
         if (ipv6 == CtNetSettings.Ipv6Mode.STATIC) {
             GlassTextField(
@@ -856,7 +778,7 @@ private fun BootOrderDialog(hw: VmHardware, running: Boolean, onSave: (List<Stri
         onConfirm = { onSave(order) },
         onDismiss = onDismiss,
     ) {
-        Hint(stringResource(R.string.hardware_boot_help))
+        FormHint(stringResource(R.string.hardware_boot_help))
         entries.forEachIndexed { index, (key, on) ->
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                 Checkbox(checked = on, onCheckedChange = { entries[index] = key to it })
@@ -874,7 +796,7 @@ private fun BootOrderDialog(hw: VmHardware, running: Boolean, onSave: (List<Stri
                 }
             }
         }
-        if (running) Hint(stringResource(R.string.hardware_cold_plug_note))
+        if (running) FormHint(stringResource(R.string.hardware_cold_plug_note))
     }
 }
 

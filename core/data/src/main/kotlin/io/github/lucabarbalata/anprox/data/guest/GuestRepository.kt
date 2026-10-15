@@ -9,6 +9,8 @@ import io.github.lucabarbalata.anprox.model.pve.GuestStatus
 import io.github.lucabarbalata.anprox.model.pve.GuestType
 import io.github.lucabarbalata.anprox.model.pve.MigrationCheck
 import io.github.lucabarbalata.anprox.model.pve.MigrationPlan
+import io.github.lucabarbalata.anprox.model.pve.NewContainer
+import io.github.lucabarbalata.anprox.model.pve.NewVm
 import io.github.lucabarbalata.anprox.model.pve.NodePowerAction
 import io.github.lucabarbalata.anprox.model.pve.NodeStatus
 import io.github.lucabarbalata.anprox.model.pve.NodeStorage
@@ -133,6 +135,18 @@ class GuestRepository(private val hub: ServerHub) {
 
     /** The lowest free VMID. */
     suspend fun nextVmid(serverId: String): Int = hub.use(serverId) { it.pve { nextId() } }
+
+    /** Every VMID in use in the cluster, to check a chosen ID before creating a guest. */
+    suspend fun usedVmids(serverId: String): Set<Int> =
+        hub.use(serverId) { it.pve { clusterResources("vm") } }.mapNotNull { it.vmid }.toSet()
+
+    /** Creates a VM on [node]; returns the task UPID. */
+    suspend fun createVm(serverId: String, node: String, vm: NewVm): String =
+        hub.use(serverId) { it.pve { createQemu(node, vm.params()) } }
+
+    /** Creates a container on [node]; returns the task UPID. */
+    suspend fun createContainer(serverId: String, node: String, ct: NewContainer): String =
+        hub.use(serverId) { it.pve { createLxc(node, ct.params()) } }
 
     /** Starts the clone and returns the task UPID (the task runs on the source node). */
     suspend fun clone(ref: GuestRef, request: CloneRequest): String =

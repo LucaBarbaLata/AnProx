@@ -492,7 +492,7 @@ def options():
 def hardware():
     tap_node(scroll_to("win11"))           # running since the start step
     tap_node(scroll_to("Hardware"))
-    find("Processor and memory", timeout=30)
+    find("Processor", timeout=30)          # section headers are upper-case on screen; this is a row
     find("SCSI 0", timeout=30)             # the seeded system disk
     tap_node(scroll_to("Add disk"))
     find("Bus", timeout=15)                # the dialog: SCSI on the first storage, 32 GiB
@@ -583,6 +583,22 @@ def tasks():
     screenshot("12-tasks")
 
 
+@step("Create a VM on a node with the suggested settings, then open it")
+def create_vm():
+    tap("Resources")
+    tap_node(scroll_to("pve1"))            # the node
+    tap_node(scroll_to("Create VM"))
+    find("Installation disc", timeout=30)  # the form has loaded: next free ID, first storage, 32 GiB
+    scroll_to("Start after creating")      # just above the button at the end of the form
+    tap("Create VM", pick="lowest")        # the button, not the title
+    find("Open it", timeout=60)            # the create task has finished
+    screenshot("12b-created")
+    tap_node(scroll_to("Open it"))
+    find("Start", timeout=30)              # the new VM's screen; it is stopped
+    back()                                 # to the node
+    back()                                 # to Resources
+
+
 @step("Light theme, the app lock without a screen lock, favourites on the dashboard")
 def light_theme():
     tap("More")
@@ -619,7 +635,7 @@ def main():
     ok = False
     try:
         for s in (launch, add_pve, add_pbs, resources, performance, guest_start, snapshots, backups,
-                  options, hardware, console, vm_console, bulk, clone_migrate, tasks, light_theme):
+                  options, hardware, console, vm_console, bulk, clone_migrate, tasks, create_vm, light_theme):
             s()
         ok = True
     finally:

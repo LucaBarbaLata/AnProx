@@ -15,11 +15,13 @@ import io.github.lucabarbalata.anprox.data.store.ProfileStore
 import io.github.lucabarbalata.anprox.data.store.SecretStore
 import io.github.lucabarbalata.anprox.diagnostics.CrashReporter
 import io.github.lucabarbalata.anprox.model.pve.ConsoleTarget
+import io.github.lucabarbalata.anprox.model.pve.GuestType
 import io.github.lucabarbalata.anprox.network.ProxmoxConnection
 import io.github.lucabarbalata.anprox.storage.DataStoreProfileStore
 import io.github.lucabarbalata.anprox.storage.KeystoreSecretStore
 import io.github.lucabarbalata.anprox.storage.SettingsRepository
 import io.github.lucabarbalata.anprox.ui.console.ConsoleViewModel
+import io.github.lucabarbalata.anprox.ui.create.CreateGuestViewModel
 import io.github.lucabarbalata.anprox.ui.hardware.HardwareViewModel
 import io.github.lucabarbalata.anprox.ui.backups.BackupScope
 import io.github.lucabarbalata.anprox.ui.backups.BackupsViewModel
@@ -92,6 +94,7 @@ val appModule = module {
     viewModel { (ref: GuestRef) -> GuestViewModel(ref, get(), get(), get()) }
     viewModel { (ref: GuestRef) -> OptionsViewModel(ref, get()) }
     viewModel { (ref: GuestRef) -> HardwareViewModel(ref, get(), get()) }
+    viewModel { (serverId: String, node: String, type: GuestType) -> CreateGuestViewModel(serverId, node, type, get(), get()) }
     viewModel { (ref: GuestRef, name: String) -> CloneViewModel(ref, name, get()) }
     viewModel { (serverId: String, target: ConsoleTarget) -> ConsoleViewModel(serverId, target, get()) }
     viewModel { (ref: GuestRef, name: String) -> MigrateViewModel(ref, name, get()) }
