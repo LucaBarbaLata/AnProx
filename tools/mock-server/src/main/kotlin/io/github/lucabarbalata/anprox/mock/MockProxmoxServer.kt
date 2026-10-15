@@ -5,6 +5,8 @@ import io.github.lucabarbalata.anprox.model.ProxmoxProduct
 import io.github.lucabarbalata.anprox.model.auth.TicketResponse
 import io.github.lucabarbalata.anprox.model.json.ProxmoxJson
 import io.github.lucabarbalata.anprox.model.pve.AgentResult
+import io.github.lucabarbalata.anprox.model.pve.CephHealth
+import io.github.lucabarbalata.anprox.model.pve.CephStatus
 import io.github.lucabarbalata.anprox.model.pve.GuestOptions
 import io.github.lucabarbalata.anprox.model.pve.SnapshotName
 import io.github.lucabarbalata.anprox.model.pve.VersionInfo
@@ -171,6 +173,12 @@ class MockProxmoxServer(
         get("cluster/tasks") {
             call.authed() ?: return@get
             call.ok(state.recentTasks())
+        }
+        get("cluster/ceph/status") {
+            call.authed() ?: return@get
+            // Like a real cluster without Ceph unless a test sets a health status.
+            val health = state.cephHealth ?: return@get call.fail(500, "binary not installed: /usr/bin/ceph-mon")
+            call.ok(CephStatus(CephHealth(health)))
         }
         get("nodes/{node}/status") {
             call.authed() ?: return@get

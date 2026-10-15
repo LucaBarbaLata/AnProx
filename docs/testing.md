@@ -12,7 +12,7 @@ testing debug builds on **real hardware**.
 | Integration: multi-server hub, sessions, dashboard snapshots, guest actions, guest snapshots, performance history, app lock rules, backup and restore, guest network info, guest options, clone/template/migrate, console sessions (terminal and VNC handshake), node power, hardware (disks, drives, network, pending changes, container volumes), creating VMs and containers, cloud-init, SPICE | `core/data/src/test` | JVM | 62 |
 | Android lint | `:app:lintDebug` | CI | — |
 | Build: debug and R8-minified release | `:app:assemble*` | CI | — |
-| **End-to-end tour** of the minified release APK on emulators against the mock server | `scripts/e2e/tour.py` | CI (Android 8.0 + 14), Release workflow | 18 steps |
+| **End-to-end tour** of the minified release APK on emulators against the mock server | `scripts/e2e/tour.py` | CI (Android 8.0 + 14), Release workflow | 19 steps |
 | UI / screenshot tests | planned (M1) | — | — |
 | Manual on real hardware | [checklist below](#manual-test-checklist-real-hardware) | owner | — |
 
@@ -127,7 +127,8 @@ so no test code is compiled into the app. `scripts/e2e/run.sh` starts the mock s
 15. **Clone** the Ubuntu template (linked by default) → **Open it** → **Migrate** the clone to `pve2` → the guest screen now says `pve2`.
 16. Tasks tab shows the newest task ("VM migrate").
 17. Node `pve1` → **Create VM** with the suggested settings (next free ID, first storage, 32 GiB) → "Open it" → the new, stopped VM.
-18. Settings → Light theme; turning on the app lock explains that the emulator has no screen lock → dashboard in light mode, with the starred VM under Favourites.
+18. More → **Alerts** → switch on **Background alerts** → **Check now** → "Servers checked: 2" → a notification "Node pve3 is offline" is posted (read with `dumpsys notification`; on Android 13+ the tour grants the notification permission first).
+19. Settings → Light theme; turning on the app lock explains that the emulator has no screen lock → dashboard in light mode, with the starred VM under Favourites.
 
 After every step the script checks that the app process is alive and that logcat has no
 `FATAL EXCEPTION` for the app. Screenshots of each step, plus UI dumps and logcat on failure,

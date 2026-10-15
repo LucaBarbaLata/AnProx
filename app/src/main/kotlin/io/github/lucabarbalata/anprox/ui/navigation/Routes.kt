@@ -41,4 +41,5 @@ import kotlinx.serialization.Serializable
 
 // Settings
 @Serializable data object SettingsRoute
+@Serializable data object AlertsRoute
 @Serializable data object AboutRoute

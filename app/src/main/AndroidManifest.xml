@@ -5,6 +5,8 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- Notice Wi-Fi ↔ mobile switches so the LAN endpoint gets tried first again (Q14). -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- Background alerts (Q26); Android 13+ asks the user when alerts are switched on. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <!--
         allowBackup=false: server profiles and encrypted secrets stay on this device. Keystore

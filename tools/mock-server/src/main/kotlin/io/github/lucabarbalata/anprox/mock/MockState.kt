@@ -63,6 +63,10 @@ class MockState(
     private val clockMillis: () -> Long = System::currentTimeMillis,
 ) {
     val clusterName = "homelab"
+
+    /** Ceph health for `GET /cluster/ceph/status`; null answers like a cluster without Ceph. */
+    @Volatile
+    var cephHealth: String? = null
     private val random = SecureRandom()
     private val lock = Any()
 
@@ -417,6 +421,17 @@ class MockState(
             seedTask("pbs", "verificationjob", "store1:v-daily", "root@pam", now - 3 * HOUR, 600_000, "OK")
             seedTask("pbs", "syncjob", "store2:s-offsite", "root@pam", now - 2 * HOUR, 300_000, "sync failed: remote unreachable")
         }
+    }
+
+    /** Test hook: the guest stops on its own (a crash, an out-of-memory kill), without a task. */
+    fun crash(vmid: Int) = synchronized(lock) {
+        guests.first { it.vmid == vmid }.status = "stopped"
+    }
+
+    /** Test hook: a task that just ended with [status]. */
+    fun finishTask(node: String, type: String, id: String, status: String) = synchronized(lock) {
+        val now = clockMillis()
+        seedTask(node, type, id, "root@pam", now - 1_000, 1_000, status)
     }
 
     private fun seedTask(node: String, type: String, id: String, user: String, start: Long, duration: Long, status: String) {

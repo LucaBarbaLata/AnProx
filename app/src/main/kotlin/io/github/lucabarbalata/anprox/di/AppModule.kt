@@ -1,6 +1,9 @@
 package io.github.lucabarbalata.anprox.di
 
 import io.github.lucabarbalata.anprox.BuildConfig
+import io.github.lucabarbalata.anprox.alerts.AlertNotifier
+import io.github.lucabarbalata.anprox.alerts.AlertScheduler
+import io.github.lucabarbalata.anprox.data.alerts.AlertRepository
 import io.github.lucabarbalata.anprox.data.backup.BackupRepository
 import io.github.lucabarbalata.anprox.data.console.ConsoleRepository
 import io.github.lucabarbalata.anprox.data.hardware.HardwareRepository
@@ -17,9 +20,11 @@ import io.github.lucabarbalata.anprox.diagnostics.CrashReporter
 import io.github.lucabarbalata.anprox.model.pve.ConsoleTarget
 import io.github.lucabarbalata.anprox.model.pve.GuestType
 import io.github.lucabarbalata.anprox.network.ProxmoxConnection
+import io.github.lucabarbalata.anprox.storage.AlertStore
 import io.github.lucabarbalata.anprox.storage.DataStoreProfileStore
 import io.github.lucabarbalata.anprox.storage.KeystoreSecretStore
 import io.github.lucabarbalata.anprox.storage.SettingsRepository
+import io.github.lucabarbalata.anprox.ui.alerts.AlertsViewModel
 import io.github.lucabarbalata.anprox.ui.cloudinit.CloudInitViewModel
 import io.github.lucabarbalata.anprox.ui.console.ConsoleViewModel
 import io.github.lucabarbalata.anprox.ui.create.CreateGuestViewModel
@@ -85,6 +90,12 @@ val appModule = module {
     single { ConsoleRepository(get()) }
     single { HardwareRepository(get()) }
 
+    // Background alerts
+    single { AlertStore(androidContext()) }
+    single { AlertRepository(get(), get(), get<AlertStore>()) }
+    single { AlertNotifier(androidContext()) }
+    single { AlertScheduler(androidContext()) }
+
     // Screens
     viewModel { ServersViewModel(get()) }
     // "" = create a new server
@@ -107,4 +118,5 @@ val appModule = module {
     viewModel { TasksViewModel(get()) }
     viewModel { (serverId: String, node: String, upid: String) -> TaskLogViewModel(serverId, node, upid, get()) }
     viewModel { SettingsViewModel(get()) }
+    viewModel { AlertsViewModel(get(), get(), get()) }
 }

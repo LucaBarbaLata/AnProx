@@ -37,6 +37,7 @@ import io.github.lucabarbalata.anprox.diagnostics.CrashReportDialog
 import io.github.lucabarbalata.anprox.model.pve.ConsoleKind
 import io.github.lucabarbalata.anprox.model.pve.ConsoleTarget
 import io.github.lucabarbalata.anprox.model.pve.GuestType
+import io.github.lucabarbalata.anprox.ui.alerts.AlertsScreen
 import io.github.lucabarbalata.anprox.ui.cloudinit.CloudInitScreen
 import io.github.lucabarbalata.anprox.ui.console.ConsoleScreen
 import io.github.lucabarbalata.anprox.ui.create.CreateGuestScreen
@@ -51,6 +52,7 @@ import io.github.lucabarbalata.anprox.ui.login.LoginScreen
 import io.github.lucabarbalata.anprox.ui.backups.BackupScope
 import io.github.lucabarbalata.anprox.ui.backups.BackupsScreen
 import io.github.lucabarbalata.anprox.ui.navigation.AboutRoute
+import io.github.lucabarbalata.anprox.ui.navigation.AlertsRoute
 import io.github.lucabarbalata.anprox.ui.navigation.BackupsRoute
 import io.github.lucabarbalata.anprox.ui.navigation.DashboardRoute
 import io.github.lucabarbalata.anprox.ui.navigation.CloneRoute
@@ -193,6 +195,7 @@ fun AnProxApp() {
                 MoreScreen(
                     onServers = { nav.navigate(ServersRoute) },
                     onSettings = { nav.navigate(SettingsRoute) },
+                    onAlerts = { nav.navigate(AlertsRoute) },
                     onAbout = { nav.navigate(AboutRoute) },
                 )
             }
@@ -306,6 +309,7 @@ fun AnProxApp() {
                 TaskLogScreen(serverId = r.serverId, node = r.node, upid = r.upid, onBack = back)
             }
             composable<SettingsRoute> { SettingsScreen(onBack = back) }
+            composable<AlertsRoute> { AlertsScreen(onBack = back) }
             composable<AboutRoute> { AboutScreen(onBack = back) }
         }
     }

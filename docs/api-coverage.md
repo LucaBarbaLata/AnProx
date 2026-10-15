@@ -43,7 +43,8 @@ Code: `core/network/src/main/kotlin/.../network/api/` (`AccessApi`, `PveApi`, `P
 | `/cluster/ha/{resources,groups,rules,status}` | High availability | 🗓 M4 |
 | `/cluster/firewall/*` | Datacenter firewall, groups, IP sets, aliases, options | 🗓 M4 |
 | `/cluster/sdn/*` | Zones, VNets, subnets, IPAM, DHCP, controllers, fabrics | 🗓 M6 |
-| `/cluster/ceph/*` | Cluster-wide Ceph status/flags | 🗓 M6 |
+| `GET /cluster/ceph/status` | Ceph health for background alerts | ✅ (health only; full status 🗓 M6) |
+| `/cluster/ceph/*` (flags, metadata) | Cluster-wide Ceph flags | 🗓 M6 |
 | `/cluster/mapping/{pci,usb,dir}` | Resource mappings | 🗓 M9 |
 | `/cluster/notifications/*` | Notification targets & matchers (also used for push, M3) | 🗓 M3 (webhook setup) / M9 (full) |
 | `/cluster/metrics/*` | External metric servers | 🗓 M9 |

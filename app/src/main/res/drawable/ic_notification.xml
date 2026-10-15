@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Status-bar icon for notifications: the launcher glyph, cropped to 24dp. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="54"
+    android:viewportHeight="54">
+    <group
+        android:translateX="-27"
+        android:translateY="-27">
+        <path
+            android:pathData="M35,72 L54,35 L73,72"
+            android:strokeWidth="9"
+            android:strokeLineCap="round"
+            android:strokeLineJoin="round"
+            android:strokeColor="#FFFFFFFF" />
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:pathData="M54,61m-4.5,0a4.5,4.5 0,1 1,9 0a4.5,4.5 0,1 1,-9 0" />
+    </group>
+</vector>

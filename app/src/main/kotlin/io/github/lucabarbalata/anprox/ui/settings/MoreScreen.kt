@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Dns
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.NotificationsActive
 import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
@@ -18,12 +19,13 @@ import io.github.lucabarbalata.anprox.ui.common.contentPadding
 
 /** The "More" tab: everything that isn't a live view. */
 @Composable
-fun MoreScreen(onServers: () -> Unit, onSettings: () -> Unit, onAbout: () -> Unit) {
+fun MoreScreen(onServers: () -> Unit, onSettings: () -> Unit, onAlerts: () -> Unit, onAbout: () -> Unit) {
     AnProxScaffold(title = stringResource(R.string.more_title)) { inner ->
         LazyColumn(contentPadding = contentPadding(inner), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             item {
                 GlassCard(contentPadding = PaddingValues(vertical = 6.dp)) {
                     MenuRow(Icons.Outlined.Dns, stringResource(R.string.servers_title), stringResource(R.string.more_servers_body), onServers)
+                    MenuRow(Icons.Outlined.NotificationsActive, stringResource(R.string.alerts_title), stringResource(R.string.more_alerts_body), onAlerts)
                     MenuRow(Icons.Outlined.Palette, stringResource(R.string.settings_title), stringResource(R.string.more_settings_body), onSettings)
                     MenuRow(Icons.Outlined.Info, stringResource(R.string.about_title), stringResource(R.string.more_about_body), onAbout)
                 }

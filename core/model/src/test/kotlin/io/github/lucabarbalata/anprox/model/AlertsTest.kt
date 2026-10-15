@@ -74,6 +74,23 @@ class AlertsTest {
         // Destroyed or moved elsewhere (no longer in the guest list): not "stopped".
         val gone = crashed.copy(guestIds = setOf(101, 200))
         assertEquals(emptyList(), AlertEngine.evaluate(m1, gone, settings).first)
+
+        // A shutdown task still running.
+        assertEquals(emptyList(), AlertEngine.evaluate(m1, crashed.copy(busyGuests = setOf(100)), settings).first)
+    }
+
+    @Test
+    fun `new tasks are picked by the server's clock`() {
+        // The phone's clock is an hour behind the server's.
+        val (_, m1) = AlertEngine.evaluate(null, healthy.copy(time = 1_000 - 3_600), settings)
+        assertEquals(900L, m1.lastTaskEnd)
+        val failed = FinishedTask("UPID:f", "qmstart", "101", "pve1", 950, "start failed")
+        val (a2, m2) = AlertEngine.evaluate(m1, healthy.copy(time = 2_000 - 3_600, tasks = listOf(failed) + healthy.tasks), settings)
+        assertEquals(listOf("UPID:f"), a2.map { it.subject })
+        assertEquals(950L, m2.lastTaskEnd)
+        // Not reported twice; with no tasks at all the last end time is kept.
+        assertEquals(emptyList(), AlertEngine.evaluate(m2, healthy.copy(time = 3_000 - 3_600, tasks = listOf(failed)), settings).first)
+        assertEquals(950L, AlertEngine.evaluate(m2, healthy.copy(tasks = emptyList()), settings).second.lastTaskEnd)
     }
 
     @Test

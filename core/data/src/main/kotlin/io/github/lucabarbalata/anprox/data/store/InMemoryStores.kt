@@ -1,5 +1,7 @@
 package io.github.lucabarbalata.anprox.data.store
 
+import io.github.lucabarbalata.anprox.data.alerts.AlertMemoryStore
+import io.github.lucabarbalata.anprox.model.alerts.AlertMemory
 import io.github.lucabarbalata.anprox.model.auth.AuthSession
 import io.github.lucabarbalata.anprox.model.profile.ServerProfile
 import kotlinx.coroutines.flow.Flow
@@ -36,5 +38,15 @@ class InMemorySecretStore : SecretStore {
     override suspend fun clear(profileId: String) {
         passwords.remove(profileId)
         sessions.remove(profileId)
+    }
+}
+
+/** Non-persistent [AlertMemoryStore] for tests. */
+class InMemoryAlertMemoryStore : AlertMemoryStore {
+    private val memories = ConcurrentHashMap<String, AlertMemory>()
+
+    override suspend fun load(serverId: String) = memories[serverId]
+    override suspend fun save(serverId: String, memory: AlertMemory) {
+        memories[serverId] = memory
     }
 }

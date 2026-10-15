@@ -4,6 +4,7 @@ import io.github.lucabarbalata.anprox.model.ApiEnvelope
 import io.github.lucabarbalata.anprox.model.pve.AgentInterface
 import io.github.lucabarbalata.anprox.model.pve.AgentOsInfo
 import io.github.lucabarbalata.anprox.model.pve.AgentResult
+import io.github.lucabarbalata.anprox.model.pve.CephStatus
 import io.github.lucabarbalata.anprox.model.pve.ClusterResource
 import io.github.lucabarbalata.anprox.model.pve.ClusterStatusEntry
 import io.github.lucabarbalata.anprox.model.pve.ConsoleProxy
@@ -47,6 +48,10 @@ interface PveApi {
     /** The most recent tasks of the whole cluster (what the web UI's bottom panel shows). */
     @GET("cluster/tasks")
     suspend fun clusterTasks(): ApiEnvelope<List<TaskSummary>>
+
+    /** Ceph health; fails on a cluster without Ceph. */
+    @GET("cluster/ceph/status")
+    suspend fun cephStatus(): ApiEnvelope<CephStatus>
 
     @GET("nodes/{node}/status")
     suspend fun nodeStatus(@Path("node") node: String): ApiEnvelope<NodeStatus>

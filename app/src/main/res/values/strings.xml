@@ -492,6 +492,7 @@
     <string name="more_title">More</string>
     <string name="more_servers_body">Add, edit and sign in to servers</string>
     <string name="more_settings_body">Theme, refresh rate, security</string>
+    <string name="more_alerts_body">Notifications about your servers while the app is closed</string>
     <string name="more_about_body">Version, license, privacy</string>
     <string name="settings_title">Settings</string>
     <string name="settings_appearance">Appearance</string>
@@ -796,4 +797,58 @@
     <string name="cloudinit_regenerated">Cloud-init image regenerated</string>
 
     <string name="about_disclaimer">AnProx is an independent project and is not affiliated with or endorsed by Proxmox Server Solutions GmbH. Proxmox is a registered trademark of Proxmox Server Solutions GmbH.</string>
+
+    <!-- Background alerts (questionnaire Q26/Q27) -->
+    <string name="alerts_title">Alerts</string>
+    <string name="alerts_enabled">Background alerts</string>
+    <string name="alerts_enabled_description">Checks your servers every few minutes, even with the app closed, and notifies you when something goes wrong.</string>
+    <string name="alerts_notifications_off">Notifications are off for AnProx, so alerts can\'t be shown.</string>
+    <string name="alerts_notifications_allow">Allow</string>
+    <string name="alerts_interval">Check every</string>
+    <string name="alerts_every_minutes">%1$d min</string>
+    <string name="alerts_every_hours">%1$d h</string>
+    <string name="alerts_interval_hint">Android may run a check a few minutes late to save battery. Checks need a network connection to your servers.</string>
+    <string name="alerts_kinds">Alert me about</string>
+    <string name="alerts_down">Nodes and guests down</string>
+    <string name="alerts_down_description">A node going offline, a cluster losing quorum, a guest that stopped without anyone stopping it.</string>
+    <string name="alerts_failures">Failed tasks and backups</string>
+    <string name="alerts_failures_description">Any task or backup that ends with an error.</string>
+    <string name="alerts_thresholds">Resource limits</string>
+    <string name="alerts_thresholds_description">CPU, memory or storage above these limits, and Ceph warnings or errors.</string>
+    <string name="alerts_cpu_limit">Node CPU</string>
+    <string name="alerts_memory_limit">Node memory</string>
+    <string name="alerts_storage_limit">Storage</string>
+    <string name="alerts_percent">%1$d%%</string>
+    <string name="alerts_lower">Lower the %1$s limit</string>
+    <string name="alerts_raise">Raise the %1$s limit</string>
+    <string name="alerts_last_check">Last check</string>
+    <string name="alerts_never_checked">No check has run yet.</string>
+    <string name="alerts_last_summary">Servers checked: %1$d · New alerts: %2$d</string>
+    <string name="alerts_unreachable">Couldn\'t reach: %1$s</string>
+    <string name="alerts_sign_in_needed">Sign in again to keep getting alerts: %1$s</string>
+    <string name="alerts_check_now">Check now</string>
+    <string name="alerts_footnote">Each problem is reported once, when it starts. A limit has to drop 5 points below before it can alert again.</string>
+    <string name="alerts_channel_down">Nodes and guests down</string>
+    <string name="alerts_channel_down_description">A node offline, quorum lost, a guest that stopped on its own.</string>
+    <string name="alerts_channel_failures">Failed tasks and backups</string>
+    <string name="alerts_channel_failures_description">Tasks and backups that ended with an error.</string>
+    <string name="alerts_channel_thresholds">Resource limits</string>
+    <string name="alerts_channel_thresholds_description">CPU, memory or storage above your limits; Ceph health.</string>
+    <string name="alerts_channel_account">Sign-in needed</string>
+    <string name="alerts_channel_account_description">A server\'s session ran out, so its alerts are paused.</string>
+    <string name="notify_node_down">Node %1$s is offline</string>
+    <string name="notify_quorum_lost">%1$s lost quorum</string>
+    <string name="notify_quorum_lost_body">Changes to the cluster are blocked until enough nodes are back.</string>
+    <string name="notify_guest_stopped">%1$s (%2$s) stopped</string>
+    <string name="notify_guest_stopped_body">Nobody stopped it from Proxmox: it may have crashed or shut itself down.</string>
+    <string name="notify_task_failed">Failed: %1$s</string>
+    <string name="notify_backup_failed">Backup failed: %1$s</string>
+    <string name="notify_cpu_high">CPU at %1$d%% on %2$s</string>
+    <string name="notify_memory_high">Memory at %1$d%% on %2$s</string>
+    <string name="notify_storage_high">%1$s is %2$d%% full</string>
+    <string name="notify_ceph_warn">Ceph health warning</string>
+    <string name="notify_ceph_err">Ceph health error</string>
+    <string name="notify_ceph_body">Open the Proxmox web interface for the details.</string>
+    <string name="notify_sign_in">Sign in to %1$s again</string>
+    <string name="notify_sign_in_body">Its session ran out, so alerts for it are paused.</string>
 </resources>

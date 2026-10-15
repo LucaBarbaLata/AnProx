@@ -9,6 +9,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import io.github.lucabarbalata.anprox.core.designsystem.theme.ThemeMode
 import io.github.lucabarbalata.anprox.data.security.AppLock
+import io.github.lucabarbalata.anprox.model.alerts.AlertSettings
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
@@ -28,6 +29,8 @@ data class AppSettings(
     val confirmDangerous: Boolean = true,
     /** Guests pinned to the dashboard, as [favouriteKey]s. */
     val favourites: Set<String> = emptySet(),
+    /** Background alerts (questionnaire Q26/Q27). */
+    val alerts: AlertSettings = AlertSettings(),
 )
 
 /** Identifies a guest independently of its node, so a favourite survives migrations. */
@@ -42,6 +45,7 @@ class SettingsRepository(context: Context) {
     private val lockAfterKey = longPreferencesKey("lock_after_ms")
     private val confirmDangerousKey = booleanPreferencesKey("confirm_dangerous")
     private val favouritesKey = stringSetPreferencesKey("favourite_guests")
+    private val alertsKey = stringPreferencesKey("alert_settings")
 
     val settings: Flow<AppSettings> = store.data
         .catch { e -> if (e is IOException) emit(emptyPreferences()) else throw e }
@@ -54,6 +58,7 @@ class SettingsRepository(context: Context) {
                 lockAfterMillis = prefs[lockAfterKey] ?: AppLock.DEFAULT_LOCK_AFTER_MILLIS,
                 confirmDangerous = prefs[confirmDangerousKey] ?: true,
                 favourites = prefs[favouritesKey].orEmpty(),
+                alerts = prefs[alertsKey]?.let { runCatching { StorageJson.decodeFromString<AlertSettings>(it) }.getOrNull() } ?: AlertSettings(),
             )
         }
 
@@ -63,6 +68,8 @@ class SettingsRepository(context: Context) {
     suspend fun setAppLock(enabled: Boolean) = store.edit { it[appLockKey] = enabled }
     suspend fun setLockAfter(millis: Long) = store.edit { it[lockAfterKey] = millis }
     suspend fun setConfirmDangerous(enabled: Boolean) = store.edit { it[confirmDangerousKey] = enabled }
+
+    suspend fun setAlerts(alerts: AlertSettings) = store.edit { it[alertsKey] = StorageJson.encodeToString(alerts) }
 
     suspend fun setFavourite(key: String, favourite: Boolean) = store.edit {
         val current = it[favouritesKey].orEmpty()

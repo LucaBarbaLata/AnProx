@@ -54,6 +54,8 @@ data class Observation(
     val storages: Map<String, Double> = emptyMap(),
     /** Tasks that have ended, most recent first; the engine keeps those after the last check. */
     val tasks: List<FinishedTask> = emptyList(),
+    /** Guests with a task still running (a shutdown, a backup in stop mode): not "stopped" yet. */
+    val busyGuests: Set<Int> = emptySet(),
     /** `HEALTH_OK`, `HEALTH_WARN`, `HEALTH_ERR`, or null without Ceph. */
     val ceph: String? = null,
 )
@@ -69,6 +71,22 @@ data class AlertMemory(
     /** Threshold keys that are above their limit (`cpu:pve1`, `storage:pve1/local`). */
     val hot: Set<String> = emptySet(),
     val ceph: String? = null,
+    /**
+     * End time of the newest task seen, in the server's clock: the next check reports tasks that
+     * ended after it, so a phone clock that is off doesn't skip or repeat any.
+     */
+    val lastTaskEnd: Long? = null,
+)
+
+/** What the latest background check found, for the alert settings screen. */
+@Serializable
+data class AlertRun(
+    val atMillis: Long,
+    /** Servers that answered. */
+    val checked: Int,
+    val alerts: Int,
+    val unreachable: List<String> = emptyList(),
+    val signInNeeded: List<String> = emptyList(),
 )
 
 /** One thing to tell the user. [subject] is a node, guest, storage or task; [detail] is extra text. */
@@ -84,7 +102,7 @@ data class Alert(val kind: Kind, val subject: String, val detail: String? = null
  * only fetches, calls [evaluate] and shows notifications.
  *
  * - Down: a node that went offline, quorum that was lost, a running guest that stopped without
- *   a stop, shutdown, migration or destroy task for it since the last check.
+ *   a stop, shutdown, migration or destroy task for it since the last check (or one still running).
  * - Failures: tasks that ended with an error since the last check (backups separately).
  * - Thresholds: crossing a limit; it must drop [HYSTERESIS] points below before it can alert
  *   again. Ceph: a change to WARN or ERR.
@@ -101,7 +119,7 @@ object AlertEngine {
     fun evaluate(previous: AlertMemory?, now: Observation, settings: AlertSettings): Pair<List<Alert>, AlertMemory> {
         val alerts = ArrayList<Alert>()
         val offline = now.nodes.filterValues { !it }.keys
-        val sinceLast = previous?.time
+        val sinceLast = previous?.let { it.lastTaskEnd ?: it.time }
 
         if (settings.down) {
             offline.filter { previous == null || it !in previous.offlineNodes }.sorted()
@@ -109,8 +127,8 @@ object AlertEngine {
             if (now.quorate == false && (previous == null || previous.quorate != false)) {
                 alerts += Alert(Alert.Kind.QUORUM_LOST, "cluster")
             }
-            if (previous != null) {
-                val intended = now.tasks.filter { it.endtime >= previous.time && INTENTIONAL.matches(it.type) }.mapNotNull { it.id?.toIntOrNull() }.toSet()
+            if (previous != null && sinceLast != null) {
+                val intended = now.tasks.filter { it.endtime >= sinceLast && INTENTIONAL.matches(it.type) }.mapNotNull { it.id?.toIntOrNull() }.toSet() + now.busyGuests
                 previous.runningGuests.forEach { (vmid, name) ->
                     val stillThere = vmid in now.guestIds
                     val stopped = vmid !in now.runningGuests
@@ -167,6 +185,7 @@ object AlertEngine {
             quorate = now.quorate,
             hot = hot,
             ceph = now.ceph,
+            lastTaskEnd = now.tasks.maxOfOrNull { it.endtime } ?: previous?.lastTaskEnd,
         )
         return alerts to memory
     }

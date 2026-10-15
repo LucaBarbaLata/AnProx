@@ -87,6 +87,31 @@ was green without running them, and beta.2 shipped with those features tested on
 and by hand. They are in the list now. Lesson: when adding a step, check the step count in the CI
 log.
 
+**Tour on Android 14.** After tapping **Keyboard** in the container console, every UI dump
+failed with an empty message. uiautomator waits for the screen to be idle, and the focused
+terminal's blinking cursor keeps it busy; the first Back also only hid the keyboard. The dump
+helper now includes stderr (where newer Android writes the reason) and `leave_console()` presses
+Back until the console's top bar is gone, treating a failed dump as "still there". The bulk step
+checks the guest's row for **Running** instead of a snackbar.
+
+**M3: background alerts.** Built along the recipe:
+| Layer | What |
+|---|---|
+| Model | `AlertEngine.evaluate(previous, now, settings)`: pure, so the rules are JVM-tested. Nodes going offline, lost quorum, running guests that stopped with no stop/shutdown/migrate/destroy task (and none still running), failed tasks and backups since the last check, CPU/memory/storage limits with 5 points of hysteresis, Ceph health getting worse. New tasks are picked by the server's clock (`lastTaskEnd`), so a phone clock that is off doesn't skip or repeat any. The first check reports current problems but no old tasks. |
+| API | `GET /cluster/ceph/status` (a cluster without Ceph answers with an error, which means "no Ceph") |
+| Data | `AlertRepository`: one `Observation` per signed-in server from the dashboard snapshot, cluster tasks and Ceph (PBS: datastores and tasks), memory per server through `AlertMemoryStore`, memory older than 12 h ignored. A node counts as offline only when both `/cluster/status` and `/cluster/resources` say so. |
+| Mock | Ceph health switch, and test hooks for a guest crash and a just-failed task |
+| App | `AlertWorker` (WorkManager, every 15 min to 3 h, network required), `AlertScheduler`, `AlertNotifier` (four channels so each kind can be silenced in Android's settings; one notification per problem, replaced rather than repeated), `AlertStore` (DataStore), More → **Alerts** with **Check now** and the last check's summary; `POST_NOTIFICATIONS` is asked for when alerts are switched on |
+| Tests | +7 model, +5 against the mock PVE and PBS (155 JVM tests); a tour step switches alerts on, runs a check and finds the notification with `dumpsys notification` |
+
+A flaky test found a real race: `ServerHub.servers` is a `stateIn` flow, updated a moment after
+the profiles load or a login, so a worker in a freshly started process could see no servers.
+`ServerHub.serversNow()` reads the same list directly.
+
+Not alerted on purpose: a server that can't be reached. A phone that leaves the home network
+would otherwise notify every 15 minutes; the Alerts screen lists unreachable servers instead.
+A session that stops working is notified once ("Sign in to … again").
+
 ---
 
 ## 2026-10-14 — Session 3: M1 starts with snapshots

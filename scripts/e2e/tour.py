@@ -75,6 +75,11 @@ def labels(node):
 def matches(root, text, exact):
     found = []
     for n in root.iter("node"):
+        # Off-screen nodes can be listed with empty bounds (seen on Android 8 while a column
+        # scrolled); they can't be tapped, so they don't count as found.
+        x1, y1, x2, y2 = bounds(n)
+        if x2 <= x1 or y2 <= y1:
+            continue
         for value in labels(n):
             if (value == text) if exact else (text in value):
                 found.append(n)
@@ -646,6 +651,28 @@ def create_vm():
     back()                                 # to Resources
 
 
+def notifications():
+    """Posted notifications as text (--noredact shows titles instead of their lengths)."""
+    return adb("shell", "dumpsys", "notification", "--noredact", check=False)
+
+
+@step("Background alerts: switch on, check now, a notification about the offline node")
+def alerts():
+    if int(adb("shell", "getprop", "ro.build.version.sdk").strip() or 0) >= 33:
+        # Android 13+ would ask with a system dialog; the tour grants it up front instead.
+        adb("shell", "pm", "grant", PKG, "android.permission.POST_NOTIFICATIONS", check=False)
+    tap("More")
+    tap("Alerts")
+    find("No check has run yet.", timeout=15)
+    tap("Background alerts")
+    tap_node(scroll_to("Check now"))
+    # Both servers answer; the mock's offline node pve3 and two full storages are reported.
+    wait_until(lambda: visible("Servers checked: 2"), "the alert check to finish", timeout=90)
+    screenshot("13-alerts")
+    wait_until(lambda: "Node pve3 is offline" in notifications(), "the offline-node notification", timeout=30)
+    back()
+
+
 @step("Light theme, the app lock without a screen lock, favourites on the dashboard")
 def light_theme():
     tap("More")
@@ -682,7 +709,8 @@ def main():
     ok = False
     try:
         for s in (launch, add_pve, add_pbs, resources, performance, guest_start, snapshots, backups,
-                  options, hardware, console, vm_console, cloud_init, bulk, clone_migrate, tasks, create_vm, light_theme):
+                  options, hardware, console, vm_console, cloud_init, bulk, clone_migrate, tasks, create_vm, alerts,
+                  light_theme):
             s()
         ok = True
     finally:

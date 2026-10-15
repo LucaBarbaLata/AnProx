@@ -11,7 +11,7 @@ Status legend: ✅ done · 🚧 in progress · 🗓 planned
 | [M0](#m0--foundation) | Foundation: servers, login, dashboard, resources, power, tasks | ✅ released as **0.1.0-beta.1** (M1 work so far: **0.1.0-beta.2**) |
 | [M1](#m1--daily-driver) | Daily driver: app lock, SSO, snapshots, backups, charts, notifications | 🚧 snapshots, charts, app lock, backups, guest IPs, bulk actions, favourites done |
 | [M2](#m2--consoles--guest-configuration) | Consoles and guest configuration | 🚧 consoles, options, clone, templates, migration done |
-| [M3](#m3--alerts--android-integration) | Alerts and Android integration | 🗓 |
+| [M3](#m3--alerts--android-integration) | Alerts and Android integration | 🚧 |
 | [M4](#m4--datacenter) | Datacenter: storage, backup jobs, HA, replication, firewall | 🗓 |
 | [M5](#m5--node-administration) | Node administration | 🗓 |
 | [M6](#m6--ceph--sdn) | Ceph and SDN | 🗓 |
@@ -100,8 +100,10 @@ Everything marked ✅ in M1 and M2 below. Gates:
 - ✅ **Migration** (pulled into 0.1.0-beta.2): live for VMs (copying local disks), restart mode for containers, offline when stopped; uses Proxmox's pre-flight check.
 
 ## M3 — Alerts & Android integration
-- **Background polling** with WorkManager (Q26) for the alert types in Q27: node or guest down,
-  quorum lost, failed tasks and backups, CPU/RAM/storage thresholds, Ceph health.
+*Status: 🚧 in progress.*
+- ✅ **Background polling** with WorkManager (Q26) for the alert types in Q27: node or guest down,
+  quorum lost, failed tasks and backups, CPU/RAM/storage thresholds, Ceph health. More → Alerts:
+  interval (15 min to 3 h), kinds, limits, **Check now**, the last check's summary.
 - **Real-time push** (Q26): a setup guide for PVE notification webhooks → ntfy/Gotify →
   UnifiedPush, with no Google services.
 - **Home-screen widgets** (Glance): cluster health, favourite guests with power buttons, storage (Q28).

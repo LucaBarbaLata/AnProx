@@ -151,6 +151,7 @@ dependencies {
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.biometric)
     implementation(libs.androidx.fragment)
+    implementation(libs.androidx.work.runtime)
 
     implementation(platform(libs.koin.bom))
     implementation(libs.koin.android)

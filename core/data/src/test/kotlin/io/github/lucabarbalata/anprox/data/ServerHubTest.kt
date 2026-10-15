@@ -69,6 +69,8 @@ class ServerHubTest {
 
         assertIs<LoginResult.Success>(hub.login("pve", "anprox", remember = false))
         assertEquals(AuthState.LOGGED_IN, hub.server("pve")!!.auth)
+        // Right away, without waiting for the `servers` flow to catch up.
+        assertEquals(AuthState.LOGGED_IN, hub.serversNow().single().auth)
         withTimeout(2_000) { while (secrets.session("pve") == null) kotlinx.coroutines.delay(10) }
         assertEquals(null, secrets.password("pve"))
 

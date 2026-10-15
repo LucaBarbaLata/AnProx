@@ -13,6 +13,7 @@ import kotlinx.serialization.json.Json
 internal val Context.profilesDataStore: DataStore<Preferences> by preferencesDataStore(name = "profiles")
 internal val Context.secretsDataStore: DataStore<Preferences> by preferencesDataStore(name = "secrets")
 internal val Context.settingsDataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
+internal val Context.alertsDataStore: DataStore<Preferences> by preferencesDataStore(name = "alerts")
 
 /**
  * JSON used for on-device storage. Unlike the API's ProxmoxJson it writes default values, so

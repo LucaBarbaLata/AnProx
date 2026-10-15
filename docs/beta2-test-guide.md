@@ -129,6 +129,19 @@ Hardware → Display → SPICE in the web UI).
 3. If you connect through a reverse proxy or a VPN address, port 3128 on that address must be
    reachable (Proxmox's SPICE proxy); say whether it worked.
 
+### D6. Background alerts (More → Alerts), new after beta.2
+1. Switch on **Background alerts**. On Android 13+ the phone asks to allow notifications: allow.
+2. **Check now** → after a few seconds "Servers checked: N". If something is already wrong
+   (a node offline, storage above 85 %) a notification arrives right away. A second **Check now**
+   adds nothing new.
+3. Stop a test VM *from inside the VM* (`poweroff`), then **Check now** → "test-vm (ID) stopped".
+   Stop it from the app or the web UI instead → no notification.
+4. Start a task that fails (for example start a VM with a missing ISO) → **Check now** → "Failed: VM start …".
+5. Set the storage limit just under a storage's current use → **Check now** → "… is N% full".
+6. Leave alerts on overnight with the app closed: say whether checks kept running (the time of
+   the last check) and whether anything was notified twice. Some phones stop background work
+   for apps with battery optimisation; say which phone you have.
+
 ### E. Snapshots (Tools → Snapshots)
 1. **Take snapshot** on the running test VM with **Include RAM** → "VM snapshot finished"; it
    appears in the tree with a RAM badge.

@@ -64,12 +64,19 @@ class ServerHub(
 
     /** Saved servers in display order, with their auth state. */
     val servers: StateFlow<List<ServerState>> = runtimes
-        .map { map ->
-            map.values
-                .sortedWith(compareBy({ it.profile.sortOrder }, { it.profile.name.lowercase() }))
-                .map { ServerState(it.profile, it.auth) }
-        }
+        .map { states(it) }
         .stateIn(scope, SharingStarted.Eagerly, emptyList())
+
+    /**
+     * The same list as [servers], read directly. [servers] is updated on [scope] a moment after
+     * a change, so code that runs right after [awaitLoaded] or a login (a background worker in a
+     * freshly started process) uses this instead.
+     */
+    fun serversNow(): List<ServerState> = states(runtimes.value)
+
+    private fun states(map: Map<String, Runtime>): List<ServerState> = map.values
+        .sortedWith(compareBy({ it.profile.sortOrder }, { it.profile.name.lowercase() }))
+        .map { ServerState(it.profile, it.auth) }
 
     init {
         scope.launch {

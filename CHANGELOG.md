@@ -36,6 +36,13 @@ All notable changes to AnProx are documented here. The format follows
   the VM in aSPICE or another app that opens `.vv` files, through the address the app already
   uses.
 
+- **Background alerts** (More → Alerts), checked every 15 minutes to 3 hours while the app is
+  closed: a node going offline, a cluster losing quorum, a guest that stopped without anyone
+  stopping it, failed tasks and backups, CPU, memory or storage above your limits, and Ceph
+  warnings or errors. Each problem is notified once, on its own Android notification channel.
+  **Check now** runs a check right away; the screen shows what the last one found and which
+  servers couldn't be reached.
+
 ### Changed
 - The bulk-action summary on the Resources list stays on screen longer.
 

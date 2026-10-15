@@ -6,6 +6,8 @@ import android.net.Network
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.ProcessLifecycleOwner
+import io.github.lucabarbalata.anprox.alerts.AlertNotifier
+import io.github.lucabarbalata.anprox.alerts.AlertScheduler
 import io.github.lucabarbalata.anprox.data.hub.ServerHub
 import io.github.lucabarbalata.anprox.data.security.AppLock
 import io.github.lucabarbalata.anprox.di.appModule
@@ -35,6 +37,20 @@ class AnProxApplication : Application() {
         crashReporter.install()
         watchNetwork()
         watchAppLock()
+        watchAlerts()
+    }
+
+    /** Keeps the background checks (questionnaire Q26) in step with the alert settings. */
+    private fun watchAlerts() {
+        get<AlertNotifier>().createChannels()
+        val scheduler: AlertScheduler = get()
+        val settings: SettingsRepository = get()
+        get<CoroutineScope>(named("appScope")).launch {
+            settings.settings
+                .map { it.alerts }
+                .distinctUntilChanged()
+                .collect { scheduler.apply(it) }
+        }
     }
 
     /**
