@@ -12,7 +12,7 @@ Status legend: ✅ done · 🚧 in progress · 🗓 planned
 | [M1](#m1--daily-driver) | Daily driver: app lock, SSO, snapshots, backups, charts, notifications | 🚧 snapshots, charts, app lock, backups, guest IPs, bulk actions, favourites done |
 | [M2](#m2--consoles--guest-configuration) | Consoles and guest configuration | 🚧 all but the built-in SSH client |
 | [M3](#m3--alerts--android-integration) | Alerts and Android integration | ✅ (beta.3 candidate) |
-| [M4](#m4--datacenter) | Datacenter: storage, backup jobs, HA, replication, firewall | 🚧 all but editing HA groups/rules and maintenance mode |
+| [M4](#m4--datacenter) | Datacenter: storage, backup jobs, HA, replication, firewall | ✅ (beta.3 candidate) |
 | [M5](#m5--node-administration) | Node administration | ✅ (beta.3 candidate) |
 | [M6](#m6--ceph--sdn) | Ceph and SDN | 🗓 |
 | [M7](#m7--access-control) | Users, groups, roles, ACLs, realms, tokens, TFA | 🗓 |
@@ -115,7 +115,7 @@ Everything marked ✅ in M1 and M2 below. Gates:
 - ✅ **Quick Settings tile** (Q28): the last check at a glance; opens the dashboard.
 
 ## M4 — Datacenter
-*Status: 🚧 nearly done: everything below except editing HA groups/rules and node maintenance mode.* Dashboard → a cluster's **Datacenter** button.
+*Status: ✅ done.* Dashboard → a cluster's **Datacenter** button.
 - ✅ **Backup jobs** (Q20): list with next run, enable/disable, run now, create/edit/delete
   (schedule presets or any calendar event with Proxmox's preview of the next runs, storage,
   node, all/selected/all-but/pool, mode, compression, retention, notes template, comment), and
@@ -133,8 +133,10 @@ Everything marked ✅ in M1 and M2 below. Gates:
   node's status and quorum; add a guest, set its requested state (started, stopped, disabled,
   ignored), group, restart and relocate limits and comment; move it to another node through the
   HA manager; remove it.
-- **High availability, the rest** (Q21): editing groups (PVE 8) and node affinity rules
-  (PVE 9), node maintenance mode.
+- ✅ **High availability, the rest** (Q21): groups (PVE 8: nodes with priorities, restricted, no
+  failback) and rules (PVE 9: prefer nodes, keep guests together or apart). Node maintenance
+  mode has no API in PVE 8; run `ha-manager crm-command node-maintenance enable <node>` in the
+  node's shell.
 - ✅ **Storage replication** (Q21, Datacenter → Replication): every job with its state (in
   sync, failed with the error, never run, off), last and next sync; add (guest, target node,
   schedule presets or any calendar event, rate limit, comment), edit, switch off, run now, the

@@ -44,4 +44,29 @@ class HighAvailabilityTest {
         )
         assertEquals(false, HaResourceForm(maxRestart = 11).valid)
     }
+
+    @Test
+    fun `node priorities, groups and rules`() {
+        assertEquals(mapOf("pve1" to 2, "pve2" to null), io.github.lucabarbalata.anprox.model.pve.NodePriorities.parse("pve1:2, pve2"))
+        assertEquals("pve1:2,pve2", io.github.lucabarbalata.anprox.model.pve.NodePriorities.format(mapOf("pve2" to null, "pve1" to 2)))
+        val group = io.github.lucabarbalata.anprox.model.pve.HaGroupForm("web", mapOf("pve1" to 1))
+        assertEquals(mapOf("group" to "web", "type" to "group", "nodes" to "pve1:1", "restricted" to "0", "nofailback" to "0"), group.createParams())
+        assertEquals(false, group.copy(nodes = emptyMap()).valid)
+
+        val rule = io.github.lucabarbalata.anprox.model.pve.HaRuleForm("keep-apart", io.github.lucabarbalata.anprox.model.pve.HaRuleForm.RESOURCE_AFFINITY, setOf("vm:101", "vm:100"), together = false)
+        assertEquals(
+            mapOf("rule" to "keep-apart", "type" to "resource-affinity", "resources" to "vm:100,vm:101", "affinity" to "negative", "disable" to "0"),
+            rule.createParams(),
+        )
+        assertEquals(false, rule.copy(resources = setOf("vm:100")).valid)
+        val parsed = ProxmoxJson.decodeFromString<ApiEnvelope<List<io.github.lucabarbalata.anprox.model.pve.HaRule>>>(
+            """{"data":[{"rule":"db-on-pve1","type":"node-affinity","resources":"vm:101","nodes":"pve1:2,pve2","strict":1,"digest":"r1"}]}""",
+        ).data!!.single()
+        val form = io.github.lucabarbalata.anprox.model.pve.HaRuleForm.from(parsed)
+        assertEquals(mapOf("pve1" to 2, "pve2" to null), form.nodes)
+        assertEquals(
+            mapOf("type" to "node-affinity", "resources" to "vm:101", "nodes" to "pve1:2,pve2", "strict" to "1", "disable" to "0", "digest" to "r1"),
+            form.updateParams(parsed),
+        )
+    }
 }

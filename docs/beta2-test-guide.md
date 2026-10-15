@@ -220,6 +220,10 @@ Needs a cluster. With a single node the screen shows the status and an empty lis
    web UI shows the same settings.
 4. **Move to another node** → pick a node → the guest moves (follow it in Tasks or the web UI).
 5. **Remove from HA** → confirm → gone from the list; the guest itself is unchanged.
+6. On PVE 8: **Add group** with two nodes and priorities → compare with the web UI's HA →
+   Groups; edit, then delete it. On PVE 9 the Groups section is replaced by **Rules**: add a
+   "Prefer nodes" rule and a "Keep apart" rule, compare with HA → Affinity Rules (written
+   from the documentation, so please check carefully).
 
 ### D11. Replication (Datacenter → Replication), new after beta.2
 Needs two nodes and a guest whose disks are on local ZFS storage that exists on both.

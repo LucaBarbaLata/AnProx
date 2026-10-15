@@ -12,7 +12,50 @@ internal class MockHa(guests: List<MockState.Guest>) {
     private val resources = LinkedHashMap<String, LinkedHashMap<String, String>>()
     private var version = 1
 
-    val groups = listOf(HaGroup("prefer-pve1", "pve1:2,pve2:1", "Run on pve1 when it is up"))
+    private val groupMap = linkedMapOf(
+        "prefer-pve1" to linkedMapOf("nodes" to "pve1:2,pve2:1", "comment" to "Run on pve1 when it is up"),
+    )
+    private var groupVersion = 1
+
+    /** Groups as Proxmox VE 8 has them (the mock answers like 8: no rules). */
+    val groups: List<HaGroup>
+        get() = groupMap.map { (g, o) ->
+            HaGroup(g, o["nodes"], o["comment"], restricted = o["restricted"] == "1", nofailback = o["nofailback"] == "1", digest = "grp%04d".format(groupVersion))
+        }
+
+    fun createGroup(p: Map<String, String>, nodeExists: (String) -> Boolean): String? {
+        val name = p["group"].orEmpty()
+        if (!Regex("^[A-Za-z][A-Za-z0-9\\-_.]*[A-Za-z0-9]$").matches(name)) return "group: invalid format"
+        if (name in groupMap) return "ha group '$name' already defined"
+        checkNodes(p["nodes"], nodeExists)?.let { return it }
+        groupMap[name] = LinkedHashMap(p.filterKeys { it != "group" && it != "type" })
+        groupVersion++
+        return null
+    }
+
+    fun updateGroup(name: String, p: Map<String, String>, nodeExists: (String) -> Boolean): String? {
+        val o = groupMap[name] ?: return "no such ha group '$name'"
+        p["digest"]?.let { if (it != "grp%04d".format(groupVersion)) return "detected modified configuration - file changed by other user? Try again." }
+        p["nodes"]?.let { checkNodes(it, nodeExists)?.let { e -> return e } }
+        p.filterKeys { it != "delete" && it != "digest" }.forEach { (k, v) -> o[k] = v }
+        p["delete"].orEmpty().split(',').filter { it.isNotBlank() }.forEach { o.remove(it) }
+        groupVersion++
+        return null
+    }
+
+    fun deleteGroup(name: String): String? {
+        if (resources.values.any { it["group"] == name }) return "ha group '$name' is used by a resource"
+        groupMap.remove(name) ?: return "no such ha group '$name'"
+        groupVersion++
+        return null
+    }
+
+    private fun checkNodes(nodes: String?, nodeExists: (String) -> Boolean): String? {
+        val list = nodes.orEmpty().split(',').map { it.substringBefore(':').trim() }.filter { it.isNotEmpty() }
+        if (list.isEmpty()) return "nodes: property is missing and it is not optional"
+        list.firstOrNull { !nodeExists(it) }?.let { return "no such node '$it'" }
+        return null
+    }
 
     init {
         guests.filter { it.ha }.forEach { g ->

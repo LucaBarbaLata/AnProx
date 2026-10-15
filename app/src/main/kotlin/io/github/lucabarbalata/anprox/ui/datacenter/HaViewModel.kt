@@ -7,8 +7,11 @@ import io.github.lucabarbalata.anprox.data.datacenter.HaRepository
 import io.github.lucabarbalata.anprox.model.pve.ClusterResource
 import io.github.lucabarbalata.anprox.model.pve.GuestType
 import io.github.lucabarbalata.anprox.model.pve.HaGroup
+import io.github.lucabarbalata.anprox.model.pve.HaGroupForm
 import io.github.lucabarbalata.anprox.model.pve.HaResource
 import io.github.lucabarbalata.anprox.model.pve.HaResourceForm
+import io.github.lucabarbalata.anprox.model.pve.HaRule
+import io.github.lucabarbalata.anprox.model.pve.HaRuleForm
 import io.github.lucabarbalata.anprox.model.pve.HaStatusEntry
 import io.github.lucabarbalata.anprox.model.pve.ResourceType
 import io.github.lucabarbalata.anprox.network.ApiException
@@ -26,16 +29,29 @@ import kotlinx.coroutines.launch
 /** The dialog for a resource: adding one ([resource] null, [sid] picked in the dialog) or editing it. */
 data class HaEdit(val resource: HaResource?, val sid: String?, val form: HaResourceForm, val migrateTo: String? = null)
 
+/** A group (Proxmox VE 8) being added ([group] null) or edited. */
+data class HaGroupEdit(val group: HaGroup?, val form: HaGroupForm)
+
+/** A rule (Proxmox VE 9) being added ([rule] null) or edited. */
+data class HaRuleEdit(val rule: HaRule?, val form: HaRuleForm)
+
 data class HaUiState(
     val loading: Boolean = true,
     val error: UiText? = null,
     val status: List<HaStatusEntry> = emptyList(),
     val resources: List<HaResource> = emptyList(),
     val groups: List<HaGroup> = emptyList(),
+    /** False on Proxmox VE 9, which replaced groups with rules. */
+    val groupsSupported: Boolean = false,
+    /** Null before Proxmox VE 9. */
+    val rules: List<HaRule>? = null,
+    val editingGroup: HaGroupEdit? = null,
+    val editingRule: HaRuleEdit? = null,
     /** Guests (no templates), to name resources and offer new ones. */
     val guests: List<ClusterResource> = emptyList(),
     val onlineNodes: List<String> = emptyList(),
     val editing: HaEdit? = null,
+    val allNodes: List<String> = emptyList(),
     val confirmRemove: HaResource? = null,
     val busy: Boolean = false,
     val result: TaskResult? = null,
@@ -67,17 +83,22 @@ class HaViewModel(
                     val statusCall = async { repo.status(serverId) }
                     val resourcesCall = async { repo.resources(serverId) }
                     val groupsCall = async { repo.groups(serverId) }
+                    val rulesCall = async { repo.rules(serverId) }
                     val allCall = async { repo.clusterResources(serverId) }
                     val status = statusCall.await()
                     val resources = resourcesCall.await()
                     val groups = groupsCall.await()
+                    val rules = rulesCall.await()
                     val all = allCall.await()
                     ui.update {
                         it.copy(
                             loading = false,
                             status = status,
                             resources = resources,
-                            groups = groups,
+                            groups = groups.orEmpty(),
+                            groupsSupported = groups != null,
+                            rules = rules,
+                            allNodes = all.filter { r -> r.resourceType == ResourceType.NODE }.mapNotNull { r -> r.node }.sorted(),
                             guests = all.filter { r -> r.isGuest && !r.template && r.vmid != null }.sortedBy { r -> r.vmid },
                             onlineNodes = all.filter { r -> r.resourceType == ResourceType.NODE && r.status == "online" }.mapNotNull { r -> r.node }.sorted(),
                         )
@@ -138,6 +159,74 @@ class HaViewModel(
         val resource = ui.value.confirmRemove ?: return
         ui.update { it.copy(confirmRemove = null) }
         run(UiText.res(R.string.ha_removed)) { repo.remove(serverId, resource) }
+    }
+
+    // ------------------------------------------------------------------ groups (Proxmox VE 8)
+
+    fun addGroup() {
+        ui.update { it.copy(editingGroup = HaGroupEdit(null, HaGroupForm())) }
+    }
+
+    fun editGroup(group: HaGroup) {
+        ui.update { it.copy(editingGroup = HaGroupEdit(group, HaGroupForm.from(group))) }
+    }
+
+    fun editGroupForm(change: HaGroupForm.() -> HaGroupForm) {
+        ui.update { s -> s.copy(editingGroup = s.editingGroup?.let { it.copy(form = it.form.change()) }) }
+    }
+
+    fun closeGroup() {
+        ui.update { it.copy(editingGroup = null) }
+    }
+
+    fun saveGroup() {
+        val edit = ui.value.editingGroup ?: return
+        if (!edit.form.valid) return
+        ui.update { it.copy(editingGroup = null) }
+        val group = edit.group
+        run(UiText.res(R.string.ha_group_saved)) {
+            if (group == null) repo.createGroup(serverId, edit.form) else repo.updateGroup(serverId, group, edit.form)
+        }
+    }
+
+    fun deleteGroup() {
+        val group = ui.value.editingGroup?.group ?: return
+        ui.update { it.copy(editingGroup = null) }
+        run(UiText.res(R.string.ha_group_deleted)) { repo.deleteGroup(serverId, group) }
+    }
+
+    // ------------------------------------------------------------------ rules (Proxmox VE 9)
+
+    fun addRule() {
+        ui.update { it.copy(editingRule = HaRuleEdit(null, HaRuleForm())) }
+    }
+
+    fun editRule(rule: HaRule) {
+        ui.update { it.copy(editingRule = HaRuleEdit(rule, HaRuleForm.from(rule))) }
+    }
+
+    fun editRuleForm(change: HaRuleForm.() -> HaRuleForm) {
+        ui.update { s -> s.copy(editingRule = s.editingRule?.let { it.copy(form = it.form.change()) }) }
+    }
+
+    fun closeRule() {
+        ui.update { it.copy(editingRule = null) }
+    }
+
+    fun saveRule() {
+        val edit = ui.value.editingRule ?: return
+        if (!edit.form.valid) return
+        ui.update { it.copy(editingRule = null) }
+        val rule = edit.rule
+        run(UiText.res(R.string.ha_rule_saved)) {
+            if (rule == null) repo.createRule(serverId, edit.form) else repo.updateRule(serverId, rule, edit.form)
+        }
+    }
+
+    fun deleteRule() {
+        val rule = ui.value.editingRule?.rule ?: return
+        ui.update { it.copy(editingRule = null) }
+        run(UiText.res(R.string.ha_rule_deleted)) { repo.deleteRule(serverId, rule) }
     }
 
     fun consumeResult() {

@@ -3,8 +3,11 @@ package io.github.lucabarbalata.anprox.data.datacenter
 import io.github.lucabarbalata.anprox.data.hub.ServerHub
 import io.github.lucabarbalata.anprox.model.pve.ClusterResource
 import io.github.lucabarbalata.anprox.model.pve.HaGroup
+import io.github.lucabarbalata.anprox.model.pve.HaGroupForm
 import io.github.lucabarbalata.anprox.model.pve.HaResource
 import io.github.lucabarbalata.anprox.model.pve.HaResourceForm
+import io.github.lucabarbalata.anprox.model.pve.HaRule
+import io.github.lucabarbalata.anprox.model.pve.HaRuleForm
 import io.github.lucabarbalata.anprox.model.pve.HaState
 import io.github.lucabarbalata.anprox.model.pve.HaStatusEntry
 import io.github.lucabarbalata.anprox.network.ApiException
@@ -23,11 +26,42 @@ class HaRepository(private val hub: ServerHub) {
     /** Guests and nodes, to name resources and offer guests and migration targets. */
     suspend fun clusterResources(serverId: String): List<ClusterResource> = hub.use(serverId) { it.pve { clusterResources(null) } }
 
-    /** Groups exist on Proxmox VE 8; on a version without them the list is empty. */
-    suspend fun groups(serverId: String): List<HaGroup> = try {
+    /** Groups exist on Proxmox VE 8; null on a version without them. */
+    suspend fun groups(serverId: String): List<HaGroup>? = try {
         hub.use(serverId) { it.pve { haGroups() } }.sortedBy { it.group }
     } catch (_: ApiException) {
-        emptyList()
+        null
+    }
+
+    /** Rules exist from Proxmox VE 9; null on older versions. */
+    suspend fun rules(serverId: String): List<HaRule>? = try {
+        hub.use(serverId) { it.pve { haRules() } }.sortedBy { it.rule }
+    } catch (_: ApiException) {
+        null
+    }
+
+    suspend fun createGroup(serverId: String, form: HaGroupForm) {
+        hub.use(serverId) { it.pveNoData { createHaGroup(form.createParams()) } }
+    }
+
+    suspend fun updateGroup(serverId: String, group: HaGroup, form: HaGroupForm) {
+        hub.use(serverId) { it.pveNoData { updateHaGroup(group.group, form.updateParams(group)) } }
+    }
+
+    suspend fun deleteGroup(serverId: String, group: HaGroup) {
+        hub.use(serverId) { it.pveNoData { deleteHaGroup(group.group) } }
+    }
+
+    suspend fun createRule(serverId: String, form: HaRuleForm) {
+        hub.use(serverId) { it.pveNoData { createHaRule(form.createParams()) } }
+    }
+
+    suspend fun updateRule(serverId: String, rule: HaRule, form: HaRuleForm) {
+        hub.use(serverId) { it.pveNoData { updateHaRule(rule.rule, form.updateParams(rule)) } }
+    }
+
+    suspend fun deleteRule(serverId: String, rule: HaRule) {
+        hub.use(serverId) { it.pveNoData { deleteHaRule(rule.rule) } }
     }
 
     suspend fun add(serverId: String, sid: String, form: HaResourceForm) {

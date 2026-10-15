@@ -44,7 +44,9 @@ Code: `core/network/src/main/kotlin/.../network/api/` (`AccessApi`, `PveApi`, `P
 | `GET /nodes/{node}/replication`, `POST …/{id}/schedule_now`, `GET …/{id}/log` | Last and next sync, failures, run now, last run's log | ✅ |
 | `/cluster/ha/resources` (list, add, edit, remove), `POST …/{sid}/migrate` | Guests managed by HA, requested state, limits, moving | ✅ |
 | `GET /cluster/ha/groups`, `GET /cluster/ha/status/current` | Groups (Proxmox VE 8) to pick from, manager and node status | ✅ |
-| `/cluster/ha/groups` (editing), `/cluster/ha/rules` (Proxmox VE 9) | Node affinity | 🗓 M4 |
+| `POST/PUT/DELETE /cluster/ha/groups` | HA groups (Proxmox VE 8): nodes with priorities, restricted, no failback | ✅ |
+| `/cluster/ha/rules` (list, add, edit, delete) | HA rules (Proxmox VE 9): node affinity and resource affinity | ✅ (written from the 9.0 docs, to confirm on hardware) |
+| Node maintenance mode | `ha-manager crm-command node-maintenance` | 🗓 (no API in Proxmox VE 8; use the node's shell) |
 | `/cluster/firewall/rules`, `/cluster/firewall/options` | Datacenter firewall rules (add, edit, enable, move, delete) and options | ✅ |
 | `GET /cluster/firewall/macros`, `GET /cluster/firewall/groups` | Macros and security groups for the rule editor | ✅ |
 | `POST/DELETE /cluster/firewall/groups`, `/cluster/firewall/groups/{group}` (rules, as for other firewalls) | Security groups and their rules | ✅ |

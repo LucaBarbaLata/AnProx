@@ -10,6 +10,7 @@ import io.github.lucabarbalata.anprox.model.profile.Endpoint
 import io.github.lucabarbalata.anprox.model.profile.ServerProfile
 import io.github.lucabarbalata.anprox.model.pve.GuestType
 import io.github.lucabarbalata.anprox.model.pve.HaResource
+import io.github.lucabarbalata.anprox.model.pve.HaGroupForm
 import io.github.lucabarbalata.anprox.model.pve.HaResourceForm
 import io.github.lucabarbalata.anprox.model.pve.HaState
 import io.github.lucabarbalata.anprox.network.ApiException
@@ -22,6 +23,7 @@ import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertTrue
 
 /** High availability against the mock (questionnaire Q21). */
 class HaTest {
@@ -50,7 +52,7 @@ class HaTest {
         val ha = HaRepository(hub())
         assertEquals(listOf("vm:100", "vm:101"), ha.resources("pve").map { it.sid })
         assertEquals("prefer-pve1", ha.resources("pve").first().group)
-        assertEquals(listOf("prefer-pve1"), ha.groups("pve").map { it.group })
+        assertEquals(listOf("prefer-pve1"), ha.groups("pve")!!.map { it.group })
         val status = ha.status("pve")
         assertEquals("OK", status.first { it.type == "quorum" }.status)
         assertEquals(listOf("lrm:pve1", "lrm:pve2", "lrm:pve3"), status.filter { it.type == "lrm" }.map { it.id })
@@ -81,6 +83,25 @@ class HaTest {
 
         ha.remove("pve", ha.resources("pve").first { it.sid == sid })
         assertEquals(listOf("vm:100", "vm:101"), ha.resources("pve").map { it.sid })
+        Unit
+    }
+
+    @Test
+    fun `groups can be added, edited and deleted, rules need Proxmox VE 9`() = runBlocking {
+        val ha = HaRepository(hub())
+        assertEquals(null, ha.rules("pve"))
+        ha.createGroup("pve", HaGroupForm("pve2-first", mapOf("pve2" to 2, "pve1" to null), restricted = true))
+        val group = ha.groups("pve")!!.single { it.group == "pve2-first" }
+        assertEquals("pve1,pve2:2", group.nodes)
+        assertTrue(group.restricted)
+        ha.updateGroup("pve", group, HaGroupForm.from(group).copy(nofailback = true, comment = "Prefer pve2"))
+        val edited = ha.groups("pve")!!.single { it.group == "pve2-first" }
+        assertTrue(edited.nofailback)
+        assertEquals("Prefer pve2", edited.comment)
+        // A group a resource uses can't go.
+        assertFailsWith<ApiException> { ha.deleteGroup("pve", ha.groups("pve")!!.single { it.group == "prefer-pve1" }) }
+        ha.deleteGroup("pve", edited)
+        assertEquals(listOf("prefer-pve1"), ha.groups("pve")!!.map { it.group })
         Unit
     }
 }

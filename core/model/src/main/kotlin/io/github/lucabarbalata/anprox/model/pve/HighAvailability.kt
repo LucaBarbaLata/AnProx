@@ -51,7 +51,139 @@ data class HaGroup(
     /** `pve1:2,pve2` (node with optional priority). */
     val nodes: String? = null,
     val comment: String? = null,
+    /** Guests may only run on the group's nodes. */
+    @Serializable(with = io.github.lucabarbalata.anprox.model.json.PveBooleanSerializer::class)
+    val restricted: Boolean = false,
+    /** Don't move guests back when a higher-priority node returns. */
+    @Serializable(with = io.github.lucabarbalata.anprox.model.json.PveBooleanSerializer::class)
+    val nofailback: Boolean = false,
+    val digest: String? = null,
 )
+
+/** Nodes with optional priorities, as Proxmox writes them: `pve1:2,pve2`. Higher runs first. */
+object NodePriorities {
+    fun parse(text: String?): Map<String, Int?> = text.orEmpty().split(',').map { it.trim() }.filter { it.isNotEmpty() }
+        .associate { entry -> entry.substringBefore(':') to entry.substringAfter(':', "").toIntOrNull() }
+
+    fun format(nodes: Map<String, Int?>): String = nodes.entries.sortedBy { it.key }.joinToString(",") { (n, p) -> if (p != null) "$n:$p" else n }
+}
+
+/** Adding or editing an HA group (Proxmox VE 8). */
+data class HaGroupForm(
+    val name: String = "",
+    val nodes: Map<String, Int?> = emptyMap(),
+    val restricted: Boolean = false,
+    val nofailback: Boolean = false,
+    val comment: String = "",
+) {
+    val valid: Boolean get() = NAME.matches(name.trim()) && nodes.isNotEmpty() && nodes.values.all { it == null || it in 0..1000 }
+
+    fun createParams(): Map<String, String> = buildMap {
+        put("group", name.trim())
+        put("type", "group")
+        putAll(values())
+    }
+
+    fun updateParams(original: HaGroup): Map<String, String> = buildMap {
+        putAll(values())
+        if (comment.isBlank() && !original.comment.isNullOrBlank()) put("delete", "comment")
+        original.digest?.let { put("digest", it) }
+    }
+
+    private fun values(): Map<String, String> = buildMap {
+        put("nodes", NodePriorities.format(nodes))
+        put("restricted", if (restricted) "1" else "0")
+        put("nofailback", if (nofailback) "1" else "0")
+        comment.trim().takeIf { it.isNotEmpty() }?.let { put("comment", it) }
+    }
+
+    companion object {
+        private val NAME = Regex("^[A-Za-z][A-Za-z0-9\\-_.]*[A-Za-z0-9]$")
+
+        fun from(g: HaGroup) = HaGroupForm(g.group, NodePriorities.parse(g.nodes), g.restricted, g.nofailback, g.comment.orEmpty())
+    }
+}
+
+/**
+ * One row of `GET /cluster/ha/rules` (Proxmox VE 9): a `node-affinity` rule keeps guests on some
+ * nodes (like a group did), a `resource-affinity` rule keeps guests together or apart.
+ */
+@Serializable
+data class HaRule(
+    val rule: String,
+    val type: String = "node-affinity",
+    /** `vm:100,ct:101`. */
+    val resources: String? = null,
+    /** Node affinity: `pve1:2,pve2`. */
+    val nodes: String? = null,
+    @Serializable(with = io.github.lucabarbalata.anprox.model.json.PveBooleanSerializer::class)
+    val strict: Boolean = false,
+    /** Resource affinity: `positive` (together) or `negative` (apart). */
+    val affinity: String? = null,
+    val comment: String? = null,
+    @Serializable(with = io.github.lucabarbalata.anprox.model.json.PveBooleanSerializer::class)
+    val disable: Boolean = false,
+    val digest: String? = null,
+) {
+    val resourceList: List<String> get() = resources.orEmpty().split(',').map { it.trim() }.filter { it.isNotEmpty() }
+}
+
+/** Adding or editing an HA rule (Proxmox VE 9). */
+data class HaRuleForm(
+    val id: String = "",
+    val type: String = NODE_AFFINITY,
+    val resources: Set<String> = emptySet(),
+    val nodes: Map<String, Int?> = emptyMap(),
+    val strict: Boolean = false,
+    val together: Boolean = true,
+    val comment: String = "",
+    val enabled: Boolean = true,
+) {
+    val valid: Boolean get() = NAME.matches(id.trim()) && resources.isNotEmpty() &&
+        (if (type == NODE_AFFINITY) nodes.isNotEmpty() else resources.size >= 2)
+
+    fun createParams(): Map<String, String> = buildMap {
+        put("rule", id.trim())
+        put("type", type)
+        putAll(values())
+    }
+
+    fun updateParams(original: HaRule): Map<String, String> = buildMap {
+        put("type", type)
+        putAll(values())
+        if (comment.isBlank() && !original.comment.isNullOrBlank()) put("delete", "comment")
+        original.digest?.let { put("digest", it) }
+    }
+
+    private fun values(): Map<String, String> = buildMap {
+        put("resources", resources.sorted().joinToString(","))
+        if (type == NODE_AFFINITY) {
+            put("nodes", NodePriorities.format(nodes))
+            put("strict", if (strict) "1" else "0")
+        } else {
+            put("affinity", if (together) "positive" else "negative")
+        }
+        comment.trim().takeIf { it.isNotEmpty() }?.let { put("comment", it) }
+        put("disable", if (enabled) "0" else "1")
+    }
+
+    companion object {
+        const val NODE_AFFINITY = "node-affinity"
+        const val RESOURCE_AFFINITY = "resource-affinity"
+        private val NAME = Regex("^[A-Za-z][A-Za-z0-9\\-_.]*[A-Za-z0-9]$")
+
+        fun from(r: HaRule) = HaRuleForm(
+            id = r.rule,
+            type = r.type,
+            resources = r.resourceList.toSet(),
+            nodes = NodePriorities.parse(r.nodes),
+            strict = r.strict,
+            together = r.affinity != "negative",
+            comment = r.comment.orEmpty(),
+            enabled = !r.disable,
+        )
+    }
+}
 
 /** One row of `GET /cluster/ha/status/current`: quorum, the master, each node's LRM, each service. */
 @Serializable

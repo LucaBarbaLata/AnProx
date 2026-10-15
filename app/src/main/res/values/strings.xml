@@ -1214,6 +1214,37 @@
     <string name="ha_added">Guest added to HA</string>
     <string name="ha_saved">HA settings saved</string>
     <string name="ha_removed">Guest removed from HA</string>
+    <string name="ha_groups">Groups</string>
+    <string name="ha_groups_body">A group lists the nodes its guests prefer, with a priority each (higher first).</string>
+    <string name="ha_group_add">Add group</string>
+    <string name="ha_group_saved">Group saved</string>
+    <string name="ha_group_deleted">Group deleted</string>
+    <string name="ha_group_delete">Delete group</string>
+    <string name="ha_group_restricted">Restricted</string>
+    <string name="ha_group_restricted_body">Guests may only run on these nodes; if none is up, they stop.</string>
+    <string name="ha_group_nofailback">No failback</string>
+    <string name="ha_group_nofailback_body">Don\'t move guests back when a preferred node returns.</string>
+    <string name="ha_name">Name</string>
+    <string name="ha_nodes">Nodes</string>
+    <string name="ha_priority">Priority</string>
+    <string name="ha_rules">Rules</string>
+    <string name="ha_rules_body">Rules (Proxmox VE 9) keep guests on some nodes, or keep guests together or apart.</string>
+    <string name="ha_rule_add">Add rule</string>
+    <string name="ha_rule_saved">Rule saved</string>
+    <string name="ha_rule_deleted">Rule deleted</string>
+    <string name="ha_rule_delete">Delete rule</string>
+    <string name="ha_rule_type_nodes">Prefer nodes</string>
+    <string name="ha_rule_type_guests">Together or apart</string>
+    <string name="ha_rule_guests">Guests</string>
+    <string name="ha_rule_no_guests">Add guests to HA first.</string>
+    <string name="ha_rule_strict">Strict</string>
+    <string name="ha_rule_strict_body">Only these nodes; without it, other nodes are used when these are down.</string>
+    <string name="ha_rule_together">Keep together</string>
+    <string name="ha_rule_together_body">On: on the same node. Off: on different nodes.</string>
+    <string name="ha_rule_enabled">Enabled</string>
+    <string name="ha_rule_on_nodes">on %1$s</string>
+    <string name="ha_rule_apart">Keep apart</string>
+    <string name="ha_rule_off">off</string>
 
     <!-- Replication (Datacenter → Replication) -->
     <string name="replication_open_body">Guests\' local disks copied to another node on a schedule</string>

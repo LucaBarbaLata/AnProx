@@ -19,6 +19,7 @@ import io.github.lucabarbalata.anprox.model.pve.GuestSnapshot
 import io.github.lucabarbalata.anprox.model.pve.GuestStatus
 import io.github.lucabarbalata.anprox.model.pve.HaGroup
 import io.github.lucabarbalata.anprox.model.pve.HaResource
+import io.github.lucabarbalata.anprox.model.pve.HaRule
 import io.github.lucabarbalata.anprox.model.pve.HaStatusEntry
 import io.github.lucabarbalata.anprox.model.pve.IpSetEntry
 import io.github.lucabarbalata.anprox.model.pve.LvmThinPool
@@ -356,6 +357,32 @@ interface PveApi {
     /** Proxmox VE 8; version 9 replaced groups with rules and may answer with an error. */
     @GET("cluster/ha/groups")
     suspend fun haGroups(): ApiEnvelope<List<HaGroup>>
+
+    @FormUrlEncoded
+    @POST("cluster/ha/groups")
+    suspend fun createHaGroup(@FieldMap params: Map<String, String>): ApiEnvelope<JsonElement>
+
+    @FormUrlEncoded
+    @PUT("cluster/ha/groups/{group}")
+    suspend fun updateHaGroup(@Path("group") group: String, @FieldMap params: Map<String, String>): ApiEnvelope<JsonElement>
+
+    @DELETE("cluster/ha/groups/{group}")
+    suspend fun deleteHaGroup(@Path("group") group: String): ApiEnvelope<JsonElement>
+
+    /** Proxmox VE 9; older versions answer with an error. */
+    @GET("cluster/ha/rules")
+    suspend fun haRules(): ApiEnvelope<List<HaRule>>
+
+    @FormUrlEncoded
+    @POST("cluster/ha/rules")
+    suspend fun createHaRule(@FieldMap params: Map<String, String>): ApiEnvelope<JsonElement>
+
+    @FormUrlEncoded
+    @PUT("cluster/ha/rules/{rule}")
+    suspend fun updateHaRule(@Path("rule") rule: String, @FieldMap params: Map<String, String>): ApiEnvelope<JsonElement>
+
+    @DELETE("cluster/ha/rules/{rule}")
+    suspend fun deleteHaRule(@Path("rule") rule: String): ApiEnvelope<JsonElement>
 
     @GET("cluster/ha/status/current")
     suspend fun haStatus(): ApiEnvelope<List<HaStatusEntry>>

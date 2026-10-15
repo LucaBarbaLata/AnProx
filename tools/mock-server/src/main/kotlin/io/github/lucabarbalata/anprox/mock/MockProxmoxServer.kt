@@ -556,6 +556,31 @@ class MockProxmoxServer(
             val error = state.migrateHaResource(call.parameters["sid"]!!, call.receiveParameters()["node"].orEmpty())
             if (error != null) call.fail(400, error) else call.ok(JsonNull)
         }
+        post("cluster/ha/groups") {
+            val s = call.authed() ?: return@post
+            if (state.isReadOnly(s.user)) return@post call.fail(403, "Permission check failed (/, Sys.Console)")
+            val p = call.receiveParameters()
+            val error = state.createHaGroup(p.names().associateWith { p[it].orEmpty() })
+            if (error != null) call.fail(400, error) else call.ok(JsonNull)
+        }
+        put("cluster/ha/groups/{group}") {
+            val s = call.authed() ?: return@put
+            if (state.isReadOnly(s.user)) return@put call.fail(403, "Permission check failed (/, Sys.Console)")
+            val p = call.receiveParameters()
+            val error = state.updateHaGroup(call.parameters["group"]!!, p.names().associateWith { p[it].orEmpty() })
+            if (error != null) call.fail(400, error) else call.ok(JsonNull)
+        }
+        delete("cluster/ha/groups/{group}") {
+            val s = call.authed() ?: return@delete
+            if (state.isReadOnly(s.user)) return@delete call.fail(403, "Permission check failed (/, Sys.Console)")
+            val error = state.deleteHaGroup(call.parameters["group"]!!)
+            if (error != null) call.fail(400, error) else call.ok(JsonNull)
+        }
+        get("cluster/ha/rules") {
+            call.authed() ?: return@get
+            // Like Proxmox VE 8, which has groups instead.
+            call.fail(501, "Method 'GET /cluster/ha/rules' not implemented")
+        }
         get("cluster/ha/groups") {
             call.authed() ?: return@get
             call.ok(state.haGroups())

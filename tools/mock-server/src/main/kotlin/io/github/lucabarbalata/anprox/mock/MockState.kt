@@ -1076,7 +1076,10 @@ class MockState(
     private fun guestNode(vmid: Int): String? = guests.firstOrNull { it.vmid == vmid && !it.template }?.node
 
     fun haResources() = synchronized(lock) { haManager.list() }
-    fun haGroups() = haManager.groups
+    fun haGroups() = synchronized(lock) { haManager.groups }
+    fun createHaGroup(p: Map<String, String>) = synchronized(lock) { haManager.createGroup(p) { n -> nodes.any { it.name == n } } }
+    fun updateHaGroup(name: String, p: Map<String, String>) = synchronized(lock) { haManager.updateGroup(name, p) { n -> nodes.any { it.name == n } } }
+    fun deleteHaGroup(name: String) = synchronized(lock) { haManager.deleteGroup(name) }
     fun haStatus() = synchronized(lock) { haManager.status(nodes, guests) }
     fun addHaResource(params: Map<String, String>) = synchronized(lock) {
         haManager.add(params) { sid -> guests.any { !it.template && haManager.sid(it) == sid } }

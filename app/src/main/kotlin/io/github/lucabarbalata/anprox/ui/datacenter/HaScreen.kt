@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -21,6 +22,7 @@ import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Sync
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -35,10 +37,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.lucabarbalata.anprox.R
 import io.github.lucabarbalata.anprox.core.designsystem.component.AnProxButton
+import io.github.lucabarbalata.anprox.core.designsystem.component.ButtonStyle
 import io.github.lucabarbalata.anprox.core.designsystem.component.EmptyState
 import io.github.lucabarbalata.anprox.core.designsystem.component.ErrorBanner
 import io.github.lucabarbalata.anprox.core.designsystem.component.GlassCard
@@ -46,11 +50,13 @@ import io.github.lucabarbalata.anprox.core.designsystem.component.GlassTextField
 import io.github.lucabarbalata.anprox.core.designsystem.component.SectionHeader
 import io.github.lucabarbalata.anprox.core.designsystem.component.StatusDot
 import io.github.lucabarbalata.anprox.core.designsystem.component.StatusPill
+import io.github.lucabarbalata.anprox.core.designsystem.component.SwitchRow
 import io.github.lucabarbalata.anprox.core.designsystem.component.Tone
 import io.github.lucabarbalata.anprox.core.designsystem.theme.AnProxTheme
 import io.github.lucabarbalata.anprox.model.pve.DangerLevel
 import io.github.lucabarbalata.anprox.model.pve.GuestType
 import io.github.lucabarbalata.anprox.model.pve.HaResource
+import io.github.lucabarbalata.anprox.model.pve.HaRuleForm
 import io.github.lucabarbalata.anprox.model.pve.HaState
 import io.github.lucabarbalata.anprox.ui.common.AnProxScaffold
 import io.github.lucabarbalata.anprox.ui.common.ChoiceChips
@@ -113,10 +119,50 @@ fun HaScreen(serverId: String, onBack: () -> Unit, onTask: (serverId: String, no
                 }
                 items(state.resources, key = { it.sid }) { r -> ResourceCard(r, state, enabled = !state.busy) { viewModel.edit(r) } }
             }
+            if (state.groupsSupported) {
+                item { SectionHeader(stringResource(R.string.ha_groups)) }
+                item { FormHint(stringResource(R.string.ha_groups_body)) }
+                items(state.groups, key = { "g-${it.group}" }) { g ->
+                    SimpleRow(
+                        title = g.group,
+                        subtitle = listOfNotNull(
+                            g.nodes,
+                            stringResource(R.string.ha_group_restricted).takeIf { g.restricted },
+                            stringResource(R.string.ha_group_nofailback).takeIf { g.nofailback },
+                            g.comment,
+                        ).joinToString(" · "),
+                        enabled = !state.busy,
+                    ) { viewModel.editGroup(g) }
+                }
+                item {
+                    AnProxButton(stringResource(R.string.ha_group_add), onClick = viewModel::addGroup, style = ButtonStyle.SECONDARY, icon = Icons.Outlined.Add, enabled = !state.busy, modifier = Modifier.fillMaxWidth())
+                }
+            }
+            state.rules?.let { rules ->
+                item { SectionHeader(stringResource(R.string.ha_rules)) }
+                item { FormHint(stringResource(R.string.ha_rules_body)) }
+                items(rules, key = { "r-${it.rule}" }) { r ->
+                    val what = if (r.type == HaRuleForm.NODE_AFFINITY) {
+                        stringResource(R.string.ha_rule_on_nodes, r.nodes.orEmpty())
+                    } else {
+                        stringResource(if (r.affinity == "negative") R.string.ha_rule_apart else R.string.ha_rule_together)
+                    }
+                    SimpleRow(
+                        title = r.rule,
+                        subtitle = listOfNotNull(r.resourceList.joinToString(", ") { guestLabel(state, it) }, what, stringResource(R.string.ha_rule_off).takeIf { r.disable }).joinToString(" · "),
+                        enabled = !state.busy,
+                    ) { viewModel.editRule(r) }
+                }
+                item {
+                    AnProxButton(stringResource(R.string.ha_rule_add), onClick = viewModel::addRule, style = ButtonStyle.SECONDARY, icon = Icons.Outlined.Add, enabled = !state.busy, modifier = Modifier.fillMaxWidth())
+                }
+            }
         }
     }
 
     state.editing?.let { edit -> HaDialog(edit, state, viewModel) }
+    state.editingGroup?.let { edit -> GroupDialog(edit, state, viewModel) }
+    state.editingRule?.let { edit -> RuleDialog(edit, state, viewModel) }
     state.confirmRemove?.let { r ->
         ConfirmActionDialog(
             title = stringResource(R.string.ha_remove_title),
@@ -265,3 +311,129 @@ private fun haStateTone(s: HaState): Tone = when (s) {
     HaState.DISABLED -> Tone.WARNING
     HaState.IGNORED -> Tone.PAUSED
 }
+
+@Composable
+private fun SimpleRow(title: String, subtitle: String, enabled: Boolean, onClick: () -> Unit) {
+    val c = AnProxTheme.colors
+    GlassCard(contentPadding = PaddingValues(0.dp)) {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(20.dp))
+                .clickable(enabled = enabled, onClickLabel = stringResource(R.string.action_edit), onClick = onClick)
+                .padding(16.dp),
+        ) {
+            Text(title, style = MaterialTheme.typography.titleMedium, color = c.textPrimary)
+            if (subtitle.isNotBlank()) Text(subtitle, style = MaterialTheme.typography.bodySmall, color = c.textSecondary)
+        }
+    }
+}
+
+/** Nodes with a tick and an optional priority each (higher runs first). */
+@Composable
+private fun NodePriorityPicker(all: List<String>, nodes: Map<String, Int?>, onChange: (Map<String, Int?>) -> Unit) {
+    val c = AnProxTheme.colors
+    (all + nodes.keys).distinct().sorted().forEach { node ->
+        val checked = node in nodes
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                Modifier
+                    .weight(1f)
+                    .toggleable(value = checked, role = Role.Checkbox, onValueChange = { on -> onChange(if (on) nodes + (node to null) else nodes - node) })
+                    .padding(vertical = 2.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Checkbox(checked = checked, onCheckedChange = null)
+                Spacer(Modifier.width(8.dp))
+                Text(node, style = MaterialTheme.typography.bodyMedium, color = c.textPrimary)
+            }
+            if (checked) {
+                Box(Modifier.width(120.dp)) {
+                    NumberField(nodes[node]?.toString().orEmpty(), { v -> onChange(nodes + (node to v.toIntOrNull())) }, stringResource(R.string.ha_priority))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun GroupDialog(edit: HaGroupEdit, state: HaUiState, viewModel: HaViewModel) {
+    val form = edit.form
+    AlertDialog(
+        onDismissRequest = viewModel::closeGroup,
+        containerColor = AnProxTheme.colors.surfaceSolid,
+        title = { Text(edit.group?.group ?: stringResource(R.string.ha_group_add)) },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (edit.group == null) {
+                    GlassTextField(value = form.name, onValueChange = { v -> viewModel.editGroupForm { copy(name = v) } }, label = stringResource(R.string.ha_name))
+                }
+                FormLabel(stringResource(R.string.ha_nodes))
+                NodePriorityPicker(state.allNodes, form.nodes) { n -> viewModel.editGroupForm { copy(nodes = n) } }
+                SwitchRow(stringResource(R.string.ha_group_restricted), form.restricted, { on -> viewModel.editGroupForm { copy(restricted = on) } }, description = stringResource(R.string.ha_group_restricted_body))
+                SwitchRow(stringResource(R.string.ha_group_nofailback), form.nofailback, { on -> viewModel.editGroupForm { copy(nofailback = on) } }, description = stringResource(R.string.ha_group_nofailback_body))
+                GlassTextField(value = form.comment, onValueChange = { v -> viewModel.editGroupForm { copy(comment = v) } }, label = stringResource(R.string.ha_comment))
+                if (edit.group != null) {
+                    TextButton(onClick = viewModel::deleteGroup) { Text(stringResource(R.string.ha_group_delete), color = AnProxTheme.colors.danger) }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = viewModel::saveGroup, enabled = form.valid) { Text(stringResource(R.string.action_save)) } },
+        dismissButton = { TextButton(onClick = viewModel::closeGroup) { Text(stringResource(R.string.action_cancel)) } },
+    )
+}
+
+@Composable
+private fun RuleDialog(edit: HaRuleEdit, state: HaUiState, viewModel: HaViewModel) {
+    val form = edit.form
+    val c = AnProxTheme.colors
+    val typeLabels = mapOf(
+        HaRuleForm.NODE_AFFINITY to stringResource(R.string.ha_rule_type_nodes),
+        HaRuleForm.RESOURCE_AFFINITY to stringResource(R.string.ha_rule_type_guests),
+    )
+    val sids = state.resources.map { it.sid }
+    AlertDialog(
+        onDismissRequest = viewModel::closeRule,
+        containerColor = c.surfaceSolid,
+        title = { Text(edit.rule?.rule ?: stringResource(R.string.ha_rule_add)) },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (edit.rule == null) {
+                    GlassTextField(value = form.id, onValueChange = { v -> viewModel.editRuleForm { copy(id = v) } }, label = stringResource(R.string.ha_name))
+                    ChoiceChips(typeLabels.keys.toList(), form.type, { typeLabels.getValue(it) }) { t -> viewModel.editRuleForm { copy(type = t) } }
+                }
+                FormLabel(stringResource(R.string.ha_rule_guests))
+                if (sids.isEmpty()) FormHint(stringResource(R.string.ha_rule_no_guests))
+                sids.forEach { sid ->
+                    val checked = sid in form.resources
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .toggleable(value = checked, role = Role.Checkbox, onValueChange = { on -> viewModel.editRuleForm { copy(resources = if (on) resources + sid else resources - sid) } })
+                            .padding(vertical = 2.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Checkbox(checked = checked, onCheckedChange = null)
+                        Spacer(Modifier.width(8.dp))
+                        Text(guestLabel(state, sid), style = MaterialTheme.typography.bodyMedium, color = c.textPrimary)
+                    }
+                }
+                if (form.type == HaRuleForm.NODE_AFFINITY) {
+                    FormLabel(stringResource(R.string.ha_nodes))
+                    NodePriorityPicker(state.allNodes, form.nodes) { n -> viewModel.editRuleForm { copy(nodes = n) } }
+                    SwitchRow(stringResource(R.string.ha_rule_strict), form.strict, { on -> viewModel.editRuleForm { copy(strict = on) } }, description = stringResource(R.string.ha_rule_strict_body))
+                } else {
+                    SwitchRow(stringResource(R.string.ha_rule_together), form.together, { on -> viewModel.editRuleForm { copy(together = on) } }, description = stringResource(R.string.ha_rule_together_body))
+                }
+                GlassTextField(value = form.comment, onValueChange = { v -> viewModel.editRuleForm { copy(comment = v) } }, label = stringResource(R.string.ha_comment))
+                SwitchRow(stringResource(R.string.ha_rule_enabled), form.enabled, { on -> viewModel.editRuleForm { copy(enabled = on) } })
+                if (edit.rule != null) {
+                    TextButton(onClick = viewModel::deleteRule) { Text(stringResource(R.string.ha_rule_delete), color = c.danger) }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = viewModel::saveRule, enabled = form.valid) { Text(stringResource(R.string.action_save)) } },
+        dismissButton = { TextButton(onClick = viewModel::closeRule) { Text(stringResource(R.string.action_cancel)) } },
+    )
+}
+

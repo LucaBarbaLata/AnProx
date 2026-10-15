@@ -82,7 +82,8 @@ All notable changes to AnProx are documented here. The format follows
   each node's state; the guests HA manages with their requested and current state. Add a guest,
   choose whether HA keeps it started, stopped, disabled or ignores it, pick a group, set how
   often it is restarted or moved, move it to another node through the HA manager, or remove it
-  from HA.
+  from HA. Edit **groups** (Proxmox VE 8: nodes with priorities, restricted, no failback) or
+  **rules** (Proxmox VE 9: prefer nodes, keep guests together or apart).
 
 - **Replication** (Datacenter → Replication): which guests are copied to which node, whether
   the last copy worked (with Proxmox's error when it didn't), when it ran and runs next. Add a
