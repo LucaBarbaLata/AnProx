@@ -13,7 +13,7 @@ Status legend: ✅ done · 🚧 in progress · 🗓 planned
 | [M2](#m2--consoles--guest-configuration) | Consoles and guest configuration | 🚧 all but the built-in SSH client |
 | [M3](#m3--alerts--android-integration) | Alerts and Android integration | 🚧 alerts, links, shortcuts, tile, widget done |
 | [M4](#m4--datacenter) | Datacenter: storage, backup jobs, HA, replication, firewall | 🚧 all but editing HA groups/rules and maintenance mode |
-| [M5](#m5--node-administration) | Node administration | 🚧 all but entering a subscription key |
+| [M5](#m5--node-administration) | Node administration | ✅ (beta.3 candidate) |
 | [M6](#m6--ceph--sdn) | Ceph and SDN | 🗓 |
 | [M7](#m7--access-control) | Users, groups, roles, ACLs, realms, tokens, TFA | 🗓 |
 | [M8](#m8--backup-server-complete) | Proxmox Backup Server complete | 🗓 |
@@ -153,7 +153,7 @@ Everything marked ✅ in M1 and M2 below. Gates:
   optional and behind the screen lock, sessions never exported.
 
 ## M5 — Node administration
-*Status: 🚧 nearly done (entering a subscription key is left).* Node → Administration.
+*Status: ✅ done.* Node → Administration.
 - ✅ **Updates and repositories** (Q22): subscription status, refresh the package lists (a
   task), upgradable packages with changelogs, installed versions, the upgrade in a terminal;
   repositories with Proxmox's warnings, switch on/off, add no-subscription/enterprise/test.
@@ -165,7 +165,7 @@ Everything marked ✅ in M1 and M2 below. Gates:
   VLAN awareness, bond mode and hash policy, MTU, comment); the pending diff; apply (type the
   node's name) and revert.
 - ✅ **DNS, hosts and time**: search domain and servers, /etc/hosts, time zone.
-- Entering a subscription key. (Node power is done, under M0/M1.)
+- ✅ Entering or removing a subscription key (Updates screen). Node power is done (M0/M1).
 
 ## M6 — Ceph & SDN
 - **Ceph** (Q21): health and status, OSDs (in/out, up/down, create/destroy), pools, monitors,

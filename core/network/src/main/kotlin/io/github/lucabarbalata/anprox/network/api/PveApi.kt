@@ -601,6 +601,14 @@ interface PveApi {
     @GET("nodes/{node}/subscription")
     suspend fun subscription(@Path("node") node: String): ApiEnvelope<NodeSubscription>
 
+    /** Sets the subscription key (Proxmox checks it online). */
+    @FormUrlEncoded
+    @PUT("nodes/{node}/subscription")
+    suspend fun setSubscriptionKey(@Path("node") node: String, @Field("key") key: String): ApiEnvelope<JsonElement>
+
+    @DELETE("nodes/{node}/subscription")
+    suspend fun removeSubscriptionKey(@Path("node") node: String): ApiEnvelope<JsonElement>
+
     @GET("nodes/{node}/services")
     suspend fun services(@Path("node") node: String): ApiEnvelope<List<NodeService>>
 

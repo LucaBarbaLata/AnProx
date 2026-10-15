@@ -692,6 +692,18 @@ class MockProxmoxServer(
             call.authed() ?: return@get
             call.ok(state.subscription())
         }
+        put("nodes/{node}/subscription") {
+            val s = call.authed() ?: return@put
+            if (state.isReadOnly(s.user)) return@put call.fail(403, "Permission check failed (/nodes/${call.parameters["node"]}, Sys.Modify)")
+            val error = state.setSubscriptionKey(call.receiveParameters()["key"].orEmpty())
+            if (error != null) call.fail(400, error) else call.ok(JsonNull)
+        }
+        delete("nodes/{node}/subscription") {
+            val s = call.authed() ?: return@delete
+            if (state.isReadOnly(s.user)) return@delete call.fail(403, "Permission check failed (/nodes/${call.parameters["node"]}, Sys.Modify)")
+            state.setSubscriptionKey(null)
+            call.ok(JsonNull)
+        }
         get("nodes/{node}/services") {
             call.authed() ?: return@get
             val node = state.node(call.parameters["node"]!!) ?: return@get call.fail(404, "no such node")

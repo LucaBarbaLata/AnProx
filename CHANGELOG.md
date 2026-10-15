@@ -101,7 +101,7 @@ All notable changes to AnProx are documented here. The format follows
   out of the configuration without deleting its data (type its name to confirm).
 
 - **Node administration** (Node → Administration):
-  - **Updates**: the subscription status, **Refresh** (apt update as a task), the packages with
+  - **Updates**: the subscription status (enter or remove a key), **Refresh** (apt update as a task), the packages with
     a newer version (tap one for its changelog), installed versions, and **Upgrade**, which
     opens the node's terminal running the upgrade, as the web interface does.
   - **Repositories**: every APT source with Proxmox's warnings (enterprise without a

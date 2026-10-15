@@ -101,6 +101,13 @@ data class NodeSubscription(
     val message: String? = null,
 ) {
     val active: Boolean get() = status.equals("active", ignoreCase = true)
+
+    companion object {
+        /** `pve4c-1a2b3c4d5e` (c: community, b: basic, s: standard, p: premium; the digit: sockets). */
+        private val KEY = Regex("^pve([1248])([cbsp])-[0-9a-f]{10}$")
+
+        fun isValidKey(key: String): Boolean = KEY.matches(key.trim())
+    }
 }
 
 /** One row of `GET /nodes/{node}/services`. */

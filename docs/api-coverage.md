@@ -91,7 +91,7 @@ Code: `core/network/src/main/kotlin/.../network/api/` (`AccessApi`, `PveApi`, `P
 | `GET /nodes/{node}/syslog` | The older syslog view | 🗓 (the journal covers it) |
 | `GET/PUT /nodes/{node}/dns`, `GET/POST /nodes/{node}/hosts`, `GET/PUT /nodes/{node}/time` | DNS servers and search domain, /etc/hosts (with its digest), time zone | ✅ |
 | `GET /nodes/{node}/subscription` | Subscription status (on the Updates screen) | ✅ |
-| `PUT/POST /nodes/{node}/subscription` | Entering a key | 🗓 M5 |
+| `PUT/DELETE /nodes/{node}/subscription` | Entering or removing a key | ✅ |
 | `/nodes/{node}/certificates/*` | Certificates, ACME orders | 🗓 M9 |
 | `/nodes/{node}/firewall/{rules,options}` | Node firewall | ✅ |
 | `/nodes/{node}/firewall/log` | Node firewall log | 🗓 M4 |

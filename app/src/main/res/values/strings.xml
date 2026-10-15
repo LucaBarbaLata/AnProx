@@ -1303,6 +1303,13 @@
     <string name="updates_subscription_none">None</string>
     <string name="updates_subscription_none_body">Without a subscription, use the no-subscription repository (Repositories) to get updates.</string>
     <string name="updates_refresh">Refresh</string>
+    <string name="updates_enter_key">Enter a subscription key</string>
+    <string name="updates_remove_key">Remove the key</string>
+    <string name="updates_key">Subscription key</string>
+    <string name="updates_key_hint">Like pve2c-0123456789, from your Proxmox shop account. Proxmox checks it online.</string>
+    <string name="updates_key_saved">Subscription key saved</string>
+    <string name="updates_key_removed">Subscription key removed</string>
+    <string name="updates_next_due">Next due: %1$s</string>
     <string name="updates_upgrade">Upgrade</string>
     <string name="updates_versions">Installed versions</string>
     <string name="updates_refreshed">Package lists refreshed</string>

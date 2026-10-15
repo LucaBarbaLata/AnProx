@@ -994,7 +994,8 @@ class MockState(
     fun aptUpdates(node: String) = synchronized(lock) { nodeAdmin.updates(node) }
     fun aptChangelog(node: String, name: String) = synchronized(lock) { nodeAdmin.changelog(node, name) }
     fun packageVersions(node: String) = synchronized(lock) { nodeAdmin.versions(node) }
-    fun subscription() = nodeAdmin.subscription()
+    fun subscription() = synchronized(lock) { nodeAdmin.subscription() }
+    fun setSubscriptionKey(key: String?) = synchronized(lock) { nodeAdmin.setSubscriptionKey(key) }
     fun aptRepositories(node: String) = synchronized(lock) { nodeAdmin.repositories(node) }
     fun setAptRepositoryEnabled(node: String, path: String, index: Int, enabled: Boolean, digest: String?) =
         synchronized(lock) { nodeAdmin.setEnabled(node, path, index, enabled, digest) }

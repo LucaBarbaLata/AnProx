@@ -89,7 +89,17 @@ internal class MockNodeAdmin(nodes: List<String>) {
         )
     }
 
-    fun subscription(): NodeSubscription = NodeSubscription(status = "notfound", message = "There is no subscription key")
+    private var subscriptionKey: String? = null
+
+    fun subscription(): NodeSubscription = subscriptionKey?.let {
+        NodeSubscription(status = "active", level = "c", product = "Proxmox VE Community Subscription 1 CPU/year", nextDueDate = "2027-10-15")
+    } ?: NodeSubscription(status = "notfound", message = "There is no subscription key")
+
+    fun setSubscriptionKey(key: String?): String? {
+        if (key != null && !Regex("^pve([1248])([cbsp])-[0-9a-f]{10}$").matches(key)) return "key: invalid format - value does not look like a valid subscription key"
+        subscriptionKey = key
+        return null
+    }
 
     fun repositories(node: String): AptRepositories? {
         val d = node(node) ?: return null

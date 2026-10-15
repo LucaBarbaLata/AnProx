@@ -44,6 +44,14 @@ class NodeAdminRepository(private val hub: ServerHub) {
         null
     }
 
+    suspend fun setSubscriptionKey(serverId: String, node: String, key: String) {
+        hub.use(serverId) { it.pveNoData { setSubscriptionKey(node, key.trim()) } }
+    }
+
+    suspend fun removeSubscriptionKey(serverId: String, node: String) {
+        hub.use(serverId) { it.pveNoData { removeSubscriptionKey(node) } }
+    }
+
     suspend fun repositories(serverId: String, node: String): AptRepositories = hub.use(serverId) { it.pve { aptRepositories(node) } }
 
     suspend fun setRepositoryEnabled(serverId: String, node: String, repos: AptRepositories, path: String, index: Int, enabled: Boolean) {

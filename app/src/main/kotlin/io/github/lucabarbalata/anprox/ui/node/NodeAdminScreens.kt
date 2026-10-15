@@ -80,6 +80,7 @@ import io.github.lucabarbalata.anprox.model.pve.NetworkInterfaceForm
 import io.github.lucabarbalata.anprox.model.pve.NetworkKind
 import io.github.lucabarbalata.anprox.model.pve.NodeDnsForm
 import io.github.lucabarbalata.anprox.model.pve.NodeService
+import io.github.lucabarbalata.anprox.model.pve.NodeSubscription
 import io.github.lucabarbalata.anprox.model.pve.ServiceAction
 import io.github.lucabarbalata.anprox.ui.common.AnProxScaffold
 import io.github.lucabarbalata.anprox.ui.common.BusyCard
@@ -141,6 +142,10 @@ fun UpdatesScreen(
                         if (!sub.active) {
                             Spacer(Modifier.height(4.dp))
                             FormHint(stringResource(R.string.updates_subscription_none_body))
+                            TextButton(onClick = viewModel::startKey) { Text(stringResource(R.string.updates_enter_key)) }
+                        } else {
+                            sub.nextDueDate?.let { FormHint(stringResource(R.string.updates_next_due, it)) }
+                            TextButton(onClick = viewModel::removeKey) { Text(stringResource(R.string.updates_remove_key), color = c.danger) }
                         }
                     }
                 }
@@ -214,6 +219,24 @@ fun UpdatesScreen(
             text = log.text,
             error = log.error?.asString(),
             onClose = viewModel::closeChangelog,
+        )
+    }
+    state.enteringKey?.let { key ->
+        AlertDialog(
+            onDismissRequest = viewModel::closeKey,
+            containerColor = c.surfaceSolid,
+            title = { Text(stringResource(R.string.updates_enter_key)) },
+            text = {
+                GlassTextField(
+                    value = key,
+                    onValueChange = viewModel::editKey,
+                    label = stringResource(R.string.updates_key),
+                    supportingText = stringResource(R.string.updates_key_hint),
+                    isError = key.isNotBlank() && !NodeSubscription.isValidKey(key),
+                )
+            },
+            confirmButton = { TextButton(onClick = viewModel::saveKey, enabled = NodeSubscription.isValidKey(key)) { Text(stringResource(R.string.action_save)) } },
+            dismissButton = { TextButton(onClick = viewModel::closeKey) { Text(stringResource(R.string.action_cancel)) } },
         )
     }
     if (state.showVersions) {

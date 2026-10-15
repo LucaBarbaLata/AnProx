@@ -61,6 +61,11 @@ class NodeAdminTest {
         val upid = repo.refresh("pve", "pve1")
         assertTrue(GuestRepository(hub).awaitTask("pve", "pve1", upid).succeeded)
         assertFalse(repo.subscription("pve", "pve1")!!.active)
+        assertFailsWith<ApiException> { repo.setSubscriptionKey("pve", "pve1", "not-a-key") }
+        repo.setSubscriptionKey("pve", "pve1", "pve1c-0123456789")
+        assertTrue(repo.subscription("pve", "pve1")!!.active)
+        repo.removeSubscriptionKey("pve", "pve1")
+        assertFalse(repo.subscription("pve", "pve1")!!.active)
         assertTrue(repo.versions("pve", "pve1").any { it.name == "pve-manager" })
         Unit
     }

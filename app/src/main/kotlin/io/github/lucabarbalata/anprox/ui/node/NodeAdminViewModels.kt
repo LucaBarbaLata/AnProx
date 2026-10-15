@@ -51,6 +51,8 @@ data class UpdatesState(
     val showVersions: Boolean = false,
     val changelog: Changelog? = null,
     val refreshing: Boolean = false,
+    /** The subscription key being typed; null when the dialog is closed. */
+    val enteringKey: String? = null,
     val result: TaskResult? = null,
 )
 
@@ -116,6 +118,42 @@ class UpdatesViewModel(
 
     fun closeChangelog() {
         ui.update { it.copy(changelog = null) }
+    }
+
+    fun startKey() {
+        ui.update { it.copy(enteringKey = "") }
+    }
+
+    fun editKey(text: String) {
+        ui.update { it.copy(enteringKey = text) }
+    }
+
+    fun closeKey() {
+        ui.update { it.copy(enteringKey = null) }
+    }
+
+    fun saveKey() {
+        val key = ui.value.enteringKey ?: return
+        if (!NodeSubscription.isValidKey(key)) return
+        ui.update { it.copy(enteringKey = null) }
+        subscriptionChange(UiText.res(R.string.updates_key_saved)) { repo.setSubscriptionKey(serverId, node, key) }
+    }
+
+    fun removeKey() {
+        subscriptionChange(UiText.res(R.string.updates_key_removed)) { repo.removeSubscriptionKey(serverId, node) }
+    }
+
+    private fun subscriptionChange(done: UiText, call: suspend () -> Unit) {
+        viewModelScope.launch {
+            val result = try {
+                call()
+                TaskResult(done, null, ok = true)
+            } catch (e: ApiException) {
+                TaskResult(e.toUiText(), null, ok = false)
+            }
+            ui.update { it.copy(result = result) }
+            load()
+        }
     }
 
     fun showVersions() {
