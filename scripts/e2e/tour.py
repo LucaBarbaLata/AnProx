@@ -313,6 +313,28 @@ def fill(label, value, fallback_index=None, password=False):
     tap_node(node)
     adb("shell", "input", "text", value.replace(" ", "%s"))
     time.sleep(0.6)
+    if not password:
+        complete_typing(label, value)
+
+
+def complete_typing(label, value, attempts=3):
+    """
+    Android 14 sometimes loses the last injected key (seen twice on CI: a URL arrived without its
+    final letter, and the app never got that keystroke). Types what is missing, if the field holds
+    the start of [value].
+    """
+    for _ in range(attempts):
+        root = dump()
+        texts = [n.get("text") or "" for n in root.iter("node") if n.get("class") == "android.widget.EditText"]
+        if value in texts:
+            return
+        partial = [t for t in texts if t and value.startswith(t)]
+        if not partial:
+            return  # can't tell which field it is (or the app reformatted the text)
+        missing = value[len(max(partial, key=len)):]
+        print(f"    retyping {missing!r} into '{label}'", flush=True)
+        adb("shell", "input", "text", missing.replace(" ", "%s"))
+        time.sleep(0.6)
 
 
 def back():

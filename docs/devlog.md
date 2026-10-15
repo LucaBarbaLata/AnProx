@@ -203,6 +203,10 @@ reaches Compose a frame later, and that late value fed back into the field overw
 just been typed. `GlassTextField` now keeps its own copy while the user types and takes the
 screen's value once typing pauses for 300 ms, so app-made changes (a suggested file name, a
 filtered number, a cleared password) still appear. Every form in the app uses it.
+It wasn't the whole story: a later run lost the final "o" again, and this time the ViewModel
+never saw it either, so the key event itself was lost on the emulator. The tour's `fill` now
+reads the field back and types whatever is missing (and says so in the log). The field change
+stays, since the overwrite it prevents is real.
 
 Not alerted on purpose: a server that can't be reached. A phone that leaves the home network
 would otherwise notify every 15 minutes; the Alerts screen lists unreachable servers instead.
