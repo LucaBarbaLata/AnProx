@@ -35,7 +35,7 @@ data class AppSettings(
     val taskNotifications: Boolean = true,
 )
 
-/** Identifies a guest independently of its node, so a favourite survives migrations. */
+/** Identifies a guest independently of its node, so a favourite survives migrations (as FavouriteRef.key). */
 fun favouriteKey(serverId: String, type: String, vmid: Int): String = "$serverId|$type|$vmid"
 
 class SettingsRepository(context: Context) {

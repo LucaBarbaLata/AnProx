@@ -57,6 +57,11 @@ All notable changes to AnProx are documented here. The format follows
 - **Home-screen widget** "Proxmox status": each server with nodes online, guests running and
   current problems, as of the last background check; tap it to open the dashboard.
 
+- **Home-screen widget** "Favourite guests": the guests you starred, with their state and a
+  button to start, resume or shut them down (tap **Shut down**, then **Tap again** within a few
+  seconds). With the app lock on, the button opens the guest in the app instead. It refreshes
+  after each background check, when you leave the app and with its ↻ button.
+
 - **Backup jobs** (Dashboard → Datacenter → Backup jobs): every scheduled backup with its next
   run; switch a job on or off, run it now, or create and edit one: schedule (presets, or any
   Proxmox calendar event with a preview of the next runs), storage, node, which guests (all,

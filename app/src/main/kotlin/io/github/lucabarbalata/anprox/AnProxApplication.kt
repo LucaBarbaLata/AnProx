@@ -14,9 +14,12 @@ import io.github.lucabarbalata.anprox.data.security.AppLock
 import io.github.lucabarbalata.anprox.di.appModule
 import io.github.lucabarbalata.anprox.diagnostics.CrashReporter
 import io.github.lucabarbalata.anprox.storage.SettingsRepository
+import io.github.lucabarbalata.anprox.widget.FavouritesWidget
+import io.github.lucabarbalata.anprox.widget.FavouritesWorker
 import io.github.lucabarbalata.anprox.widget.StatusWidget
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import org.koin.android.ext.android.get
@@ -40,6 +43,31 @@ class AnProxApplication : Application() {
         watchNetwork()
         watchAppLock()
         watchAlerts()
+        watchFavourites()
+    }
+
+    /**
+     * Keeps the favourites widget (questionnaire Q28) in step: a guest starred or unstarred, the
+     * app lock switched, or the user leaving the app (after possibly starting or stopping guests).
+     */
+    private fun watchFavourites() {
+        val settings: SettingsRepository = get()
+        val scope = get<CoroutineScope>(named("appScope"))
+        scope.launch {
+            settings.settings
+                .map { it.favourites to it.appLock }
+                .distinctUntilChanged()
+                .drop(1)
+                .collect {
+                    FavouritesWidget.redraw(this@AnProxApplication)
+                    FavouritesWorker.refreshIfShown(this@AnProxApplication)
+                }
+        }
+        ProcessLifecycleOwner.get().lifecycle.addObserver(
+            LifecycleEventObserver { _, event ->
+                if (event == Lifecycle.Event.ON_STOP) scope.launch { FavouritesWorker.refreshIfShown(this@AnProxApplication) }
+            },
+        )
     }
 
     /** Keeps the background checks (questionnaire Q26) in step with the alert settings. */

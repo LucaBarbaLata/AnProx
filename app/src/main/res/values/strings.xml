@@ -883,6 +883,14 @@
     <string name="widget_pbs">Backup Server · %1$d datastores</string>
     <string name="widget_pve">%1$d/%2$d nodes · %3$d/%4$d guests running</string>
     <string name="widget_problems">problems: %1$d</string>
+    <string name="widget_favourites_label">Favourite guests</string>
+    <string name="widget_favourites_description">Your starred guests, with buttons to start and shut them down</string>
+    <string name="widget_favourites_title">Favourites</string>
+    <string name="widget_favourites_empty">Star a guest on its screen in AnProx to see it here.</string>
+    <string name="widget_favourites_loading">Refreshing…</string>
+    <string name="widget_favourites_confirm">Tap again</string>
+    <string name="widget_favourites_gone">Not found</string>
+    <string name="widget_favourites_signed_out">Sign in needed</string>
 
     <!-- Datacenter (M4) -->
     <string name="dashboard_datacenter">Datacenter</string>

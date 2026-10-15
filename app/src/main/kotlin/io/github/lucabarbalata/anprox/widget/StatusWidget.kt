@@ -3,7 +3,6 @@ package io.github.lucabarbalata.anprox.widget
 import android.content.Context
 import android.text.format.DateUtils
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceId
@@ -41,13 +40,6 @@ import kotlinx.coroutines.flow.first
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
-// Midnight Glass colours (docs/design-system.md); widgets can't read the app's Compose theme.
-private val BACKGROUND = Color(0xF00B0F1A)
-private val TEXT = Color(0xFFF6F8FC)
-private val MUTED = Color(0xFF9AA4B8)
-private val OK = Color(0xFF34D399)
-private val WARN = Color(0xFFFBBF24)
-
 private const val MAX_SERVERS = 4
 
 /**
@@ -79,11 +71,11 @@ class StatusWidgetReceiver : GlanceAppWidgetReceiver() {
 @Composable
 private fun Content(run: AlertRun?, enabled: Boolean) {
     val context = LocalContext.current
-    val small = TextStyle(color = ColorProvider(MUTED), fontSize = 12.sp)
+    val small = TextStyle(color = ColorProvider(WidgetColors.MUTED), fontSize = 12.sp)
     Column(
         GlanceModifier
             .fillMaxSize()
-            .background(BACKGROUND)
+            .background(WidgetColors.BACKGROUND)
             .cornerRadius(20.dp)
             .padding(14.dp)
             .clickable(actionStartActivity(AppLinks.intent(context, AppLink.Dashboard))),
@@ -92,7 +84,7 @@ private fun Content(run: AlertRun?, enabled: Boolean) {
             Text(
                 context.getString(R.string.widget_title),
                 modifier = GlanceModifier.defaultWeight(),
-                style = TextStyle(color = ColorProvider(TEXT), fontSize = 15.sp, fontWeight = FontWeight.Bold),
+                style = TextStyle(color = ColorProvider(WidgetColors.TEXT), fontSize = 15.sp, fontWeight = FontWeight.Bold),
             )
             if (run != null) Text(DateUtils.formatDateTime(context, run.atMillis, DateUtils.FORMAT_SHOW_TIME), style = small)
         }
@@ -107,7 +99,7 @@ private fun Content(run: AlertRun?, enabled: Boolean) {
         }
         if (!enabled && run != null) {
             Spacer(GlanceModifier.height(4.dp))
-            Text(context.getString(R.string.widget_alerts_off), style = TextStyle(color = ColorProvider(WARN), fontSize = 12.sp))
+            Text(context.getString(R.string.widget_alerts_off), style = TextStyle(color = ColorProvider(WidgetColors.WARN), fontSize = 12.sp))
         }
     }
 }
@@ -116,9 +108,9 @@ private fun Content(run: AlertRun?, enabled: Boolean) {
 private fun ServerLine(s: ServerSummary) {
     val context = LocalContext.current
     val dot = when {
-        !s.reachable -> MUTED
-        s.problems > 0 -> WARN
-        else -> OK
+        !s.reachable -> WidgetColors.MUTED
+        s.problems > 0 -> WidgetColors.WARN
+        else -> WidgetColors.OK
     }
     val detail = when {
         !s.reachable -> context.getString(R.string.widget_unreachable)
@@ -130,8 +122,8 @@ private fun ServerLine(s: ServerSummary) {
         Text("●", style = TextStyle(color = ColorProvider(dot), fontSize = 12.sp))
         Spacer(GlanceModifier.width(8.dp))
         Column {
-            Text(s.name, style = TextStyle(color = ColorProvider(TEXT), fontSize = 13.sp, fontWeight = FontWeight.Medium), maxLines = 1)
-            Text(detail + problems, style = TextStyle(color = ColorProvider(MUTED), fontSize = 12.sp), maxLines = 1)
+            Text(s.name, style = TextStyle(color = ColorProvider(WidgetColors.TEXT), fontSize = 13.sp, fontWeight = FontWeight.Medium), maxLines = 1)
+            Text(detail + problems, style = TextStyle(color = ColorProvider(WidgetColors.MUTED), fontSize = 12.sp), maxLines = 1)
         }
     }
 }

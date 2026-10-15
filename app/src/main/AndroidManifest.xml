@@ -60,6 +60,18 @@
                 android:resource="@xml/status_widget_info" />
         </receiver>
 
+        <receiver
+            android:name=".widget.FavouritesWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_favourites_label">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/favourites_widget_info" />
+        </receiver>
+
         <!-- Hands SPICE connection files (.vv) to a viewer app such as aSPICE. -->
         <provider
             android:name="androidx.core.content.FileProvider"

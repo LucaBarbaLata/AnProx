@@ -14,6 +14,7 @@ import io.github.lucabarbalata.anprox.data.datacenter.PoolRepository
 import io.github.lucabarbalata.anprox.data.datacenter.ReplicationRepository
 import io.github.lucabarbalata.anprox.data.datacenter.StorageRepository
 import io.github.lucabarbalata.anprox.data.datacenter.StorageSetupRepository
+import io.github.lucabarbalata.anprox.data.favourites.FavouriteRepository
 import io.github.lucabarbalata.anprox.data.guest.GuestRef
 import io.github.lucabarbalata.anprox.data.guest.GuestRepository
 import io.github.lucabarbalata.anprox.data.hardware.HardwareRepository
@@ -35,6 +36,7 @@ import io.github.lucabarbalata.anprox.storage.AlertStore
 import io.github.lucabarbalata.anprox.storage.DataStoreProfileStore
 import io.github.lucabarbalata.anprox.storage.KeystoreSecretStore
 import io.github.lucabarbalata.anprox.storage.SettingsRepository
+import io.github.lucabarbalata.anprox.storage.WidgetStore
 import io.github.lucabarbalata.anprox.ui.alerts.AlertsViewModel
 import io.github.lucabarbalata.anprox.ui.backups.BackupScope
 import io.github.lucabarbalata.anprox.ui.backups.BackupsViewModel
@@ -135,9 +137,11 @@ val appModule = module {
     single { StorageSetupRepository(get()) }
     single { ProfileTransfer(get(), get()) }
     single { NodeAdminRepository(get()) }
+    single { FavouriteRepository(get(), get()) }
 
     // Background alerts
     single { AlertStore(androidContext()) }
+    single { WidgetStore(androidContext()) }
     single { AlertRepository(get(), get(), get<AlertStore>()) }
     single { AlertNotifier(androidContext()) }
     single { AlertScheduler(androidContext()) }

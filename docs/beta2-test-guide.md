@@ -148,6 +148,13 @@ Hardware → Display → SPICE in the web UI).
    or "N new alerts"); tap it → the dashboard.
 10. **Widget**: long-press the home screen → Widgets → AnProx "Proxmox status". Each server shows
     nodes online and guests running; it updates after each check (**Check now** to see it change).
+    **Favourites widget**: star two guests (one running, one stopped; the star is on the guest's
+    screen), then add AnProx "Favourite guests". Both appear with their state within a few
+    seconds. Tap **Start** on the stopped one: it shows "…", then "Running" once the task ends.
+    Tap **Shut down** once: it turns into **Tap again**; wait 10 s and it goes back without doing
+    anything; tap twice quickly and the guest shuts down. Unstar a guest in the app and leave the
+    app: it disappears from the widget. Switch the app lock on: the buttons now open the guest
+    in the app (after unlocking) instead of acting.
 11. Leave alerts on overnight with the app closed: say whether checks kept running (the time of
    the last check) and whether anything was notified twice. Some phones stop background work
    for apps with battery optimisation; say which phone you have.

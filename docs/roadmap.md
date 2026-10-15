@@ -100,7 +100,7 @@ Everything marked ✅ in M1 and M2 below. Gates:
 - ✅ **Migration** (pulled into 0.1.0-beta.2): live for VMs (copying local disks), restart mode for containers, offline when stopped; uses Proxmox's pre-flight check.
 
 ## M3 — Alerts & Android integration
-*Status: ✅ done (favourite guests on the widget still to come).*
+*Status: ✅ done.*
 - ✅ **Background polling** with WorkManager (Q26) for the alert types in Q27: node or guest down,
   quorum lost, failed tasks and backups, CPU/RAM/storage thresholds, Ceph health. More → Alerts:
   interval (15 min to 3 h), kinds, limits, **Check now**, the last check's summary.
@@ -110,8 +110,10 @@ Everything marked ✅ in M1 and M2 below. Gates:
 - ✅ **Live task notifications** (Q28): tasks started from the app, followed until they end.
 - ✅ **App shortcuts and in-app links** (Q28): Resources, Tasks, Alerts; notifications open the
   node, guest or task they are about (`anprox://` links, explicit intents only).
-- ✅ **Home-screen widget** (Glance, Q28): every server's nodes, running guests and current
-  problems from the last background check. Still to come: favourite guests with power buttons.
+- ✅ **Home-screen widgets** (Glance, Q28): "Proxmox status", every server's nodes, running
+  guests and current problems from the last background check; "Favourite guests", the starred
+  guests with their state and a start, resume or shut down button (shut down takes a second
+  tap; with the app lock on, the button opens the guest in the app).
 - ✅ **Quick Settings tile** (Q28): the last check at a glance; opens the dashboard.
 
 ## M4 — Datacenter

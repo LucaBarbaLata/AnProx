@@ -231,6 +231,19 @@ from the start of the file; the first call asks for one line to learn `total`, t
 the last 500 (`ApiEnvelope` gained `total`, and `ProxmoxConnection.pveEnvelope` returns the
 whole envelope). That completes M4.
 
+**M3: favourites on the home screen.** A second Glance widget, `FavouritesWidget`, lists the
+starred guests. `FavouriteRepository` (`:core:data`) asks each server for `cluster/resources?type=vm`
+once, in parallel, and marks a favourite gone, unreachable or signed out when that's all it can
+say; power actions look the node up again first, since the guest may have moved.
+`FavouritesWorker` does the network work (refresh, action, waiting for the task) and
+`WidgetStore` keeps what the widget draws, which the widget follows with `collectAsState` so a
+live Glance session doesn't keep drawing what `provideGlance` read when it started. Shutting down
+takes a second tap within 8 s (Q12); with the app lock on, the buttons open the guest in the app
+instead (Q11). It refreshes after each background check, when favourites or the lock change,
+when the app goes to the background and on its ↻ button. Android sends `APPWIDGET_UPDATE` when
+an app's components are switched on or off, which WorkManager does when its queue empties, so
+refreshing from `onUpdate` could loop; it is limited to once every two minutes.
+
 **Tour, again.** On Android 8 the alerts screen's last card is below the fold, and uiautomator
 lists it with empty bounds; on Android 14 the **Open it** button after creating a VM ended up
 under the result snackbar at the end of the form. The create and clone screens now scroll to

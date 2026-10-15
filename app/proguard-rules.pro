@@ -31,3 +31,9 @@
 -keepclassmembers class io.github.lucabarbalata.anprox.ui.console.** {
     @android.webkit.JavascriptInterface <methods>;
 }
+
+# Glance creates the widgets' action callbacks by class name.
+-keep class * implements androidx.glance.appwidget.action.ActionCallback { <init>(); }
+
+# Small @Serializable records the app keeps on the device.
+-keep @kotlinx.serialization.Serializable class io.github.lucabarbalata.anprox.storage.** { *; }
