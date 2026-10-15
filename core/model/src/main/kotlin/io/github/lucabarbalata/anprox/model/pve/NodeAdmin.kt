@@ -154,12 +154,13 @@ data class NodeDnsForm(val search: String = "", val servers: List<String> = list
         else -> null
     }
 
-    /** `PUT /nodes/{node}/dns`; cleared servers are deleted. */
+    /**
+     * `PUT /nodes/{node}/dns`. Proxmox rewrites resolv.conf from what it gets, so a cleared server
+     * is simply left out (the call has no `delete`). Servers move up to fill gaps.
+     */
     fun params(): Map<String, String> = buildMap {
         put("search", search.trim())
-        val delete = mutableListOf<String>()
-        servers.forEachIndexed { i, s -> if (s.isNotBlank()) put("dns${i + 1}", s.trim()) else delete += "dns${i + 1}" }
-        if (delete.isNotEmpty()) put("delete", delete.joinToString(","))
+        servers.map { it.trim() }.filter { it.isNotEmpty() }.forEachIndexed { i, s -> put("dns${i + 1}", s) }
     }
 
     companion object {

@@ -209,12 +209,12 @@ internal class MockNodeAdmin(nodes: List<String>) {
     fun setDns(node: String, params: Map<String, String>): String? {
         val d = node(node) ?: return "no such node"
         val search = params["search"]?.takeIf { it.isNotBlank() } ?: return "search: property is missing and it is not optional"
-        val delete = params["delete"].orEmpty().split(',').toSet()
-        fun server(key: String, old: String?) = if (key in delete) null else params[key] ?: old
+        if ("delete" in params) return "delete: property is not defined in schema and the schema does not allow additional properties"
         listOf("dns1", "dns2", "dns3").forEach { k ->
             params[k]?.let { if (!Regex("^[0-9a-fA-F:.]+$").matches(it)) return "$k: value does not look like a valid IP address" }
         }
-        d.dns = NodeDns(search, server("dns1", d.dns.dns1), server("dns2", d.dns.dns2), server("dns3", d.dns.dns3))
+        // Like Proxmox: resolv.conf is written from the call, so servers left out are gone.
+        d.dns = NodeDns(search, params["dns1"], params["dns2"], params["dns3"])
         return null
     }
 
