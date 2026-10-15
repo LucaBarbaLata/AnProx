@@ -139,7 +139,9 @@ Everything marked ✅ in M1 and M2 below. Gates:
   (direction, action or security group, macro, protocol, addresses, ports, interface, log);
   enable, policies, log levels, DHCP/NDP/RA and MAC/IP filters.
 - **Firewall, the rest** (Q24): editing security groups, IP sets and aliases; the firewall log.
-- Resource pools and tags.
+- ✅ **Resource pools** (Datacenter → Resource pools): every pool with its guests and storages;
+  create, add and remove guests and storages, edit the comment, delete an empty pool. Tags are
+  edited per guest (Tools → Options).
 - Encrypted export/import of server profiles (move to a new phone without retyping everything).
 
 ## M5 — Node administration

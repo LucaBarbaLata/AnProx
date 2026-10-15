@@ -365,7 +365,49 @@ class MockProxmoxServer(
         }
         get("pools") {
             call.authed() ?: return@get
-            call.ok(state.pools())
+            // Proxmox VE 8.1+: one pool with its members.
+            val id = call.request.queryParameters["poolid"] ?: return@get call.ok(state.pools())
+            val pool = state.pool(id) ?: return@get call.fail(500, "pool '$id' does not exist")
+            call.ok(listOf(pool))
+        }
+        get("pools/{poolid}") {
+            call.authed() ?: return@get
+            val id = call.parameters["poolid"]!!
+            call.ok(state.pool(id) ?: return@get call.fail(500, "pool '$id' does not exist"))
+        }
+        post("pools") {
+            val s = call.authed() ?: return@post
+            if (state.isReadOnly(s.user)) return@post call.fail(403, "Permission check failed (/pool, Pool.Allocate)")
+            val p = call.receiveParameters()
+            val error = state.createPool(p.names().associateWith { p[it].orEmpty() })
+            if (error != null) call.fail(400, error) else call.ok(JsonNull)
+        }
+        put("pools") {
+            val s = call.authed() ?: return@put
+            if (state.isReadOnly(s.user)) return@put call.fail(403, "Permission check failed (/pool, Pool.Allocate)")
+            val p = call.receiveParameters()
+            val params = p.names().associateWith { p[it].orEmpty() }
+            val error = state.updatePool(params["poolid"].orEmpty(), params - "poolid")
+            if (error != null) call.fail(400, error) else call.ok(JsonNull)
+        }
+        put("pools/{poolid}") {
+            val s = call.authed() ?: return@put
+            if (state.isReadOnly(s.user)) return@put call.fail(403, "Permission check failed (/pool, Pool.Allocate)")
+            val p = call.receiveParameters()
+            val error = state.updatePool(call.parameters["poolid"]!!, p.names().associateWith { p[it].orEmpty() })
+            if (error != null) call.fail(400, error) else call.ok(JsonNull)
+        }
+        delete("pools") {
+            val s = call.authed() ?: return@delete
+            if (state.isReadOnly(s.user)) return@delete call.fail(403, "Permission check failed (/pool, Pool.Allocate)")
+            val error = state.deletePool(call.request.queryParameters["poolid"].orEmpty())
+            if (error != null) call.fail(400, error) else call.ok(JsonNull)
+        }
+        delete("pools/{poolid}") {
+            val s = call.authed() ?: return@delete
+            if (state.isReadOnly(s.user)) return@delete call.fail(403, "Permission check failed (/pool, Pool.Allocate)")
+            val error = state.deletePool(call.parameters["poolid"]!!)
+            if (error != null) call.fail(400, error) else call.ok(JsonNull)
         }
         get("cluster/replication") {
             call.authed() ?: return@get

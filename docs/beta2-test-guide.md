@@ -215,6 +215,15 @@ Needs two nodes and a guest whose disks are on local ZFS storage that exists on 
 5. **Delete job** without keeping the copy → in the web UI the job is marked for removal and
    the copy on the target disappears after its run.
 
+### D12. Resource pools (Datacenter → Resource pools), new after beta.2
+1. The pools and their guests and storages match the web UI's Datacenter → Permissions → Pools
+   (and each pool's Members).
+2. **Create pool** `anprox-test` with a comment → open it → **Add guests**: tick a test guest
+   → it is listed; in the web UI it is a member. Tap it: its screen opens.
+3. **Add storage** → a storage → listed. Edit the comment (pencil at the top).
+4. Remove the guest and the storage (minus icons) → **Delete pool** becomes available → delete
+   it → gone in the web UI too.
+
 ### E. Snapshots (Tools → Snapshots)
 1. **Take snapshot** on the running test VM with **Include RAM** → "VM snapshot finished"; it
    appears in the tree with a RAM badge.

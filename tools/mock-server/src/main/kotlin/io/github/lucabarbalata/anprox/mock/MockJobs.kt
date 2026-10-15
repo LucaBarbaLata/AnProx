@@ -1,7 +1,6 @@
 package io.github.lucabarbalata.anprox.mock
 
 import io.github.lucabarbalata.anprox.model.pve.NotBackedUp
-import io.github.lucabarbalata.anprox.model.pve.ResourcePool
 import io.github.lucabarbalata.anprox.model.pve.ScheduledRun
 import io.github.lucabarbalata.anprox.model.pve.StorageConfig
 import kotlinx.serialization.json.JsonObject
@@ -11,18 +10,17 @@ import java.time.ZoneOffset
 import java.time.temporal.ChronoUnit
 
 /**
- * Datacenter → Backup: scheduled backup jobs, the storage configuration and resource pools.
+ * Datacenter → Backup: scheduled backup jobs and the storage configuration.
  * Jobs keep their options as Proxmox's flat key/value pairs, like `/etc/pve/jobs.cfg`.
  */
 internal class MockJobs(
     private val storages: List<MockState.Storage>,
     private val clockMillis: () -> Long,
+    private val pools: MockPools,
 ) {
     private val jobs = LinkedHashMap<String, LinkedHashMap<String, String>>()
     private var counter = 0
 
-    val pools = listOf(ResourcePool("prod", "Production"), ResourcePool("lab"))
-    private val poolMembers = mapOf("prod" to setOf(100, 101, 201), "lab" to setOf(104))
 
     init {
         add(linkedMapOf("schedule" to "21:00", "storage" to "pbs", "all" to "1", "mode" to "snapshot", "enabled" to "1",
@@ -92,7 +90,7 @@ internal class MockJobs(
         val candidates = guests.filter { !it.template && (node == null || it.node == node) }
         val pool = params["pool"]
         return when {
-            !pool.isNullOrBlank() -> candidates.filter { it.vmid in poolMembers[pool].orEmpty() }
+            !pool.isNullOrBlank() -> candidates.filter { it.vmid in pools.members(pool) }
             params["all"] == "1" -> {
                 val exclude = ids(params["exclude"])
                 candidates.filter { it.vmid !in exclude }

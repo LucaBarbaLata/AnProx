@@ -775,6 +775,25 @@ def replication():
     back()
 
 
+@step("Datacenter: resource pools, add a guest to a pool")
+def pools():
+    tap("Overview")
+    tap_node(scroll_to("Datacenter", exact=True))
+    tap_node(scroll_to("Resource pools", exact=True))
+    find("Production", timeout=30)                 # the prod pool's comment
+    find("Guests: 3 · Storages: 1", timeout=10)
+    tap("lab")                                    # exact matches win
+    find("Guests (1)", timeout=30)                 # lab-vm
+    tap("Add guests")
+    tap("103 · k8s-master")
+    tap("Add (1)")
+    find("Guests (2)", timeout=30)
+    screenshot("13h-pool")
+    back()
+    back()
+    back()
+
+
 @step("Light theme, the app lock without a screen lock, favourites on the dashboard")
 def light_theme():
     tap("More")
@@ -812,7 +831,7 @@ def main():
     try:
         for s in (launch, add_pve, add_pbs, resources, performance, guest_start, snapshots, backups,
                   options, hardware, console, vm_console, cloud_init, bulk, clone_migrate, tasks, create_vm, alerts,
-                  backup_jobs, storage, firewall, high_availability, replication, light_theme):
+                  backup_jobs, storage, firewall, high_availability, replication, pools, light_theme):
             s()
         ok = True
     finally:

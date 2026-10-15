@@ -53,6 +53,8 @@ import io.github.lucabarbalata.anprox.ui.datacenter.BackupJobsScreen
 import io.github.lucabarbalata.anprox.ui.datacenter.DatacenterScreen
 import io.github.lucabarbalata.anprox.ui.datacenter.FirewallScreen
 import io.github.lucabarbalata.anprox.ui.datacenter.HaScreen
+import io.github.lucabarbalata.anprox.ui.datacenter.PoolScreen
+import io.github.lucabarbalata.anprox.ui.datacenter.PoolsScreen
 import io.github.lucabarbalata.anprox.ui.datacenter.ReplicationScreen
 import io.github.lucabarbalata.anprox.ui.datacenter.StorageContentScreen
 import io.github.lucabarbalata.anprox.ui.datacenter.StorageListScreen
@@ -84,6 +86,8 @@ import io.github.lucabarbalata.anprox.ui.navigation.MigrateRoute
 import io.github.lucabarbalata.anprox.ui.navigation.MoreRoute
 import io.github.lucabarbalata.anprox.ui.navigation.NodeRoute
 import io.github.lucabarbalata.anprox.ui.navigation.OptionsRoute
+import io.github.lucabarbalata.anprox.ui.navigation.PoolRoute
+import io.github.lucabarbalata.anprox.ui.navigation.PoolsRoute
 import io.github.lucabarbalata.anprox.ui.navigation.ReplicationRoute
 import io.github.lucabarbalata.anprox.ui.navigation.ResourcesRoute
 import io.github.lucabarbalata.anprox.ui.navigation.ServerEditorRoute
@@ -237,6 +241,7 @@ fun AnProxApp() {
                     onFirewall = { nav.navigate(FirewallRoute(route.serverId, "dc", route.title)) },
                     onHa = { nav.navigate(HaRoute(route.serverId)) },
                     onReplication = { nav.navigate(ReplicationRoute(route.serverId)) },
+                    onPools = { nav.navigate(PoolsRoute(route.serverId)) },
                 )
             }
             composable<HaRoute> { entry ->
@@ -244,6 +249,20 @@ fun AnProxApp() {
             }
             composable<ReplicationRoute> { entry ->
                 ReplicationScreen(entry.toRoute<ReplicationRoute>().serverId, onBack = back, onTask = openTask)
+            }
+            composable<PoolsRoute> { entry ->
+                val route = entry.toRoute<PoolsRoute>()
+                PoolsScreen(route.serverId, onBack = back, onPool = { id -> nav.navigate(PoolRoute(route.serverId, id)) }, onTask = openTask)
+            }
+            composable<PoolRoute> { entry ->
+                val route = entry.toRoute<PoolRoute>()
+                PoolScreen(
+                    route.serverId,
+                    route.poolId,
+                    onBack = back,
+                    onGuest = { node, type, vmid -> openGuest(GuestRef(route.serverId, node, type, vmid)) },
+                    onTask = openTask,
+                )
             }
             composable<FirewallRoute> { entry ->
                 val r = entry.toRoute<FirewallRoute>()

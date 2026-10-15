@@ -173,6 +173,14 @@ free number. "Run now" (`schedule_now`) has no task: Proxmox starts the job with
 so the screen says so and shows the log on request. The mock seeds a synced job and one that
 fails because its target (pve3) is offline.
 
+**M4: resource pools.** Proxmox VE 8.1 moved pools from `/pools/{poolid}` to
+`/pools?poolid=…` (so names can hold slashes for nested pools) and deprecated the old paths.
+`PoolRepository` uses the new form and falls back to the old one when the server answers 501
+(no `PUT`/`DELETE /pools`), 404, or rejects the `poolid` parameter, which is how Proxmox VE 8.0
+and older react. The mock's pools moved out of `MockJobs` into `MockPools`; backup jobs
+selecting a pool read its members from there, guests carry their pool in `/cluster/resources`
+and each pool is listed there too, as Proxmox does.
+
 **Tour, again.** On Android 8 the alerts screen's last card is below the fold, and uiautomator
 lists it with empty bounds; on Android 14 the **Open it** button after creating a VM ended up
 under the result snackbar at the end of the form. The create and clone screens now scroll to

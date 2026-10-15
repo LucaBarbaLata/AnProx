@@ -892,6 +892,8 @@
     <string name="datacenter_storage_body">Every storage, what it holds, ISO images and templates</string>
     <string name="datacenter_replication">Replication</string>
     <string name="datacenter_pools">Resource pools</string>
+    <string name="datacenter_storage_config">Adding and editing storages</string>
+    <string name="datacenter_firewall_more">Firewall security groups, IP sets, aliases and log</string>
     <string name="backupjobs_title">Backup jobs</string>
     <string name="backupjobs_add">Add backup job</string>
     <string name="backupjobs_empty_title">No backup jobs</string>
@@ -1160,4 +1162,34 @@
     <string name="schedule_30_minutes">Every 30 minutes</string>
     <string name="schedule_two_hours">Every 2 hours</string>
     <string name="schedule_nightly">Every day at 22:00</string>
+
+    <!-- Resource pools (Datacenter → Resource pools) -->
+    <string name="pools_open_body">Groups of guests and storages for permissions and backups</string>
+    <string name="pools_create">Create pool</string>
+    <string name="pools_create_short">Create</string>
+    <string name="pools_created">Pool %1$s created</string>
+    <string name="pools_empty_title">No resource pools</string>
+    <string name="pools_empty_body">A pool groups guests and storages, so permissions and backup jobs can cover all of them at once.</string>
+    <string name="pools_counts">Guests: %1$d · Storages: %2$d</string>
+    <string name="pools_name">Name</string>
+    <string name="pools_name_hint">Letters, digits, dots, dashes and underscores.</string>
+    <string name="pools_name_taken">A pool with this name exists.</string>
+    <string name="pools_comment">Comment</string>
+    <string name="pool_guests">Guests (%1$d)</string>
+    <string name="pool_storages">Storage (%1$d)</string>
+    <string name="pool_add_guests">Add guests</string>
+    <string name="pool_add_guests_hint">Guests already in a pool are not listed: a guest belongs to one pool at most.</string>
+    <string name="pool_add_storage">Add storage</string>
+    <string name="pool_add_count">Add (%1$d)</string>
+    <string name="pool_added">%1$d added to the pool</string>
+    <string name="pool_remove">Remove from pool</string>
+    <string name="pool_remove_title">Remove from the pool?</string>
+    <string name="pool_remove_body">%1$s leaves pool %2$s. Nothing else changes.</string>
+    <string name="pool_removed">Removed from the pool</string>
+    <string name="pool_edit_comment">Edit comment</string>
+    <string name="pool_comment_saved">Comment saved</string>
+    <string name="pool_delete">Delete pool</string>
+    <string name="pool_delete_not_empty">Only an empty pool can be deleted. Remove its guests and storages first.</string>
+    <string name="pool_delete_title">Delete pool %1$s?</string>
+    <string name="pool_delete_body">The pool is empty; permissions given on it are removed with it.</string>
 </resources>

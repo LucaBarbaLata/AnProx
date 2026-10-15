@@ -86,6 +86,10 @@ All notable changes to AnProx are documented here. The format follows
   job (guest, node, every 15 or 30 minutes, every 2 hours, nightly or any schedule, a speed
   limit), edit it, switch it off, run it now, read the last run's log, or delete it.
 
+- **Resource pools** (Datacenter → Resource pools): what each pool holds. Create a pool, add
+  guests and storages to it or take them out, change its comment, delete it once empty. Tap a
+  guest to open it.
+
 ### Changed
 - The bulk-action summary on the Resources list stays on screen longer.
 - After creating or cloning a guest, the form scrolls to the result and its **Open it** button.

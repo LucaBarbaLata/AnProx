@@ -133,8 +133,9 @@ Code: `core/network/src/main/kotlin/.../network/api/` (`AccessApi`, `PveApi`, `P
 | `GET /nodes/{node}/query-url-metadata` | Name and size behind a download URL | ✅ |
 | `GET …/rrddata` | Storage charts | 🗓 M1 |
 | `…/file-restore/{list,download}` | File-level restore from PBS-backed backups | 🗓 M8 |
-| `GET /pools` | Resource pools (backup job selection) | ✅ |
-| `/pools` (create, edit, delete, members) | Resource pools | 🗓 M4 |
+| `GET /pools` | Resource pools (list, backup job selection) | ✅ |
+| `GET /pools?poolid=`, `POST /pools`, `PUT /pools` (`vms`, `storage`, `delete`, `comment`), `DELETE /pools?poolid=` | One pool's members, create, add and remove members, comment, delete (Proxmox VE 8.1+) | ✅ |
+| `GET/PUT/DELETE /pools/{poolid}` | The same before Proxmox VE 8.1 (used when the newer form is refused) | ✅ |
 
 ---
 

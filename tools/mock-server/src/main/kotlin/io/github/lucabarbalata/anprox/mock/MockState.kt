@@ -216,7 +216,8 @@ class MockState(
     }
 
     private val hardware = MockHardware(storages, nodes)
-    private val jobs = MockJobs(storages, clockMillis)
+    private val poolsManager = MockPools()
+    private val jobs = MockJobs(storages, clockMillis, poolsManager)
     private val firewall = MockFirewall()
     private val haManager = MockHa(guests)
     private val replication = MockReplication(clockMillis)
@@ -276,6 +277,7 @@ class MockState(
                 )
             }
             guests.forEach { g -> add(g.toResource()) }
+            poolsManager.list().forEach { p -> add(ClusterResource(id = "pool/${p.id}", type = "pool", pool = p.id)) }
             storages.forEach { s ->
                 val online = node(s.node)?.online == true
                 add(
@@ -303,7 +305,7 @@ class MockState(
             disk = if (type == "lxc") maxdisk / 3 else 0, maxdisk = maxdisk,
             uptime = if (running) (clockMillis() - startedAtMillis) / 1000 else 0,
             netin = if (running) vmid * 1_234_567L else 0, netout = if (running) vmid * 765_432L else 0,
-            template = template, tags = tags, hastate = haManager.state(this),
+            template = template, tags = tags, hastate = haManager.state(this), pool = poolsManager.poolOf(vmid),
         )
     }
 
@@ -1025,7 +1027,13 @@ class MockState(
     fun backupJob(id: String): Map<String, String>? = synchronized(lock) { jobs.job(id) }
     fun notBackedUp() = synchronized(lock) { jobs.notBackedUp(guests) }
     fun storageConfigs() = jobs.storageConfigs()
-    fun pools() = jobs.pools
+    fun pools() = synchronized(lock) { poolsManager.list() }
+    fun pool(id: String) = synchronized(lock) { poolsManager.detail(id, guests, storages) }
+    fun createPool(params: Map<String, String>) = synchronized(lock) { poolsManager.create(params) }
+    fun updatePool(id: String, params: Map<String, String>) = synchronized(lock) {
+        poolsManager.update(id, params, { vmid -> guests.any { it.vmid == vmid } }, { s -> storages.any { it.id == s } })
+    }
+    fun deletePool(id: String) = synchronized(lock) { poolsManager.delete(id) }
 
     /**
      * `POST /nodes/{node}/vzdump` with `all`, `exclude` or `pool` instead of one `vmid`: one task

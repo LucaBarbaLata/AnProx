@@ -21,6 +21,7 @@ import io.github.lucabarbalata.anprox.model.pve.NodeNetwork
 import io.github.lucabarbalata.anprox.model.pve.NodeStatus
 import io.github.lucabarbalata.anprox.model.pve.NodeStorage
 import io.github.lucabarbalata.anprox.model.pve.NotBackedUp
+import io.github.lucabarbalata.anprox.model.pve.PoolDetail
 import io.github.lucabarbalata.anprox.model.pve.PendingEntry
 import io.github.lucabarbalata.anprox.model.pve.ResourcePool
 import io.github.lucabarbalata.anprox.model.pve.RrdPoint
@@ -93,6 +94,35 @@ interface PveApi {
 
     @GET("pools")
     suspend fun pools(): ApiEnvelope<List<ResourcePool>>
+
+    // Resource pools. Proxmox VE 8.1 moved them to `/pools?poolid=…` (pool names may then contain
+    // slashes); the `/pools/{poolid}` forms are for older versions.
+
+    @GET("pools")
+    suspend fun poolDetails(@Query("poolid") id: String): ApiEnvelope<List<PoolDetail>>
+
+    @GET("pools/{poolid}")
+    suspend fun poolDetailLegacy(@Path("poolid") id: String): ApiEnvelope<PoolDetail>
+
+    @FormUrlEncoded
+    @POST("pools")
+    suspend fun createPool(@FieldMap params: Map<String, String>): ApiEnvelope<JsonElement>
+
+    /** [params] include `poolid`. */
+    @FormUrlEncoded
+    @PUT("pools")
+    suspend fun updatePool(@FieldMap params: Map<String, String>): ApiEnvelope<JsonElement>
+
+    @FormUrlEncoded
+    @PUT("pools/{poolid}")
+    suspend fun updatePoolLegacy(@Path("poolid") id: String, @FieldMap params: Map<String, String>): ApiEnvelope<JsonElement>
+
+    /** Only an empty pool can be deleted. */
+    @DELETE("pools")
+    suspend fun deletePool(@Query("poolid") id: String): ApiEnvelope<JsonElement>
+
+    @DELETE("pools/{poolid}")
+    suspend fun deletePoolLegacy(@Path("poolid") id: String): ApiEnvelope<JsonElement>
 
     /** What a download URL points to (name, size), fetched by the node. */
     @GET("nodes/{node}/query-url-metadata")
