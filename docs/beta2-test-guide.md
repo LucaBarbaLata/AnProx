@@ -168,6 +168,18 @@ Compare everything with Datacenter → Backup in the web UI.
    "Show guests without backup job" in the web UI).
 7. Delete the test job.
 
+### D8. Storage (Dashboard → your cluster → Datacenter → Storage), new after beta.2
+1. Every storage is listed with its type, content types and usage per node; a shared one shows
+   one row. Compare with the web UI's Datacenter → Storage and each node's storage summary.
+2. Tap a node's row → the chips show what the storage can hold. ISO images and templates match
+   the web UI's lists; VM disks and CT volumes show which guest owns them.
+3. **From URL** → paste the link of a small ISO (for example a netinst image) → **Check the URL**
+   shows its name and size → **Download** → the download task runs on the node; the file appears
+   when it finishes. Try a wrong checksum: the task fails and says so.
+4. **Upload** → pick an ISO on the phone → **Upload** → the progress bar moves; keep the screen
+   open; the file appears after the task. Say how fast it was over Wi-Fi.
+5. Delete the test ISO (trash icon) → gone in the web UI too.
+
 ### E. Snapshots (Tools → Snapshots)
 1. **Take snapshot** on the running test VM with **Include RAM** → "VM snapshot finished"; it
    appears in the tree with a RAM badge.

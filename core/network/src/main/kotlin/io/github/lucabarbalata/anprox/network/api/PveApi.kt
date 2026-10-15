@@ -25,15 +25,20 @@ import io.github.lucabarbalata.anprox.model.pve.StorageContentItem
 import io.github.lucabarbalata.anprox.model.pve.TaskLogLine
 import io.github.lucabarbalata.anprox.model.pve.TaskStatus
 import io.github.lucabarbalata.anprox.model.pve.TaskSummary
+import io.github.lucabarbalata.anprox.model.pve.UrlMetadata
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
+import okhttp3.MultipartBody
+import okhttp3.RequestBody
 import retrofit2.http.DELETE
 import retrofit2.http.Field
 import retrofit2.http.FieldMap
 import retrofit2.http.FormUrlEncoded
 import retrofit2.http.GET
+import retrofit2.http.Multipart
 import retrofit2.http.PUT
 import retrofit2.http.POST
+import retrofit2.http.Part
 import retrofit2.http.Path
 import retrofit2.http.Query
 
@@ -82,6 +87,41 @@ interface PveApi {
 
     @GET("pools")
     suspend fun pools(): ApiEnvelope<List<ResourcePool>>
+
+    /** What a download URL points to (name, size), fetched by the node. */
+    @GET("nodes/{node}/query-url-metadata")
+    suspend fun queryUrlMetadata(
+        @Path("node") node: String,
+        @Query("url") url: String,
+        @Query("verify-certificates") verifyCertificates: Int,
+    ): ApiEnvelope<UrlMetadata>
+
+    /** The node downloads a file into the storage. Returns a UPID. */
+    @FormUrlEncoded
+    @POST("nodes/{node}/storage/{storage}/download-url")
+    suspend fun downloadUrl(
+        @Path("node") node: String,
+        @Path("storage") storage: String,
+        @FieldMap params: Map<String, String>,
+    ): ApiEnvelope<String>
+
+    /** Upload an ISO image or template. The `content` part must come before the file. Returns a UPID. */
+    @Multipart
+    @POST("nodes/{node}/storage/{storage}/upload")
+    suspend fun upload(
+        @Path("node") node: String,
+        @Path("storage") storage: String,
+        @Part("content") content: RequestBody,
+        @Part file: MultipartBody.Part,
+    ): ApiEnvelope<String>
+
+    /** Deletes a volume. Recent versions answer with a UPID, older ones with nothing. */
+    @DELETE("nodes/{node}/storage/{storage}/content/{volume}")
+    suspend fun deleteVolume(
+        @Path("node") node: String,
+        @Path("storage") storage: String,
+        @Path("volume") volume: String,
+    ): ApiEnvelope<JsonElement>
 
     /** Ceph health; fails on a cluster without Ceph. */
     @GET("cluster/ceph/status")

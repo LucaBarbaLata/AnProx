@@ -889,7 +889,7 @@
     <string name="datacenter_title">Datacenter</string>
     <string name="datacenter_backup_jobs_body">Scheduled backups, run now, guests without a backup</string>
     <string name="datacenter_planned">Planned</string>
-    <string name="datacenter_storage">Storage</string>
+    <string name="datacenter_storage_body">Every storage, what it holds, ISO images and templates</string>
     <string name="datacenter_ha">High availability</string>
     <string name="datacenter_replication">Replication</string>
     <string name="datacenter_firewall">Firewall</string>
@@ -965,4 +965,48 @@
     <string name="backupjob_problem_guests">Pick at least one guest.</string>
     <string name="backupjob_problem_pool">Pick a pool.</string>
     <string name="backupjob_problem_retention">Set at least one number, or keep all backups.</string>
+
+    <!-- Storage (M4) -->
+    <string name="storage_title">Storage</string>
+    <string name="storage_shared">shared</string>
+    <string name="storage_disabled">Disabled</string>
+    <string name="storage_all_nodes">All nodes</string>
+    <string name="storage_unavailable">Not available</string>
+    <string name="content_iso">ISO images</string>
+    <string name="content_vztmpl">CT templates</string>
+    <string name="content_images">VM disks</string>
+    <string name="content_rootdir">CT volumes</string>
+    <string name="content_backup">Backups</string>
+    <string name="content_snippets">Snippets</string>
+    <string name="content_import">Import</string>
+    <string name="storage_download">From URL</string>
+    <string name="storage_upload">Upload</string>
+    <string name="storage_working">Working…</string>
+    <string name="storage_open_backups">Open the backups</string>
+    <string name="storage_empty_title">Nothing here</string>
+    <string name="storage_empty_body">Download a file from a URL or upload one from this phone.</string>
+    <string name="storage_owner">guest %1$d</string>
+    <string name="storage_delete_item">Delete %1$s</string>
+    <string name="storage_delete_title">Delete this file?</string>
+    <string name="storage_delete_body">%1$s is removed from the storage. Guests that still use it as a CD/DVD won\'t start until you eject it.</string>
+    <string name="storage_deleted">File deleted</string>
+    <string name="storage_downloaded">%1$s downloaded</string>
+    <string name="storage_uploaded">%1$s uploaded</string>
+    <string name="storage_upload_title">Upload this file?</string>
+    <string name="storage_upload_as">Upload as</string>
+    <string name="storage_upload_keep_open">Keep this screen open until the upload has finished.</string>
+    <string name="storage_uploading">Uploading %1$s</string>
+    <string name="storage_download_title">Download from URL</string>
+    <string name="storage_download_url">URL</string>
+    <string name="storage_download_check">Check the URL</string>
+    <string name="storage_download_name">File name</string>
+    <string name="storage_download_checksum">Checksum (optional)</string>
+    <string name="storage_download_checksum_hint">The node checks the file against it after downloading.</string>
+    <string name="storage_download_verify">Verify the server\'s certificate</string>
+    <string name="storage_download_verify_body">Turn off only for a download server you trust that uses a self-signed certificate.</string>
+    <string name="storage_download_start">Download</string>
+    <string name="storage_problem_url">Enter an http, https or ftp URL.</string>
+    <string name="storage_problem_name">Use letters, digits, dots, dashes and underscores in the file name.</string>
+    <string name="storage_problem_extension">The file name must end in .iso or .img for ISO images, .tar.gz, .tar.xz or .tar.zst for templates.</string>
+    <string name="storage_problem_checksum">A checksum is 32 to 128 hexadecimal characters.</string>
 </resources>

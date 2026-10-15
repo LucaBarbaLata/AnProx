@@ -63,6 +63,11 @@ All notable changes to AnProx are documented here. The format follows
   selected, all but some, a pool), mode, compression, retention and notes. The screen also lists
   guests that no enabled job backs up.
 
+- **Storage** (Dashboard → Datacenter → Storage): every storage with its usage on each node, and
+  what it holds by type. The node can download an ISO image or container template straight from
+  a URL (optionally checked against a checksum), you can upload one from the phone, and delete
+  ISO images and templates you no longer need.
+
 ### Changed
 - The bulk-action summary on the Resources list stays on screen longer.
 - After creating or cloning a guest, the form scrolls to the result and its **Open it** button.

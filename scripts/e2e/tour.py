@@ -701,6 +701,26 @@ def backup_jobs():
     back()
 
 
+@step("Datacenter: storage, the node downloads an ISO image from a URL")
+def storage():
+    tap("Overview")
+    tap_node(scroll_to("Datacenter", exact=True))
+    tap_node(scroll_to("Storage", exact=True))
+    find("nas-nfs", timeout=30)
+    tap_node(scroll_to("pve1", exact=True))     # the local storage on pve1
+    find("debian-12.7.0-amd64-netinst.iso", timeout=30)
+    tap("From URL")
+    find("Download from URL", timeout=10)
+    fill("URL", "https://example.com/images/tiny-test.iso", fallback_index=0)
+    tap("Download", pick="lowest")              # the dialog's button; the file name was filled in
+    wait_until(lambda: not visible("Download from URL"), "the download dialog to close", timeout=10)
+    find("tiny-test.iso", timeout=60)           # listed once the node's download task has finished
+    screenshot("13d-storage")
+    back()
+    back()
+    back()
+
+
 @step("Light theme, the app lock without a screen lock, favourites on the dashboard")
 def light_theme():
     tap("More")
@@ -738,7 +758,7 @@ def main():
     try:
         for s in (launch, add_pve, add_pbs, resources, performance, guest_start, snapshots, backups,
                   options, hardware, console, vm_console, cloud_init, bulk, clone_migrate, tasks, create_vm, alerts,
-                  backup_jobs, light_theme):
+                  backup_jobs, storage, light_theme):
             s()
         ok = True
     finally:

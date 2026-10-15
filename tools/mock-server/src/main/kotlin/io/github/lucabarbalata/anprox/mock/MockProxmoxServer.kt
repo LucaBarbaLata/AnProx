@@ -11,6 +11,10 @@ import io.github.lucabarbalata.anprox.model.pve.GuestOptions
 import io.github.lucabarbalata.anprox.model.pve.SnapshotName
 import io.github.lucabarbalata.anprox.model.pve.VersionInfo
 import io.ktor.http.ContentType
+import io.ktor.http.content.PartData
+import io.ktor.http.content.forEachPart
+import io.ktor.server.request.receiveMultipart
+import io.ktor.utils.io.toByteArray
 import io.ktor.websocket.close
 import io.ktor.websocket.CloseReason
 import io.ktor.server.websocket.DefaultWebSocketServerSession
@@ -360,6 +364,53 @@ class MockProxmoxServer(
         get("pools") {
             call.authed() ?: return@get
             call.ok(state.pools())
+        }
+        get("nodes/{node}/query-url-metadata") {
+            call.authed() ?: return@get
+            state.urlMetadata(call.request.queryParameters["url"].orEmpty()).fold(
+                onSuccess = { call.ok(it) },
+                onFailure = { call.fail(500, it.message ?: "error") },
+            )
+        }
+        post("nodes/{node}/storage/{storage}/download-url") {
+            val s = call.authed() ?: return@post
+            if (state.isReadOnly(s.user)) return@post call.fail(403, "Permission check failed (/storage/${call.parameters["storage"]}, Datastore.AllocateTemplate)")
+            val p = call.receiveParameters()
+            state.downloadUrl(call.parameters["node"]!!, call.parameters["storage"]!!, p.names().associateWith { p[it].orEmpty() }, s.user).fold(
+                onSuccess = { call.ok(it) },
+                onFailure = { call.fail(500, it.message ?: "error") },
+            )
+        }
+        post("nodes/{node}/storage/{storage}/upload") {
+            val s = call.authed() ?: return@post
+            if (state.isReadOnly(s.user)) return@post call.fail(403, "Permission check failed (/storage/${call.parameters["storage"]}, Datastore.AllocateTemplate)")
+            var content = ""
+            var name = ""
+            var size = 0L
+            // Proxmox reads the form fields first and the file last, like the web UI sends them.
+            call.receiveMultipart().forEachPart { part ->
+                when (part) {
+                    is PartData.FormItem -> if (part.name == "content") content = part.value
+                    is PartData.FileItem -> {
+                        name = part.originalFileName.orEmpty()
+                        size = part.provider().toByteArray().size.toLong()
+                    }
+                    else -> Unit
+                }
+                part.dispose()
+            }
+            state.upload(call.parameters["node"]!!, call.parameters["storage"]!!, content, name, size, s.user).fold(
+                onSuccess = { call.ok(it) },
+                onFailure = { call.fail(500, it.message ?: "error") },
+            )
+        }
+        delete("nodes/{node}/storage/{storage}/content/{volume}") {
+            val s = call.authed() ?: return@delete
+            if (state.isReadOnly(s.user)) return@delete call.fail(403, "Permission check failed (/storage/${call.parameters["storage"]}, Datastore.Allocate)")
+            state.deleteVolume(call.parameters["node"]!!, call.parameters["storage"]!!, call.parameters["volume"]!!, s.user).fold(
+                onSuccess = { call.ok(it) },
+                onFailure = { call.fail(500, it.message ?: "error") },
+            )
         }
         // Proxmox returns the id as a string.
         get("cluster/nextid") {

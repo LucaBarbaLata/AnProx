@@ -119,7 +119,11 @@ Everything marked ✅ in M1 and M2 below. Gates:
   (schedule presets or any calendar event with Proxmox's preview of the next runs, storage,
   node, all/selected/all-but/pool, mode, compression, retention, notes template, comment), and
   the guests no job covers.
-- Storage: add/edit/remove every storage type, content browser, upload ISO/templates, download from URL.
+- ✅ **Storage browser** (Datacenter → Storage): every storage with its state and usage per
+  node; what it holds by type (ISO images, CT templates, VM disks, CT volumes, snippets, import,
+  backups); the node downloads ISO images and templates from a URL (with a checksum); upload from
+  the phone with progress; delete ISO images and templates.
+- Storage configuration: add/edit/remove every storage type.
 - **High Availability** (Q21): resources, node affinity rules/groups, CRM/LRM status, maintenance mode.
 - **Storage replication** (Q21): jobs, schedule, status, run now.
 - **Firewall, full management** (Q24): datacenter/node/guest rules, security groups, IP sets, aliases, options, log.

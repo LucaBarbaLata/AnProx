@@ -44,6 +44,8 @@ import kotlinx.serialization.Serializable
 @Serializable data class BackupJobsRoute(val serverId: String)
 // "" = a new job
 @Serializable data class BackupJobEditorRoute(val serverId: String, val jobId: String = "")
+@Serializable data class StorageListRoute(val serverId: String)
+@Serializable data class StorageContentRoute(val serverId: String, val node: String, val storage: String)
 
 // Settings
 @Serializable data object SettingsRoute

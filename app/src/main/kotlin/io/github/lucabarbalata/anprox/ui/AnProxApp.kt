@@ -48,6 +48,8 @@ import io.github.lucabarbalata.anprox.ui.dashboard.DashboardScreen
 import io.github.lucabarbalata.anprox.ui.datacenter.BackupJobEditorScreen
 import io.github.lucabarbalata.anprox.ui.datacenter.BackupJobsScreen
 import io.github.lucabarbalata.anprox.ui.datacenter.DatacenterScreen
+import io.github.lucabarbalata.anprox.ui.datacenter.StorageContentScreen
+import io.github.lucabarbalata.anprox.ui.datacenter.StorageListScreen
 import io.github.lucabarbalata.anprox.ui.guest.CloneScreen
 import io.github.lucabarbalata.anprox.ui.guest.GuestScreen
 import io.github.lucabarbalata.anprox.ui.guest.GuestTool
@@ -81,6 +83,8 @@ import io.github.lucabarbalata.anprox.ui.navigation.ServerEditorRoute
 import io.github.lucabarbalata.anprox.ui.navigation.ServersRoute
 import io.github.lucabarbalata.anprox.ui.navigation.SettingsRoute
 import io.github.lucabarbalata.anprox.ui.navigation.SnapshotsRoute
+import io.github.lucabarbalata.anprox.ui.navigation.StorageContentRoute
+import io.github.lucabarbalata.anprox.ui.navigation.StorageListRoute
 import io.github.lucabarbalata.anprox.ui.navigation.StorageRoute
 import io.github.lucabarbalata.anprox.ui.navigation.TaskLogRoute
 import io.github.lucabarbalata.anprox.ui.navigation.TasksRoute
@@ -217,7 +221,27 @@ fun AnProxApp() {
             }
             composable<DatacenterRoute> { entry ->
                 val route = entry.toRoute<DatacenterRoute>()
-                DatacenterScreen(route.title, onBack = back, onBackupJobs = { nav.navigate(BackupJobsRoute(route.serverId)) })
+                DatacenterScreen(
+                    route.title,
+                    onBack = back,
+                    onBackupJobs = { nav.navigate(BackupJobsRoute(route.serverId)) },
+                    onStorage = { nav.navigate(StorageListRoute(route.serverId)) },
+                )
+            }
+            composable<StorageListRoute> { entry ->
+                val route = entry.toRoute<StorageListRoute>()
+                StorageListScreen(route.serverId, onBack = back, onOpen = { node, storage -> nav.navigate(StorageContentRoute(route.serverId, node, storage)) })
+            }
+            composable<StorageContentRoute> { entry ->
+                val r = entry.toRoute<StorageContentRoute>()
+                StorageContentScreen(
+                    serverId = r.serverId,
+                    node = r.node,
+                    storage = r.storage,
+                    onBack = back,
+                    onBackups = { nav.navigate(StorageRoute(r.serverId, r.node, r.storage)) },
+                    onTask = openTask,
+                )
             }
             composable<BackupJobsRoute> { entry ->
                 val route = entry.toRoute<BackupJobsRoute>()

@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Backup
+import androidx.compose.material.icons.outlined.Storage
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -26,12 +27,13 @@ import io.github.lucabarbalata.anprox.ui.common.contentPadding
 
 /** Cluster-wide settings of one Proxmox VE server (milestone M4). */
 @Composable
-fun DatacenterScreen(title: String, onBack: () -> Unit, onBackupJobs: () -> Unit) {
+fun DatacenterScreen(title: String, onBack: () -> Unit, onBackupJobs: () -> Unit, onStorage: () -> Unit) {
     AnProxScaffold(title = stringResource(R.string.datacenter_title), subtitle = title, onBack = onBack) { inner ->
         LazyColumn(contentPadding = contentPadding(inner), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             item {
                 GlassCard(contentPadding = PaddingValues(vertical = 6.dp)) {
                     MenuRow(Icons.Outlined.Backup, stringResource(R.string.backupjobs_title), stringResource(R.string.datacenter_backup_jobs_body), onBackupJobs)
+                    MenuRow(Icons.Outlined.Storage, stringResource(R.string.storage_title), stringResource(R.string.datacenter_storage_body), onStorage)
                 }
             }
             item { SectionHeader(stringResource(R.string.datacenter_planned)) }
@@ -45,7 +47,6 @@ fun DatacenterScreen(title: String, onBack: () -> Unit, onBackupJobs: () -> Unit
 private fun Planned() {
     val c = AnProxTheme.colors
     val items = listOf(
-        R.string.datacenter_storage,
         R.string.datacenter_ha,
         R.string.datacenter_replication,
         R.string.datacenter_firewall,

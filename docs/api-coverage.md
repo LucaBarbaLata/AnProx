@@ -120,8 +120,10 @@ Code: `core/network/src/main/kotlin/.../network/api/` (`AccessApi`, `PveApi`, `P
 | `GET /storage` | Storage configuration (backup targets for jobs) | ✅ |
 | `/storage` (create, edit, delete) | Storage configuration | 🗓 M4 |
 | `GET /nodes/{node}/storage` | Storages a node can use (backup targets) | ✅ |
-| `GET /nodes/{node}/storage/{storage}/content` | Browse ISOs, templates, backups, disks | 🔸 backups ✅, the rest M4 |
-| `POST …/upload`, `POST …/download-url` | Upload / download ISO & templates | 🗓 M4 |
+| `GET /nodes/{node}/storage/{storage}/content` | Browse ISOs, templates, backups, disks | ✅ |
+| `DELETE /nodes/{node}/storage/{storage}/content/{volume}` | Delete ISO images, templates, snippets (backups from their screen) | ✅ |
+| `POST …/upload`, `POST …/download-url` | Upload / download ISO & templates | ✅ (upload streams from the phone with progress) |
+| `GET /nodes/{node}/query-url-metadata` | Name and size behind a download URL | ✅ |
 | `GET …/rrddata` | Storage charts | 🗓 M1 |
 | `…/file-restore/{list,download}` | File-level restore from PBS-backed backups | 🗓 M8 |
 | `GET /pools` | Resource pools (backup job selection) | ✅ |

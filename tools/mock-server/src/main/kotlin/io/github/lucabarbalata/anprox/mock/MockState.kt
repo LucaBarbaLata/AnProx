@@ -31,6 +31,7 @@ import io.github.lucabarbalata.anprox.model.pve.StorageContentItem
 import io.github.lucabarbalata.anprox.model.pve.TaskLogLine
 import io.github.lucabarbalata.anprox.model.pve.TaskStatus
 import io.github.lucabarbalata.anprox.model.pve.TaskSummary
+import io.github.lucabarbalata.anprox.model.pve.UrlMetadata
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
@@ -861,7 +862,7 @@ class MockState(
         .filter { it.node == n.name && (content == null || content in it.content.split(',')) }
         .map { NodeStorage(it.id, it.plugin, it.content, active = n.online, enabled = true, shared = it.shared, total = it.total, used = it.used, avail = it.total - it.used) }
 
-    /** `null` if the storage doesn't exist on that node. The mock stores backups and ISO images. */
+    /** `null` if the storage doesn't exist on that node. The mock stores backups, ISO images, templates and disks. */
     fun storageContent(n: Node, storage: String, content: String?, vmid: Int?): List<StorageContentItem>? = synchronized(lock) {
         settleTasks()
         val s = storages.firstOrNull { it.node == n.name && it.id == storage } ?: return null
@@ -872,10 +873,86 @@ class MockState(
         } else {
             emptyList()
         }
-        if (content != null && content != "backup") return files
+        val disks = if (content == null || content == "images" || content == "rootdir") volumes(n, s, vmid).filter { content == null || it.content == content } else emptyList()
+        if (content != null && content != "backup") return files + disks
         backups
             .filter { it.storage == storage && (s.shared || it.node == n.name) && (vmid == null || it.vmid == vmid) }
-            .map { it.toItem() } + files
+            .map { it.toItem() } + files + disks
+    }
+
+    /** Guest disks on [s] as seen from node [n]: volumes in the guests' configs. */
+    private fun volumes(n: Node, s: Storage, vmid: Int?): List<StorageContentItem> = guests
+        .filter { (s.shared || it.node == n.name) && (vmid == null || it.vmid == vmid) }
+        .flatMap { g ->
+            hardware.of(g).filter { (key, value) -> DISK_KEY.matches(key) && value.startsWith("${s.id}:") && "media=cdrom" !in value }
+                .map { (_, value) ->
+                    val volid = value.substringBefore(',')
+                    val size = Regex("size=(\\d+)([KMGT]?)").find(value)?.let { m ->
+                        m.groupValues[1].toLong() * when (m.groupValues[2]) { "K" -> 1024L; "M" -> MIB; "G" -> GIB; "T" -> 1024 * GIB; else -> 1L }
+                    }
+                    StorageContentItem(volid = volid, content = if (g.type == "qemu") "images" else "rootdir", size = size, vmid = g.vmid, format = "raw")
+                }
+        }
+
+    /** What a URL would download (the mock invents a size). `fail.invalid` can't be reached. */
+    fun urlMetadata(url: String): Result<UrlMetadata> {
+        if ("fail.invalid" in url) return Result.failure(IllegalStateException("can't connect to fail.invalid:443"))
+        val name = url.substringBefore('?').trimEnd('/').substringAfterLast('/')
+        val type = if (name.endsWith(".iso")) "application/x-iso9660-image" else "application/octet-stream"
+        return Result.success(UrlMetadata(name, 123 * MIB, type))
+    }
+
+    /** `download-url`: a task that adds the file to the storage when it ends. */
+    fun downloadUrl(nodeName: String, storage: String, params: Map<String, String>, user: String): Result<String> = synchronized(lock) {
+        settleTasks()
+        fun fail(msg: String) = Result.failure<String>(IllegalStateException(msg))
+        val s = storages.firstOrNull { it.node == nodeName && it.id == storage } ?: return fail("storage '$storage' does not exist")
+        val content = params["content"].orEmpty()
+        if (content !in s.content.split(',')) return fail("storage '$storage' does not support content-type '$content'")
+        val name = params["filename"].orEmpty()
+        if (name.isEmpty() || '/' in name) return fail("filename: invalid format")
+        val url = params["url"].orEmpty()
+        urlMetadata(url).exceptionOrNull()?.let { return fail(it.message ?: "download failed") }
+        if (stored(storage, content).any { it.file == name }) return fail("refusing to override existing file '$name'")
+        Result.success(startTask(nodeName, "download", "$storage:$content/$name", user) { addFile(MockHardware.StoredFile(storage, content, name, 123 * MIB)) })
+    }
+
+    /** `upload`: a task that moves the uploaded file into the storage. */
+    fun upload(nodeName: String, storage: String, content: String, name: String, size: Long, user: String): Result<String> = synchronized(lock) {
+        settleTasks()
+        fun fail(msg: String) = Result.failure<String>(IllegalStateException(msg))
+        val s = storages.firstOrNull { it.node == nodeName && it.id == storage } ?: return fail("storage '$storage' does not exist")
+        if (content !in listOf("iso", "vztmpl", "import")) return fail("upload content type '$content' is not allowed")
+        if (content !in s.content.split(',')) return fail("storage '$storage' does not support content-type '$content'")
+        if (name.isEmpty() || '/' in name) return fail("filename: invalid format")
+        Result.success(startTask(nodeName, "imgcopy", "", user) { addFile(MockHardware.StoredFile(storage, content, name, size)) })
+    }
+
+    /** Deletes an ISO image, template or backup. Disks in use by a guest are refused, like Proxmox does. */
+    fun deleteVolume(nodeName: String, storage: String, volid: String, user: String): Result<String> = synchronized(lock) {
+        settleTasks()
+        fun fail(msg: String) = Result.failure<String>(IllegalStateException(msg))
+        storages.firstOrNull { it.node == nodeName && it.id == storage } ?: return fail("storage '$storage' does not exist")
+        val file = (hardware.isos + hardware.templates).firstOrNull { it.volid == volid }
+        val backup = backups.firstOrNull { it.volid == volid }
+        when {
+            file != null -> Unit
+            backup != null -> if (backup.isProtected) return fail("backup '$volid' is protected")
+            guests.any { g -> hardware.of(g).values.any { it.substringBefore(',') == volid } } -> return fail("volume '$volid' is in use by a guest")
+            else -> return fail("volume '$volid' does not exist")
+        }
+        Result.success(
+            startTask(nodeName, "imgdel", volid, user) {
+                file?.let { hardware.isos.remove(it); hardware.templates.remove(it) }
+                backup?.let { backups.remove(it) }
+            },
+        )
+    }
+
+    private fun stored(storage: String, content: String) = (hardware.isos + hardware.templates).filter { it.storage == storage && it.content == content }
+
+    private fun addFile(f: MockHardware.StoredFile) {
+        if (f.content == "vztmpl") hardware.templates += f else hardware.isos += f
     }
 
     /** `vzdump` for one guest. Returns a UPID, or an error message (500). */
@@ -890,6 +967,8 @@ class MockState(
             .replace("{{node}}", g.node).replace("{{cluster}}", clusterName)
         Result.success(startTask(g.node, "vzdump", g.vmid.toString(), user) { backups += newBackup(storage, g, clockMillis(), notes) })
     }
+
+    private val DISK_KEY = Regex("^(scsi|virtio|sata|ide|efidisk|tpmstate|unused|mp)\\d+$|^rootfs$")
 
     // ------------------------------------------------------------------ backup jobs, pools, storage config
 

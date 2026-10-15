@@ -137,6 +137,15 @@ events. "Run now" posts the job's settings to `vzdump` on each node it covers, l
 and limits a "selected guests" job to the guests on each node. The Datacenter screen opens from
 the cluster card on the dashboard and lists the rest of M4 as planned.
 
+**M4: storage.** `StorageRepository` combines `GET /storage` (the configuration) with the
+storage rows of `/cluster/resources` (state and usage per node), lists content by type, and
+handles `download-url` (the node fetches the file, so a big ISO never passes through the phone),
+`query-url-metadata` and deletes. Uploads stream from the Storage Access Framework through an
+`UploadBody` that re-opens the file for each attempt and reports progress; the `content` field
+goes before the file part, which Proxmox requires. VM disks and container volumes are listed
+but not deletable here (that is the Hardware screen's job). A mock bug turned up on the way: the
+Windows VM's seeded config took its ISO by list index, which broke once a test deleted an ISO.
+
 **Tour, again.** On Android 8 the alerts screen's last card is below the fold, and uiautomator
 lists it with empty bounds; on Android 14 the **Open it** button after creating a VM ended up
 under the result snackbar at the end of the form. The create and clone screens now scroll to

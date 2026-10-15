@@ -37,13 +37,16 @@ internal class MockHardware(
         NodeNetwork("eno2", "eth", active = false),
     )
 
-    val isos = listOf(
+    /** Mounted in the Windows VM's seeded config (the app can delete ISO images, so not by index). */
+    private val virtioIso = StoredFile("nas-nfs", "iso", "virtio-win-0.1.262.iso", 708 * MIB)
+
+    val isos = mutableListOf(
         StoredFile("local", "iso", "debian-12.7.0-amd64-netinst.iso", 631 * MIB),
         StoredFile("local", "iso", "ubuntu-24.04.1-live-server-amd64.iso", 2_640 * MIB),
-        StoredFile("nas-nfs", "iso", "virtio-win-0.1.262.iso", 708 * MIB),
+        virtioIso,
     )
 
-    val templates = listOf(
+    val templates = mutableListOf(
         StoredFile("local", "vztmpl", "debian-12-standard_12.7-1_amd64.tar.zst", 126 * MIB),
         StoredFile("local", "vztmpl", "ubuntu-24.04-standard_24.04-2_amd64.tar.zst", 141 * MIB),
         StoredFile("local", "vztmpl", "alpine-3.20-default_20240908_amd64.tar.xz", 3 * MIB),
@@ -350,7 +353,7 @@ internal class MockHardware(
                 m["tpmstate0"] = "${volumeName(storage, g, 2, false)},size=4M,version=v2.0"
             }
             m["scsi0"] = "${volumeName(storage, g, 0, false)},iothread=1,size=${g.maxdisk / GIB}G"
-            m["ide2"] = if (windows) "${isos[2].volid},media=cdrom,size=708M" else "none,media=cdrom"
+            m["ide2"] = if (windows) "${virtioIso.volid},media=cdrom,size=708M" else "none,media=cdrom"
             if (g.vmid == 103) {
                 m["ide0"] = "${storage.id}:vm-103-cloudinit,media=cdrom"
                 m["ciuser"] = "ubuntu"
