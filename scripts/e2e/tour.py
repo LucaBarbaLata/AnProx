@@ -43,11 +43,14 @@ def screen_size():
     return (int(m.group(1)), int(m.group(2))) if m else (1080, 2400)
 
 
-def dump():
+def dump(attempts=8):
     """Current UI hierarchy (uiautomator sees Compose through its accessibility tree)."""
     last = ""
-    for _ in range(8):
-        out = adb("shell", "uiautomator", "dump", "/sdcard/anprox-ui.xml", check=False)
+    for _ in range(attempts):
+        # uiautomator waits for the screen to be idle; on recent Android its complaint goes to stderr.
+        result = subprocess.run(["adb", "shell", "uiautomator", "dump", "/sdcard/anprox-ui.xml"],
+                                capture_output=True, text=True, timeout=120)
+        out = result.stdout + result.stderr
         if "dumped" in out.lower():
             xml = adb("exec-out", "cat", "/sdcard/anprox-ui.xml")
             try:
@@ -142,6 +145,20 @@ def find_any(texts, timeout=30):
 def visible(text):
     root = dump()
     return bool(matches(root, text, exact=True) or matches(root, text, exact=False))
+
+
+def bounds(node):
+    return tuple(map(int, re.findall(r"\d+", node.get("bounds"))))
+
+
+def row_shows(name, text):
+    """Whether the list row of [name] also shows [text] (the two overlap vertically)."""
+    root = dump()
+    row = first_match(root, name)
+    if row is None:
+        return False
+    _, top, _, bottom = bounds(row)
+    return any(bounds(n)[1] < bottom + 80 and bounds(n)[3] > top - 80 for n in matches(root, text, exact=True))
 
 
 def wait_until(condition, what, timeout=30):
@@ -295,6 +312,23 @@ def fill(label, value, fallback_index=None, password=False):
 def back():
     adb("shell", "input", "keyevent", "4")
     time.sleep(1.2)
+
+
+def leave_console(marker="Reconnect"):
+    """
+    Presses Back until the console (recognised by its top bar's [marker]) is gone. The first Back may only hide
+    the soft keyboard, and while the terminal has focus its blinking cursor keeps uiautomator from
+    ever seeing an idle screen, so a failed dump means "still there" too.
+    """
+    for _ in range(3):
+        back()
+        try:
+            root = dump(attempts=2)
+        except RuntimeError:
+            continue
+        if not matches(root, marker, exact=True):
+            return
+    raise AssertionError(f"Back didn't leave the console (still showing '{marker}')")
 
 
 def screenshot(name):
@@ -522,7 +556,7 @@ def console():
         tap("Keyboard")                    # focuses the terminal and asks for the soft keyboard
         time.sleep(1)
     screenshot("11f-console")
-    back()
+    leave_console()
     scroll_to("The container's terminal")  # back on the guest screen
     back()
 
@@ -534,7 +568,7 @@ def vm_console():
     # noVNC completes the VNC handshake (with the generated password) and reports the desktop name.
     find_any(["Connected · k8s-master", "Android System WebView"], timeout=45)
     screenshot("11f2-vm-console")
-    back()
+    leave_console()
     scroll_to("The VM's screen (noVNC)")
     back()
 
@@ -561,9 +595,10 @@ def bulk():
     find("Start these guests?", timeout=10)
     screenshot("11g-bulk")
     tap("Start", pick="lowest")              # the dialog's button
-    # The selection clears when every task has finished; then the summary shows.
+    # The selection clears when every task has finished. The summary snackbar can come and go
+    # between two UI dumps, so check the outcome on the list instead.
     wait_until(lambda: not visible("2 selected"), "the bulk start to finish", timeout=60)
-    find("Started 1 of 1 guests", timeout=20)
+    wait_until(lambda: row_shows("backup-client", "Running"), "backup-client to show as running", timeout=30)
 
 
 @step("Clone the template, then migrate the clone to another node")

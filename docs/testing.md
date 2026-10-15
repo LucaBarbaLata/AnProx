@@ -123,7 +123,7 @@ so no test code is compiled into the app. `scripts/e2e/run.sh` starts the mock s
 11. **Console** of `nginx-proxy` → "Connected" (the app's own connection to the mock termproxy through the self-signed certificate) → **Esc** and **Keyboard** on the key row.
 12. **Console** of `k8s-master` → noVNC (bundled) finishes the VNC handshake with the generated password → "Connected · k8s-master". (An emulator with an Android System WebView older than 80 shows the update message instead, in both console steps.)
 13. **Cloud-init** of `k8s-master` → the user `ubuntu` and net0's static address from the VM's config.
-14. Long-press `backup-client`, tap `nginx-proxy` → "2 selected" → **Start** → the confirmation lists only the stopped one → the selection clears when the tasks end → "Started 1 of 1 guests".
+14. Long-press `backup-client`, tap `nginx-proxy` → "2 selected" → **Start** → the confirmation lists only the stopped one → the selection clears when the tasks end → `backup-client` shows **Running**.
 15. **Clone** the Ubuntu template (linked by default) → **Open it** → **Migrate** the clone to `pve2` → the guest screen now says `pve2`.
 16. Tasks tab shows the newest task ("VM migrate").
 17. Node `pve1` → **Create VM** with the suggested settings (next free ID, first storage, 32 GiB) → "Open it" → the new, stopped VM.
