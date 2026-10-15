@@ -41,7 +41,9 @@ Code: `core/network/src/main/kotlin/.../network/api/` (`AccessApi`, `PveApi`, `P
 | `/cluster/backup` (list, create, edit, delete) | Backup jobs | ✅ (run now uses `POST /nodes/{node}/vzdump` per node, like the web UI) |
 | `GET /cluster/backup-info/not-backed-up` | Guests no enabled job covers | ✅ |
 | `/cluster/replication` | Storage replication jobs | 🗓 M4 |
-| `/cluster/ha/{resources,groups,rules,status}` | High availability | 🗓 M4 |
+| `/cluster/ha/resources` (list, add, edit, remove), `POST …/{sid}/migrate` | Guests managed by HA, requested state, limits, moving | ✅ |
+| `GET /cluster/ha/groups`, `GET /cluster/ha/status/current` | Groups (Proxmox VE 8) to pick from, manager and node status | ✅ |
+| `/cluster/ha/groups` (editing), `/cluster/ha/rules` (Proxmox VE 9) | Node affinity | 🗓 M4 |
 | `/cluster/firewall/rules`, `/cluster/firewall/options` | Datacenter firewall rules (add, edit, enable, move, delete) and options | ✅ |
 | `GET /cluster/firewall/macros`, `GET /cluster/firewall/groups` | Macros and security groups for the rule editor | ✅ |
 | `/cluster/firewall/{groups/*, aliases, ipset, refs}` (editing) | Security groups' rules, aliases, IP sets | 🗓 M4 |

@@ -50,6 +50,7 @@ import io.github.lucabarbalata.anprox.ui.datacenter.BackupJobEditorScreen
 import io.github.lucabarbalata.anprox.ui.datacenter.BackupJobsScreen
 import io.github.lucabarbalata.anprox.ui.datacenter.DatacenterScreen
 import io.github.lucabarbalata.anprox.ui.datacenter.FirewallScreen
+import io.github.lucabarbalata.anprox.ui.datacenter.HaScreen
 import io.github.lucabarbalata.anprox.ui.datacenter.StorageContentScreen
 import io.github.lucabarbalata.anprox.ui.datacenter.StorageListScreen
 import io.github.lucabarbalata.anprox.ui.guest.CloneScreen
@@ -75,6 +76,7 @@ import io.github.lucabarbalata.anprox.ui.navigation.CreateGuestRoute
 import io.github.lucabarbalata.anprox.ui.navigation.DatacenterRoute
 import io.github.lucabarbalata.anprox.ui.navigation.FirewallRoute
 import io.github.lucabarbalata.anprox.ui.navigation.GuestRoute
+import io.github.lucabarbalata.anprox.ui.navigation.HaRoute
 import io.github.lucabarbalata.anprox.ui.navigation.LoginRoute
 import io.github.lucabarbalata.anprox.ui.navigation.MoreRoute
 import io.github.lucabarbalata.anprox.ui.navigation.MigrateRoute
@@ -231,7 +233,11 @@ fun AnProxApp() {
                     onBackupJobs = { nav.navigate(BackupJobsRoute(route.serverId)) },
                     onStorage = { nav.navigate(StorageListRoute(route.serverId)) },
                     onFirewall = { nav.navigate(FirewallRoute(route.serverId, "dc", route.title)) },
+                    onHa = { nav.navigate(HaRoute(route.serverId)) },
                 )
+            }
+            composable<HaRoute> { entry ->
+                HaScreen(entry.toRoute<HaRoute>().serverId, onBack = back, onTask = openTask)
             }
             composable<FirewallRoute> { entry ->
                 val r = entry.toRoute<FirewallRoute>()

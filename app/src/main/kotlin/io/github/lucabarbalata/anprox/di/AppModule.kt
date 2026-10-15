@@ -9,6 +9,7 @@ import io.github.lucabarbalata.anprox.data.backup.BackupRepository
 import io.github.lucabarbalata.anprox.data.console.ConsoleRepository
 import io.github.lucabarbalata.anprox.data.datacenter.BackupJobRepository
 import io.github.lucabarbalata.anprox.data.datacenter.FirewallRepository
+import io.github.lucabarbalata.anprox.data.datacenter.HaRepository
 import io.github.lucabarbalata.anprox.data.datacenter.StorageRepository
 import io.github.lucabarbalata.anprox.data.hardware.HardwareRepository
 import io.github.lucabarbalata.anprox.data.guest.GuestRef
@@ -34,6 +35,7 @@ import io.github.lucabarbalata.anprox.ui.cloudinit.CloudInitViewModel
 import io.github.lucabarbalata.anprox.ui.datacenter.BackupJobEditorViewModel
 import io.github.lucabarbalata.anprox.ui.datacenter.BackupJobsViewModel
 import io.github.lucabarbalata.anprox.ui.datacenter.FirewallViewModel
+import io.github.lucabarbalata.anprox.ui.datacenter.HaViewModel
 import io.github.lucabarbalata.anprox.ui.datacenter.StorageContentViewModel
 import io.github.lucabarbalata.anprox.ui.datacenter.StorageListViewModel
 import io.github.lucabarbalata.anprox.ui.navigation.AppLinks
@@ -106,6 +108,7 @@ val appModule = module {
     single { BackupJobRepository(get()) }
     single { StorageRepository(get()) }
     single { FirewallRepository(get()) }
+    single { HaRepository(get()) }
 
     // Background alerts
     single { AlertStore(androidContext()) }
@@ -141,5 +144,6 @@ val appModule = module {
     viewModel { (serverId: String, jobId: String) -> BackupJobEditorViewModel(serverId, jobId.ifEmpty { null }, get()) }
     viewModel { (serverId: String) -> StorageListViewModel(serverId, get()) }
     viewModel { (serverId: String, scope: FirewallScope) -> FirewallViewModel(serverId, scope, get()) }
+    viewModel { (serverId: String) -> HaViewModel(serverId, get()) }
     viewModel { (serverId: String, node: String, storage: String) -> StorageContentViewModel(serverId, node, storage, get(), get()) }
 }

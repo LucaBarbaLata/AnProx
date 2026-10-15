@@ -10,6 +10,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Backup
 import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material.icons.outlined.Storage
+import androidx.compose.material.icons.outlined.Sync
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -28,7 +29,7 @@ import io.github.lucabarbalata.anprox.ui.common.contentPadding
 
 /** Cluster-wide settings of one Proxmox VE server (milestone M4). */
 @Composable
-fun DatacenterScreen(title: String, onBack: () -> Unit, onBackupJobs: () -> Unit, onStorage: () -> Unit, onFirewall: () -> Unit) {
+fun DatacenterScreen(title: String, onBack: () -> Unit, onBackupJobs: () -> Unit, onStorage: () -> Unit, onFirewall: () -> Unit, onHa: () -> Unit) {
     AnProxScaffold(title = stringResource(R.string.datacenter_title), subtitle = title, onBack = onBack) { inner ->
         LazyColumn(contentPadding = contentPadding(inner), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             item {
@@ -36,6 +37,7 @@ fun DatacenterScreen(title: String, onBack: () -> Unit, onBackupJobs: () -> Unit
                     MenuRow(Icons.Outlined.Backup, stringResource(R.string.backupjobs_title), stringResource(R.string.datacenter_backup_jobs_body), onBackupJobs)
                     MenuRow(Icons.Outlined.Storage, stringResource(R.string.storage_title), stringResource(R.string.datacenter_storage_body), onStorage)
                     MenuRow(Icons.Outlined.Shield, stringResource(R.string.firewall_title), stringResource(R.string.firewall_open_body_dc), onFirewall)
+                    MenuRow(Icons.Outlined.Sync, stringResource(R.string.ha_title), stringResource(R.string.ha_open_body), onHa)
                 }
             }
             item { SectionHeader(stringResource(R.string.datacenter_planned)) }
@@ -49,7 +51,6 @@ fun DatacenterScreen(title: String, onBack: () -> Unit, onBackupJobs: () -> Unit
 private fun Planned() {
     val c = AnProxTheme.colors
     val items = listOf(
-        R.string.datacenter_ha,
         R.string.datacenter_replication,
         R.string.datacenter_pools,
     )

@@ -890,7 +890,6 @@
     <string name="datacenter_backup_jobs_body">Scheduled backups, run now, guests without a backup</string>
     <string name="datacenter_planned">Planned</string>
     <string name="datacenter_storage_body">Every storage, what it holds, ISO images and templates</string>
-    <string name="datacenter_ha">High availability</string>
     <string name="datacenter_replication">Replication</string>
     <string name="datacenter_pools">Resource pools</string>
     <string name="backupjobs_title">Backup jobs</string>
@@ -1073,4 +1072,42 @@
     <string name="firewall_problem_protocol">Ports need a protocol (TCP or UDP) or a macro.</string>
     <string name="firewall_problem_port">Use numbers, service names, commas and ranges with a colon for ports.</string>
     <string name="firewall_problem_address">Addresses can\'t contain spaces; separate several with commas.</string>
+
+    <!-- High availability (M4, questionnaire Q21) -->
+    <string name="ha_title">High availability</string>
+    <string name="ha_open_body">Guests restarted or moved automatically when a node fails</string>
+    <string name="ha_status">Status</string>
+    <string name="ha_quorum">Quorum</string>
+    <string name="ha_master">Manager: %1$s</string>
+    <string name="ha_resources">Managed guests</string>
+    <string name="ha_add">Add a guest to HA</string>
+    <string name="ha_add_short">Add</string>
+    <string name="ha_empty_title">No guest is managed by HA</string>
+    <string name="ha_empty_body">HA restarts a guest on another node when its node fails. It needs at least three nodes and shared storage.</string>
+    <string name="ha_in_group">group %1$s</string>
+    <string name="ha_guest">Guest</string>
+    <string name="ha_requested_state">Requested state</string>
+    <string name="ha_state_started">Started</string>
+    <string name="ha_state_stopped">Stopped</string>
+    <string name="ha_state_disabled">Disabled</string>
+    <string name="ha_state_ignored">Ignored</string>
+    <string name="ha_state_started_body">Keep it running; restart or move it when something fails.</string>
+    <string name="ha_state_stopped_body">Keep it stopped. It stays managed and can be moved.</string>
+    <string name="ha_state_disabled_body">Stop it and don\'t restart or move it until it is set to started again.</string>
+    <string name="ha_state_ignored_body">Leave it alone, as if it weren\'t managed: you can start, stop and migrate it yourself.</string>
+    <string name="ha_group">Group</string>
+    <string name="ha_no_group">None</string>
+    <string name="ha_max_restart">Restarts on the same node</string>
+    <string name="ha_max_relocate">Moves to another node</string>
+    <string name="ha_problem_limits">Use 0 to 10.</string>
+    <string name="ha_comment">Comment</string>
+    <string name="ha_migrate">Move to another node</string>
+    <string name="ha_migrate_to">To %1$s</string>
+    <string name="ha_migrating">Asked the HA manager to move it to %1$s</string>
+    <string name="ha_remove">Remove from HA</string>
+    <string name="ha_remove_title">Stop managing this guest?</string>
+    <string name="ha_remove_body">%1$s keeps running or stays stopped, but is no longer restarted or moved when its node fails.</string>
+    <string name="ha_added">Guest added to HA</string>
+    <string name="ha_saved">HA settings saved</string>
+    <string name="ha_removed">Guest removed from HA</string>
 </resources>

@@ -218,6 +218,7 @@ class MockState(
     private val hardware = MockHardware(storages, nodes)
     private val jobs = MockJobs(storages, clockMillis)
     private val firewall = MockFirewall()
+    private val haManager = MockHa(guests)
 
     /** Accepted `POST /nodes/{node}/status` calls (node, command); the mock nodes keep running. */
     val nodePowerRequests: MutableList<Pair<String, String>> = java.util.Collections.synchronizedList(mutableListOf())
@@ -301,7 +302,7 @@ class MockState(
             disk = if (type == "lxc") maxdisk / 3 else 0, maxdisk = maxdisk,
             uptime = if (running) (clockMillis() - startedAtMillis) / 1000 else 0,
             netin = if (running) vmid * 1_234_567L else 0, netout = if (running) vmid * 765_432L else 0,
-            template = template, tags = tags, hastate = if (ha) (if (running) "started" else "stopped") else null,
+            template = template, tags = tags, hastate = haManager.state(this),
         )
     }
 
@@ -970,6 +971,27 @@ class MockState(
     }
 
     private val DISK_KEY = Regex("^(scsi|virtio|sata|ide|efidisk|tpmstate|unused|mp)\\d+$|^rootfs$")
+
+    // ------------------------------------------------------------------ high availability
+
+    fun haResources() = synchronized(lock) { haManager.list() }
+    fun haGroups() = haManager.groups
+    fun haStatus() = synchronized(lock) { haManager.status(nodes, guests) }
+    fun addHaResource(params: Map<String, String>) = synchronized(lock) {
+        haManager.add(params) { sid -> guests.any { !it.template && haManager.sid(it) == sid } }
+    }
+    fun updateHaResource(sid: String, params: Map<String, String>) = synchronized(lock) { haManager.update(sid, params) }
+    fun removeHaResource(sid: String) = synchronized(lock) { haManager.remove(sid) }
+
+    /** The HA manager moves the guest; the mock does it at once (offline VMs and containers alike). */
+    fun migrateHaResource(sid: String, target: String): String? = synchronized(lock) {
+        val g = guests.firstOrNull { haManager.sid(it) == sid } ?: return "no such resource '$sid'"
+        if (haManager.list().none { it.sid == sid }) return "service '$sid' is not managed by HA"
+        if (node(target)?.online != true) return "node '$target' is not online"
+        if (g.node == target) return "service '$sid' already running on node '$target'"
+        g.node = target
+        null
+    }
 
     // ------------------------------------------------------------------ firewall
 

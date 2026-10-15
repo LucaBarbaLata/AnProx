@@ -192,6 +192,17 @@ Careful: a wrong firewall rule can lock you out of the web UI or SSH. Test on a 
 5. Change a rule in the web UI while the app shows the list, then edit the same rule in the
    app: it must refuse ("modified configuration") rather than overwrite; pull to refresh.
 
+### D10. High availability (Datacenter → High availability), new after beta.2
+Needs a cluster. With a single node the screen shows the status and an empty list.
+1. The status card matches the web UI's Datacenter → HA: quorum, the manager's node, each
+   node's state.
+2. **Add a guest to HA**: pick a stopped test guest, requested state Started → **Save**. Within
+   a minute the HA manager starts it; the web UI lists it under Resources.
+3. Tap it: set the requested state to Stopped, restarts 2, a comment → **Save** → it stops; the
+   web UI shows the same settings.
+4. **Move to another node** → pick a node → the guest moves (follow it in Tasks or the web UI).
+5. **Remove from HA** → confirm → gone from the list; the guest itself is unchanged.
+
 ### E. Snapshots (Tools → Snapshots)
 1. **Take snapshot** on the running test VM with **Include RAM** → "VM snapshot finished"; it
    appears in the tree with a RAM badge.

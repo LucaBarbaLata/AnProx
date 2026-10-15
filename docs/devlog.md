@@ -154,6 +154,16 @@ fields on edit (a rule switched to a macro drops its protocol and port) and chec
 would refuse (ports without a protocol or macro). Options are kept as key/value pairs with
 Proxmox's defaults filled in for display; only changed ones are sent.
 
+**M4: high availability.** `HaResource` keeps the `sid` (`vm:100`, `ct:101`) as Proxmox sends
+it and reads the VMID from it; `HaStatusEntry` covers the quorum, master, LRM and service lines
+of `status/current`. `HaResourceForm` sends only changed keys and deletes cleared ones on edit
+(group, comment). Groups are read when the server has them: Proxmox VE 9 replaced them with
+rules, so a failed groups request just hides the picker. Moving a managed guest goes through
+`POST /cluster/ha/resources/{sid}/migrate` (the HA manager moves it; there is no task to
+follow). The mock's HA manager lives in `MockHa`; a managed guest's `hastate` in
+`/cluster/resources` now comes from it. The field was first called `ha`, which shadowed
+`Guest.ha` inside `MockState`'s `with` blocks and broke the build of the mock.
+
 **Tour, again.** On Android 8 the alerts screen's last card is below the fold, and uiautomator
 lists it with empty bounds; on Android 14 the **Open it** button after creating a VM ended up
 under the result snackbar at the end of the form. The create and clone screens now scroll to

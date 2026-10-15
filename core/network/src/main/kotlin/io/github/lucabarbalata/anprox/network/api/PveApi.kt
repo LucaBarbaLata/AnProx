@@ -12,6 +12,9 @@ import io.github.lucabarbalata.anprox.model.pve.FirewallMacro
 import io.github.lucabarbalata.anprox.model.pve.FirewallRule
 import io.github.lucabarbalata.anprox.model.pve.GuestSnapshot
 import io.github.lucabarbalata.anprox.model.pve.GuestStatus
+import io.github.lucabarbalata.anprox.model.pve.HaGroup
+import io.github.lucabarbalata.anprox.model.pve.HaResource
+import io.github.lucabarbalata.anprox.model.pve.HaStatusEntry
 import io.github.lucabarbalata.anprox.model.pve.LxcInterface
 import io.github.lucabarbalata.anprox.model.pve.MigrationCheck
 import io.github.lucabarbalata.anprox.model.pve.NodeNetwork
@@ -163,6 +166,34 @@ interface PveApi {
 
     @GET("cluster/firewall/groups")
     suspend fun securityGroups(): ApiEnvelope<List<SecurityGroup>>
+
+    // High availability (questionnaire Q21)
+
+    @GET("cluster/ha/resources")
+    suspend fun haResources(): ApiEnvelope<List<HaResource>>
+
+    @FormUrlEncoded
+    @POST("cluster/ha/resources")
+    suspend fun addHaResource(@FieldMap params: Map<String, String>): ApiEnvelope<JsonElement>
+
+    @FormUrlEncoded
+    @PUT("cluster/ha/resources/{sid}")
+    suspend fun updateHaResource(@Path("sid") sid: String, @FieldMap params: Map<String, String>): ApiEnvelope<JsonElement>
+
+    @DELETE("cluster/ha/resources/{sid}")
+    suspend fun removeHaResource(@Path("sid") sid: String): ApiEnvelope<JsonElement>
+
+    /** Asks the HA manager to move a resource (live for running VMs). */
+    @FormUrlEncoded
+    @POST("cluster/ha/resources/{sid}/migrate")
+    suspend fun migrateHaResource(@Path("sid") sid: String, @Field("node") node: String): ApiEnvelope<JsonElement>
+
+    /** Proxmox VE 8; version 9 replaced groups with rules and may answer with an error. */
+    @GET("cluster/ha/groups")
+    suspend fun haGroups(): ApiEnvelope<List<HaGroup>>
+
+    @GET("cluster/ha/status/current")
+    suspend fun haStatus(): ApiEnvelope<List<HaStatusEntry>>
 
     /** Ceph health; fails on a cluster without Ceph. */
     @GET("cluster/ceph/status")

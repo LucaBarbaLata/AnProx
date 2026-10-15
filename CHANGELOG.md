@@ -75,6 +75,12 @@ All notable changes to AnProx are documented here. The format follows
   the policies for unmatched traffic, log levels, and a guest's DHCP, NDP, router advertisement
   and MAC/IP filters. Edits made elsewhere in the meantime are refused instead of overwritten.
 
+- **High availability** (Datacenter → High availability): the HA manager's status, quorum and
+  each node's state; the guests HA manages with their requested and current state. Add a guest,
+  choose whether HA keeps it started, stopped, disabled or ignores it, pick a group, set how
+  often it is restarted or moved, move it to another node through the HA manager, or remove it
+  from HA.
+
 ### Changed
 - The bulk-action summary on the Resources list stays on screen longer.
 - After creating or cloning a guest, the form scrolls to the result and its **Open it** button.

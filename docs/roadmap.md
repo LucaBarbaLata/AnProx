@@ -124,7 +124,12 @@ Everything marked ✅ in M1 and M2 below. Gates:
   backups); the node downloads ISO images and templates from a URL (with a checksum); upload from
   the phone with progress; delete ISO images and templates.
 - Storage configuration: add/edit/remove every storage type.
-- **High Availability** (Q21): resources, node affinity rules/groups, CRM/LRM status, maintenance mode.
+- ✅ **High availability** (Q21, Datacenter → High availability): the manager's and each
+  node's status and quorum; add a guest, set its requested state (started, stopped, disabled,
+  ignored), group, restart and relocate limits and comment; move it to another node through the
+  HA manager; remove it.
+- **High availability, the rest** (Q21): editing groups (PVE 8) and node affinity rules
+  (PVE 9), node maintenance mode.
 - **Storage replication** (Q21): jobs, schedule, status, run now.
 - ✅ **Firewall rules and options** (Q24) for the datacenter (Datacenter → Firewall), nodes
   (Node → Firewall) and guests (Tools → Firewall): add, edit, enable, reorder and delete rules

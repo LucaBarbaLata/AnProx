@@ -367,6 +367,44 @@ class MockProxmoxServer(
             call.authed() ?: return@get
             call.ok(state.pools())
         }
+        get("cluster/ha/resources") {
+            call.authed() ?: return@get
+            call.ok(state.haResources())
+        }
+        post("cluster/ha/resources") {
+            val s = call.authed() ?: return@post
+            if (state.isReadOnly(s.user)) return@post call.fail(403, "Permission check failed (/, Sys.Console)")
+            val p = call.receiveParameters()
+            val error = state.addHaResource(p.names().associateWith { p[it].orEmpty() })
+            if (error != null) call.fail(400, error) else call.ok(JsonNull)
+        }
+        put("cluster/ha/resources/{sid}") {
+            val s = call.authed() ?: return@put
+            if (state.isReadOnly(s.user)) return@put call.fail(403, "Permission check failed (/, Sys.Console)")
+            val p = call.receiveParameters()
+            val error = state.updateHaResource(call.parameters["sid"]!!, p.names().associateWith { p[it].orEmpty() })
+            if (error != null) call.fail(400, error) else call.ok(JsonNull)
+        }
+        delete("cluster/ha/resources/{sid}") {
+            val s = call.authed() ?: return@delete
+            if (state.isReadOnly(s.user)) return@delete call.fail(403, "Permission check failed (/, Sys.Console)")
+            val error = state.removeHaResource(call.parameters["sid"]!!)
+            if (error != null) call.fail(400, error) else call.ok(JsonNull)
+        }
+        post("cluster/ha/resources/{sid}/migrate") {
+            val s = call.authed() ?: return@post
+            if (state.isReadOnly(s.user)) return@post call.fail(403, "Permission check failed (/, Sys.Console)")
+            val error = state.migrateHaResource(call.parameters["sid"]!!, call.receiveParameters()["node"].orEmpty())
+            if (error != null) call.fail(400, error) else call.ok(JsonNull)
+        }
+        get("cluster/ha/groups") {
+            call.authed() ?: return@get
+            call.ok(state.haGroups())
+        }
+        get("cluster/ha/status/current") {
+            call.authed() ?: return@get
+            call.ok(state.haStatus())
+        }
         get("cluster/firewall/macros") {
             call.authed() ?: return@get
             call.ok(state.firewallMacros())
