@@ -226,14 +226,14 @@ def nudge(dy):
     time.sleep(1.0)
 
 
-def first_match(root, text, pick="first"):
-    found = matches(root, text, exact=True) or matches(root, text, exact=False)
+def first_match(root, text, pick="first", exact=False):
+    found = matches(root, text, exact=True) or ([] if exact else matches(root, text, exact=False))
     if not found:
         return None
     return max(found, key=lambda n: center(n)[1]) if pick == "lowest" else found[0]
 
 
-def scroll_to(text, attempts=24, pick="first"):
+def scroll_to(text, attempts=24, pick="first", exact=False):
     """
     Scrolls until [text] is on screen, then brings it towards mid-screen and waits until it
     stops moving. Use this for anything inside a scrolling list before tapping it.
@@ -245,7 +245,8 @@ def scroll_to(text, attempts=24, pick="first"):
     content padding then keeps it clear of the bars.
 
     Scrolls down first; once the screen stops changing (end of the list) it scrolls up instead,
-    so targets above the current scroll position are found too.
+    so targets above the current scroll position are found too. With [exact], a text that only
+    contains [text] doesn't count (a guest row's "Homelab · pve1 · …" is not the node pve1).
     """
     w, h = screen_size()
     previous_y = None
@@ -253,7 +254,7 @@ def scroll_to(text, attempts=24, pick="first"):
     last_seen = None
     for _ in range(attempts):
         root = dump()
-        node = first_match(root, text, pick)
+        node = first_match(root, text, pick, exact)
         if node is None:
             seen = signature(root)
             if seen and seen == last_seen and not upwards:
@@ -265,7 +266,7 @@ def scroll_to(text, attempts=24, pick="first"):
         y = center(node)[1]
         if h * 0.2 <= y <= h * 0.7 or (previous_y is not None and abs(y - previous_y) < 12):
             time.sleep(0.5)
-            settled = first_match(dump(), text, pick)
+            settled = first_match(dump(), text, pick, exact)
             if settled is not None and abs(center(settled)[1] - y) < 4:
                 return settled
             previous_y = None   # still moving (fling): look again
@@ -638,7 +639,7 @@ def tasks():
 @step("Create a VM on a node with the suggested settings, then open it")
 def create_vm():
     tap("Resources")
-    tap_node(scroll_to("pve1"))            # the node
+    tap_node(scroll_to("pve1", exact=True))  # the node, not a guest row that mentions it
     tap_node(scroll_to("Create VM"))
     find("Installation disc", timeout=30)  # the form has loaded: next free ID, first storage, 32 GiB
     scroll_to("Start after creating")      # just above the button at the end of the form
