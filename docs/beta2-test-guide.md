@@ -120,6 +120,15 @@ Best with a VM made from a cloud image (for example the Debian or Ubuntu cloud i
    note says it applies at the next start.
 4. Leave the password empty and save another change: the old password must still work.
 
+### D5. SPICE viewer, new after beta.2
+Needs a SPICE app on the phone (for example aSPICE) and a VM whose Display is SPICE (VM →
+Hardware → Display → SPICE in the web UI).
+1. Start the VM → Tools → **SPICE viewer** → aSPICE opens and shows the VM.
+2. Without a SPICE app the app says what to install; with a non-SPICE display Proxmox's error
+   is shown.
+3. If you connect through a reverse proxy or a VPN address, port 3128 on that address must be
+   reachable (Proxmox's SPICE proxy); say whether it worked.
+
 ### E. Snapshots (Tools → Snapshots)
 1. **Take snapshot** on the running test VM with **Include RAM** → "VM snapshot finished"; it
    appears in the tree with a RAM badge.

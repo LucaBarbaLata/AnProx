@@ -32,6 +32,10 @@ All notable changes to AnProx are documented here. The format follows
   domain and package upgrades. Adds the cloud-init drive if the VM has none, and can regenerate
   the image.
 
+- **SPICE viewer** for running VMs with a SPICE display (Guest → Tools → SPICE viewer): opens
+  the VM in aSPICE or another app that opens `.vv` files, through the address the app already
+  uses.
+
 ### Changed
 - The bulk-action summary on the Resources list stays on screen longer.
 

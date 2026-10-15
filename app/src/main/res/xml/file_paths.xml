@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Files other apps may open through the FileProvider: only SPICE connection files (.vv). -->
+<paths>
+    <cache-path name="spice" path="spice/" />
+</paths>

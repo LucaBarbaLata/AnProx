@@ -234,6 +234,13 @@ class MockProxmoxServer(
             val g = call.guest("lxc") ?: return@post
             call.moveVolume(s, g)
         }
+        post("nodes/{node}/qemu/{vmid}/spiceproxy") {
+            val s = call.authed() ?: return@post
+            val g = call.guest("qemu") ?: return@post
+            val p = call.receiveParameters()
+            if (state.isReadOnly(s.user)) return@post call.fail(403, "Permission check failed (/vms/${g.vmid}, VM.Console)")
+            state.spiceProxy(g, p["proxy"]).fold(onSuccess = { call.ok(it) }, onFailure = { call.fail(500, it.message ?: "error") })
+        }
         put("nodes/{node}/qemu/{vmid}/cloudinit") {
             val s = call.authed() ?: return@put
             val g = call.guest("qemu") ?: return@put

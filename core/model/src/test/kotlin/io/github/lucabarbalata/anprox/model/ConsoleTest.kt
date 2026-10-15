@@ -4,7 +4,9 @@ import io.github.lucabarbalata.anprox.model.json.ProxmoxJson
 import io.github.lucabarbalata.anprox.model.pve.ConsoleKind
 import io.github.lucabarbalata.anprox.model.pve.ConsoleProxy
 import io.github.lucabarbalata.anprox.model.pve.ConsoleTarget
+import io.github.lucabarbalata.anprox.model.pve.SpiceFile
 import io.github.lucabarbalata.anprox.model.pve.TermProxyProtocol
+import kotlinx.serialization.json.JsonObject
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -48,5 +50,19 @@ class ConsoleTest {
         assertTrue(TermProxyProtocol.isAccepted("OKwelcome".toByteArray()))
         assertFalse(TermProxyProtocol.isAccepted("NO".toByteArray()))
         Unit
+    }
+
+    @Test
+    fun `SPICE file`() {
+        val config = ProxmoxJson.decodeFromString<ApiEnvelope<JsonObject>>(
+            """{"data":{"type":"spice","host":"pvespiceproxy:6720A3B1:102:pve2::abc","password":"pw","proxy":"http://10.0.0.11:3128",
+            "tls-port":61000,"ca":"-----BEGIN CERTIFICATE-----\nMIIB\n-----END CERTIFICATE-----\n","delete-this-file":1,"release-cursor":"Ctrl+Alt+R"}}""",
+        ).data!!
+        assertEquals(
+            "[virt-viewer]\ntype=spice\nhost=pvespiceproxy:6720A3B1:102:pve2::abc\npassword=pw\nproxy=http://10.0.0.11:3128\n" +
+                "tls-port=61000\nca=-----BEGIN CERTIFICATE-----\\nMIIB\\n-----END CERTIFICATE-----\\n\ndelete-this-file=1\nrelease-cursor=Ctrl+Alt+R\n",
+            SpiceFile.render(config),
+        )
+        assertEquals(mapOf("proxy" to "pve.example.com"), SpiceFile.proxyParams("pve.example.com"))
     }
 }

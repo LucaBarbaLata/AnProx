@@ -105,7 +105,7 @@ Code: `core/network/src/main/kotlin/.../network/api/` (`AccessApi`, `PveApi`, `P
 | `POST /nodes/{node}/{qemu,lxc}` | Create guest (wizard) | ✅ VM (OS type, ISO, disk, CPU, memory, bridge; Advanced: sockets, CPU type, bus, discard, ballooning, NIC model, VLAN, firewall, UEFI, agent, start at boot) and container (template, root password and/or SSH keys, disk, cores, memory, network with DHCP/static; Advanced: swap, IPv6, VLAN, firewall, unprivileged, nesting, start at boot) |
 | `DELETE …/{vmid}` | Destroy guest (type-to-confirm) | 🗓 M2 |
 | `…/vncproxy`, `…/vncwebsocket`, `…/termproxy` | noVNC / terminal console | ✅ through the app's connection (`generate-password=1` for VMs), bundled noVNC and xterm.js ([ADR 0014](adr/0014-consoles-through-the-app.md)) |
-| `POST /qemu/{vmid}/spiceproxy` | SPICE `.vv` handoff | 🗓 M2 |
+| `POST /qemu/{vmid}/spiceproxy` | SPICE `.vv` handoff | ✅ `proxy` = the address the app uses; the `.vv` file goes to a viewer app (aSPICE…) through a FileProvider |
 | `…/firewall/*` | Guest firewall | 🗓 M4 |
 | `POST /nodes/{node}/qemu` (`archive=`) / `lxc` (`restore=1`) | Restore from backup | ✅ (as new with `unique=1`, or replace with `force=1`; target storage choice 🗓) |
 

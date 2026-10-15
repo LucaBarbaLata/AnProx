@@ -4,6 +4,7 @@ import io.github.lucabarbalata.anprox.data.hub.ServerHub
 import io.github.lucabarbalata.anprox.model.pve.ConsoleKind
 import io.github.lucabarbalata.anprox.model.pve.ConsoleProxy
 import io.github.lucabarbalata.anprox.model.pve.ConsoleTarget
+import io.github.lucabarbalata.anprox.model.pve.SpiceFile
 import io.github.lucabarbalata.anprox.model.pve.TermProxyProtocol
 import io.github.lucabarbalata.anprox.network.ApiException
 import io.github.lucabarbalata.anprox.network.ProxmoxConnection
@@ -17,6 +18,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.Response
 import okhttp3.WebSocket
 import okhttp3.WebSocketListener
@@ -154,6 +156,16 @@ class ConsoleRepository(private val hub: ServerHub) {
         val query = mapOf("port" to proxy.portNumber, "vncticket" to proxy.ticket)
         session.attach(conn.openWebSocket(target.websocketPath, query, session.listener(user, proxy.ticket)))
         session
+    }
+
+    /**
+     * The `.vv` file for a SPICE viewer. The SPICE proxy is the address the app reaches the
+     * server at, since the node's own address may not be reachable from the phone.
+     */
+    suspend fun spiceFile(serverId: String, node: String, vmid: Int): String = hub.use(serverId) { conn ->
+        val endpoint = conn.endpoints.active ?: conn.endpoints.endpoints.first()
+        val host = endpoint.url.toHttpUrlOrNull()?.host ?: endpoint.url.substringAfter("://").substringBefore('/').substringBefore(':')
+        SpiceFile.render(conn.pve { spiceProxy(node, vmid, SpiceFile.proxyParams(host)) })
     }
 
     /** VMs ask for a generated VNC password (PVE 7.1+); older servers reject the parameter. */

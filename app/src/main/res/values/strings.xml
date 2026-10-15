@@ -220,7 +220,7 @@
     <string name="power_reset">Reset</string>
     <string name="power_pause">Pause</string>
     <string name="power_resume">Resume</string>
-    <string name="tool_console">SPICE viewer and built-in SSH</string>
+    <string name="tool_ssh">Built-in SSH client</string>
     <string name="coming_in">Coming in %1$s</string>
 
     <!-- Guest options (Q19) -->
@@ -760,6 +760,11 @@
     <string name="create_done">%1$s %2$d created on %3$s</string>
     <string name="create_vm_action">Create VM</string>
     <string name="create_ct_action">Create container</string>
+
+    <!-- SPICE (Q15) -->
+    <string name="spice_title">SPICE viewer</string>
+    <string name="spice_open_body">Open the VM\'s screen in aSPICE or another SPICE app (needs the SPICE display)</string>
+    <string name="spice_no_viewer">No app on this phone opens SPICE connections. Install aSPICE (or another app that opens .vv files) and try again.</string>
 
     <!-- Cloud-init (Q18) -->
     <string name="cloudinit_title">Cloud-init</string>

@@ -343,6 +343,7 @@ internal class MockHardware(
             if (g.vmid == 100 || g.vmid == 101) m["balloon"] = (g.maxmem / MIB / 4).toString()
             m["scsihw"] = "virtio-scsi-single"
             if (windows) {
+                m["vga"] = "qxl" // a SPICE display
                 m["bios"] = "ovmf"
                 m["machine"] = "pc-q35-8.1"
                 m["efidisk0"] = "${volumeName(storage, g, 1, false)},efitype=4m,pre-enrolled-keys=1,size=1M"

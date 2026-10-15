@@ -1,5 +1,6 @@
 package io.github.lucabarbalata.anprox.ui.common
 
+import android.content.Context
 import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
@@ -23,6 +24,12 @@ sealed interface UiText {
 @Composable
 fun UiText.asString(): String = when (this) {
     is UiText.Res -> stringResource(id, *args.toTypedArray())
+    is UiText.Raw -> value
+}
+
+/** For code outside composition (callbacks, coroutines started from the UI). */
+fun UiText.resolve(context: Context): String = when (this) {
+    is UiText.Res -> context.getString(id, *args.toTypedArray())
     is UiText.Raw -> value
 }
 

@@ -3,6 +3,8 @@ package io.github.lucabarbalata.anprox.data
 import io.github.lucabarbalata.anprox.data.console.ConsoleEvent
 import io.github.lucabarbalata.anprox.data.console.ConsoleRepository
 import io.github.lucabarbalata.anprox.data.console.ConsoleSession
+import io.github.lucabarbalata.anprox.data.guest.GuestRef
+import io.github.lucabarbalata.anprox.data.guest.GuestRepository
 import io.github.lucabarbalata.anprox.data.hub.ServerHub
 import io.github.lucabarbalata.anprox.data.store.InMemoryProfileStore
 import io.github.lucabarbalata.anprox.data.store.InMemorySecretStore
@@ -13,6 +15,8 @@ import io.github.lucabarbalata.anprox.model.profile.Endpoint
 import io.github.lucabarbalata.anprox.model.profile.ServerProfile
 import io.github.lucabarbalata.anprox.model.pve.ConsoleKind
 import io.github.lucabarbalata.anprox.model.pve.ConsoleTarget
+import io.github.lucabarbalata.anprox.model.pve.GuestType
+import io.github.lucabarbalata.anprox.model.pve.PowerAction
 import io.github.lucabarbalata.anprox.network.ApiException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -113,6 +117,34 @@ class ConsoleTest {
         session.sendBinary(byteArrayOf(1))
         session.events.awaitText("k8s-master") // ServerInit carries the desktop name
         session.close()
+    }
+
+    @Test
+    fun `SPICE file for a running VM with a SPICE display`() = runBlocking {
+        val profile = ServerProfile(
+            id = "pve", name = "Homelab", product = ProxmoxProduct.PVE,
+            endpoints = listOf(Endpoint(pve.baseUrl)), username = "root", realm = "pam", allowInsecureTls = true,
+        )
+        val hub = ServerHub(InMemoryProfileStore(listOf(profile)), InMemorySecretStore(), scope)
+        hub.awaitLoaded()
+        hub.login("pve", "anprox", remember = false)
+        val guests = GuestRepository(hub)
+        val consoles = ConsoleRepository(hub)
+        val win11 = GuestRef("pve", "pve2", GuestType.QEMU, 102)
+
+        assertFailsWith<ApiException.Server> { consoles.spiceFile("pve", "pve2", 102) } // stopped
+        assertTrue(guests.awaitTask("pve", "pve2", guests.power(win11, PowerAction.START)).succeeded)
+
+        val lines = consoles.spiceFile("pve", "pve2", 102).lines()
+        assertEquals("[virt-viewer]", lines.first())
+        assertTrue("type=spice" in lines)
+        assertTrue("proxy=http://127.0.0.1:3128" in lines) // the address the app uses, not the node's
+        assertTrue(lines.any { it.startsWith("ca=-----BEGIN CERTIFICATE-----\\n") && it.endsWith("\\n") })
+        assertTrue("delete-this-file=1" in lines)
+
+        // Proxmox refuses VMs without a SPICE display.
+        assertFailsWith<ApiException.Server> { consoles.spiceFile("pve", "pve1", 100) }
+        Unit
     }
 
     @Test

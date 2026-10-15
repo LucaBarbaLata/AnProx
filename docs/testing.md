@@ -7,9 +7,9 @@ testing debug builds on **real hardware**.
 
 | Layer | Where | Runs on | Count |
 |---|---|---|---|
-| Unit: parsing, formatting, URL rules, UPID/TFA parsing, snapshot tree and names, chart scales, backup listings, guest agent replies, guest options, clone and migration rules, console endpoints and terminal protocol, property strings and hardware forms (VM and container), IP address checks, new VM and container forms, cloud-init (SSH key encoding, IP configs) | `core/model/src/test` | JVM | 64 |
+| Unit: parsing, formatting, URL rules, UPID/TFA parsing, snapshot tree and names, chart scales, backup listings, guest agent replies, guest options, clone and migration rules, console endpoints and terminal protocol, property strings and hardware forms (VM and container), IP address checks, new VM and container forms, cloud-init (SSH key encoding, IP configs), SPICE files | `core/model/src/test` | JVM | 65 |
 | Integration: HTTP client ↔ mock server over real HTTPS (auth, TFA, failover, TLS, errors, renewal, PBS) | `core/network/src/test` | JVM | 16 |
-| Integration: multi-server hub, sessions, dashboard snapshots, guest actions, guest snapshots, performance history, app lock rules, backup and restore, guest network info, guest options, clone/template/migrate, console sessions (terminal and VNC handshake), node power, hardware (disks, drives, network, pending changes, container volumes), creating VMs and containers, cloud-init | `core/data/src/test` | JVM | 61 |
+| Integration: multi-server hub, sessions, dashboard snapshots, guest actions, guest snapshots, performance history, app lock rules, backup and restore, guest network info, guest options, clone/template/migrate, console sessions (terminal and VNC handshake), node power, hardware (disks, drives, network, pending changes, container volumes), creating VMs and containers, cloud-init, SPICE | `core/data/src/test` | JVM | 62 |
 | Android lint | `:app:lintDebug` | CI | — |
 | Build: debug and R8-minified release | `:app:assemble*` | CI | — |
 | **End-to-end tour** of the minified release APK on emulators against the mock server | `scripts/e2e/tour.py` | CI (Android 8.0 + 14), Release workflow | 18 steps |

@@ -84,7 +84,7 @@ Everything marked ✅ in M1 and M2 below. Gates:
   button and an extra key row (Q15; pulled into 0.1.0-beta.2). Rebuilt after beta.2: the app
   connects through its own HTTP client and both front ends are bundled
   ([ADR 0014](adr/0014-consoles-through-the-app.md)).
-- **SPICE handoff**: download the `.vv` file and open it in aSPICE or another SPICE viewer (Q15).
+- ✅ **SPICE handoff**: the `.vv` file opens in aSPICE or another SPICE viewer (Q15).
 - **Built-in SSH client** with key management (Q15).
 - ✅ **Hardware editing**, common settings first (Q19): CPU, memory/balloon, disks
   (add/grow/move/detach, unused volumes), network devices, CD/DVD, boot order; container

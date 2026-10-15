@@ -230,6 +230,15 @@ interface PveApi {
         @FieldMap params: Map<String, String>,
     ): ApiEnvelope<ConsoleProxy>
 
+    /** SPICE connection details for a running VM with a SPICE display; [params]: `proxy` (host). */
+    @FormUrlEncoded
+    @POST("nodes/{node}/qemu/{vmid}/spiceproxy")
+    suspend fun spiceProxy(
+        @Path("node") node: String,
+        @Path("vmid") vmid: Int,
+        @FieldMap params: Map<String, String>,
+    ): ApiEnvelope<JsonObject>
+
     // ------------------------------------------------------------------ clone, template, migrate (Q18)
 
     /** [params]: `newid`, `name`/`hostname`, `target`, `full`, `storage`. Returns a UPID. */

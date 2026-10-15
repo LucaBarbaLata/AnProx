@@ -699,6 +699,31 @@ class MockState(
         )
     }
 
+    /** `POST …/spiceproxy`: like Proxmox, only for running VMs with a SPICE (`qxl`) display. */
+    fun spiceProxy(g: Guest, proxy: String?): Result<JsonObject> = synchronized(lock) {
+        settleTasks()
+        fun fail(msg: String) = Result.failure<JsonObject>(IllegalStateException(msg))
+        if (g.status != "running") return fail("VM ${g.vmid} not running")
+        val vga = hardware.effective(g)["vga"].orEmpty()
+        if (!vga.startsWith("qxl")) return fail("VM ${g.vmid} has no SPICE display (set Display to SPICE)")
+        Result.success(
+            buildJsonObject {
+                put("type", "spice")
+                put("title", "VM ${g.vmid} - ${g.name}")
+                put("host", "pvespiceproxy:${hexTime()}:${g.vmid}:${g.node}::${token().take(40)}")
+                put("password", token().take(32))
+                put("proxy", "http://${proxy ?: node(g.node)!!.ip}:3128")
+                put("tls-port", 61000)
+                put("host-subject", "OU=PVE Cluster Node,O=Proxmox Virtual Environment,CN=${g.node}.$clusterName")
+                put("ca", "-----BEGIN CERTIFICATE-----\nMIIFakeMockCertificateForTheTestsOnly\n-----END CERTIFICATE-----\n")
+                put("delete-this-file", 1)
+                put("secure-attention", "Ctrl+Alt+Ins")
+                put("toggle-fullscreen", "Shift+F11")
+                put("release-cursor", "Ctrl+Alt+R")
+            },
+        )
+    }
+
     /** `GET /nodes/{node}/network`; [type] `any_bridge` lists bridges only. */
     fun nodeNetworks(type: String?): List<NodeNetwork> =
         if (type == "any_bridge" || type == "bridge") hardware.bridges.filter { it.isBridge } else hardware.bridges

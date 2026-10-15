@@ -17,6 +17,7 @@ import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.CloudQueue
 import androidx.compose.material.icons.outlined.PauseCircle
 import androidx.compose.material.icons.outlined.Memory
+import androidx.compose.material.icons.outlined.Monitor
 import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.PowerSettingsNew
@@ -70,6 +71,7 @@ import io.github.lucabarbalata.anprox.model.pve.PowerAction
 import io.github.lucabarbalata.anprox.ui.common.AnProxScaffold
 import io.github.lucabarbalata.anprox.ui.common.ConfirmActionDialog
 import io.github.lucabarbalata.anprox.ui.common.MenuRow
+import io.github.lucabarbalata.anprox.ui.console.rememberSpiceLauncher
 import io.github.lucabarbalata.anprox.ui.common.TaskResultSnackbar
 import io.github.lucabarbalata.anprox.ui.common.asString
 import io.github.lucabarbalata.anprox.ui.common.contentPadding
@@ -108,6 +110,7 @@ fun GuestDetail(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val openSpice = rememberSpiceLauncher(snackbar)
     val copiedLabel = stringResource(R.string.guest_copied)
     TaskResultSnackbar(state.result, snackbar, ref.serverId, ref.node, onTask, viewModel::consumeResult)
 
@@ -160,6 +163,14 @@ fun GuestDetail(
                                 stringResource(R.string.console_title),
                                 stringResource(if (ref.type == GuestType.QEMU) R.string.console_open_body_vm else R.string.console_open_body_ct),
                             ) { onTool(GuestTool.CONSOLE, ref, state.title) }
+                        }
+                        // SPICE needs a running VM with a SPICE display; Proxmox explains otherwise.
+                        if (ref.type == GuestType.QEMU && status.isRunning) {
+                            MenuRow(
+                                Icons.Outlined.Monitor,
+                                stringResource(R.string.spice_title),
+                                stringResource(R.string.spice_open_body),
+                            ) { openSpice(ref) }
                         }
                         // Templates can't have snapshots in Proxmox.
                         if (!status.template) {
@@ -357,7 +368,7 @@ private fun Details(ref: GuestRef, s: GuestStatus) {
 private fun ComingSoon() {
     val c = AnProxTheme.colors
     val items = listOf(
-        R.string.tool_console to "M2",
+        R.string.tool_ssh to "M2",
     )
     GlassCard(contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)) {
         items.forEach { (label, milestone) ->

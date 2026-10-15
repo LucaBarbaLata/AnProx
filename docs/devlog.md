@@ -70,6 +70,12 @@ device, `nameserver`, `searchdomain` and `ciupgrade`. A VM without a drive gets 
 `storage:cloudinit`; `PUT …/cloudinit` regenerates the image. The tour opens the cloud-init
 screen of `k8s-master`. That completes the M2 items except SPICE and the built-in SSH client.
 
+**M2: SPICE handoff.** `POST …/spiceproxy` with `proxy` set to the host the app talks to (the
+node's own address may not be reachable from the phone), rendered as a `[virt-viewer]` file
+with the CA's newlines escaped, written to the cache and opened with `ACTION_VIEW` through a
+FileProvider limited to `cache/spice/`. The mock answers only for running VMs with a `qxl`
+display (win11). Left in M2: the built-in SSH client.
+
 **Tour, again.** With the five steps wired in, two waited for snackbars that are only 4 s long
 (missed between two UI dumps on the slow emulator) and one looked for a section header, which is
 drawn in upper case. The steps now wait for something that stays on screen.
