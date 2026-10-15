@@ -7,12 +7,12 @@ testing debug builds on **real hardware**.
 
 | Layer | Where | Runs on | Count |
 |---|---|---|---|
-| Unit: parsing, formatting, URL rules, UPID/TFA parsing, snapshot tree and names, chart scales, backup listings, guest agent replies, guest options, clone and migration rules, console endpoints and terminal protocol, property strings and hardware forms (VM and container), IP address checks, new VM and container forms | `core/model/src/test` | JVM | 60 |
+| Unit: parsing, formatting, URL rules, UPID/TFA parsing, snapshot tree and names, chart scales, backup listings, guest agent replies, guest options, clone and migration rules, console endpoints and terminal protocol, property strings and hardware forms (VM and container), IP address checks, new VM and container forms, cloud-init (SSH key encoding, IP configs) | `core/model/src/test` | JVM | 64 |
 | Integration: HTTP client ↔ mock server over real HTTPS (auth, TFA, failover, TLS, errors, renewal, PBS) | `core/network/src/test` | JVM | 16 |
-| Integration: multi-server hub, sessions, dashboard snapshots, guest actions, guest snapshots, performance history, app lock rules, backup and restore, guest network info, guest options, clone/template/migrate, console sessions (terminal and VNC handshake), node power, hardware (disks, drives, network, pending changes, container volumes), creating VMs and containers | `core/data/src/test` | JVM | 60 |
+| Integration: multi-server hub, sessions, dashboard snapshots, guest actions, guest snapshots, performance history, app lock rules, backup and restore, guest network info, guest options, clone/template/migrate, console sessions (terminal and VNC handshake), node power, hardware (disks, drives, network, pending changes, container volumes), creating VMs and containers, cloud-init | `core/data/src/test` | JVM | 61 |
 | Android lint | `:app:lintDebug` | CI | — |
 | Build: debug and R8-minified release | `:app:assemble*` | CI | — |
-| **End-to-end tour** of the minified release APK on emulators against the mock server | `scripts/e2e/tour.py` | CI (Android 8.0 + 14), Release workflow | 17 steps |
+| **End-to-end tour** of the minified release APK on emulators against the mock server | `scripts/e2e/tour.py` | CI (Android 8.0 + 14), Release workflow | 18 steps |
 | UI / screenshot tests | planned (M1) | — | — |
 | Manual on real hardware | [checklist below](#manual-test-checklist-real-hardware) | owner | — |
 
@@ -122,11 +122,12 @@ so no test code is compiled into the app. `scripts/e2e/run.sh` starts the mock s
 10. **Hardware** of the running `win11` VM → **Add disk** (SCSI, first storage, 32 GiB) → "SCSI 1" appears after the task → **Memory** → turn off **Ballooning** → **Save** → "After restart" (a running VM keeps the change for its next start).
 11. **Console** of `nginx-proxy` → "Connected" (the app's own connection to the mock termproxy through the self-signed certificate) → **Esc** and **Keyboard** on the key row.
 12. **Console** of `k8s-master` → noVNC (bundled) finishes the VNC handshake with the generated password → "Connected · k8s-master". (An emulator with an Android System WebView older than 80 shows the update message instead, in both console steps.)
-13. Long-press `backup-client`, tap `nginx-proxy` → "2 selected" → **Start** → the confirmation lists only the stopped one → the selection clears when the tasks end → "Started 1 of 1 guests".
-14. **Clone** the Ubuntu template (linked by default) → **Open it** → **Migrate** the clone to `pve2` → the guest screen now says `pve2`.
-15. Tasks tab shows the newest task ("VM migrate").
-16. Node `pve1` → **Create VM** with the suggested settings (next free ID, first storage, 32 GiB) → "Open it" → the new, stopped VM.
-17. Settings → Light theme; turning on the app lock explains that the emulator has no screen lock → dashboard in light mode, with the starred VM under Favourites.
+13. **Cloud-init** of `k8s-master` → the user `ubuntu` and net0's static address from the VM's config.
+14. Long-press `backup-client`, tap `nginx-proxy` → "2 selected" → **Start** → the confirmation lists only the stopped one → the selection clears when the tasks end → "Started 1 of 1 guests".
+15. **Clone** the Ubuntu template (linked by default) → **Open it** → **Migrate** the clone to `pve2` → the guest screen now says `pve2`.
+16. Tasks tab shows the newest task ("VM migrate").
+17. Node `pve1` → **Create VM** with the suggested settings (next free ID, first storage, 32 GiB) → "Open it" → the new, stopped VM.
+18. Settings → Light theme; turning on the app lock explains that the emulator has no screen lock → dashboard in light mode, with the starred VM under Favourites.
 
 After every step the script checks that the app process is alive and that logcat has no
 `FATAL EXCEPTION` for the app. Screenshots of each step, plus UI dumps and logcat on failure,

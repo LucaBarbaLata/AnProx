@@ -539,6 +539,18 @@ def vm_console():
     back()
 
 
+@step("Cloud-init settings of a VM")
+def cloud_init():
+    tap_node(scroll_to("k8s-master"))
+    tap_node(scroll_to("Cloud-init"))
+    find("ubuntu", timeout=30)             # the user from the VM's config
+    scroll_to("10.0.0.103/24")             # net0's static address
+    screenshot("11f3-cloud-init")
+    back()
+    scroll_to("User, password, SSH keys, IP addresses, DNS")  # back on the guest screen
+    back()
+
+
 @step("Select two guests on the list and start the stopped one")
 def bulk():
     long_press(scroll_to("backup-client"))  # stopped container: starts the selection
@@ -635,7 +647,7 @@ def main():
     ok = False
     try:
         for s in (launch, add_pve, add_pbs, resources, performance, guest_start, snapshots, backups,
-                  options, hardware, console, vm_console, bulk, clone_migrate, tasks, create_vm, light_theme):
+                  options, hardware, console, vm_console, cloud_init, bulk, clone_migrate, tasks, create_vm, light_theme):
             s()
         ok = True
     finally:

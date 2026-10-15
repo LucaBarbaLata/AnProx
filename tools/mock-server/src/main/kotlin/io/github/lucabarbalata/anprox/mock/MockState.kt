@@ -625,7 +625,11 @@ class MockState(
             if (g.type == "qemu" && g.agent) put("agent", "enabled=1,fstrim_cloned_disks=1")
             hardware.effective(g).forEach { (k, v) ->
                 // Proxmox sends numbers as numbers for some keys and strings for others; the app must cope with both.
-                if (k == "cores" || k == "sockets" || (k == "memory" && g.type == "lxc")) put(k, v.toIntOrNull() ?: 0) else put(k, v)
+                when {
+                    k == "cores" || k == "sockets" || (k == "memory" && g.type == "lxc") -> put(k, v.toIntOrNull() ?: 0)
+                    k == "cipassword" -> put(k, "**********") // Proxmox never returns it
+                    else -> put(k, v)
+                }
             }
             put("digest", g.digest())
         }

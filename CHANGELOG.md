@@ -27,6 +27,11 @@ All notable changes to AnProx are documented here. The format follows
   and DHCP or a static address. The next free ID is filled in; problems are explained before
   Proxmox would refuse them. **Open it** goes to the new guest.
 
+- **Cloud-init** for VMs (Guest → Tools → Cloud-init): user, password (kept unless you type a
+  new one), SSH keys, DHCP/static/none IPv4 and IPv6 per network device, DNS servers, search
+  domain and package upgrades. Adds the cloud-init drive if the VM has none, and can regenerate
+  the image.
+
 ### Changed
 - The bulk-action summary on the Resources list stays on screen longer.
 

@@ -37,6 +37,7 @@ import io.github.lucabarbalata.anprox.diagnostics.CrashReportDialog
 import io.github.lucabarbalata.anprox.model.pve.ConsoleKind
 import io.github.lucabarbalata.anprox.model.pve.ConsoleTarget
 import io.github.lucabarbalata.anprox.model.pve.GuestType
+import io.github.lucabarbalata.anprox.ui.cloudinit.CloudInitScreen
 import io.github.lucabarbalata.anprox.ui.console.ConsoleScreen
 import io.github.lucabarbalata.anprox.ui.create.CreateGuestScreen
 import io.github.lucabarbalata.anprox.ui.dashboard.DashboardScreen
@@ -53,6 +54,7 @@ import io.github.lucabarbalata.anprox.ui.navigation.AboutRoute
 import io.github.lucabarbalata.anprox.ui.navigation.BackupsRoute
 import io.github.lucabarbalata.anprox.ui.navigation.DashboardRoute
 import io.github.lucabarbalata.anprox.ui.navigation.CloneRoute
+import io.github.lucabarbalata.anprox.ui.navigation.CloudInitRoute
 import io.github.lucabarbalata.anprox.ui.navigation.ConsoleRoute
 import io.github.lucabarbalata.anprox.ui.navigation.CreateGuestRoute
 import io.github.lucabarbalata.anprox.ui.navigation.GuestRoute
@@ -132,6 +134,7 @@ fun AnProxApp() {
             GuestTool.SNAPSHOTS -> nav.navigate(SnapshotsRoute(ref.serverId, ref.node, type, ref.vmid, name))
             GuestTool.BACKUPS -> nav.navigate(BackupsRoute(ref.serverId, ref.node, type, ref.vmid, name))
             GuestTool.HARDWARE -> nav.navigate(HardwareRoute(ref.serverId, ref.node, type, ref.vmid, name))
+            GuestTool.CLOUD_INIT -> nav.navigate(CloudInitRoute(ref.serverId, ref.node, ref.vmid, name))
             GuestTool.OPTIONS -> nav.navigate(OptionsRoute(ref.serverId, ref.node, type, ref.vmid, name))
             GuestTool.CONSOLE -> {
                 val kind = if (ref.type == GuestType.QEMU) ConsoleKind.VM else ConsoleKind.CONTAINER
@@ -248,6 +251,10 @@ fun AnProxApp() {
                         openGuest(ref)
                     },
                 )
+            }
+            composable<CloudInitRoute> { entry ->
+                val r = entry.toRoute<CloudInitRoute>()
+                CloudInitScreen(GuestRef(r.serverId, r.node, GuestType.QEMU, r.vmid), guestName = r.name, onBack = back, onTask = openTask)
             }
             composable<HardwareRoute> { entry ->
                 val r = entry.toRoute<HardwareRoute>()

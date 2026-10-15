@@ -63,6 +63,13 @@ container templates. The form lives on `ui/create/` and is opened from a node's 
 form pieces (chips, number fields, storage and bridge pickers) moved to `ui/common/FormParts.kt`.
 +5 model and +4 data tests; the tour creates a VM with the suggested settings.
 
+**M2: cloud-init.** `CloudInit`, `CloudInitIp` and `CloudInitForm` read and write `ciuser`,
+`cipassword` (Proxmox only says whether one is set), `sshkeys` (stored URL-encoded: the app
+encodes spaces as `%20` like the web UI, and decodes with `+` kept), `ipconfigN` per network
+device, `nameserver`, `searchdomain` and `ciupgrade`. A VM without a drive gets one with
+`storage:cloudinit`; `PUT …/cloudinit` regenerates the image. The tour opens the cloud-init
+screen of `k8s-master`. That completes the M2 items except SPICE and the built-in SSH client.
+
 **Tour, again.** With the five steps wired in, two waited for snackbars that are only 4 s long
 (missed between two UI dumps on the slow emulator) and one looked for a section header, which is
 drawn in upper case. The steps now wait for something that stays on screen.

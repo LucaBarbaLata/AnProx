@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.CloudQueue
 import androidx.compose.material.icons.outlined.PauseCircle
 import androidx.compose.material.icons.outlined.Memory
 import androidx.compose.material.icons.outlined.PhotoCamera
@@ -178,6 +179,13 @@ fun GuestDetail(
                             stringResource(R.string.hardware_title),
                             stringResource(if (ref.type == GuestType.QEMU) R.string.hardware_open_body_vm else R.string.hardware_open_body_ct),
                         ) { onTool(GuestTool.HARDWARE, ref, state.title) }
+                        if (ref.type == GuestType.QEMU) {
+                            MenuRow(
+                                Icons.Outlined.CloudQueue,
+                                stringResource(R.string.cloudinit_title),
+                                stringResource(R.string.cloudinit_open_body),
+                            ) { onTool(GuestTool.CLOUD_INIT, ref, state.title) }
+                        }
                         MenuRow(
                             Icons.Outlined.Tune,
                             stringResource(R.string.options_title),
@@ -350,7 +358,6 @@ private fun ComingSoon() {
     val c = AnProxTheme.colors
     val items = listOf(
         R.string.tool_console to "M2",
-        R.string.tool_cloudinit to "M2",
     )
     GlassCard(contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)) {
         items.forEach { (label, milestone) ->

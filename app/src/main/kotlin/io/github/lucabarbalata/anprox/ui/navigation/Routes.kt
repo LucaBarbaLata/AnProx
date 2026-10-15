@@ -26,6 +26,7 @@ import kotlinx.serialization.Serializable
 @Serializable data class SnapshotsRoute(val serverId: String, val node: String, val type: String, val vmid: Int, val name: String)
 @Serializable data class OptionsRoute(val serverId: String, val node: String, val type: String, val vmid: Int, val name: String)
 @Serializable data class HardwareRoute(val serverId: String, val node: String, val type: String, val vmid: Int, val name: String)
+@Serializable data class CloudInitRoute(val serverId: String, val node: String, val vmid: Int, val name: String)
 /** [kind] is a [io.github.lucabarbalata.anprox.model.pve.ConsoleKind] name; [vmid] is 0 for a node shell. */
 @Serializable data class ConsoleRoute(val serverId: String, val node: String, val kind: String, val vmid: Int, val name: String)
 @Serializable data class CloneRoute(val serverId: String, val node: String, val type: String, val vmid: Int, val name: String)

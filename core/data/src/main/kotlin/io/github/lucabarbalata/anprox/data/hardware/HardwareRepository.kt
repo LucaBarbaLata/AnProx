@@ -2,6 +2,7 @@ package io.github.lucabarbalata.anprox.data.hardware
 
 import io.github.lucabarbalata.anprox.data.guest.GuestRef
 import io.github.lucabarbalata.anprox.data.hub.ServerHub
+import io.github.lucabarbalata.anprox.model.pve.CloudInit
 import io.github.lucabarbalata.anprox.model.pve.CtHardware
 import io.github.lucabarbalata.anprox.model.pve.GuestType
 import io.github.lucabarbalata.anprox.model.pve.NodeNetwork
@@ -61,6 +62,18 @@ class HardwareRepository(private val hub: ServerHub) {
                 null
             }
         }
+    }
+
+    /** A VM's cloud-init settings, with its hardware (network devices, free slots for the drive). */
+    suspend fun cloudInit(ref: GuestRef): Pair<CloudInit, VmHardware> {
+        require(ref.type == GuestType.QEMU) { "cloud-init is for VMs" }
+        val config = hub.use(ref.serverId) { it.pve { guestConfig(ref.node, ref.type.apiName, ref.vmid) } }
+        return CloudInit.fromConfig(config) to VmHardware.fromConfig(config)
+    }
+
+    /** Builds the cloud-init image again, so a stopped VM gets the new settings at its next start. */
+    suspend fun regenerateCloudInit(ref: GuestRef) {
+        hub.use(ref.serverId) { it.pveNoData { regenerateCloudInit(ref.node, ref.vmid) } }
     }
 
     /** Grows a disk or volume. A task UPID, or null when Proxmox did it at once (older VMs). */

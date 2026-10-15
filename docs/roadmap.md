@@ -93,7 +93,8 @@ Everything marked ✅ in M1 and M2 below. Gates:
 - ✅ **Options** (pulled into 0.1.0-beta.2): name, start at boot, protection, tags, description, QEMU agent.
   (Start order and the remaining options are still to do.)
 - ✅ **Clone and templates** (Q18, pulled into 0.1.0-beta.2): full and linked clones to any node and storage, convert to template.
-- **Cloud-init** (Q18): user, SSH keys, IP.
+- ✅ **Cloud-init** (Q18): user, password, SSH keys, IP per network device, DNS, upgrade on first
+  start; adds the cloud-init drive if the VM has none; regenerate the image.
 - ✅ **Creation wizard** for VMs and containers (Q17): a simple flow with an "Advanced" toggle,
   from a node's screen (Node → Create VM / Create container).
 - ✅ **Migration** (pulled into 0.1.0-beta.2): live for VMs (copying local disks), restart mode for containers, offline when stopped; uses Proxmox's pre-flight check.

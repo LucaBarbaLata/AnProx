@@ -234,6 +234,12 @@ class MockProxmoxServer(
             val g = call.guest("lxc") ?: return@post
             call.moveVolume(s, g)
         }
+        put("nodes/{node}/qemu/{vmid}/cloudinit") {
+            val s = call.authed() ?: return@put
+            val g = call.guest("qemu") ?: return@put
+            if (state.isReadOnly(s.user)) return@put call.fail(403, "Permission check failed (/vms/${g.vmid}, VM.Config.Cloudinit)")
+            call.ok(JsonNull) // the image is built again at the next start; nothing to do in the mock
+        }
         get("nodes/{node}/network") {
             call.authed() ?: return@get
             state.node(call.parameters["node"]!!) ?: return@get call.fail(404, "no such node")

@@ -201,6 +201,13 @@ internal class MockHardware(
             val iso = isos.firstOrNull { it.volid == file } ?: return error("volume '$file' does not exist")
             return props.with("size", "${iso.size / MIB}M").toString()
         }
+        CLOUDINIT.matchEntire(file)?.let { m ->
+            val storage = storage(node.name, m.groupValues[1]) ?: return error("storage '${m.groupValues[1]}' does not exist")
+            if ("images" !in storage.content.split(',')) return error("storage '${storage.id}' does not support content-type 'images'")
+            if (config.values.any { "cloudinit" in it }) return error("$key: only one cloud-init drive is allowed")
+            val volume = if (storage.plugin == "zfspool") "${storage.id}:vm-${g.vmid}-cloudinit" else "${storage.id}:${g.vmid}/vm-${g.vmid}-cloudinit.qcow2"
+            return "$volume,media=cdrom"
+        }
         val allocation = ALLOCATION.matchEntire(file)
         if (allocation != null) {
             val (storageId, size) = allocation.destructured
@@ -343,7 +350,13 @@ internal class MockHardware(
             }
             m["scsi0"] = "${volumeName(storage, g, 0, false)},iothread=1,size=${g.maxdisk / GIB}G"
             m["ide2"] = if (windows) "${isos[2].volid},media=cdrom,size=708M" else "none,media=cdrom"
-            if (g.vmid == 103) m["ide0"] = "${storage.id}:vm-103-cloudinit,media=cdrom"
+            if (g.vmid == 103) {
+                m["ide0"] = "${storage.id}:vm-103-cloudinit,media=cdrom"
+                m["ciuser"] = "ubuntu"
+                m["sshkeys"] = "ssh-ed25519%20AAAAC3NzaC1lZDI1NTE5AAAAIMockKeyForTheTourOnlyAAAAAAAAAAAAAAAAAAAA%20admin%40laptop%0A"
+                m["ipconfig0"] = "ip=10.0.0.103/24,gw=10.0.0.1"
+                m["nameserver"] = "10.0.0.1"
+            }
             m["net0"] = "virtio=${mac(g, 0)},bridge=vmbr0,firewall=1"
             m["boot"] = "order=scsi0;ide2;net0"
             if (g.vmid == 104) m["unused0"] = volumeName(storage, g, 3, false)
@@ -369,6 +382,7 @@ internal class MockHardware(
         val DISK = Regex("^(?:(?:ide|sata|scsi|virtio)\\d+|efidisk0|tpmstate0)$")
         val NET = Regex("^net\\d+$")
         val ALLOCATION = Regex("^([A-Za-z0-9][A-Za-z0-9_.-]*):(\\d+(?:\\.\\d+)?)$")
+        val CLOUDINIT = Regex("^([A-Za-z0-9][A-Za-z0-9_.-]*):cloudinit$")
         val DISK_NUMBER = Regex("-disk-(\\d+)")
 
         /** Keys a running VM only picks up at the next start. */

@@ -158,6 +158,10 @@ interface PveApi {
         @FieldMap params: Map<String, String>,
     ): ApiEnvelope<String>
 
+    /** Builds the VM's cloud-init image again with the current settings (`{"data": null}`). */
+    @PUT("nodes/{node}/qemu/{vmid}/cloudinit")
+    suspend fun regenerateCloudInit(@Path("node") node: String, @Path("vmid") vmid: Int): ApiEnvelope<JsonElement>
+
     /** A node's network interfaces; [type] `any_bridge` lists Linux and OVS bridges. */
     @GET("nodes/{node}/network")
     suspend fun nodeNetworks(@Path("node") node: String, @Query("type") type: String?): ApiEnvelope<List<NodeNetwork>>

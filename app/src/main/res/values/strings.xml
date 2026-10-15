@@ -221,7 +221,6 @@
     <string name="power_pause">Pause</string>
     <string name="power_resume">Resume</string>
     <string name="tool_console">SPICE viewer and built-in SSH</string>
-    <string name="tool_cloudinit">Cloud-init (user, SSH keys, IP)</string>
     <string name="coming_in">Coming in %1$s</string>
 
     <!-- Guest options (Q19) -->
@@ -761,6 +760,35 @@
     <string name="create_done">%1$s %2$d created on %3$s</string>
     <string name="create_vm_action">Create VM</string>
     <string name="create_ct_action">Create container</string>
+
+    <!-- Cloud-init (Q18) -->
+    <string name="cloudinit_title">Cloud-init</string>
+    <string name="cloudinit_open_body">User, password, SSH keys, IP addresses, DNS</string>
+    <string name="cloudinit_no_drive_title">No cloud-init drive</string>
+    <string name="cloudinit_no_drive_body">Cloud-init settings reach the VM through a small drive Proxmox writes them to. Add one, then the VM\'s image (a cloud image with cloud-init) picks them up when it starts.</string>
+    <string name="cloudinit_add_drive">Add cloud-init drive</string>
+    <string name="cloudinit_drive_added">Cloud-init drive added</string>
+    <string name="cloudinit_running_note">The VM is running: cloud-init applies these settings the next time it starts.</string>
+    <string name="cloudinit_user_section">User</string>
+    <string name="cloudinit_user">User name</string>
+    <string name="cloudinit_user_help">Empty: the image\'s default user (for example ubuntu or debian)</string>
+    <string name="cloudinit_user_error">Lower-case letters, digits, _ . - (up to 32)</string>
+    <string name="cloudinit_password">New password</string>
+    <string name="cloudinit_password_set">A password is set. Leave this empty to keep it.</string>
+    <string name="cloudinit_password_unset">No password set; SSH keys alone are safer.</string>
+    <string name="cloudinit_password_clear">Remove the password</string>
+    <string name="cloudinit_dns">DNS</string>
+    <string name="cloudinit_nameserver">DNS servers</string>
+    <string name="cloudinit_nameserver_help">IP addresses separated by spaces. Empty: the node\'s settings</string>
+    <string name="cloudinit_nameserver_error">Only IP addresses, separated by spaces</string>
+    <string name="cloudinit_search_domain">Search domain</string>
+    <string name="cloudinit_dns_help">Empty: the node\'s settings</string>
+    <string name="cloudinit_upgrade">Upgrade packages</string>
+    <string name="cloudinit_upgrade_body">Install updates on the first start.</string>
+    <string name="cloudinit_saved">Cloud-init settings saved</string>
+    <string name="cloudinit_regenerate">Regenerate image</string>
+    <string name="cloudinit_regenerate_help">Proxmox writes the cloud-init image when the VM starts. Regenerate it to update a stopped VM or a template right away, for example before cloning it.</string>
+    <string name="cloudinit_regenerated">Cloud-init image regenerated</string>
 
     <string name="about_disclaimer">AnProx is an independent project and is not affiliated with or endorsed by Proxmox Server Solutions GmbH. Proxmox is a registered trademark of Proxmox Server Solutions GmbH.</string>
 </resources>

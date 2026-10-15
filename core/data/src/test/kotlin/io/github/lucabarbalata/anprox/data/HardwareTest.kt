@@ -10,6 +10,8 @@ import io.github.lucabarbalata.anprox.mock.MockProxmoxServer
 import io.github.lucabarbalata.anprox.model.ProxmoxProduct
 import io.github.lucabarbalata.anprox.model.profile.Endpoint
 import io.github.lucabarbalata.anprox.model.profile.ServerProfile
+import io.github.lucabarbalata.anprox.model.pve.CloudInitForm
+import io.github.lucabarbalata.anprox.model.pve.CloudInitIp
 import io.github.lucabarbalata.anprox.model.pve.CtNetSettings
 import io.github.lucabarbalata.anprox.model.pve.CtResources
 import io.github.lucabarbalata.anprox.model.pve.CtVolumeOps
@@ -19,6 +21,7 @@ import io.github.lucabarbalata.anprox.model.pve.NewMountPoint
 import io.github.lucabarbalata.anprox.model.pve.NewVmDisk
 import io.github.lucabarbalata.anprox.model.pve.PowerAction
 import io.github.lucabarbalata.anprox.model.pve.VmCpuMemory
+import io.github.lucabarbalata.anprox.model.pve.VmDisk
 import io.github.lucabarbalata.anprox.model.pve.VmDiskOps
 import io.github.lucabarbalata.anprox.model.pve.VmNetSettings
 import io.github.lucabarbalata.anprox.network.ApiException
@@ -246,6 +249,40 @@ class HardwareTest {
         ct = hw.container(nginx)
         assertEquals(listOf("mp0"), ct.mountPoints.map { it.key })
         assertEquals(1, ct.unused.size)
+    }
+
+    @Test
+    fun `cloud-init settings, drive and image`() = runBlocking {
+        val hw = HardwareRepository(hub())
+        val k8s = GuestRef("pve", "pve2", GuestType.QEMU, 103)
+        val (ci, vm) = hw.cloudInit(k8s)
+        assertEquals("ide0", ci.drive)
+        assertEquals("ubuntu", ci.user)
+        assertTrue(ci.sshKeys.startsWith("ssh-ed25519 AAAA") && ci.sshKeys.endsWith(" admin@laptop"))
+        assertEquals("10.0.0.103/24", ci.ipconfigs.getValue(0).ip)
+
+        val form = CloudInitForm.from(ci, vm.nets).copy(
+            user = "admin",
+            password = "s3cret!",
+            ipconfigs = mapOf(0 to CloudInitIp(ipv4 = CtNetSettings.Ipv4Mode.DHCP)),
+        )
+        hw.apply(k8s, form.changes(ci))
+        hw.regenerateCloudInit(k8s)
+        val (after, _) = hw.cloudInit(k8s)
+        assertEquals("admin", after.user)
+        assertTrue(after.passwordSet)
+        assertEquals(CtNetSettings.Ipv4Mode.DHCP, after.ipconfigs.getValue(0).ipv4)
+        assertEquals(ci.sshKeys, after.sshKeys) // unchanged, still decoded the same way
+
+        // A VM without a drive gets one on a free IDE slot; only one is allowed.
+        val (none, webHw) = hw.cloudInit(web)
+        assertNull(none.drive)
+        hw.apply(web, CloudInitForm.addDrive(webHw, "local-zfs"))
+        val (withDrive, webAfter) = hw.cloudInit(web)
+        assertEquals("ide0", withDrive.drive)
+        assertEquals(VmDisk.Kind.CLOUD_INIT, webAfter.disk("ide0")!!.kind)
+        assertFailsWith<ApiException> { hw.apply(web, CloudInitForm.addDrive(webAfter, "local-zfs")) }
+        Unit
     }
 
     @Test

@@ -109,6 +109,17 @@ overwriting (try it once: open Hardware, change something in the web UI, then sa
 6. Wrong input is explained before you can press Create: an ID that exists, a too-short
    password, a disk bigger than the free space.
 
+### D4. Cloud-init (VM → Tools → Cloud-init), new after beta.2
+Best with a VM made from a cloud image (for example the Debian or Ubuntu cloud images).
+1. A VM without a cloud-init drive: the screen offers **Add cloud-init drive** → pick a storage →
+   the form appears (web UI: VM → Hardware shows a CloudInit drive).
+2. Set a user, a password and your SSH key; net0 → **Static** with an address and gateway; DNS
+   server → **Save**. Check VM → Cloud-Init in the web UI: same values (the SSH key must look
+   right there, not URL-encoded).
+3. Start the VM, log in with the key, check the address. Change something while it runs: the
+   note says it applies at the next start.
+4. Leave the password empty and save another change: the old password must still work.
+
 ### E. Snapshots (Tools → Snapshots)
 1. **Take snapshot** on the running test VM with **Include RAM** → "VM snapshot finished"; it
    appears in the tree with a RAM badge.
