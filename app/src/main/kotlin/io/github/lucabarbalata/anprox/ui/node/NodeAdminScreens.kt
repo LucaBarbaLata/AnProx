@@ -25,6 +25,7 @@ import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.CloudDownload
 import androidx.compose.material.icons.outlined.Description
+import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.SystemUpdateAlt
@@ -41,7 +42,10 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -63,6 +67,7 @@ import io.github.lucabarbalata.anprox.core.designsystem.component.TagChip
 import io.github.lucabarbalata.anprox.core.designsystem.component.Tone
 import io.github.lucabarbalata.anprox.core.designsystem.theme.AnProxTheme
 import io.github.lucabarbalata.anprox.model.pve.DangerLevel
+import io.github.lucabarbalata.anprox.model.pve.NodeDnsForm
 import io.github.lucabarbalata.anprox.model.pve.NodeService
 import io.github.lucabarbalata.anprox.model.pve.ServiceAction
 import io.github.lucabarbalata.anprox.ui.common.AnProxScaffold
@@ -509,6 +514,7 @@ fun NodeAdminCard(onOpen: (NodeAdminPage) -> Unit) {
                         NodeAdminPage.REPOSITORIES -> Icons.Outlined.CloudDownload
                         NodeAdminPage.SERVICES -> Icons.Outlined.Settings
                         NodeAdminPage.JOURNAL -> Icons.Outlined.Description
+                        NodeAdminPage.SYSTEM -> Icons.Outlined.Language
                     },
                     contentDescription = null,
                     tint = c.accent,
@@ -528,6 +534,7 @@ private fun pageTitle(page: NodeAdminPage): Int = when (page) {
     NodeAdminPage.REPOSITORIES -> R.string.repos_title
     NodeAdminPage.SERVICES -> R.string.services_title
     NodeAdminPage.JOURNAL -> R.string.journal_title
+    NodeAdminPage.SYSTEM -> R.string.system_title
 }
 
 private fun pageBody(page: NodeAdminPage): Int = when (page) {
@@ -535,4 +542,129 @@ private fun pageBody(page: NodeAdminPage): Int = when (page) {
     NodeAdminPage.REPOSITORIES -> R.string.repos_open_body
     NodeAdminPage.SERVICES -> R.string.services_open_body
     NodeAdminPage.JOURNAL -> R.string.journal_open_body
+    NodeAdminPage.SYSTEM -> R.string.system_open_body
 }
+
+// ------------------------------------------------------------------------------ DNS, hosts, time
+
+/** Node → DNS, hosts and time: the resolver, `/etc/hosts` and the time zone. */
+@Composable
+fun SystemSettingsScreen(
+    serverId: String,
+    node: String,
+    onBack: () -> Unit,
+    onTask: (serverId: String, node: String, upid: String) -> Unit,
+) {
+    val viewModel: SystemSettingsViewModel = koinViewModel(key = "system-$serverId-$node") { parametersOf(serverId, node) }
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    val c = AnProxTheme.colors
+    val snackbar = remember { SnackbarHostState() }
+    TaskResultSnackbar(state.result, snackbar, serverId, node, onTask, viewModel::consumeResult)
+    var zoneQuery by rememberSaveable { mutableStateOf("") }
+    val zones = remember { java.util.TimeZone.getAvailableIDs().filter { '/' in it || it == "UTC" }.sorted() }
+    AnProxScaffold(
+        title = stringResource(R.string.system_title),
+        subtitle = node,
+        onBack = onBack,
+        snackbarHostState = snackbar,
+        actions = {
+            IconButton(onClick = viewModel::load, enabled = !state.loading) {
+                Icon(Icons.Outlined.Refresh, contentDescription = stringResource(R.string.action_refresh))
+            }
+        },
+    ) { inner ->
+        LazyColumn(contentPadding = contentPadding(inner), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            state.error?.let { error ->
+                item { ErrorBanner(error.asString(), actionLabel = stringResource(R.string.action_retry), onAction = viewModel::load) }
+            }
+            if (state.loading && state.dns == null) {
+                item {
+                    Box(Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = c.accent)
+                    }
+                }
+            }
+            state.dns?.let { dns ->
+                item { SectionHeader(stringResource(R.string.system_dns)) }
+                item {
+                    GlassCard {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            GlassTextField(value = dns.search, onValueChange = { v -> viewModel.editDns { copy(search = v) } }, label = stringResource(R.string.system_search_domain))
+                            dns.servers.forEachIndexed { i, server ->
+                                GlassTextField(
+                                    value = server,
+                                    onValueChange = { v -> viewModel.setServer(i, v) },
+                                    label = stringResource(R.string.system_dns_server, i + 1),
+                                    isError = server.isNotBlank() && dns.problem() == NodeDnsForm.Problem.SERVER,
+                                )
+                            }
+                            dns.problem()?.let {
+                                FormHint(stringResource(if (it == NodeDnsForm.Problem.SEARCH) R.string.system_problem_search else R.string.system_problem_server), error = true)
+                            }
+                            AnProxButton(stringResource(R.string.action_save), onClick = viewModel::saveDns, enabled = !state.busy && dns.problem() == null, modifier = Modifier.fillMaxWidth())
+                        }
+                    }
+                }
+            }
+            state.time?.let { time ->
+                item { SectionHeader(stringResource(R.string.system_time)) }
+                item {
+                    GlassCard {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            time.localtime?.let { local ->
+                                Text(
+                                    stringResource(R.string.system_node_time, java.time.Instant.ofEpochSecond(local).toString().replace('T', ' ').removeSuffix("Z")),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = c.textSecondary,
+                                )
+                            }
+                            Text(stringResource(R.string.system_timezone, state.timezone), style = MaterialTheme.typography.titleSmall, color = c.textPrimary)
+                            GlassTextField(value = zoneQuery, onValueChange = { zoneQuery = it }, label = stringResource(R.string.system_timezone_search))
+                            if (zoneQuery.length >= 2) {
+                                zones.filter { it.contains(zoneQuery.trim(), ignoreCase = true) }.take(8).forEach { zone ->
+                                    Text(
+                                        zone,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = if (zone == state.timezone) c.accent else c.textPrimary,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clickable {
+                                                viewModel.setTimezone(zone)
+                                                zoneQuery = ""
+                                            }
+                                            .padding(vertical = 8.dp),
+                                    )
+                                }
+                            }
+                            AnProxButton(
+                                stringResource(R.string.system_timezone_save),
+                                onClick = viewModel::saveTimezone,
+                                enabled = !state.busy && state.timezoneChanged,
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                        }
+                    }
+                }
+            }
+            if (state.hosts != null) {
+                item { SectionHeader(stringResource(R.string.system_hosts)) }
+                item {
+                    GlassCard {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            FormHint(stringResource(R.string.system_hosts_body))
+                            GlassTextField(
+                                value = state.hostsText,
+                                onValueChange = viewModel::editHosts,
+                                label = stringResource(R.string.system_hosts_file),
+                                singleLine = false,
+                                minLines = 6,
+                            )
+                            AnProxButton(stringResource(R.string.action_save), onClick = viewModel::saveHosts, enabled = !state.busy && state.hostsChanged, modifier = Modifier.fillMaxWidth())
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+

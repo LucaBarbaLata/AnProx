@@ -261,6 +261,8 @@ Needs two nodes and a guest whose disks are on local ZFS storage that exists on 
    switch the enterprise one off → check /etc/apt/sources.list* on the node.
 4. **Services**: restart `pvestatd` (harmless) → "done"; stopping `pveproxy` asks first.
 5. **System log**: the newest lines match `journalctl -n 500`; the filter narrows them.
+6. **DNS, hosts and time**: values match the web UI's System → DNS / Hosts / Time; change the
+   time zone and back; add a comment line to /etc/hosts and remove it again.
 
 ### E. Snapshots (Tools → Snapshots)
 1. **Take snapshot** on the running test VM with **Include RAM** → "VM snapshot finished"; it

@@ -9,6 +9,8 @@ import io.github.lucabarbalata.anprox.mock.MockProxmoxServer
 import io.github.lucabarbalata.anprox.model.ProxmoxProduct
 import io.github.lucabarbalata.anprox.model.profile.Endpoint
 import io.github.lucabarbalata.anprox.model.profile.ServerProfile
+import io.github.lucabarbalata.anprox.model.pve.NodeDns
+import io.github.lucabarbalata.anprox.model.pve.NodeDnsForm
 import io.github.lucabarbalata.anprox.model.pve.ServiceAction
 import io.github.lucabarbalata.anprox.network.ApiException
 import kotlinx.coroutines.CoroutineScope
@@ -93,6 +95,31 @@ class NodeAdminTest {
         val journal = repo.journal("pve", "pve1", 100)
         assertEquals(100, journal.size)
         assertTrue(journal.none { it.startsWith("-- cursor") })
+        Unit
+    }
+
+    @Test
+    fun `dns, hosts and the time zone`() = runBlocking {
+        val repo = NodeAdminRepository(hub())
+        val dns = repo.dns("pve", "pve1")
+        assertEquals("home.lan", dns.search)
+        val form = NodeDnsForm.from(dns)
+        assertEquals(listOf("10.0.0.1", "1.1.1.1", ""), form.servers)
+        assertEquals(NodeDnsForm.Problem.SERVER, form.copy(servers = listOf("dns.example", "", "")).problem())
+        repo.setDns("pve", "pve1", form.copy(servers = listOf("10.0.0.2", "", "")))
+        assertEquals(NodeDns("home.lan", "10.0.0.2", null, null), repo.dns("pve", "pve1"))
+
+        val hosts = repo.hosts("pve", "pve1")
+        assertTrue("pve1.home.lan" in hosts.data)
+        repo.setHosts("pve", "pve1", hosts, hosts.data + "10.0.0.50 nas.home.lan nas\n")
+        assertTrue("nas.home.lan" in repo.hosts("pve", "pve1").data)
+        // The old copy's digest is stale.
+        assertFailsWith<ApiException> { repo.setHosts("pve", "pve1", hosts, hosts.data) }
+
+        assertEquals("Europe/Bucharest", repo.time("pve", "pve1").timezone)
+        repo.setTimezone("pve", "pve1", "Europe/Berlin")
+        assertEquals("Europe/Berlin", repo.time("pve", "pve1").timezone)
+        assertFailsWith<ApiException> { repo.setTimezone("pve", "pve1", "Mars/Olympus") }
         Unit
     }
 }

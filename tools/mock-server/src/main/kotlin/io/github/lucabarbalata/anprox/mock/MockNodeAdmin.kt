@@ -5,6 +5,9 @@ import io.github.lucabarbalata.anprox.model.pve.AptRepository
 import io.github.lucabarbalata.anprox.model.pve.AptRepositoryFile
 import io.github.lucabarbalata.anprox.model.pve.AptRepositoryInfo
 import io.github.lucabarbalata.anprox.model.pve.AptUpdate
+import io.github.lucabarbalata.anprox.model.pve.NodeDns
+import io.github.lucabarbalata.anprox.model.pve.NodeHosts
+import io.github.lucabarbalata.anprox.model.pve.NodeTime
 import io.github.lucabarbalata.anprox.model.pve.NodeService
 import io.github.lucabarbalata.anprox.model.pve.NodeSubscription
 import io.github.lucabarbalata.anprox.model.pve.PackageVersion
@@ -23,6 +26,10 @@ internal class MockNodeAdmin(nodes: List<String>) {
         val files: LinkedHashMap<String, MutableList<Repo>>,
         val services: LinkedHashMap<String, String>,
         var version: Int = 1,
+        var dns: NodeDns = NodeDns("home.lan", "10.0.0.1", "1.1.1.1"),
+        var hosts: String = "",
+        var hostsVersion: Int = 1,
+        var timezone: String = "Europe/Bucharest",
     )
 
     private val data = nodes.associateWith { node ->
@@ -176,5 +183,44 @@ internal class MockNodeAdmin(nodes: List<String>) {
             "chrony" to "chrony, an NTP client/server", "sshd" to "OpenBSD Secure Shell server", "cron" to "Regular background program processing daemon",
             "postfix" to "Postfix Mail Transport Agent", "systemd-journald" to "Journal Service", "ksmtuned" to "Kernel Samepage Merging (KSM) Tuning Daemon",
         )
+    }
+
+    fun dns(node: String): NodeDns? = node(node)?.dns
+
+    fun setDns(node: String, params: Map<String, String>): String? {
+        val d = node(node) ?: return "no such node"
+        val search = params["search"]?.takeIf { it.isNotBlank() } ?: return "search: property is missing and it is not optional"
+        val delete = params["delete"].orEmpty().split(',').toSet()
+        fun server(key: String, old: String?) = if (key in delete) null else params[key] ?: old
+        listOf("dns1", "dns2", "dns3").forEach { k ->
+            params[k]?.let { if (!Regex("^[0-9a-fA-F:.]+$").matches(it)) return "$k: value does not look like a valid IP address" }
+        }
+        d.dns = NodeDns(search, server("dns1", d.dns.dns1), server("dns2", d.dns.dns2), server("dns3", d.dns.dns3))
+        return null
+    }
+
+    fun hosts(node: String): NodeHosts? = node(node)?.let { d ->
+        if (d.hosts.isEmpty()) d.hosts = "127.0.0.1 localhost.localdomain localhost\n10.0.0.11 pve1.home.lan pve1\n10.0.0.12 pve2.home.lan pve2\n10.0.0.13 pve3.home.lan pve3\n"
+        NodeHosts(d.hosts, "hosts%04d".format(d.hostsVersion))
+    }
+
+    fun setHosts(node: String, data: String, digest: String?): String? {
+        val d = node(node) ?: return "no such node"
+        if (digest != null && digest != "hosts%04d".format(d.hostsVersion)) return "hosts file changed by someone else"
+        d.hosts = data
+        d.hostsVersion++
+        return null
+    }
+
+    fun time(node: String, nowSeconds: Long): NodeTime? = node(node)?.let { d ->
+        val offset = java.util.TimeZone.getTimeZone(d.timezone).getOffset(nowSeconds * 1000) / 1000
+        NodeTime(d.timezone, nowSeconds, nowSeconds + offset)
+    }
+
+    fun setTimezone(node: String, timezone: String): String? {
+        val d = node(node) ?: return "no such node"
+        if (timezone !in java.util.TimeZone.getAvailableIDs()) return "timezone: invalid time zone '$timezone'"
+        d.timezone = timezone
+        return null
     }
 }

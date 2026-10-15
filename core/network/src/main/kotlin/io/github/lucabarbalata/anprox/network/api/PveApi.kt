@@ -26,11 +26,14 @@ import io.github.lucabarbalata.anprox.model.pve.LvmVolumeGroup
 import io.github.lucabarbalata.anprox.model.pve.LxcInterface
 import io.github.lucabarbalata.anprox.model.pve.MigrationCheck
 import io.github.lucabarbalata.anprox.model.pve.NfsExport
+import io.github.lucabarbalata.anprox.model.pve.NodeDns
+import io.github.lucabarbalata.anprox.model.pve.NodeHosts
 import io.github.lucabarbalata.anprox.model.pve.NodeNetwork
 import io.github.lucabarbalata.anprox.model.pve.NodeService
 import io.github.lucabarbalata.anprox.model.pve.NodeStatus
 import io.github.lucabarbalata.anprox.model.pve.NodeStorage
 import io.github.lucabarbalata.anprox.model.pve.NodeSubscription
+import io.github.lucabarbalata.anprox.model.pve.NodeTime
 import io.github.lucabarbalata.anprox.model.pve.NotBackedUp
 import io.github.lucabarbalata.anprox.model.pve.PackageVersion
 import io.github.lucabarbalata.anprox.model.pve.PbsDatastore
@@ -602,6 +605,27 @@ interface PveApi {
     /** [action]: `start`, `stop`, `restart`, `reload`. Returns a UPID. */
     @POST("nodes/{node}/services/{service}/{action}")
     suspend fun serviceAction(@Path("node") node: String, @Path("service") service: String, @Path("action") action: String): ApiEnvelope<String>
+
+    @GET("nodes/{node}/dns")
+    suspend fun nodeDns(@Path("node") node: String): ApiEnvelope<NodeDns>
+
+    @FormUrlEncoded
+    @PUT("nodes/{node}/dns")
+    suspend fun setNodeDns(@Path("node") node: String, @FieldMap params: Map<String, String>): ApiEnvelope<JsonElement>
+
+    @GET("nodes/{node}/hosts")
+    suspend fun nodeHosts(@Path("node") node: String): ApiEnvelope<NodeHosts>
+
+    @FormUrlEncoded
+    @POST("nodes/{node}/hosts")
+    suspend fun setNodeHosts(@Path("node") node: String, @Field("data") data: String, @Field("digest") digest: String?): ApiEnvelope<JsonElement>
+
+    @GET("nodes/{node}/time")
+    suspend fun nodeTime(@Path("node") node: String): ApiEnvelope<NodeTime>
+
+    @FormUrlEncoded
+    @PUT("nodes/{node}/time")
+    suspend fun setNodeTimezone(@Path("node") node: String, @Field("timezone") timezone: String): ApiEnvelope<JsonElement>
 
     /** The newest [lastEntries] journal lines, between `-- cursor:` markers. */
     @GET("nodes/{node}/journal")

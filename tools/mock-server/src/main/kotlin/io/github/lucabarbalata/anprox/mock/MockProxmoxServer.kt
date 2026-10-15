@@ -674,6 +674,38 @@ class MockProxmoxServer(
                 onFailure = { call.fail(400, it.message ?: "error") },
             )
         }
+        get("nodes/{node}/dns") {
+            call.authed() ?: return@get
+            call.ok(state.nodeDns(call.parameters["node"]!!) ?: return@get call.fail(404, "no such node"))
+        }
+        put("nodes/{node}/dns") {
+            val s = call.authed() ?: return@put
+            if (state.isReadOnly(s.user)) return@put call.fail(403, "Permission check failed (/nodes/${call.parameters["node"]}, Sys.Modify)")
+            val p = call.receiveParameters()
+            val error = state.setNodeDns(call.parameters["node"]!!, p.names().associateWith { p[it].orEmpty() })
+            if (error != null) call.fail(400, error) else call.ok(JsonNull)
+        }
+        get("nodes/{node}/hosts") {
+            call.authed() ?: return@get
+            call.ok(state.nodeHosts(call.parameters["node"]!!) ?: return@get call.fail(404, "no such node"))
+        }
+        post("nodes/{node}/hosts") {
+            val s = call.authed() ?: return@post
+            if (state.isReadOnly(s.user)) return@post call.fail(403, "Permission check failed (/nodes/${call.parameters["node"]}, Sys.Modify)")
+            val p = call.receiveParameters()
+            val error = state.setNodeHosts(call.parameters["node"]!!, p["data"].orEmpty(), p["digest"])
+            if (error != null) call.fail(400, error) else call.ok(JsonNull)
+        }
+        get("nodes/{node}/time") {
+            call.authed() ?: return@get
+            call.ok(state.nodeTime(call.parameters["node"]!!) ?: return@get call.fail(404, "no such node"))
+        }
+        put("nodes/{node}/time") {
+            val s = call.authed() ?: return@put
+            if (state.isReadOnly(s.user)) return@put call.fail(403, "Permission check failed (/nodes/${call.parameters["node"]}, Sys.Modify)")
+            val error = state.setNodeTimezone(call.parameters["node"]!!, call.receiveParameters()["timezone"].orEmpty())
+            if (error != null) call.fail(400, error) else call.ok(JsonNull)
+        }
         get("nodes/{node}/journal") {
             call.authed() ?: return@get
             val node = state.node(call.parameters["node"]!!) ?: return@get call.fail(404, "no such node")

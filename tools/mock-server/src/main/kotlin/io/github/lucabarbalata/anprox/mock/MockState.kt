@@ -995,6 +995,12 @@ class MockState(
         nodeAdmin.services(node)
     }
     fun journal(node: String, last: Int) = nodeAdmin.journal(node, last)
+    fun nodeDns(node: String) = synchronized(lock) { nodeAdmin.dns(node) }
+    fun setNodeDns(node: String, params: Map<String, String>) = synchronized(lock) { nodeAdmin.setDns(node, params) }
+    fun nodeHosts(node: String) = synchronized(lock) { nodeAdmin.hosts(node) }
+    fun setNodeHosts(node: String, data: String, digest: String?) = synchronized(lock) { nodeAdmin.setHosts(node, data, digest) }
+    fun nodeTime(node: String) = synchronized(lock) { nodeAdmin.time(node, clockMillis() / 1000) }
+    fun setNodeTimezone(node: String, timezone: String) = synchronized(lock) { nodeAdmin.setTimezone(node, timezone) }
 
     /** `POST …/services/{service}/{action}`: a task that changes the service's state when it ends. */
     fun serviceAction(node: String, service: String, action: String, user: String): Result<String> {

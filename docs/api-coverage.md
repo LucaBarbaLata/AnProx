@@ -85,7 +85,7 @@ Code: `core/network/src/main/kotlin/.../network/api/` (`AccessApi`, `PveApi`, `P
 | `GET /nodes/{node}/services`, `POST …/services/{service}/{start,stop,restart,reload}` | Services (tasks) | ✅ |
 | `GET /nodes/{node}/journal?lastentries=` | System log (newest 500 lines) | ✅ |
 | `GET /nodes/{node}/syslog` | The older syslog view | 🗓 (the journal covers it) |
-| `/nodes/{node}/{dns,hosts,time}` | System settings | 🗓 M5 |
+| `GET/PUT /nodes/{node}/dns`, `GET/POST /nodes/{node}/hosts`, `GET/PUT /nodes/{node}/time` | DNS servers and search domain, /etc/hosts (with its digest), time zone | ✅ |
 | `GET /nodes/{node}/subscription` | Subscription status (on the Updates screen) | ✅ |
 | `PUT/POST /nodes/{node}/subscription` | Entering a key | 🗓 M5 |
 | `/nodes/{node}/certificates/*` | Certificates, ACME orders | 🗓 M9 |

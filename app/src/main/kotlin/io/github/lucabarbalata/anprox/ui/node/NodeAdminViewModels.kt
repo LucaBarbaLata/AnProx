@@ -7,8 +7,11 @@ import io.github.lucabarbalata.anprox.data.guest.GuestRepository
 import io.github.lucabarbalata.anprox.data.node.NodeAdminRepository
 import io.github.lucabarbalata.anprox.model.pve.AptRepositories
 import io.github.lucabarbalata.anprox.model.pve.AptUpdate
+import io.github.lucabarbalata.anprox.model.pve.NodeDnsForm
+import io.github.lucabarbalata.anprox.model.pve.NodeHosts
 import io.github.lucabarbalata.anprox.model.pve.NodeService
 import io.github.lucabarbalata.anprox.model.pve.NodeSubscription
+import io.github.lucabarbalata.anprox.model.pve.NodeTime
 import io.github.lucabarbalata.anprox.model.pve.PackageVersion
 import io.github.lucabarbalata.anprox.model.pve.ServiceAction
 import io.github.lucabarbalata.anprox.network.ApiException
@@ -24,7 +27,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /** The node pages under Node → Administration (milestone M5). */
-enum class NodeAdminPage { UPDATES, REPOSITORIES, SERVICES, JOURNAL }
+enum class NodeAdminPage { UPDATES, REPOSITORIES, SERVICES, JOURNAL, SYSTEM }
 
 // ------------------------------------------------------------------------------ updates
 
@@ -329,3 +332,108 @@ class JournalViewModel(
         ui.update { it.copy(filter = text) }
     }
 }
+
+// ------------------------------------------------------------------------------ DNS, hosts, time
+
+data class SystemState(
+    val loading: Boolean = true,
+    val error: UiText? = null,
+    val dns: NodeDnsForm? = null,
+    val hosts: NodeHosts? = null,
+    val hostsText: String = "",
+    val time: NodeTime? = null,
+    val timezone: String = "",
+    val busy: Boolean = false,
+    val result: TaskResult? = null,
+) {
+    val hostsChanged: Boolean get() = hosts != null && hostsText != hosts.data
+    val timezoneChanged: Boolean get() = time != null && timezone.isNotBlank() && timezone != time.timezone
+}
+
+/** Node → DNS, hosts and time. */
+class SystemSettingsViewModel(
+    private val serverId: String,
+    private val node: String,
+    private val repo: NodeAdminRepository,
+) : ViewModel() {
+    private val ui = MutableStateFlow(SystemState())
+    val state: StateFlow<SystemState> = ui.asStateFlow()
+
+    init {
+        load()
+    }
+
+    fun load() {
+        ui.update { it.copy(loading = true, error = null) }
+        viewModelScope.launch {
+            try {
+                coroutineScope {
+                    val dnsCall = async { repo.dns(serverId, node) }
+                    val hostsCall = async { repo.hosts(serverId, node) }
+                    val timeCall = async { repo.time(serverId, node) }
+                    val dns = dnsCall.await()
+                    val hosts = hostsCall.await()
+                    val time = timeCall.await()
+                    ui.update {
+                        it.copy(loading = false, dns = NodeDnsForm.from(dns), hosts = hosts, hostsText = hosts.data, time = time, timezone = time.timezone)
+                    }
+                }
+            } catch (e: ApiException) {
+                ui.update { it.copy(loading = false, error = e.toUiText()) }
+            }
+        }
+    }
+
+    fun editDns(change: NodeDnsForm.() -> NodeDnsForm) {
+        ui.update { s -> s.copy(dns = s.dns?.change()) }
+    }
+
+    fun setServer(index: Int, value: String) = editDns { copy(servers = servers.toMutableList().also { it[index] = value }) }
+
+    fun saveDns() {
+        val form = ui.value.dns ?: return
+        if (form.problem() != null) return
+        run(UiText.res(R.string.system_dns_saved)) { repo.setDns(serverId, node, form) }
+    }
+
+    fun editHosts(text: String) {
+        ui.update { it.copy(hostsText = text) }
+    }
+
+    fun saveHosts() {
+        val s = ui.value
+        val hosts = s.hosts ?: return
+        if (!s.hostsChanged) return
+        run(UiText.res(R.string.system_hosts_saved)) { repo.setHosts(serverId, node, hosts, s.hostsText) }
+    }
+
+    fun setTimezone(zone: String) {
+        ui.update { it.copy(timezone = zone) }
+    }
+
+    fun saveTimezone() {
+        val s = ui.value
+        if (!s.timezoneChanged) return
+        run(UiText.res(R.string.system_timezone_saved, s.timezone)) { repo.setTimezone(serverId, node, s.timezone) }
+    }
+
+    fun consumeResult() {
+        ui.update { it.copy(result = null) }
+    }
+
+    private fun run(done: UiText, call: suspend () -> Unit) {
+        if (ui.value.busy) return
+        ui.update { it.copy(busy = true) }
+        viewModelScope.launch {
+            val result = try {
+                call()
+                TaskResult(done, null, ok = true)
+            } catch (e: ApiException) {
+                TaskResult(e.toUiText(), null, ok = false)
+            }
+            ui.update { it.copy(busy = false, result = result) }
+            load()
+        }
+    }
+}
+

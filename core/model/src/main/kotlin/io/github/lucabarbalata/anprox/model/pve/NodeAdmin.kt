@@ -132,3 +132,38 @@ enum class ServiceAction(val apiName: String) {
 object Journal {
     fun lines(raw: List<String>): List<String> = raw.filterNot { it.startsWith("-- cursor:") || it.startsWith("-- No entries") }
 }
+
+/** `GET /nodes/{node}/dns`. */
+@Serializable
+data class NodeDns(val search: String? = null, val dns1: String? = null, val dns2: String? = null, val dns3: String? = null)
+
+/** The DNS editor: a search domain and up to three servers. */
+data class NodeDnsForm(val search: String = "", val servers: List<String> = listOf("", "", "")) {
+    enum class Problem { SEARCH, SERVER }
+
+    fun problem(): Problem? = when {
+        search.isBlank() -> Problem.SEARCH
+        servers.any { it.isNotBlank() && !(IpAddress.isIpv4(it.trim()) || IpAddress.isIpv6(it.trim())) } -> Problem.SERVER
+        else -> null
+    }
+
+    /** `PUT /nodes/{node}/dns`; cleared servers are deleted. */
+    fun params(): Map<String, String> = buildMap {
+        put("search", search.trim())
+        val delete = mutableListOf<String>()
+        servers.forEachIndexed { i, s -> if (s.isNotBlank()) put("dns${i + 1}", s.trim()) else delete += "dns${i + 1}" }
+        if (delete.isNotEmpty()) put("delete", delete.joinToString(","))
+    }
+
+    companion object {
+        fun from(d: NodeDns) = NodeDnsForm(d.search.orEmpty(), listOf(d.dns1.orEmpty(), d.dns2.orEmpty(), d.dns3.orEmpty()))
+    }
+}
+
+/** `GET /nodes/{node}/hosts`: `/etc/hosts` as text, with its digest. */
+@Serializable
+data class NodeHosts(val data: String = "", val digest: String? = null)
+
+/** `GET /nodes/{node}/time`. [time] and [localtime] are epoch seconds (local time as if it were UTC). */
+@Serializable
+data class NodeTime(val timezone: String = "UTC", val time: Long? = null, val localtime: Long? = null)

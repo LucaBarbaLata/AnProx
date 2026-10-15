@@ -1333,6 +1333,24 @@
     <string name="services_confirm_body">AnProx and the web interface talk to the node through this service, or the cluster depends on it. The connection drops for a moment; stopping it cuts it until the service is started again on the node.</string>
     <string name="journal_title">System log</string>
     <string name="journal_open_body">The newest 500 lines of the journal</string>
+    <string name="system_title">DNS, hosts and time</string>
+    <string name="system_open_body">Name servers, /etc/hosts, time zone</string>
+    <string name="system_dns">DNS</string>
+    <string name="system_search_domain">Search domain</string>
+    <string name="system_dns_server">DNS server %1$d</string>
+    <string name="system_problem_search">Enter a search domain, for example home.lan.</string>
+    <string name="system_problem_server">DNS servers are IP addresses.</string>
+    <string name="system_dns_saved">DNS saved</string>
+    <string name="system_time">Time</string>
+    <string name="system_node_time">Node time: %1$s</string>
+    <string name="system_timezone">Time zone: %1$s</string>
+    <string name="system_timezone_search">Find a time zone</string>
+    <string name="system_timezone_save">Set time zone</string>
+    <string name="system_timezone_saved">Time zone set to %1$s</string>
+    <string name="system_hosts">Hosts</string>
+    <string name="system_hosts_body">/etc/hosts of the node. In a cluster, keep the nodes\' own names right: corosync and migrations depend on them.</string>
+    <string name="system_hosts_file">/etc/hosts</string>
+    <string name="system_hosts_saved">Hosts saved</string>
 
     <!-- Resource pools (Datacenter → Resource pools) -->
     <string name="pools_open_body">Groups of guests and storages for permissions and backups</string>

@@ -68,6 +68,7 @@ import io.github.lucabarbalata.anprox.ui.node.JournalViewModel
 import io.github.lucabarbalata.anprox.ui.node.NodeViewModel
 import io.github.lucabarbalata.anprox.ui.node.RepositoriesViewModel
 import io.github.lucabarbalata.anprox.ui.node.ServicesViewModel
+import io.github.lucabarbalata.anprox.ui.node.SystemSettingsViewModel
 import io.github.lucabarbalata.anprox.ui.node.UpdatesViewModel
 import io.github.lucabarbalata.anprox.ui.resources.ResourcesViewModel
 import io.github.lucabarbalata.anprox.ui.servers.ServerEditorViewModel
@@ -162,6 +163,7 @@ val appModule = module {
     viewModel { (serverId: String, node: String) -> RepositoriesViewModel(serverId, node, get()) }
     viewModel { (serverId: String, node: String) -> ServicesViewModel(serverId, node, get(), get()) }
     viewModel { (serverId: String, node: String) -> JournalViewModel(serverId, node, get()) }
+    viewModel { (serverId: String, node: String) -> SystemSettingsViewModel(serverId, node, get()) }
     viewModel { TasksViewModel(get()) }
     viewModel { (serverId: String, node: String, upid: String) -> TaskLogViewModel(serverId, node, upid, get()) }
     viewModel { SettingsViewModel(get()) }
