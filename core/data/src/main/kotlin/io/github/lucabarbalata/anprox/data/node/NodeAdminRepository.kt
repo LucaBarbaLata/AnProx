@@ -4,9 +4,12 @@ import io.github.lucabarbalata.anprox.data.hub.ServerHub
 import io.github.lucabarbalata.anprox.model.pve.AptRepositories
 import io.github.lucabarbalata.anprox.model.pve.AptUpdate
 import io.github.lucabarbalata.anprox.model.pve.Journal
+import io.github.lucabarbalata.anprox.model.pve.NetworkConfig
+import io.github.lucabarbalata.anprox.model.pve.NetworkInterfaceForm
 import io.github.lucabarbalata.anprox.model.pve.NodeDns
 import io.github.lucabarbalata.anprox.model.pve.NodeDnsForm
 import io.github.lucabarbalata.anprox.model.pve.NodeHosts
+import io.github.lucabarbalata.anprox.model.pve.NodeNetwork
 import io.github.lucabarbalata.anprox.model.pve.NodeService
 import io.github.lucabarbalata.anprox.model.pve.NodeSubscription
 import io.github.lucabarbalata.anprox.model.pve.NodeTime
@@ -54,6 +57,39 @@ class NodeAdminRepository(private val hub: ServerHub) {
     /** Returns the task's UPID. */
     suspend fun serviceAction(serverId: String, node: String, service: NodeService, action: ServiceAction): String =
         hub.use(serverId) { it.pve { serviceAction(node, service.id, action.apiName) } }
+
+    /** Interfaces as they will be after applying, and the pending diff. */
+    suspend fun network(serverId: String, node: String): NetworkConfig {
+        val envelope = hub.use(serverId) { it.pveEnvelope { nodeNetworks(node, null) } }
+        return NetworkConfig(envelope.data.orEmpty().sortedWith(compareBy({ networkOrder(it.type) }, { it.iface })), envelope.changes)
+    }
+
+    private fun networkOrder(type: String?) = when (type) {
+        "bridge", "OVSBridge" -> 0
+        "bond", "OVSBond" -> 1
+        "vlan", "OVSIntPort" -> 2
+        "eth" -> 3
+        else -> 4
+    }
+
+    suspend fun createInterface(serverId: String, node: String, form: NetworkInterfaceForm) {
+        hub.use(serverId) { it.pveNoData { createNetwork(node, form.createParams()) } }
+    }
+
+    suspend fun updateInterface(serverId: String, node: String, original: NodeNetwork, form: NetworkInterfaceForm) {
+        hub.use(serverId) { it.pveNoData { updateNetwork(node, original.iface, form.updateParams(original)) } }
+    }
+
+    suspend fun deleteInterface(serverId: String, node: String, iface: String) {
+        hub.use(serverId) { it.pveNoData { deleteNetwork(node, iface) } }
+    }
+
+    /** Applies the pending changes; returns the task's UPID. */
+    suspend fun applyNetwork(serverId: String, node: String): String = hub.use(serverId) { it.pve { applyNetwork(node) } }
+
+    suspend fun revertNetwork(serverId: String, node: String) {
+        hub.use(serverId) { it.pveNoData { revertNetwork(node) } }
+    }
 
     suspend fun dns(serverId: String, node: String): NodeDns = hub.use(serverId) { it.pve { nodeDns(node) } }
 

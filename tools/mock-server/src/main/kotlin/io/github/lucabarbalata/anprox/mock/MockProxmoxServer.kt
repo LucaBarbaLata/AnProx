@@ -263,8 +263,42 @@ class MockProxmoxServer(
         }
         get("nodes/{node}/network") {
             call.authed() ?: return@get
-            state.node(call.parameters["node"]!!) ?: return@get call.fail(404, "no such node")
-            call.ok(state.nodeNetworks(call.request.queryParameters["type"]))
+            val node = state.node(call.parameters["node"]!!) ?: return@get call.fail(404, "no such node")
+            val (list, changes) = state.nodeNetworks(node.name, call.request.queryParameters["type"]) ?: return@get call.fail(404, "no such node")
+            call.respondText(ProxmoxJson.encodeToString(ApiEnvelope(list, changes = changes)), ContentType.Application.Json)
+        }
+        post("nodes/{node}/network") {
+            val s = call.authed() ?: return@post
+            if (state.isReadOnly(s.user)) return@post call.fail(403, "Permission check failed (/nodes/${call.parameters["node"]}, Sys.Modify)")
+            val p = call.receiveParameters()
+            val error = state.createNetwork(call.parameters["node"]!!, p.names().associateWith { p[it].orEmpty() })
+            if (error != null) call.fail(400, error) else call.ok(JsonNull)
+        }
+        put("nodes/{node}/network/{iface}") {
+            val s = call.authed() ?: return@put
+            if (state.isReadOnly(s.user)) return@put call.fail(403, "Permission check failed (/nodes/${call.parameters["node"]}, Sys.Modify)")
+            val p = call.receiveParameters()
+            val error = state.updateNetwork(call.parameters["node"]!!, call.parameters["iface"]!!, p.names().associateWith { p[it].orEmpty() })
+            if (error != null) call.fail(400, error) else call.ok(JsonNull)
+        }
+        delete("nodes/{node}/network/{iface}") {
+            val s = call.authed() ?: return@delete
+            if (state.isReadOnly(s.user)) return@delete call.fail(403, "Permission check failed (/nodes/${call.parameters["node"]}, Sys.Modify)")
+            val error = state.deleteNetwork(call.parameters["node"]!!, call.parameters["iface"]!!)
+            if (error != null) call.fail(400, error) else call.ok(JsonNull)
+        }
+        put("nodes/{node}/network") {
+            val s = call.authed() ?: return@put
+            if (state.isReadOnly(s.user)) return@put call.fail(403, "Permission check failed (/nodes/${call.parameters["node"]}, Sys.Modify)")
+            val node = state.node(call.parameters["node"]!!) ?: return@put call.fail(404, "no such node")
+            if (!node.online) return@put call.fail(595, "Connection refused")
+            call.ok(state.applyNetwork(node.name, s.user))
+        }
+        delete("nodes/{node}/network") {
+            val s = call.authed() ?: return@delete
+            if (state.isReadOnly(s.user)) return@delete call.fail(403, "Permission check failed (/nodes/${call.parameters["node"]}, Sys.Modify)")
+            state.revertNetwork(call.parameters["node"]!!)
+            call.ok(JsonNull)
         }
         get("nodes/{node}/qemu/{vmid}/agent/{command}") {
             call.authed() ?: return@get

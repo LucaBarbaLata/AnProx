@@ -7,8 +7,12 @@ import io.github.lucabarbalata.anprox.data.guest.GuestRepository
 import io.github.lucabarbalata.anprox.data.node.NodeAdminRepository
 import io.github.lucabarbalata.anprox.model.pve.AptRepositories
 import io.github.lucabarbalata.anprox.model.pve.AptUpdate
+import io.github.lucabarbalata.anprox.model.pve.NetworkConfig
+import io.github.lucabarbalata.anprox.model.pve.NetworkInterfaceForm
+import io.github.lucabarbalata.anprox.model.pve.NetworkKind
 import io.github.lucabarbalata.anprox.model.pve.NodeDnsForm
 import io.github.lucabarbalata.anprox.model.pve.NodeHosts
+import io.github.lucabarbalata.anprox.model.pve.NodeNetwork
 import io.github.lucabarbalata.anprox.model.pve.NodeService
 import io.github.lucabarbalata.anprox.model.pve.NodeSubscription
 import io.github.lucabarbalata.anprox.model.pve.NodeTime
@@ -27,7 +31,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /** The node pages under Node → Administration (milestone M5). */
-enum class NodeAdminPage { UPDATES, REPOSITORIES, SERVICES, JOURNAL, SYSTEM }
+enum class NodeAdminPage { UPDATES, REPOSITORIES, SERVICES, NETWORK, SYSTEM, JOURNAL }
 
 // ------------------------------------------------------------------------------ updates
 
@@ -415,6 +419,150 @@ class SystemSettingsViewModel(
         val s = ui.value
         if (!s.timezoneChanged) return
         run(UiText.res(R.string.system_timezone_saved, s.timezone)) { repo.setTimezone(serverId, node, s.timezone) }
+    }
+
+    fun consumeResult() {
+        ui.update { it.copy(result = null) }
+    }
+
+    private fun run(done: UiText, call: suspend () -> Unit) {
+        if (ui.value.busy) return
+        ui.update { it.copy(busy = true) }
+        viewModelScope.launch {
+            val result = try {
+                call()
+                TaskResult(done, null, ok = true)
+            } catch (e: ApiException) {
+                TaskResult(e.toUiText(), null, ok = false)
+            }
+            ui.update { it.copy(busy = false, result = result) }
+            load()
+        }
+    }
+}
+
+// ------------------------------------------------------------------------------ network
+
+/** An interface being added ([original] null) or edited. */
+data class NetworkEdit(val original: NodeNetwork?, val form: NetworkInterfaceForm)
+
+data class NetworkState(
+    val loading: Boolean = true,
+    val error: UiText? = null,
+    val config: NetworkConfig? = null,
+    val editing: NetworkEdit? = null,
+    val showChanges: Boolean = false,
+    val confirmApply: Boolean = false,
+    val confirmRevert: Boolean = false,
+    val confirmDelete: NodeNetwork? = null,
+    val busy: Boolean = false,
+    val result: TaskResult? = null,
+) {
+    val names: List<String> get() = config?.interfaces?.map { it.iface }.orEmpty()
+}
+
+/** Node → Network: interfaces, edited into a pending configuration that is then applied or reverted. */
+class NetworkViewModel(
+    private val serverId: String,
+    private val node: String,
+    private val repo: NodeAdminRepository,
+    private val guests: GuestRepository,
+) : ViewModel() {
+    private val ui = MutableStateFlow(NetworkState())
+    val state: StateFlow<NetworkState> = ui.asStateFlow()
+
+    init {
+        load()
+    }
+
+    fun load() {
+        ui.update { it.copy(loading = true, error = null) }
+        viewModelScope.launch {
+            try {
+                val config = repo.network(serverId, node)
+                ui.update { it.copy(loading = false, config = config) }
+            } catch (e: ApiException) {
+                ui.update { it.copy(loading = false, error = e.toUiText()) }
+            }
+        }
+    }
+
+    fun add(kind: NetworkKind) {
+        val name = NetworkInterfaceForm.suggestedName(kind, ui.value.names)
+        ui.update { it.copy(editing = NetworkEdit(null, NetworkInterfaceForm(type = kind.apiName, name = name))) }
+    }
+
+    fun edit(iface: NodeNetwork) {
+        ui.update { it.copy(editing = NetworkEdit(iface, NetworkInterfaceForm.from(iface))) }
+    }
+
+    fun editForm(change: NetworkInterfaceForm.() -> NetworkInterfaceForm) {
+        ui.update { s -> s.copy(editing = s.editing?.let { it.copy(form = it.form.change()) }) }
+    }
+
+    fun close() {
+        ui.update { it.copy(editing = null) }
+    }
+
+    fun save() {
+        val s = ui.value
+        val edit = s.editing ?: return
+        val original = edit.original
+        if (edit.form.problem(original == null, s.names) != null) return
+        ui.update { it.copy(editing = null) }
+        run(UiText.res(R.string.network_saved)) {
+            if (original == null) repo.createInterface(serverId, node, edit.form) else repo.updateInterface(serverId, node, original, edit.form)
+        }
+    }
+
+    fun requestDelete(iface: NodeNetwork) {
+        ui.update { it.copy(editing = null, confirmDelete = iface) }
+    }
+
+    fun dismissDelete() {
+        ui.update { it.copy(confirmDelete = null) }
+    }
+
+    fun delete() {
+        val iface = ui.value.confirmDelete ?: return
+        ui.update { it.copy(confirmDelete = null) }
+        run(UiText.res(R.string.network_deleted, iface.iface)) { repo.deleteInterface(serverId, node, iface.iface) }
+    }
+
+    fun showChanges(show: Boolean) {
+        ui.update { it.copy(showChanges = show) }
+    }
+
+    fun requestApply() {
+        ui.update { it.copy(confirmApply = true, showChanges = false) }
+    }
+
+    fun requestRevert() {
+        ui.update { it.copy(confirmRevert = true, showChanges = false) }
+    }
+
+    fun dismissConfirm() {
+        ui.update { it.copy(confirmApply = false, confirmRevert = false) }
+    }
+
+    fun apply() {
+        ui.update { it.copy(confirmApply = false, busy = true) }
+        viewModelScope.launch {
+            val result = try {
+                val upid = repo.applyNetwork(serverId, node)
+                val ok = guests.awaitTask(serverId, node, upid).succeeded
+                TaskResult(UiText.res(if (ok) R.string.network_applied else R.string.network_apply_failed), upid, ok)
+            } catch (e: ApiException) {
+                TaskResult(e.toUiText(), null, ok = false)
+            }
+            ui.update { it.copy(busy = false, result = result) }
+            load()
+        }
+    }
+
+    fun revert() {
+        ui.update { it.copy(confirmRevert = false) }
+        run(UiText.res(R.string.network_reverted)) { repo.revertNetwork(serverId, node) }
     }
 
     fun consumeResult() {

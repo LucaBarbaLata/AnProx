@@ -606,6 +606,25 @@ interface PveApi {
     @POST("nodes/{node}/services/{service}/{action}")
     suspend fun serviceAction(@Path("node") node: String, @Path("service") service: String, @Path("action") action: String): ApiEnvelope<String>
 
+    @FormUrlEncoded
+    @POST("nodes/{node}/network")
+    suspend fun createNetwork(@Path("node") node: String, @FieldMap params: Map<String, String>): ApiEnvelope<JsonElement>
+
+    @FormUrlEncoded
+    @PUT("nodes/{node}/network/{iface}")
+    suspend fun updateNetwork(@Path("node") node: String, @Path("iface") iface: String, @FieldMap params: Map<String, String>): ApiEnvelope<JsonElement>
+
+    @DELETE("nodes/{node}/network/{iface}")
+    suspend fun deleteNetwork(@Path("node") node: String, @Path("iface") iface: String): ApiEnvelope<JsonElement>
+
+    /** Applies the pending configuration (ifreload); returns a UPID. */
+    @PUT("nodes/{node}/network")
+    suspend fun applyNetwork(@Path("node") node: String): ApiEnvelope<String>
+
+    /** Drops the pending configuration. */
+    @DELETE("nodes/{node}/network")
+    suspend fun revertNetwork(@Path("node") node: String): ApiEnvelope<JsonElement>
+
     @GET("nodes/{node}/dns")
     suspend fun nodeDns(@Path("node") node: String): ApiEnvelope<NodeDns>
 

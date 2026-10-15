@@ -111,6 +111,9 @@ All notable changes to AnProx are documented here. The format follows
     (pveproxy, pvedaemon, pve-cluster, corosync, sshd) asks first.
   - **System log**: the newest 500 journal lines, with a filter.
   - **DNS, hosts and time**: search domain and DNS servers, /etc/hosts, and the time zone.
+  - **Network**: bridges, bonds, VLANs and ports with their addresses, gateways, ports, VLAN
+    awareness, bond mode, MTU and comment. Changes wait as pending (with the diff) until you
+    **Apply** them (type the node's name, since a mistake can cut the node off) or **Revert**.
 
 - **Move to another phone** (More → Settings): export your servers to a file protected with a
   passphrase, optionally with saved passwords (after the fingerprint or screen lock), and import

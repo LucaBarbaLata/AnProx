@@ -859,7 +859,7 @@ def pools():
     back()
 
 
-@step("Node administration: updates, repositories, a service, the system log")
+@step("Node administration: updates, repositories, a service, a pending network change, the system log")
 def node_admin():
     tap("Resources")
     tap_node(scroll_to("pve1", exact=True))      # the node
@@ -876,6 +876,15 @@ def node_admin():
     tap_node(scroll_to("ksmtuned", exact=True))  # stopped in the mock
     tap("Start", pick="lowest")
     wait_until(lambda: row_shows("ksmtuned", "Running"), "ksmtuned to run", timeout=60)
+    back()
+    tap_node(scroll_to("Bridges, bonds and VLANs"))  # Network (a chart is called Network too)
+    find("vmbr0", timeout=30)
+    tap("Bridge")                                # new bridge, named vmbr2
+    tap("Save", pick="lowest")
+    find("Changes not applied yet", timeout=30)
+    tap("Revert")
+    tap("Revert", pick="lowest")                 # the confirmation
+    wait_until(lambda: not visible("Changes not applied yet"), "the changes to be reverted", timeout=30)
     back()
     tap_node(scroll_to("System log", exact=True))
     find("pvestatd", timeout=30)

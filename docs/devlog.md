@@ -208,6 +208,14 @@ null means not configured, so it can be added); changes send the digest. Service
 tasks, and the app waits for them like guest actions. The journal endpoint wraps its lines in
 `-- cursor:` markers, which `Journal.lines` drops.
 
+**M5: network.** Proxmox writes edits to `/etc/network/interfaces.new` and `GET …/network`
+returns the interfaces as they will be, with the unified diff in the envelope's `changes`
+(`ApiEnvelope.changes`). Apply is `PUT …/network` (ifreload, a task); revert is `DELETE`. An
+interface that isn't applied yet has `exists` false, shown as "Not applied". Applying asks for
+the node's name, since a wrong gateway or bridge port can cut the node off. The mock keeps a
+current and a pending copy per node, and lists bridges from it for the guests' network
+devices too.
+
 **M4: the rest of the firewall.** A security group's rules sit at the group's own path
 (`/cluster/firewall/groups/{group}/{pos}`), not under `…/rules`, so `FirewallScope` gained a
 `rulesPath` and a `Group` case, and the rules screen serves groups unchanged (minus options, and

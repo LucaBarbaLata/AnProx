@@ -226,6 +226,7 @@ class MockState(
     private val haManager = MockHa(guests)
     private val replication = MockReplication(clockMillis)
     private val nodeAdmin = MockNodeAdmin(nodes.map { it.name })
+    private val network = MockNetwork(nodes.map { it.name })
 
     /** Accepted `POST /nodes/{node}/status` calls (node, command); the mock nodes keep running. */
     val nodePowerRequests: MutableList<Pair<String, String>> = java.util.Collections.synchronizedList(mutableListOf())
@@ -751,9 +752,17 @@ class MockState(
         )
     }
 
-    /** `GET /nodes/{node}/network`; [type] `any_bridge` lists bridges only. */
-    fun nodeNetworks(type: String?): List<NodeNetwork> =
-        if (type == "any_bridge" || type == "bridge") hardware.bridges.filter { it.isBridge } else hardware.bridges
+    /** `GET /nodes/{node}/network`; [type] `any_bridge` lists bridges only. With the pending diff. */
+    fun nodeNetworks(node: String, type: String?): Pair<List<NodeNetwork>, String?>? = synchronized(lock) {
+        network.list(node, type)?.let { it to network.changes(node) }
+    }
+    fun createNetwork(node: String, params: Map<String, String>) = synchronized(lock) { network.create(node, params) }
+    fun updateNetwork(node: String, iface: String, params: Map<String, String>) = synchronized(lock) { network.update(node, iface, params) }
+    fun deleteNetwork(node: String, iface: String) = synchronized(lock) { network.delete(node, iface) }
+    fun revertNetwork(node: String) = synchronized(lock) { network.revert(node) }
+
+    /** `PUT /nodes/{node}/network`: ifreload as a task; the pending file becomes the live one. */
+    fun applyNetwork(node: String, user: String): String = startTask(node, "srvreload", "networking", user) { network.apply(node) }
 
     // ------------------------------------------------------------------ guest agent
 

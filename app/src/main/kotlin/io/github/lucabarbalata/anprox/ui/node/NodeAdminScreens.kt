@@ -28,6 +28,7 @@ import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.SettingsEthernet
 import androidx.compose.material.icons.outlined.SystemUpdateAlt
 import androidx.compose.material.icons.outlined.Terminal
 import androidx.compose.material3.AlertDialog
@@ -63,17 +64,22 @@ import io.github.lucabarbalata.anprox.core.designsystem.component.GlassCard
 import io.github.lucabarbalata.anprox.core.designsystem.component.GlassTextField
 import io.github.lucabarbalata.anprox.core.designsystem.component.SectionHeader
 import io.github.lucabarbalata.anprox.core.designsystem.component.StatusPill
+import io.github.lucabarbalata.anprox.core.designsystem.component.SwitchRow
 import io.github.lucabarbalata.anprox.core.designsystem.component.TagChip
 import io.github.lucabarbalata.anprox.core.designsystem.component.Tone
 import io.github.lucabarbalata.anprox.core.designsystem.theme.AnProxTheme
 import io.github.lucabarbalata.anprox.model.pve.DangerLevel
+import io.github.lucabarbalata.anprox.model.pve.NetworkInterfaceForm
+import io.github.lucabarbalata.anprox.model.pve.NetworkKind
 import io.github.lucabarbalata.anprox.model.pve.NodeDnsForm
 import io.github.lucabarbalata.anprox.model.pve.NodeService
 import io.github.lucabarbalata.anprox.model.pve.ServiceAction
 import io.github.lucabarbalata.anprox.ui.common.AnProxScaffold
 import io.github.lucabarbalata.anprox.ui.common.BusyCard
+import io.github.lucabarbalata.anprox.ui.common.ChoiceChips
 import io.github.lucabarbalata.anprox.ui.common.ConfirmActionDialog
 import io.github.lucabarbalata.anprox.ui.common.FormHint
+import io.github.lucabarbalata.anprox.ui.common.FormLabel
 import io.github.lucabarbalata.anprox.ui.common.TaskResultSnackbar
 import io.github.lucabarbalata.anprox.ui.common.asString
 import io.github.lucabarbalata.anprox.ui.common.contentPadding
@@ -515,6 +521,7 @@ fun NodeAdminCard(onOpen: (NodeAdminPage) -> Unit) {
                         NodeAdminPage.SERVICES -> Icons.Outlined.Settings
                         NodeAdminPage.JOURNAL -> Icons.Outlined.Description
                         NodeAdminPage.SYSTEM -> Icons.Outlined.Language
+                        NodeAdminPage.NETWORK -> Icons.Outlined.SettingsEthernet
                     },
                     contentDescription = null,
                     tint = c.accent,
@@ -535,6 +542,7 @@ private fun pageTitle(page: NodeAdminPage): Int = when (page) {
     NodeAdminPage.SERVICES -> R.string.services_title
     NodeAdminPage.JOURNAL -> R.string.journal_title
     NodeAdminPage.SYSTEM -> R.string.system_title
+    NodeAdminPage.NETWORK -> R.string.network_title
 }
 
 private fun pageBody(page: NodeAdminPage): Int = when (page) {
@@ -543,6 +551,7 @@ private fun pageBody(page: NodeAdminPage): Int = when (page) {
     NodeAdminPage.SERVICES -> R.string.services_open_body
     NodeAdminPage.JOURNAL -> R.string.journal_open_body
     NodeAdminPage.SYSTEM -> R.string.system_open_body
+    NodeAdminPage.NETWORK -> R.string.network_open_body
 }
 
 // ------------------------------------------------------------------------------ DNS, hosts, time
@@ -666,5 +675,237 @@ fun SystemSettingsScreen(
             }
         }
     }
+}
+
+// ------------------------------------------------------------------------------ network
+
+/**
+ * Node → Network (questionnaire Q22): bridges, bonds, VLANs and ports. Edits collect in a pending
+ * configuration; **Apply** reloads the network, **Revert** drops the changes.
+ */
+@Composable
+fun NetworkScreen(
+    serverId: String,
+    node: String,
+    onBack: () -> Unit,
+    onTask: (serverId: String, node: String, upid: String) -> Unit,
+) {
+    val viewModel: NetworkViewModel = koinViewModel(key = "network-$serverId-$node") { parametersOf(serverId, node) }
+    val state by viewModel.state.collectAsStateWithLifecycle()
+    val c = AnProxTheme.colors
+    val snackbar = remember { SnackbarHostState() }
+    TaskResultSnackbar(state.result, snackbar, serverId, node, onTask, viewModel::consumeResult)
+    AnProxScaffold(
+        title = stringResource(R.string.network_title),
+        subtitle = node,
+        onBack = onBack,
+        snackbarHostState = snackbar,
+        actions = {
+            IconButton(onClick = viewModel::load, enabled = !state.loading) {
+                Icon(Icons.Outlined.Refresh, contentDescription = stringResource(R.string.action_refresh))
+            }
+        },
+    ) { inner ->
+        LazyColumn(contentPadding = contentPadding(inner), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            state.error?.let { error ->
+                item { ErrorBanner(error.asString(), actionLabel = stringResource(R.string.action_retry), onAction = viewModel::load) }
+            }
+            val config = state.config
+            if (config == null) {
+                if (state.loading) {
+                    item {
+                        Box(Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator(color = c.accent)
+                        }
+                    }
+                }
+                return@LazyColumn
+            }
+            if (config.pending) {
+                item {
+                    GlassCard {
+                        Text(stringResource(R.string.network_pending), style = MaterialTheme.typography.titleSmall, color = c.warning)
+                        FormHint(stringResource(R.string.network_pending_body))
+                        Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            TextButton(onClick = { viewModel.showChanges(true) }) { Text(stringResource(R.string.network_show_changes)) }
+                            TextButton(onClick = viewModel::requestApply, enabled = !state.busy) { Text(stringResource(R.string.network_apply)) }
+                            TextButton(onClick = viewModel::requestRevert, enabled = !state.busy) { Text(stringResource(R.string.network_revert), color = c.danger) }
+                        }
+                    }
+                }
+            }
+            item {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    NetworkKind.entries.forEach { kind ->
+                        AnProxButton(
+                            kindLabel(kind),
+                            onClick = { viewModel.add(kind) },
+                            style = ButtonStyle.SECONDARY,
+                            icon = Icons.Outlined.Add,
+                            enabled = !state.busy,
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                }
+            }
+            items(config.interfaces, key = { it.iface }) { iface ->
+                GlassCard(contentPadding = PaddingValues(0.dp)) {
+                    Column(
+                        Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(20.dp))
+                            .clickable(enabled = !state.busy) { viewModel.edit(iface) }
+                            .padding(16.dp),
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(iface.iface, style = MaterialTheme.typography.titleMedium, color = c.textPrimary, modifier = Modifier.weight(1f))
+                            if (!iface.exists) {
+                                StatusPill(stringResource(R.string.network_state_pending), Tone.WARNING)
+                            } else {
+                                StatusPill(stringResource(if (iface.active) R.string.network_state_active else R.string.network_state_inactive), if (iface.active) Tone.SUCCESS else Tone.NEUTRAL)
+                            }
+                        }
+                        Text(
+                            listOfNotNull(typeLabel(iface.type), iface.cidr, iface.gateway?.let { stringResource(R.string.network_via, it) }, iface.members).joinToString(" · "),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = c.textSecondary,
+                        )
+                        iface.comments?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = c.textTertiary) }
+                    }
+                }
+            }
+        }
+    }
+
+    state.editing?.let { edit -> NetworkDialog(edit, state, viewModel) }
+    if (state.showChanges) {
+        TextDialog(stringResource(R.string.network_changes), state.config?.changes.orEmpty(), null, onClose = { viewModel.showChanges(false) })
+    }
+    if (state.confirmApply) {
+        ConfirmActionDialog(
+            title = stringResource(R.string.network_apply_title, node),
+            message = stringResource(R.string.network_apply_body),
+            confirmLabel = stringResource(R.string.network_apply),
+            danger = DangerLevel.TYPE_TO_CONFIRM,
+            onConfirm = viewModel::apply,
+            onDismiss = viewModel::dismissConfirm,
+            confirmText = node,
+        )
+    }
+    if (state.confirmRevert) {
+        ConfirmActionDialog(
+            title = stringResource(R.string.network_revert_title),
+            message = stringResource(R.string.network_revert_body),
+            confirmLabel = stringResource(R.string.network_revert),
+            danger = DangerLevel.CONFIRM,
+            onConfirm = viewModel::revert,
+            onDismiss = viewModel::dismissConfirm,
+        )
+    }
+    state.confirmDelete?.let { iface ->
+        ConfirmActionDialog(
+            title = stringResource(R.string.network_delete_title, iface.iface),
+            message = stringResource(R.string.network_delete_body),
+            confirmLabel = stringResource(R.string.action_delete),
+            danger = DangerLevel.CONFIRM,
+            onConfirm = viewModel::delete,
+            onDismiss = viewModel::dismissDelete,
+        )
+    }
+}
+
+@Composable
+private fun NetworkDialog(edit: NetworkEdit, state: NetworkState, viewModel: NetworkViewModel) {
+    val c = AnProxTheme.colors
+    val form = edit.form
+    val creating = edit.original == null
+    val problem = form.problem(creating, state.names)
+    AlertDialog(
+        onDismissRequest = viewModel::close,
+        containerColor = c.surfaceSolid,
+        title = { Text(if (creating) stringResource(R.string.network_add, form.kind?.let { kindLabel(it) }.orEmpty()) else form.name) },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (creating) {
+                    GlassTextField(value = form.name, onValueChange = { v -> viewModel.editForm { copy(name = v) } }, label = stringResource(R.string.network_name))
+                }
+                GlassTextField(
+                    value = form.cidr,
+                    onValueChange = { v -> viewModel.editForm { copy(cidr = v) } },
+                    label = stringResource(R.string.network_cidr),
+                    supportingText = stringResource(R.string.network_cidr_hint),
+                )
+                GlassTextField(value = form.gateway, onValueChange = { v -> viewModel.editForm { copy(gateway = v) } }, label = stringResource(R.string.network_gateway))
+                GlassTextField(value = form.cidr6, onValueChange = { v -> viewModel.editForm { copy(cidr6 = v) } }, label = stringResource(R.string.network_cidr6))
+                GlassTextField(value = form.gateway6, onValueChange = { v -> viewModel.editForm { copy(gateway6 = v) } }, label = stringResource(R.string.network_gateway6))
+                when (form.kind) {
+                    NetworkKind.BRIDGE -> {
+                        GlassTextField(
+                            value = form.bridgePorts,
+                            onValueChange = { v -> viewModel.editForm { copy(bridgePorts = v) } },
+                            label = stringResource(R.string.network_ports),
+                            supportingText = stringResource(R.string.network_ports_hint),
+                        )
+                        SwitchRow(stringResource(R.string.network_vlan_aware), form.vlanAware, { on -> viewModel.editForm { copy(vlanAware = on) } })
+                    }
+                    NetworkKind.BOND -> {
+                        GlassTextField(
+                            value = form.slaves,
+                            onValueChange = { v -> viewModel.editForm { copy(slaves = v) } },
+                            label = stringResource(R.string.network_slaves),
+                            supportingText = stringResource(R.string.network_ports_hint),
+                        )
+                        FormLabel(stringResource(R.string.network_bond_mode))
+                        ChoiceChips(NetworkInterfaceForm.BOND_MODES, form.bondMode, { it }) { m -> viewModel.editForm { copy(bondMode = m) } }
+                        if (form.bondMode in NetworkInterfaceForm.HASH_MODES) {
+                            FormLabel(stringResource(R.string.network_hash_policy))
+                            ChoiceChips(NetworkInterfaceForm.HASH_POLICIES, form.hashPolicy, { it }) { h -> viewModel.editForm { copy(hashPolicy = h) } }
+                        }
+                    }
+                    NetworkKind.VLAN -> {
+                        FormHint(stringResource(R.string.network_vlan_hint))
+                        GlassTextField(value = form.vlanRawDevice, onValueChange = { v -> viewModel.editForm { copy(vlanRawDevice = v) } }, label = stringResource(R.string.network_vlan_device))
+                        GlassTextField(value = form.vlanId, onValueChange = { v -> viewModel.editForm { copy(vlanId = v.filter(Char::isDigit).take(4)) } }, label = stringResource(R.string.network_vlan_tag))
+                    }
+                    null -> Unit
+                }
+                GlassTextField(value = form.mtu, onValueChange = { v -> viewModel.editForm { copy(mtu = v.filter(Char::isDigit).take(5)) } }, label = stringResource(R.string.network_mtu))
+                GlassTextField(value = form.comment, onValueChange = { v -> viewModel.editForm { copy(comment = v) } }, label = stringResource(R.string.network_comment))
+                SwitchRow(stringResource(R.string.network_autostart), form.autostart, { on -> viewModel.editForm { copy(autostart = on) } })
+                problem?.let { FormHint(stringResource(networkProblem(it)), error = true) }
+                val original = edit.original
+                if (original != null && original.type != "eth") {
+                    TextButton(onClick = { viewModel.requestDelete(original) }) { Text(stringResource(R.string.network_delete), color = c.danger) }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = viewModel::save, enabled = problem == null) { Text(stringResource(R.string.action_save)) } },
+        dismissButton = { TextButton(onClick = viewModel::close) { Text(stringResource(R.string.action_cancel)) } },
+    )
+}
+
+@Composable
+private fun kindLabel(kind: NetworkKind): String = stringResource(
+    when (kind) {
+        NetworkKind.BRIDGE -> R.string.network_kind_bridge
+        NetworkKind.BOND -> R.string.network_kind_bond
+        NetworkKind.VLAN -> R.string.network_kind_vlan
+    },
+)
+
+@Composable
+private fun typeLabel(type: String?): String = NetworkKind.fromApi(type)?.let { kindLabel(it) }
+    ?: if (type == "eth") stringResource(R.string.network_kind_port) else type.orEmpty()
+
+private fun networkProblem(p: NetworkInterfaceForm.Problem): Int = when (p) {
+    NetworkInterfaceForm.Problem.NAME -> R.string.network_problem_name
+    NetworkInterfaceForm.Problem.NAME_TAKEN -> R.string.network_problem_name_taken
+    NetworkInterfaceForm.Problem.ADDRESS -> R.string.network_problem_address
+    NetworkInterfaceForm.Problem.GATEWAY -> R.string.network_problem_gateway
+    NetworkInterfaceForm.Problem.ADDRESS6 -> R.string.network_problem_address6
+    NetworkInterfaceForm.Problem.GATEWAY6 -> R.string.network_problem_gateway6
+    NetworkInterfaceForm.Problem.MTU -> R.string.network_problem_mtu
+    NetworkInterfaceForm.Problem.SLAVES -> R.string.network_problem_slaves
+    NetworkInterfaceForm.Problem.VLAN -> R.string.network_problem_vlan
 }
 

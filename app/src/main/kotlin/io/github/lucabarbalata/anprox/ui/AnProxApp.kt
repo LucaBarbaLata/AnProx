@@ -109,6 +109,7 @@ import io.github.lucabarbalata.anprox.ui.navigation.TaskLogRoute
 import io.github.lucabarbalata.anprox.ui.navigation.TasksRoute
 import io.github.lucabarbalata.anprox.ui.navigation.firewallScope
 import io.github.lucabarbalata.anprox.ui.node.JournalScreen
+import io.github.lucabarbalata.anprox.ui.node.NetworkScreen
 import io.github.lucabarbalata.anprox.ui.node.NodeAdminPage
 import io.github.lucabarbalata.anprox.ui.node.NodeScreen
 import io.github.lucabarbalata.anprox.ui.node.RepositoriesScreen
@@ -483,6 +484,7 @@ fun AnProxApp() {
                     NodeAdminPage.SERVICES -> ServicesScreen(r.serverId, r.node, onBack = back, onTask = openTask)
                     NodeAdminPage.JOURNAL -> JournalScreen(r.serverId, r.node, onBack = back)
                     NodeAdminPage.SYSTEM -> SystemSettingsScreen(r.serverId, r.node, onBack = back, onTask = openTask)
+                    NodeAdminPage.NETWORK -> NetworkScreen(r.serverId, r.node, onBack = back, onTask = openTask)
                 }
             }
             composable<TaskLogRoute> { entry ->

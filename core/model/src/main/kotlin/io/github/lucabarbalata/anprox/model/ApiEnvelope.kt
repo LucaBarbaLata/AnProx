@@ -12,4 +12,6 @@ data class ApiEnvelope<T>(
     val message: String? = null,
     val errors: Map<String, String>? = null,
     val total: Int? = null,
+    /** `GET /nodes/{node}/network`: the pending changes as a unified diff. */
+    val changes: String? = null,
 )

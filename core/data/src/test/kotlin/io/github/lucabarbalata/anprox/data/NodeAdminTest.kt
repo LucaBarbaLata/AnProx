@@ -9,6 +9,7 @@ import io.github.lucabarbalata.anprox.mock.MockProxmoxServer
 import io.github.lucabarbalata.anprox.model.ProxmoxProduct
 import io.github.lucabarbalata.anprox.model.profile.Endpoint
 import io.github.lucabarbalata.anprox.model.profile.ServerProfile
+import io.github.lucabarbalata.anprox.model.pve.NetworkInterfaceForm
 import io.github.lucabarbalata.anprox.model.pve.NodeDns
 import io.github.lucabarbalata.anprox.model.pve.NodeDnsForm
 import io.github.lucabarbalata.anprox.model.pve.ServiceAction
@@ -120,6 +121,34 @@ class NodeAdminTest {
         repo.setTimezone("pve", "pve1", "Europe/Berlin")
         assertEquals("Europe/Berlin", repo.time("pve", "pve1").timezone)
         assertFailsWith<ApiException> { repo.setTimezone("pve", "pve1", "Mars/Olympus") }
+        Unit
+    }
+
+    @Test
+    fun `network changes stay pending until applied or reverted`() = runBlocking {
+        val hub = hub()
+        val repo = NodeAdminRepository(hub)
+        var config = repo.network("pve", "pve1")
+        assertEquals(listOf("vmbr0", "vmbr1", "eno1", "eno2"), config.interfaces.map { it.iface })
+        assertFalse(config.pending)
+        assertEquals("10.0.0.11/24", config.interfaces.first().cidr)
+
+        repo.createInterface("pve", "pve1", NetworkInterfaceForm(name = "vmbr2", cidr = "192.168.50.1/24"))
+        config = repo.network("pve", "pve1")
+        assertTrue(config.pending)
+        assertTrue(config.changes.orEmpty().contains("+iface vmbr2"))
+        assertFalse(config.interfaces.single { it.iface == "vmbr2" }.exists)
+        repo.revertNetwork("pve", "pve1")
+        assertTrue(repo.network("pve", "pve1").interfaces.none { it.iface == "vmbr2" })
+
+        val vmbr1 = repo.network("pve", "pve1").interfaces.single { it.iface == "vmbr1" }
+        repo.updateInterface("pve", "pve1", vmbr1, NetworkInterfaceForm.from(vmbr1).copy(comment = "Storage"))
+        assertFailsWith<ApiException> { repo.createInterface("pve", "pve1", NetworkInterfaceForm(name = "vmbr3", bridgePorts = "eno9")) }
+        val upid = repo.applyNetwork("pve", "pve1")
+        assertTrue(GuestRepository(hub).awaitTask("pve", "pve1", upid).succeeded)
+        config = repo.network("pve", "pve1")
+        assertFalse(config.pending)
+        assertEquals("Storage", config.interfaces.single { it.iface == "vmbr1" }.comments)
         Unit
     }
 }

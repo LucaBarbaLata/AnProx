@@ -81,7 +81,9 @@ Code: `core/network/src/main/kotlin/.../network/api/` (`AccessApi`, `PveApi`, `P
 | `GET/POST/PUT /nodes/{node}/apt/repositories` | Repositories with Proxmox's warnings; switch on/off; add a standard repository | ✅ |
 | `POST /nodes/{node}/termproxy` with `cmd=upgrade` | The upgrade in a terminal, like the web UI | ✅ |
 | `/nodes/{node}/disks/*` | SMART, wipe, GPT, ZFS, LVM, LVM-thin, directory | 🗓 M5 |
-| `/nodes/{node}/network` | Interfaces, bridges, bonds, VLANs, apply/revert | 🔸 `GET ?type=any_bridge` ✅ (bridges for network devices); editing 🗓 M5 |
+| `GET /nodes/{node}/network` (with the `changes` diff), `POST`, `PUT …/{iface}`, `DELETE …/{iface}` | Interfaces: bridges, bonds, VLANs, ports; addresses, gateways, MTU, comments | ✅ |
+| `PUT /nodes/{node}/network` (apply, a task), `DELETE /nodes/{node}/network` (revert) | Pending network changes | ✅ |
+| OVS bridges, bonds and ports | Open vSwitch | 🗓 later (shown, edited in the web UI) |
 | `GET /nodes/{node}/services`, `POST …/services/{service}/{start,stop,restart,reload}` | Services (tasks) | ✅ |
 | `GET /nodes/{node}/journal?lastentries=` | System log (newest 500 lines) | ✅ |
 | `GET /nodes/{node}/syslog` | The older syslog view | 🗓 (the journal covers it) |

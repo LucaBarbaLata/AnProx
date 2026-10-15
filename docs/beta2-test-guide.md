@@ -261,7 +261,11 @@ Needs two nodes and a guest whose disks are on local ZFS storage that exists on 
    switch the enterprise one off → check /etc/apt/sources.list* on the node.
 4. **Services**: restart `pvestatd` (harmless) → "done"; stopping `pveproxy` asks first.
 5. **System log**: the newest lines match `journalctl -n 500`; the filter narrows them.
-6. **DNS, hosts and time**: values match the web UI's System → DNS / Hosts / Time; change the
+6. **Network** (careful, test on a lab node): **Bridge** → keep vmbr2, no address → Save → the
+   pending banner and **Show changes** (compare with the web UI's Network → Pending changes) →
+   **Revert**. Then the same and **Apply** (type the node's name) → vmbr2 exists; remove it and
+   apply again.
+7. **DNS, hosts and time**: values match the web UI's System → DNS / Hosts / Time; change the
    time zone and back; add a comment line to /etc/hosts and remove it again.
 
 ### E. Snapshots (Tools → Snapshots)
