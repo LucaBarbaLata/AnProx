@@ -18,7 +18,7 @@ class AlertsTest {
     private val healthy = Observation(
         time = 1_000,
         nodes = mapOf("pve1" to true, "pve2" to true),
-        runningGuests = mapOf(100 to GuestSeen(100, "web", "pve1"), 200 to GuestSeen(200, "pihole", "pve2")),
+        runningGuests = mapOf(100 to GuestSeen(100, "web", "pve1"), 200 to GuestSeen(200, "pihole", "pve2", "lxc")),
         guestIds = setOf(100, 101, 200),
         quorate = true,
         nodeCpu = mapOf("pve1" to 0.20, "pve2" to 0.30),
@@ -64,9 +64,11 @@ class AlertsTest {
     @Test
     fun `a guest that stops is reported unless a task stopped it`() {
         val (_, m1) = AlertEngine.evaluate(null, healthy, settings)
-        val crashed = healthy.copy(time = 2_000, runningGuests = mapOf(200 to GuestSeen(200, "pihole", "pve2")))
+        val crashed = healthy.copy(time = 2_000, runningGuests = mapOf(200 to GuestSeen(200, "pihole", "pve2", "lxc")))
         val (a2, _) = AlertEngine.evaluate(m1, crashed, settings)
-        assertEquals(listOf(Alert(Kind.GUEST_STOPPED, "web", detail = "100")), a2)
+        assertEquals(listOf(Alert(Kind.GUEST_STOPPED, "web", detail = "100", node = "pve1", guestType = "qemu")), a2)
+        val ctDown = healthy.copy(time = 2_000, runningGuests = mapOf(100 to GuestSeen(100, "web", "pve1")))
+        assertEquals("lxc", AlertEngine.evaluate(m1, ctDown, settings).first.single().guestType)
 
         val shutDown = crashed.copy(tasks = listOf(FinishedTask("UPID:x", "qmshutdown", "100", "pve1", 1_500, "OK")))
         assertEquals(emptyList(), AlertEngine.evaluate(m1, shutDown, settings).first)

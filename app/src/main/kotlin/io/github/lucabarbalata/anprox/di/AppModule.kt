@@ -3,6 +3,7 @@ package io.github.lucabarbalata.anprox.di
 import io.github.lucabarbalata.anprox.BuildConfig
 import io.github.lucabarbalata.anprox.alerts.AlertNotifier
 import io.github.lucabarbalata.anprox.alerts.AlertScheduler
+import io.github.lucabarbalata.anprox.alerts.TaskTracker
 import io.github.lucabarbalata.anprox.data.alerts.AlertRepository
 import io.github.lucabarbalata.anprox.data.backup.BackupRepository
 import io.github.lucabarbalata.anprox.data.console.ConsoleRepository
@@ -26,6 +27,7 @@ import io.github.lucabarbalata.anprox.storage.KeystoreSecretStore
 import io.github.lucabarbalata.anprox.storage.SettingsRepository
 import io.github.lucabarbalata.anprox.ui.alerts.AlertsViewModel
 import io.github.lucabarbalata.anprox.ui.cloudinit.CloudInitViewModel
+import io.github.lucabarbalata.anprox.ui.navigation.AppLinks
 import io.github.lucabarbalata.anprox.ui.console.ConsoleViewModel
 import io.github.lucabarbalata.anprox.ui.create.CreateGuestViewModel
 import io.github.lucabarbalata.anprox.ui.hardware.HardwareViewModel
@@ -69,6 +71,7 @@ val appModule = module {
     single { SettingsRepository(androidContext()) }
     single { CrashReporter(androidContext()) }
     single { AppLock() }
+    single { AppLinks() }
 
     // Networking: one shared OkHttp pool for all servers.
     single { OkHttpClient() }
@@ -84,7 +87,9 @@ val appModule = module {
         )
     }
     single { SnapshotRepository(get()) }
-    single { GuestRepository(get()) }
+    // Live task notifications follow every task the app waits for.
+    single { TaskTracker(androidContext(), get(), get(named("appScope")), get()) }
+    single { GuestRepository(get(), get<TaskTracker>()) }
     single { MetricsRepository(get()) }
     single { BackupRepository(get()) }
     single { ConsoleRepository(get()) }

@@ -16,7 +16,9 @@ import androidx.compose.material.icons.outlined.Dns
 import androidx.compose.material.icons.outlined.MoreHoriz
 import androidx.compose.material.icons.outlined.Task
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavDestination
@@ -34,6 +36,7 @@ import io.github.lucabarbalata.anprox.core.designsystem.component.AdaptiveNavSca
 import io.github.lucabarbalata.anprox.core.designsystem.component.NavItem
 import io.github.lucabarbalata.anprox.data.guest.GuestRef
 import io.github.lucabarbalata.anprox.diagnostics.CrashReportDialog
+import io.github.lucabarbalata.anprox.model.link.AppLink
 import io.github.lucabarbalata.anprox.model.pve.ConsoleKind
 import io.github.lucabarbalata.anprox.model.pve.ConsoleTarget
 import io.github.lucabarbalata.anprox.model.pve.GuestType
@@ -53,6 +56,7 @@ import io.github.lucabarbalata.anprox.ui.backups.BackupScope
 import io.github.lucabarbalata.anprox.ui.backups.BackupsScreen
 import io.github.lucabarbalata.anprox.ui.navigation.AboutRoute
 import io.github.lucabarbalata.anprox.ui.navigation.AlertsRoute
+import io.github.lucabarbalata.anprox.ui.navigation.AppLinks
 import io.github.lucabarbalata.anprox.ui.navigation.BackupsRoute
 import io.github.lucabarbalata.anprox.ui.navigation.DashboardRoute
 import io.github.lucabarbalata.anprox.ui.navigation.CloneRoute
@@ -84,6 +88,7 @@ import io.github.lucabarbalata.anprox.ui.settings.SettingsScreen
 import io.github.lucabarbalata.anprox.ui.snapshots.SnapshotsScreen
 import io.github.lucabarbalata.anprox.ui.tasks.TaskLogScreen
 import io.github.lucabarbalata.anprox.ui.tasks.TasksScreen
+import org.koin.compose.koinInject
 
 private enum class Tab(val route: Any) { DASHBOARD(DashboardRoute), RESOURCES(ResourcesRoute), TASKS(TasksRoute), MORE(MoreRoute) }
 
@@ -157,6 +162,28 @@ fun AnProxApp() {
         }
     }
     val openStorage: (String, String, String) -> Unit = { serverId, node, storage -> nav.navigate(StorageRoute(serverId, node, storage)) }
+
+    // A notification, shortcut or widget asked for a screen. Waits until the graph is set up.
+    val links: AppLinks = koinInject()
+    val link by links.next.collectAsStateWithLifecycle()
+    val ready = backStack != null
+    LaunchedEffect(link, ready) {
+        val target = link ?: return@LaunchedEffect
+        if (!ready) return@LaunchedEffect
+        when (target) {
+            AppLink.Dashboard -> nav.selectTab(Tab.DASHBOARD)
+            AppLink.Resources -> nav.selectTab(Tab.RESOURCES)
+            AppLink.Tasks -> nav.selectTab(Tab.TASKS)
+            AppLink.Alerts -> {
+                nav.selectTab(Tab.MORE)
+                nav.navigate(AlertsRoute) { launchSingleTop = true }
+            }
+            is AppLink.Guest -> nav.navigate(GuestRoute(target.serverId, target.node, target.type, target.vmid))
+            is AppLink.Node -> nav.navigate(NodeRoute(target.serverId, target.node))
+            is AppLink.Task -> nav.navigate(TaskLogRoute(target.serverId, target.node, target.upid))
+        }
+        links.opened(target)
+    }
 
     AdaptiveNavScaffold(
         items = items,

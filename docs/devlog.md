@@ -108,6 +108,18 @@ A flaky test found a real race: `ServerHub.servers` is a `stateIn` flow, updated
 the profiles load or a login, so a worker in a freshly started process could see no servers.
 `ServerHub.serversNow()` reads the same list directly.
 
+**M3: links, live tasks, shortcuts.** `AppLink` (`:core:model`, JVM-tested) is a small
+`anprox://` link format for the places notifications, shortcuts and widgets open: a guest, a
+node, a task log, a tab, the alert settings. `MainActivity` hands the intent's link to
+`AppLinks`, and the navigation graph opens it once it is set up. There is no intent filter, so
+only explicit intents carry links; a link only opens a screen. Alert notifications now open the
+node, guest or task they are about (stopped-guest alerts carry the guest's node and type for
+that). `GuestRepository.awaitTask` tells a `TaskObserver` about each task; the app's
+`TaskTracker` follows it on the app scope (so leaving the screen doesn't lose it), shows a silent
+ongoing notification after 3 s and, if the app is in the background when the task ends, says how
+it ended. Three dynamic shortcuts (Resources, Tasks, Alerts) are published from the activity. The
+tour opens the Alerts screen with `am start -d anprox://alerts`.
+
 Not alerted on purpose: a server that can't be reached. A phone that leaves the home network
 would otherwise notify every 15 minutes; the Alerts screen lists unreachable servers instead.
 A session that stops working is notified once ("Sign in to … again").

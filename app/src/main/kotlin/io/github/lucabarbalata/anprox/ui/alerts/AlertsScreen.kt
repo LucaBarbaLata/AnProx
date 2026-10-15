@@ -98,7 +98,7 @@ fun AlertsScreen(onBack: () -> Unit, viewModel: AlertsViewModel = koinViewModel(
                             if (on && !allowed) requestNotifications()
                         },
                     )
-                    if (!allowed && (s.enabled || state.lastRun != null)) {
+                    if (!allowed && (s.enabled || state.taskNotifications)) {
                         Spacer(Modifier.height(8.dp))
                         // After a refusal Android won't ask again; its settings page is the way back.
                         ErrorBanner(
@@ -150,6 +150,20 @@ fun AlertsScreen(onBack: () -> Unit, viewModel: AlertsViewModel = koinViewModel(
                         PercentStepper(stringResource(R.string.alerts_memory_limit), s.memoryPercent) { p -> viewModel.update { copy(memoryPercent = p) } }
                         PercentStepper(stringResource(R.string.alerts_storage_limit), s.storagePercent) { p -> viewModel.update { copy(storagePercent = p) } }
                     }
+                }
+            }
+            item { SectionHeader(stringResource(R.string.alerts_tasks)) }
+            item {
+                GlassCard {
+                    SwitchRow(
+                        title = stringResource(R.string.alerts_task_notifications),
+                        description = stringResource(R.string.alerts_task_notifications_description),
+                        checked = state.taskNotifications,
+                        onCheckedChange = { on ->
+                            viewModel.setTaskNotifications(on)
+                            if (on && !allowed) requestNotifications()
+                        },
+                    )
                 }
             }
             item { SectionHeader(stringResource(R.string.alerts_last_check)) }

@@ -106,8 +106,11 @@ Everything marked ✅ in M1 and M2 below. Gates:
   interval (15 min to 3 h), kinds, limits, **Check now**, the last check's summary.
 - **Real-time push** (Q26): a setup guide for PVE notification webhooks → ntfy/Gotify →
   UnifiedPush, with no Google services.
+- ✅ **Live task notifications** (Q28): tasks started from the app, followed until they end.
+- ✅ **App shortcuts and in-app links** (Q28): Resources, Tasks, Alerts; notifications open the
+  node, guest or task they are about (`anprox://` links, explicit intents only).
 - **Home-screen widgets** (Glance): cluster health, favourite guests with power buttons, storage (Q28).
-- **Quick Settings tiles** and **app shortcuts/deep links** (Q28).
+- **Quick Settings tiles** (Q28).
 
 ## M4 — Datacenter
 - Storage: add/edit/remove every storage type, content browser, upload ISO/templates, download from URL.

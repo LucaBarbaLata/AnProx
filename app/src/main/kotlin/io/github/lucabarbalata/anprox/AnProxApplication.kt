@@ -8,6 +8,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.ProcessLifecycleOwner
 import io.github.lucabarbalata.anprox.alerts.AlertNotifier
 import io.github.lucabarbalata.anprox.alerts.AlertScheduler
+import io.github.lucabarbalata.anprox.alerts.TaskTracker
 import io.github.lucabarbalata.anprox.data.hub.ServerHub
 import io.github.lucabarbalata.anprox.data.security.AppLock
 import io.github.lucabarbalata.anprox.di.appModule
@@ -43,6 +44,7 @@ class AnProxApplication : Application() {
     /** Keeps the background checks (questionnaire Q26) in step with the alert settings. */
     private fun watchAlerts() {
         get<AlertNotifier>().createChannels()
+        get<TaskTracker>().createChannels()
         val scheduler: AlertScheduler = get()
         val settings: SettingsRepository = get()
         get<CoroutineScope>(named("appScope")).launch {

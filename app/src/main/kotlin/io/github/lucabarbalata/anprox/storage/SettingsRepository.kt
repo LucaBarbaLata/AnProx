@@ -31,6 +31,8 @@ data class AppSettings(
     val favourites: Set<String> = emptySet(),
     /** Background alerts (questionnaire Q26/Q27). */
     val alerts: AlertSettings = AlertSettings(),
+    /** A notification follows each task started from the app until it ends (Q28). */
+    val taskNotifications: Boolean = true,
 )
 
 /** Identifies a guest independently of its node, so a favourite survives migrations. */
@@ -46,6 +48,7 @@ class SettingsRepository(context: Context) {
     private val confirmDangerousKey = booleanPreferencesKey("confirm_dangerous")
     private val favouritesKey = stringSetPreferencesKey("favourite_guests")
     private val alertsKey = stringPreferencesKey("alert_settings")
+    private val taskNotificationsKey = booleanPreferencesKey("task_notifications")
 
     val settings: Flow<AppSettings> = store.data
         .catch { e -> if (e is IOException) emit(emptyPreferences()) else throw e }
@@ -59,6 +62,7 @@ class SettingsRepository(context: Context) {
                 confirmDangerous = prefs[confirmDangerousKey] ?: true,
                 favourites = prefs[favouritesKey].orEmpty(),
                 alerts = prefs[alertsKey]?.let { runCatching { StorageJson.decodeFromString<AlertSettings>(it) }.getOrNull() } ?: AlertSettings(),
+                taskNotifications = prefs[taskNotificationsKey] ?: true,
             )
         }
 
@@ -70,6 +74,7 @@ class SettingsRepository(context: Context) {
     suspend fun setConfirmDangerous(enabled: Boolean) = store.edit { it[confirmDangerousKey] = enabled }
 
     suspend fun setAlerts(alerts: AlertSettings) = store.edit { it[alertsKey] = StorageJson.encodeToString(alerts) }
+    suspend fun setTaskNotifications(enabled: Boolean) = store.edit { it[taskNotificationsKey] = enabled }
 
     suspend fun setFavourite(key: String, favourite: Boolean) = store.edit {
         val current = it[favouritesKey].orEmpty()

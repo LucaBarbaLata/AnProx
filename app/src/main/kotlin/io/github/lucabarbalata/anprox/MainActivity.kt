@@ -1,5 +1,6 @@
 package io.github.lucabarbalata.anprox
 
+import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import androidx.activity.SystemBarStyle
@@ -31,6 +32,8 @@ import io.github.lucabarbalata.anprox.security.LockScreen
 import io.github.lucabarbalata.anprox.storage.AppSettings
 import io.github.lucabarbalata.anprox.storage.SettingsRepository
 import io.github.lucabarbalata.anprox.ui.AnProxApp
+import io.github.lucabarbalata.anprox.ui.navigation.AppLinks
+import io.github.lucabarbalata.anprox.ui.navigation.Shortcuts
 import kotlinx.coroutines.launch
 import org.koin.android.ext.android.inject
 
@@ -42,6 +45,7 @@ class MainActivity : FragmentActivity() {
 
     private val settingsRepository: SettingsRepository by inject()
     private val appLock: AppLock by inject()
+    private val links: AppLinks by inject()
 
     @Volatile
     private var settingsLoaded = false
@@ -51,6 +55,11 @@ class MainActivity : FragmentActivity() {
         installSplashScreen().setKeepOnScreenCondition { !settingsLoaded || !appLock.ready.value }
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        // After a rotation or process restore the launch intent's link was already opened.
+        if (savedInstanceState == null) {
+            links.open(intent)
+            Shortcuts.publish(this)
+        }
         val authenticator = BiometricAuthenticator(this, appLock)
 
         setContent {
@@ -104,5 +113,12 @@ class MainActivity : FragmentActivity() {
                 }
             }
         }
+    }
+
+    /** A notification, shortcut or widget tapped while the app was already open. */
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        links.open(intent)
     }
 }

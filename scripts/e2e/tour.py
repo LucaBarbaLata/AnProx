@@ -657,13 +657,13 @@ def notifications():
     return adb("shell", "dumpsys", "notification", "--noredact", check=False)
 
 
-@step("Background alerts: switch on, check now, a notification about the offline node")
+@step("Background alerts through an anprox:// link: switch on, check now, a notification about the offline node")
 def alerts():
     if int(adb("shell", "getprop", "ro.build.version.sdk").strip() or 0) >= 33:
         # Android 13+ would ask with a system dialog; the tour grants it up front instead.
         adb("shell", "pm", "grant", PKG, "android.permission.POST_NOTIFICATIONS", check=False)
-    tap("More")
-    tap("Alerts")
+    # Opened the way notifications and shortcuts do: an anprox:// link for the main activity.
+    adb("shell", "am", "start", "-n", f"{PKG}/{ACTIVITY}", "-a", "android.intent.action.VIEW", "-d", "anprox://alerts")
     find("No check has run yet.", timeout=15)
     tap("Background alerts")
     tap_node(scroll_to("Check now"))

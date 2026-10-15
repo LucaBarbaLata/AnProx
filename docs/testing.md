@@ -127,7 +127,7 @@ so no test code is compiled into the app. `scripts/e2e/run.sh` starts the mock s
 15. **Clone** the Ubuntu template (linked by default) → **Open it** → **Migrate** the clone to `pve2` → the guest screen now says `pve2`.
 16. Tasks tab shows the newest task ("VM migrate").
 17. Node `pve1` → **Create VM** with the suggested settings (next free ID, first storage, 32 GiB) → "Open it" → the new, stopped VM.
-18. More → **Alerts** → switch on **Background alerts** → **Check now** → "Servers checked: 2" → a notification "Node pve3 is offline" is posted (read with `dumpsys notification`; on Android 13+ the tour grants the notification permission first).
+18. `anprox://alerts` (the link notifications and shortcuts use) opens **Alerts** → switch on **Background alerts** → **Check now** → "Servers checked: 2" → a notification "Node pve3 is offline" is posted (read with `dumpsys notification`; on Android 13+ the tour grants the notification permission first).
 19. Settings → Light theme; turning on the app lock explains that the emulator has no screen lock → dashboard in light mode, with the starred VM under Favourites.
 
 After every step the script checks that the app process is alive and that logcat has no

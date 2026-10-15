@@ -138,7 +138,13 @@ Hardware → Display → SPICE in the web UI).
    Stop it from the app or the web UI instead → no notification.
 4. Start a task that fails (for example start a VM with a missing ISO) → **Check now** → "Failed: VM start …".
 5. Set the storage limit just under a storage's current use → **Check now** → "… is N% full".
-6. Leave alerts on overnight with the app closed: say whether checks kept running (the time of
+6. Tap an alert notification: it opens the node, the VM or the failed task's log.
+7. **Live tasks**: start a backup or a migration that takes a while, then leave the app (Home).
+   A "Running…" notification stays until it ends, then says "… finished" (or "failed"). With
+   the app open, the notification disappears when the task ends. Tasks that take under 3 s
+   show nothing.
+8. **Shortcuts**: long-press the AnProx icon → Resources / Tasks / Alerts open those screens.
+9. Leave alerts on overnight with the app closed: say whether checks kept running (the time of
    the last check) and whether anything was notified twice. Some phones stop background work
    for apps with battery optimisation; say which phone you have.
 

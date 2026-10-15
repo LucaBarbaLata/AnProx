@@ -6,6 +6,7 @@ import io.github.lucabarbalata.anprox.data.hub.ServerState
 import io.github.lucabarbalata.anprox.data.snapshot.PbsSnapshot
 import io.github.lucabarbalata.anprox.data.snapshot.PveSnapshot
 import io.github.lucabarbalata.anprox.data.snapshot.SnapshotRepository
+import io.github.lucabarbalata.anprox.model.ProxmoxProduct
 import io.github.lucabarbalata.anprox.model.alerts.Alert
 import io.github.lucabarbalata.anprox.model.alerts.AlertEngine
 import io.github.lucabarbalata.anprox.model.alerts.AlertMemory
@@ -27,7 +28,12 @@ interface AlertMemoryStore {
 }
 
 /** An alert and the server it is about. */
-data class ServerAlert(val serverId: String, val serverName: String, val alert: Alert)
+data class ServerAlert(
+    val serverId: String,
+    val serverName: String,
+    val alert: Alert,
+    val product: ProxmoxProduct = ProxmoxProduct.PVE,
+)
 
 /** The outcome of checking every server once. */
 data class AlertCheck(
@@ -76,7 +82,7 @@ class AlertRepository(
                 val previous = memory.load(server.id)?.takeIf { observation.time - it.time in 0..MAX_GAP_SECONDS }
                 val (found, remembered) = AlertEngine.evaluate(previous, observation, settings)
                 memory.save(server.id, remembered)
-                found.forEach { alerts += ServerAlert(server.id, server.profile.name, it) }
+                found.forEach { alerts += ServerAlert(server.id, server.profile.name, it, server.profile.product) }
             } else if (outcome.exceptionOrNull() is ApiException.Unauthorized) {
                 // Reported once: when a working session stops working.
                 if (server.auth == AuthState.LOGGED_IN) signIn += server.profile.name
@@ -129,7 +135,7 @@ class AlertRepository(
             nodes = nodes,
             runningGuests = guests.filter { it.status == "running" }.associate { g ->
                 val vmid = g.vmid!!
-                vmid to GuestSeen(vmid, g.name ?: vmid.toString(), g.node.orEmpty())
+                vmid to GuestSeen(vmid, g.name ?: vmid.toString(), g.node.orEmpty(), g.type)
             },
             guestIds = guests.mapNotNull { it.vmid }.toSet(),
             // A standalone node has no cluster row and so no quorum to lose.

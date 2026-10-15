@@ -42,6 +42,14 @@ All notable changes to AnProx are documented here. The format follows
   warnings or errors. Each problem is notified once, on its own Android notification channel.
   **Check now** runs a check right away; the screen shows what the last one found and which
   servers couldn't be reached.
+  Tapping a notification opens the node, guest or task log it is about.
+
+- **Live task notifications**: a task you start (power, snapshot, backup, clone, migrate, a
+  hardware change…) that runs for more than a few seconds shows a silent notification until it
+  ends; if the app is in the background by then, a notification says how it ended. Switch it
+  off under More → Alerts.
+
+- **App shortcuts**: long-press the launcher icon for Resources, Tasks or Alerts.
 
 ### Changed
 - The bulk-action summary on the Resources list stays on screen longer.

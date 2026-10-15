@@ -19,6 +19,7 @@ data class AlertsState(
     val lastRun: AlertRun? = null,
     /** A "check now" is queued or running. */
     val checking: Boolean = false,
+    val taskNotifications: Boolean = true,
 )
 
 /** Background alert settings (questionnaire Q26/Q27). [AnProxApplication] schedules the checks. */
@@ -29,11 +30,15 @@ class AlertsViewModel(
 ) : ViewModel() {
 
     val state: StateFlow<AlertsState> = combine(settings.settings, store.lastRun, scheduler.checking) { s, run, checking ->
-        AlertsState(s.alerts, run, checking)
+        AlertsState(s.alerts, run, checking, s.taskNotifications)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AlertsState())
 
     fun update(change: AlertSettings.() -> AlertSettings) {
         viewModelScope.launch { settings.setAlerts(settings.settings.first().alerts.change()) }
+    }
+
+    fun setTaskNotifications(enabled: Boolean) {
+        viewModelScope.launch { settings.setTaskNotifications(enabled) }
     }
 
     fun checkNow() {

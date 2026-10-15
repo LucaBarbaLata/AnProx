@@ -41,8 +41,16 @@ data class GuestNetworkInfo(
     val agentProblem: String? = null,
 )
 
+/**
+ * Hears about every task the app starts waiting for, so :app can follow it in a notification
+ * that outlives the screen (questionnaire Q28, live task notifications).
+ */
+fun interface TaskObserver {
+    fun started(serverId: String, node: String, upid: String)
+}
+
 /** Guest-level operations (questionnaire Q18/Q19 grow this over the milestones). */
-class GuestRepository(private val hub: ServerHub) {
+class GuestRepository(private val hub: ServerHub, private val taskObserver: TaskObserver? = null) {
 
     fun observeStatus(ref: GuestRef, intervalMillis: Long = 3_000): Flow<Polled<GuestStatus>> = poll(intervalMillis) { status(ref) }
 
@@ -203,8 +211,10 @@ class GuestRepository(private val hub: ServerHub) {
 
     // ------------------------------------------------------------------ tasks
 
-    suspend fun awaitTask(serverId: String, node: String, upid: String): TaskStatus =
-        hub.use(serverId) { it.awaitPveTask(node, upid) }
+    suspend fun awaitTask(serverId: String, node: String, upid: String): TaskStatus {
+        taskObserver?.started(serverId, node, upid)
+        return hub.use(serverId) { it.awaitPveTask(node, upid) }
+    }
 
     suspend fun taskStatus(serverId: String, node: String, upid: String): TaskStatus =
         hub.use(serverId) { it.pve { taskStatus(node, upid) } }

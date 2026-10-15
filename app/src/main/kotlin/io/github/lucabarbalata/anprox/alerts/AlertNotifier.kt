@@ -3,21 +3,21 @@ package io.github.lucabarbalata.anprox.alerts
 import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
-import android.app.PendingIntent
 import android.content.Context
-import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
-import io.github.lucabarbalata.anprox.MainActivity
 import io.github.lucabarbalata.anprox.R
 import io.github.lucabarbalata.anprox.data.alerts.AlertCheck
 import io.github.lucabarbalata.anprox.data.alerts.ServerAlert
+import io.github.lucabarbalata.anprox.model.ProxmoxProduct
 import io.github.lucabarbalata.anprox.model.alerts.Alert.Kind
 import io.github.lucabarbalata.anprox.model.format.TaskTypes
+import io.github.lucabarbalata.anprox.model.link.AppLink
 import io.github.lucabarbalata.anprox.model.pve.Upid
+import io.github.lucabarbalata.anprox.ui.navigation.AppLinks
 
 /**
  * Turns alerts into notifications, one per problem: the same problem again replaces its
@@ -60,6 +60,7 @@ class AlertNotifier(context: Context) {
                 title = context.getString(R.string.notify_sign_in, server),
                 text = context.getString(R.string.notify_sign_in_body),
                 server = null,
+                link = AppLink.Dashboard,
             )
         }
     }
@@ -83,7 +84,27 @@ class AlertNotifier(context: Context) {
             Kind.CEPH_WARN -> Triple(CHANNEL_THRESHOLDS, context.getString(R.string.notify_ceph_warn), context.getString(R.string.notify_ceph_body))
             Kind.CEPH_ERR -> Triple(CHANNEL_DOWN, context.getString(R.string.notify_ceph_err), context.getString(R.string.notify_ceph_body))
         }
-        post("${item.serverId}:${a.key}", channel, title, text, item.serverName)
+        post("${item.serverId}:${a.key}", channel, title, text, item.serverName, link(item))
+    }
+
+    /** Where tapping the notification goes: the node, guest or task concerned, if the app has a screen for it. */
+    private fun link(item: ServerAlert): AppLink {
+        val a = item.alert
+        val pve = item.product == ProxmoxProduct.PVE
+        return when (a.kind) {
+            Kind.NODE_DOWN, Kind.CPU_HIGH, Kind.MEMORY_HIGH -> if (pve) AppLink.Node(item.serverId, a.subject) else AppLink.Dashboard
+            Kind.GUEST_STOPPED -> {
+                val node = a.node
+                val vmid = a.detail?.toIntOrNull()
+                if (node != null && vmid != null) AppLink.Guest(item.serverId, node, a.guestType ?: "qemu", vmid) else AppLink.Resources
+            }
+            Kind.TASK_FAILED, Kind.BACKUP_FAILED -> {
+                // The task log screen reads Proxmox VE tasks; Backup Server tasks are on the Tasks tab.
+                val node = Upid.parse(a.subject)?.node
+                if (pve && node != null) AppLink.Task(item.serverId, node, a.subject) else AppLink.Tasks
+            }
+            Kind.QUORUM_LOST, Kind.STORAGE_HIGH, Kind.CEPH_WARN, Kind.CEPH_ERR -> AppLink.Dashboard
+        }
     }
 
     /** "VM start 102" from a UPID; the raw UPID if it can't be read. */
@@ -92,19 +113,14 @@ class AlertNotifier(context: Context) {
         return listOf(TaskTypes.label(parsed.type), parsed.id).filter { it.isNotBlank() }.joinToString(" ")
     }
 
-    private fun post(tag: String, channel: String, title: String, text: String?, server: String?) {
+    private fun post(tag: String, channel: String, title: String, text: String?, server: String?, link: AppLink) {
         // Checked here again so lint can see the permission check next to notify().
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
         ) {
             return
         }
-        val open = PendingIntent.getActivity(
-            context,
-            0,
-            Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
-        )
+        val open = AppLinks.pendingIntent(context, link)
         val notification = NotificationCompat.Builder(context, channel)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(title)

@@ -32,8 +32,8 @@ data class FinishedTask(val upid: String, val type: String, val id: String?, val
     val ok: Boolean get() = status == "OK" || status.startsWith("WARNINGS")
 }
 
-/** A guest seen running, by VMID. */
-data class GuestSeen(val vmid: Int, val name: String, val node: String)
+/** A guest seen running, by VMID. [type] is `qemu` or `lxc`. */
+data class GuestSeen(val vmid: Int, val name: String, val node: String, val type: String = "qemu")
 
 /**
  * What one check saw on one server. Fractions are 0..1; null when unknown. A Backup Server has
@@ -67,6 +67,7 @@ data class AlertMemory(
     val offlineNodes: Set<String> = emptySet(),
     val runningGuests: Map<Int, String> = emptyMap(),
     val guestNodes: Map<Int, String> = emptyMap(),
+    val guestTypes: Map<Int, String> = emptyMap(),
     val quorate: Boolean? = null,
     /** Threshold keys that are above their limit (`cpu:pve1`, `storage:pve1/local`). */
     val hot: Set<String> = emptySet(),
@@ -89,8 +90,18 @@ data class AlertRun(
     val signInNeeded: List<String> = emptyList(),
 )
 
-/** One thing to tell the user. [subject] is a node, guest, storage or task; [detail] is extra text. */
-data class Alert(val kind: Kind, val subject: String, val detail: String? = null, val percent: Int? = null) {
+/**
+ * One thing to tell the user. [subject] is a node, guest, storage or task; [detail] is extra
+ * text. A stopped guest also carries its [node] and [guestType], so its notification can open it.
+ */
+data class Alert(
+    val kind: Kind,
+    val subject: String,
+    val detail: String? = null,
+    val percent: Int? = null,
+    val node: String? = null,
+    val guestType: String? = null,
+) {
     enum class Kind { NODE_DOWN, QUORUM_LOST, GUEST_STOPPED, TASK_FAILED, BACKUP_FAILED, CPU_HIGH, MEMORY_HIGH, STORAGE_HIGH, CEPH_WARN, CEPH_ERR }
 
     /** Stable per problem, so a notification replaces the previous one about the same thing. */
@@ -135,7 +146,10 @@ object AlertEngine {
                     // A guest on a node that went offline is covered by the node alert.
                     val onOfflineNode = previous.guestNodes[vmid] in offline
                     if (stillThere && stopped && vmid !in intended && !onOfflineNode) {
-                        alerts += Alert(Alert.Kind.GUEST_STOPPED, name, detail = vmid.toString())
+                        alerts += Alert(
+                            Alert.Kind.GUEST_STOPPED, name, detail = vmid.toString(),
+                            node = previous.guestNodes[vmid], guestType = previous.guestTypes[vmid] ?: "qemu",
+                        )
                     }
                 }
             }
@@ -182,6 +196,7 @@ object AlertEngine {
             offlineNodes = offline,
             runningGuests = now.runningGuests.mapValues { it.value.name },
             guestNodes = now.runningGuests.mapValues { it.value.node },
+            guestTypes = now.runningGuests.mapValues { it.value.type },
             quorate = now.quorate,
             hot = hot,
             ceph = now.ceph,

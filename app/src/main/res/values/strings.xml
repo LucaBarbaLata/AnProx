@@ -851,4 +851,20 @@
     <string name="notify_ceph_body">Open the Proxmox web interface for the details.</string>
     <string name="notify_sign_in">Sign in to %1$s again</string>
     <string name="notify_sign_in_body">Its session ran out, so alerts for it are paused.</string>
+    <string name="alerts_tasks">Tasks you start</string>
+    <string name="alerts_task_notifications">Follow running tasks</string>
+    <string name="alerts_task_notifications_description">A notification shows each task you start from the app until it ends. If the app is in the background by then, it tells you how it ended.</string>
+    <string name="tasks_channel_running">Running tasks</string>
+    <string name="tasks_channel_running_description">Tasks you started from the app, while they run.</string>
+    <string name="tasks_channel_done">Finished tasks</string>
+    <string name="tasks_channel_done_description">How a task you started ended, when the app was in the background.</string>
+    <string name="task_notify_running">Running…</string>
+    <string name="task_notify_ok">%1$s finished</string>
+    <string name="task_notify_failed">%1$s failed</string>
+    <string name="shortcut_resources">Resources</string>
+    <string name="shortcut_resources_long">All guests, nodes and storage</string>
+    <string name="shortcut_tasks">Tasks</string>
+    <string name="shortcut_tasks_long">Recent tasks</string>
+    <string name="shortcut_alerts">Alerts</string>
+    <string name="shortcut_alerts_long">Alert settings and the last check</string>
 </resources>
