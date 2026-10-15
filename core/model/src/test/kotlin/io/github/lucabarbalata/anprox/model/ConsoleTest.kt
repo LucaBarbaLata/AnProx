@@ -1,37 +1,52 @@
 package io.github.lucabarbalata.anprox.model
 
+import io.github.lucabarbalata.anprox.model.json.ProxmoxJson
 import io.github.lucabarbalata.anprox.model.pve.ConsoleKind
+import io.github.lucabarbalata.anprox.model.pve.ConsoleProxy
 import io.github.lucabarbalata.anprox.model.pve.ConsoleTarget
-import io.github.lucabarbalata.anprox.model.pve.TerminalKey
+import io.github.lucabarbalata.anprox.model.pve.TermProxyProtocol
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class ConsoleTest {
 
     @Test
-    fun `console pages match the Proxmox web UI`() {
-        assertEquals(
-            "https://pve.lan:8006/?console=kvm&novnc=1&vmid=100&vmname=web+server&node=pve1&resize=scale&cmd=",
-            ConsoleTarget(ConsoleKind.VM, "pve1", 100, "web server").url("https://pve.lan:8006/"),
-        )
-        assertEquals(
-            "https://proxy.example/pve/?console=lxc&xtermjs=1&vmid=200&vmname=pihole&node=pve2&cmd=",
-            ConsoleTarget(ConsoleKind.CONTAINER, "pve2", 200, "pihole").url("https://proxy.example/pve"),
-        )
-        assertEquals(
-            "https://10.0.0.11:8006/?console=shell&xtermjs=1&node=pve1&cmd=",
-            ConsoleTarget(ConsoleKind.NODE, "pve1").url("https://10.0.0.11:8006"),
-        )
+    fun `console endpoints match the Proxmox API`() {
+        val vm = ConsoleTarget(ConsoleKind.VM, "pve1", 100, "web")
+        assertEquals("nodes/pve1/qemu/100/vncproxy", vm.proxyPath)
+        assertEquals("nodes/pve1/qemu/100/vncwebsocket", vm.websocketPath)
+        val ct = ConsoleTarget(ConsoleKind.CONTAINER, "pve2", 200, "pihole")
+        assertEquals("nodes/pve2/lxc/200/termproxy", ct.proxyPath)
+        assertEquals("nodes/pve2/lxc/200/vncwebsocket", ct.websocketPath)
+        val node = ConsoleTarget(ConsoleKind.NODE, "pve1")
+        assertEquals("nodes/pve1/termproxy", node.proxyPath)
+        assertEquals("nodes/pve1/vncwebsocket", node.websocketPath)
     }
 
     @Test
-    fun `terminal keys become keydown events with the right key code`() {
-        val esc = TerminalKey.ESC.script()
-        assertTrue("return 27;" in esc && "ctrlKey: false" in esc)
-        val ctrlC = TerminalKey.CTRL_C.script()
-        assertTrue("return 67;" in ctrlC && "ctrlKey: true" in ctrlC)
-        assertTrue(TerminalKey.entries.none { "'" in it.key })
+    fun `proxy answers with the port as a number or a string`() {
+        val numeric = ProxmoxJson.decodeFromString<ApiEnvelope<ConsoleProxy>>(
+            """{"data":{"port":5900,"ticket":"PVEVNC:abc","user":"root@pam","upid":"UPID:x","cert":"-----BEGIN"}}""",
+        ).data!!
+        assertEquals("5900", numeric.portNumber)
+        assertEquals("PVEVNC:abc", numeric.vncPassword) // no generated password: the ticket is the password
+        val quoted = ProxmoxJson.decodeFromString<ApiEnvelope<ConsoleProxy>>(
+            """{"data":{"port":"5901","ticket":"PVEVNC:def","password":"s3cret"}}""",
+        ).data!!
+        assertEquals("5901", quoted.portNumber)
+        assertEquals("s3cret", quoted.vncPassword)
+    }
+
+    @Test
+    fun `terminal protocol frames`() {
+        assertEquals("root@pam:PVEVNC:abc\n", TermProxyProtocol.auth("root@pam", "PVEVNC:abc"))
+        assertEquals("0:3:ls\r", TermProxyProtocol.input("ls\r"))
+        assertEquals("0:2:é", TermProxyProtocol.input("é")) // byte length, not characters
+        assertEquals("1:80:24:", TermProxyProtocol.resize(80, 24))
+        assertTrue(TermProxyProtocol.isAccepted("OKwelcome".toByteArray()))
+        assertFalse(TermProxyProtocol.isAccepted("NO".toByteArray()))
         Unit
     }
 }

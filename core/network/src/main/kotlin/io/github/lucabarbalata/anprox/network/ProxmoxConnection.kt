@@ -25,8 +25,12 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.JsonElement
+import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.WebSocket
+import okhttp3.WebSocketListener
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.HttpException
 import retrofit2.Retrofit
@@ -197,6 +201,20 @@ class ProxmoxConnection(
     suspend fun <T> pveOrNull(call: suspend PveApi.() -> ApiEnvelope<T>): T? {
         check(product == ProxmoxProduct.PVE) { "${profile.name} is not a Proxmox VE server" }
         return envelope { pveApi.call() }.data
+    }
+
+    /**
+     * Opens a WebSocket to the API path [apiPath] (e.g. `nodes/pve1/vncwebsocket`) through this
+     * connection's client: the same address failover, custom headers, certificate setting and
+     * session cookie as every API call. Proxmox's console sockets speak the `binary` subprotocol.
+     */
+    fun openWebSocket(apiPath: String, query: Map<String, String>, listener: WebSocketListener): WebSocket {
+        val url = FailoverInterceptor.PLACEHOLDER_BASE.toHttpUrl().newBuilder()
+            .addPathSegments(apiPath.trimStart('/'))
+            .apply { query.forEach { (k, v) -> addQueryParameter(k, v) } }
+            .build()
+        val request = Request.Builder().url(url).header("Sec-WebSocket-Protocol", "binary").build()
+        return httpClient.newWebSocket(request, listener)
     }
 
     /** Run a call against the PBS API. Throws [ApiException] on any failure. */

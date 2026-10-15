@@ -9,6 +9,11 @@ import io.github.lucabarbalata.anprox.model.pve.GuestOptions
 import io.github.lucabarbalata.anprox.model.pve.SnapshotName
 import io.github.lucabarbalata.anprox.model.pve.VersionInfo
 import io.ktor.http.ContentType
+import io.ktor.websocket.close
+import io.ktor.websocket.CloseReason
+import io.ktor.server.websocket.DefaultWebSocketServerSession
+import io.ktor.server.websocket.webSocket
+import io.ktor.server.websocket.WebSockets
 import io.ktor.http.HttpStatusCode
 import io.ktor.network.tls.certificates.buildKeyStore
 import io.ktor.server.application.Application
@@ -114,8 +119,8 @@ class MockProxmoxServer(
 
     private fun Application.routes() {
         install(createApplicationPlugin("HeaderRecorder") { onCall { lastRequestHeaders = it.request.headers } })
+        install(WebSockets)
         routing {
-            if (product == ProxmoxProduct.PVE) get("$pathPrefix/") { call.consolePage() }
             route("$pathPrefix/api2/json") {
                 access()
                 when (product) {
@@ -253,6 +258,15 @@ class MockProxmoxServer(
         }
         post("nodes/{node}/qemu") { call.restore("qemu") }
         post("nodes/{node}/lxc") { call.restore("lxc") }
+        post("nodes/{node}/termproxy") { call.consoleProxy(type = null) }
+        post("nodes/{node}/lxc/{vmid}/termproxy") { call.consoleProxy(type = "lxc") }
+        post("nodes/{node}/qemu/{vmid}/vncproxy") { call.consoleProxy(type = "qemu") }
+        // Proxmox answers the `binary` subprotocol; browsers refuse the socket otherwise.
+        webSocket("nodes/{node}/vncwebsocket", protocol = "binary") { console("nodes/${call.parameters["node"]}/vncwebsocket", vnc = false) }
+        webSocket("nodes/{node}/{type}/{vmid}/vncwebsocket", protocol = "binary") {
+            val p = call.parameters
+            console("nodes/${p["node"]}/${p["type"]}/${p["vmid"]}/vncwebsocket", vnc = p["type"] == "qemu")
+        }
         post("nodes/{node}/{type}/{vmid}/clone") {
             val s = call.authed() ?: return@post
             val g = call.guest() ?: return@post
@@ -420,36 +434,33 @@ class MockProxmoxServer(
         )
     }
 
-    /**
-     * Stand-in for Proxmox's console page (`/?console=kvm|lxc|shell…`). The title says whether the
-     * session cookie was accepted; terminals get xterm.js's input element and report the key codes
-     * they receive in the title, so the app's extra key row can be tested.
-     */
-    private suspend fun ApplicationCall.consolePage() {
-        val q = request.queryParameters
-        val kind = q["console"] ?: return respondText("<!DOCTYPE html><title>Proxmox Virtual Environment</title>", ContentType.Text.Html)
-        val signedIn = state.session(request.cookies.rawCookies[product.cookieName]) != null
-        val what = listOfNotNull(kind, q["vmid"], q["node"]?.let { "on $it" }).joinToString(" ")
-        val title = "Mock console: $what (${if (signedIn) "signed in" else "not signed in"})"
-        val terminal = q["xtermjs"] == "1"
-        val html = buildString {
-            append("<!DOCTYPE html><html><head><meta name=\"viewport\" content=\"width=device-width\"><title>")
-            append(title.escapeHtml())
-            append("</title></head><body style=\"background:#000;color:#0f0;font-family:monospace\"><p>")
-            append(title.escapeHtml())
-            append("</p>")
-            if (terminal) {
-                append("<textarea class=\"xterm-helper-textarea\"></textarea><script>")
-                append("var keys=[];document.querySelector('.xterm-helper-textarea').addEventListener('keydown',function(e){")
-                append("keys.push((e.ctrlKey?'Ctrl+':'')+e.keyCode);document.title='Keys: '+keys.join(' ');});")
-                append("</script>")
-            }
-            append("</body></html>")
+    /** `termproxy` (node shell when [type] is null, containers) and `vncproxy` (VMs). */
+    private suspend fun ApplicationCall.consoleProxy(type: String?) {
+        val s = authed() ?: return
+        val nodeName = parameters["node"]!!
+        val node = state.node(nodeName) ?: return fail(404, "no such node")
+        if (!node.online) return fail(595, "Connection refused")
+        val g = if (type != null) guest(type) ?: return else null
+        val params = receiveParameters()
+        if (g != null && g.status != "running") return fail(500, "${if (type == "qemu") "VM" else "CT"} ${g.vmid} not running")
+        if (state.isReadOnly(s.user)) {
+            return fail(403, if (g != null) "Permission check failed (/vms/${g.vmid}, VM.Console)" else "Permission check failed (/nodes/$nodeName, Sys.Console)")
         }
-        respondText(html, ContentType.Text.Html)
+        val path = if (g != null) "nodes/$nodeName/$type/${g.vmid}/vncwebsocket" else "nodes/$nodeName/vncwebsocket"
+        ok(state.issueConsole(s.user, path, name = g?.name ?: nodeName, vnc = type == "qemu", generatePassword = params["generate-password"] == "1"))
     }
 
-    private fun String.escapeHtml() = replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+    /** The console WebSocket: the session cookie plus a one-time `vncticket` for this path. */
+    private suspend fun DefaultWebSocketServerSession.console(path: String, vnc: Boolean) {
+        val signedIn = state.session(call.request.cookies.rawCookies[product.cookieName]) != null
+        val q = call.request.queryParameters
+        val console = state.takeConsole(q["vncticket"], q["port"], path)
+        if (!signedIn || console == null) {
+            close(CloseReason(CloseReason.Codes.VIOLATED_POLICY, "permission denied - invalid vncticket"))
+            return
+        }
+        if (vnc) mockVnc(console) else mockTerminal(console)
+    }
 
     /** The guest named by the path; [type] for routes with a literal `qemu`/`lxc` segment. */
     private suspend fun ApplicationCall.guest(type: String? = null): MockState.Guest? {

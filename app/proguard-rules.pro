@@ -26,3 +26,8 @@
 # Keep line numbers in crash reports (the source file name is hidden).
 -keepattributes SourceFile,LineNumberTable
 -renamesourcefileattribute SourceFile
+
+# The bundled console pages call these through the WebView's JavaScript bridge.
+-keepclassmembers class io.github.lucabarbalata.anprox.ui.console.** {
+    @android.webkit.JavascriptInterface <methods>;
+}

@@ -18,6 +18,7 @@ consequences. ADRs are never rewritten. If a decision changes, a new ADR superse
 | [0011](0011-polling-while-visible.md) | Poll only while a screen is visible | Accepted |
 | [0012](0012-release-pipeline.md) | Release pipeline: owner-held key, GitHub pre-releases, emulator gate | Accepted |
 | [0013](0013-app-lock.md) | App lock uses the phone's own biometrics and screen lock | Accepted |
+| [0014](0014-consoles-through-the-app.md) | Consoles connect through the app; noVNC and xterm.js are bundled | Accepted |
 
 Template for new ADRs:
 

@@ -5,6 +5,43 @@ solved. Newest first.
 
 ---
 
+## 2026-10-15 — Session 4: consoles rebuilt
+
+**0.1.0-beta.2 released** by the owner (Release run 3, commit `4881937`). The session couldn't
+push the tag (the push was refused), so the owner ran **Actions → Release** themselves.
+
+**Bug report from the owner's phone (Proxmox VE 8):** the node shell showed no content and no
+keyboard, and noVNC reconnected in an endless loop on every VM.
+
+- **Cause.** beta.2 loaded Proxmox's own console pages in a WebView with the session cookie set.
+  The pages loaded, but their WebSocket never connected. The most likely reason is that the
+  WebView's "proceed despite the certificate" answer doesn't cover WebSockets. The mock server
+  and the emulator tour didn't catch it because they only checked that the page loaded.
+- **Fix ([ADR 0014](adr/0014-consoles-through-the-app.md)).** The app now asks for the console
+  ticket (`termproxy` / `vncproxy` with `generate-password=1`) and opens `vncwebsocket` with its
+  own OkHttp client (`ProxmoxConnection.openWebSocket`), so certificates, custom headers,
+  failover and the cookie are the same as for API calls. The terminal protocol is in Kotlin
+  (`TermProxyProtocol`). noVNC and xterm.js are bundled as two local pages
+  (`tools/console-web/` → `app/src/main/assets/console/`), and bytes cross a JavaScript bridge as
+  base64. A **Keyboard** button focuses the page and shows the IME; the VM screen got its own key
+  row.
+- **Mock server.** termproxy/vncproxy, a terminal that echoes input (`\r` gives a new prompt,
+  ESC shows `^[`) and a small RFB 3.8 server with VNC authentication (DES with bit-reversed key
+  bytes, as noVNC does) that sends one 320x200 frame. JVM tests run the whole chain over HTTPS
+  with a self-signed certificate and a sub-path.
+- **Gotchas.**
+  - noVNC 1.7 has a top-level `await` (an H.264 probe), which an IIFE bundle can't contain. The
+    build rewrites that one line and fails if it can't find it.
+  - Browsers drop a WebSocket whose server doesn't echo the `binary` subprotocol. Real Proxmox
+    echoes it, the mock didn't, so the Chromium smoke test failed with 1006 until the mock routes
+    used `protocol = "binary"`. OkHttp doesn't check the echo, so JVM tests passed either way.
+  - `pkill -f MainKt` in the container also killed the shell running it. Kill the mock by PID.
+- **Checked here:** 110 JVM tests, and a headless Chromium run of both pages against the mock
+  (terminal echo, VNC handshake and frame). The Android screen is verified by CI and the emulator
+  tour, which now opens a container console and a VM console.
+
+---
+
 ## 2026-10-14 — Session 3: M1 starts with snapshots
 
 **Beta 0.1.0-beta.1 released.** The owner tested the app on **Proxmox VE 8** ("everything works

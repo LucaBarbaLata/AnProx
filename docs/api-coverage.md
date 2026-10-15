@@ -64,7 +64,7 @@ Code: `core/network/src/main/kotlin/.../network/api/` (`AccessApi`, `PveApi`, `P
 | `GET /nodes/{node}/rrddata` | Performance history (charts) | ✅ |
 | `POST /nodes/{node}/vzdump` | Backup now | ✅ (one guest; storage, mode, notes) |
 | `/nodes/{node}/{startall,stopall,migrateall}` | Bulk actions | 🗓 M4 |
-| `/nodes/{node}/{termproxy,vncshell,vncwebsocket}` | Node shell | ✅ through Proxmox's xterm.js page in a WebView |
+| `/nodes/{node}/{termproxy,vncshell,vncwebsocket}` | Node shell | ✅ `termproxy` + `vncwebsocket` through the app's connection, bundled xterm.js ([ADR 0014](adr/0014-consoles-through-the-app.md)) |
 | `/nodes/{node}/apt/*` | Updates, changelog, repositories | 🗓 M5 |
 | `/nodes/{node}/disks/*` | SMART, wipe, GPT, ZFS, LVM, LVM-thin, directory | 🗓 M5 |
 | `/nodes/{node}/network` | Interfaces, bridges, bonds, VLANs, apply/revert | 🗓 M5 |
@@ -104,7 +104,7 @@ Code: `core/network/src/main/kotlin/.../network/api/` (`AccessApi`, `PveApi`, `P
 | `POST …/migrate` (+ `GET` precondition check) | Migration: live for VMs (with local disks), restart mode for containers, offline when stopped | ✅ |
 | `POST /nodes/{node}/{qemu,lxc}` | Create guest (wizard) | 🗓 M2 |
 | `DELETE …/{vmid}` | Destroy guest (type-to-confirm) | 🗓 M2 |
-| `…/vncproxy`, `…/vncwebsocket`, `…/termproxy` | noVNC / terminal console | ✅ through Proxmox's own console pages (`/?console=kvm|lxc|shell`) in a WebView |
+| `…/vncproxy`, `…/vncwebsocket`, `…/termproxy` | noVNC / terminal console | ✅ through the app's connection (`generate-password=1` for VMs), bundled noVNC and xterm.js ([ADR 0014](adr/0014-consoles-through-the-app.md)) |
 | `POST /qemu/{vmid}/spiceproxy` | SPICE `.vv` handoff | 🗓 M2 |
 | `…/firewall/*` | Guest firewall | 🗓 M4 |
 | `POST /nodes/{node}/qemu` (`archive=`) / `lxc` (`restore=1`) | Restore from backup | ✅ (as new with `unique=1`, or replace with `force=1`; target storage choice 🗓) |

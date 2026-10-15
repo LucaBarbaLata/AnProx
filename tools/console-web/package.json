@@ -1,0 +1,17 @@
+{
+  "name": "anprox-console-web",
+  "private": true,
+  "description": "The VM screen (noVNC) and terminal (xterm.js) pages bundled into the app. See README.md.",
+  "license": "GPL-3.0-only",
+  "scripts": {
+    "build": "node build.mjs"
+  },
+  "dependencies": {
+    "@novnc/novnc": "1.7.0",
+    "@xterm/addon-fit": "0.11.0",
+    "@xterm/xterm": "6.0.0"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
+  }
+}

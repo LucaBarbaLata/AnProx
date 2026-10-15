@@ -80,9 +80,10 @@ Everything marked ✅ in M1 and M2 below. Gates:
 - ✅ **Favourites** pinned to the top of the dashboard (star on the guest screen).
 
 ## M2 — Consoles & guest configuration
-- ✅ **noVNC console** for VMs, **xterm.js terminal** for nodes and containers, in a WebView with
-  an extra key row (Q15; pulled into 0.1.0-beta.2). Proxmox's own console pages, signed in with
-  the app's session.
+- ✅ **noVNC console** for VMs, **xterm.js terminal** for nodes and containers, with a keyboard
+  button and an extra key row (Q15; pulled into 0.1.0-beta.2). Rebuilt after beta.2: the app
+  connects through its own HTTP client and both front ends are bundled
+  ([ADR 0014](adr/0014-consoles-through-the-app.md)).
 - **SPICE handoff**: download the `.vv` file and open it in aSPICE or another SPICE viewer (Q15).
 - **Built-in SSH client** with key management (Q15).
 - **Hardware editing**, common settings first (Q19): CPU, memory/balloon, disks

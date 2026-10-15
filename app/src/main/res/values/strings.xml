@@ -277,11 +277,18 @@
     <string name="console_title">Console</string>
     <string name="console_open_body_vm">The VM\'s screen (noVNC)</string>
     <string name="console_open_body_ct">The container\'s terminal</string>
-    <string name="console_kind_vm">VM screen</string>
-    <string name="console_kind_ct">Container console</string>
-    <string name="console_kind_node">Node shell</string>
     <string name="console_reconnect">Reconnect</string>
-    <string name="console_ssl_refused">The server\'s certificate isn\'t trusted. Turn on “Allow insecure certificate” for this server (More → Servers) to open consoles.</string>
+    <string name="console_connecting">Connecting…</string>
+    <string name="console_connected">Connected</string>
+    <string name="console_connected_desktop">Connected · %1$s</string>
+    <string name="console_closed">Disconnected</string>
+    <string name="console_failed_vm">Couldn\'t open the VM\'s screen</string>
+    <string name="console_failed_ct">Couldn\'t open the container\'s console</string>
+    <string name="console_failed_node">Couldn\'t open the node\'s shell</string>
+    <string name="console_keyboard">Keyboard</string>
+    <string name="console_ctrl_alt_del">Ctrl+Alt+Del</string>
+    <string name="console_webview_old_title">Android System WebView is too old</string>
+    <string name="console_webview_old_body">Consoles need Android System WebView %1$d or newer; this phone has %2$s. Update it from the Play Store.</string>
 
     <!-- Node tools and power (Q12) -->
     <string name="node_tools">Tools</string>

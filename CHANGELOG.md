@@ -6,6 +6,15 @@ All notable changes to AnProx are documented here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+- **Consoles work on real servers.** In 0.1.0-beta.2 the VM screen reconnected endlessly and node
+  and container terminals stayed empty, without a keyboard. The app now connects to the console
+  itself, through the same connection as everything else, so self-signed certificates, custom
+  headers and several addresses work. noVNC and xterm.js are now bundled in the app. A
+  **keyboard** button shows the phone keyboard, and the key row works on the VM screen too (Esc,
+  Tab, arrows, Enter, Ctrl+Alt+Del). An outdated Android System WebView is explained instead of
+  failing silently.
+
 ## [0.1.0-beta.2] — 2026-10-15 (milestone M1 "Daily driver", plus consoles and guest management from M2)
 
 Second beta, focused on everyday Proxmox VE work: consoles, snapshots, backups, charts, guest

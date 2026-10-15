@@ -7,12 +7,12 @@ testing debug builds on **real hardware**.
 
 | Layer | Where | Runs on | Count |
 |---|---|---|---|
-| Unit: parsing, formatting, URL rules, UPID/TFA parsing, snapshot tree and names, chart scales, backup listings, guest agent replies, guest options, clone and migration rules, console URLs and keys | `core/model/src/test` | JVM | 43 |
+| Unit: parsing, formatting, URL rules, UPID/TFA parsing, snapshot tree and names, chart scales, backup listings, guest agent replies, guest options, clone and migration rules, console endpoints and terminal protocol | `core/model/src/test` | JVM | 44 |
 | Integration: HTTP client ↔ mock server over real HTTPS (auth, TFA, failover, TLS, errors, renewal, PBS) | `core/network/src/test` | JVM | 16 |
-| Integration: multi-server hub, sessions, dashboard snapshots, guest actions, guest snapshots, performance history, app lock rules, backup and restore, guest network info, guest options, clone/template/migrate, console sessions, node power | `core/data/src/test` | JVM | 48 |
+| Integration: multi-server hub, sessions, dashboard snapshots, guest actions, guest snapshots, performance history, app lock rules, backup and restore, guest network info, guest options, clone/template/migrate, console sessions (terminal and VNC handshake), node power | `core/data/src/test` | JVM | 50 |
 | Android lint | `:app:lintDebug` | CI | — |
 | Build: debug and R8-minified release | `:app:assemble*` | CI | — |
-| **End-to-end tour** of the minified release APK on emulators against the mock server | `scripts/e2e/tour.py` | CI (Android 8.0 + 14), Release workflow | 14 steps |
+| **End-to-end tour** of the minified release APK on emulators against the mock server | `scripts/e2e/tour.py` | CI (Android 8.0 + 14), Release workflow | 15 steps |
 | UI / screenshot tests | planned (M1) | — | — |
 | Manual on real hardware | [checklist below](#manual-test-checklist-real-hardware) | owner | — |
 
@@ -119,11 +119,12 @@ so no test code is compiled into the app. `scripts/e2e/run.sh` starts the mock s
 7. Snapshots of the now-running VM → **Take snapshot** with RAM → "VM snapshot finished" → the new snapshot is listed.
 8. Backups of the `pihole` container → **Back up now** to the Backup Server → "Backup finished" → **Restore** the new backup as a new container (ID 105) → "CT restore finished".
 9. Options of the `nginx-proxy` container → turn on **Start at boot** → **Save** → "Options saved".
-10. **Console** of `nginx-proxy` → the mock's console page reports "(signed in)" (the session cookie works through the self-signed certificate) → **Esc** on the key row reaches the page's terminal input.
-11. Long-press `backup-client`, tap `nginx-proxy` → "2 selected" → **Start** → the confirmation lists only the stopped one → "Started 1 of 1 guests".
-12. **Clone** the Ubuntu template (linked by default) → **Open it** → **Migrate** the clone to `pve2` → the guest screen now says `pve2`.
-13. Tasks tab shows the newest task ("VM migrate").
-14. Settings → Light theme; turning on the app lock explains that the emulator has no screen lock → dashboard in light mode, with the starred VM under Favourites.
+10. **Console** of `nginx-proxy` → "Connected" (the app's own connection to the mock termproxy through the self-signed certificate) → **Esc** and **Keyboard** on the key row.
+11. **Console** of `k8s-master` → noVNC (bundled) finishes the VNC handshake with the generated password → "Connected · k8s-master". (An emulator with an Android System WebView older than 80 shows the update message instead, in both console steps.)
+12. Long-press `backup-client`, tap `nginx-proxy` → "2 selected" → **Start** → the confirmation lists only the stopped one → "Started 1 of 1 guests".
+13. **Clone** the Ubuntu template (linked by default) → **Open it** → **Migrate** the clone to `pve2` → the guest screen now says `pve2`.
+14. Tasks tab shows the newest task ("VM migrate").
+15. Settings → Light theme; turning on the app lock explains that the emulator has no screen lock → dashboard in light mode, with the starred VM under Favourites.
 
 After every step the script checks that the app process is alive and that logcat has no
 `FATAL EXCEPTION` for the app. Screenshots of each step, plus UI dumps and logcat on failure,
@@ -201,11 +202,12 @@ Run this before closing a milestone. Note the PVE/PBS versions you tested agains
 - [ ] Edit a field, press Back → "Discard changes?".
 
 **Consoles**
-- [ ] A running VM → Console shows its screen (noVNC); typing and the mouse work; rotating to landscape fits the screen.
-- [ ] A container → Console shows a login prompt; the soft keyboard types; Esc, Tab, Ctrl+C, Ctrl+D and the arrows work (e.g. in `top` or `vi`).
+- [ ] A running VM → Console: "Connected · <name>" and its screen (noVNC), scaled to fit. Tap to click; the **Keyboard** button types; Esc, Tab, arrows, Enter and Ctrl+Alt+Del work; landscape fits the screen.
+- [ ] A container → Console shows a login prompt; tapping the terminal or **Keyboard** shows the keyboard; Esc, Tab, Ctrl+C, Ctrl+D and the arrows work (e.g. in `top` or `vi`).
 - [ ] Node → Shell opens a root shell (as root@pam).
-- [ ] With "Allow insecure certificate" off on a self-signed server, the console explains the certificate problem instead of loading.
-- [ ] Leave a console open for over an hour, then Reconnect: it opens again without signing in.
+- [ ] Works with a self-signed certificate ("Allow insecure certificate" on) and behind a reverse proxy.
+- [ ] A stopped VM's Console says it isn't running; Reconnect after starting it works.
+- [ ] Leave a console open for a long time, then Reconnect: it opens again without signing in.
 
 **Bulk actions** (use test guests)
 - [ ] Long-press a guest in Resources: "1 selected"; taps add/remove guests; Back or the arrow ends the selection.

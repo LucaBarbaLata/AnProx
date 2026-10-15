@@ -1,86 +1,109 @@
 package io.github.lucabarbalata.anprox.model.pve
 
-import java.net.URLEncoder
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.contentOrNull
 
-/** Which of Proxmox's own console pages to open (questionnaire Q15). */
+/** Which console a screen shows (questionnaire Q15). */
 enum class ConsoleKind {
-    /** noVNC: the VM's screen. */
+    /** The VM's screen over VNC (noVNC in the app). */
     VM,
 
-    /** xterm.js: the container's console. */
+    /** The container's console as a terminal (xterm.js in the app). */
     CONTAINER,
 
-    /** xterm.js: a root shell on the node (needs Sys.Console). */
+    /** A root shell on the node as a terminal (needs Sys.Console). */
     NODE,
     ;
 
     val isTerminal: Boolean get() = this != VM
 }
 
+/**
+ * A console to open. The app talks to Proxmox itself, like the web UI's console window does:
+ * first [proxyPath] hands out a one-time ticket and port, then [websocketPath] carries the
+ * session. Going through the app's own HTTP client (rather than letting a WebView connect)
+ * means self-signed certificates, custom headers and failover work exactly as for the API.
+ */
 data class ConsoleTarget(val kind: ConsoleKind, val node: String, val vmid: Int? = null, val name: String? = null) {
 
-    /**
-     * The page the Proxmox web UI opens in its console window, under [baseUrl] (an endpoint URL,
-     * possibly with a reverse-proxy sub-path). It needs the `PVEAuthCookie` cookie; Proxmox then
-     * embeds the CSRF token itself.
-     */
-    fun url(baseUrl: String): String {
-        val params = buildList {
-            when (kind) {
-                ConsoleKind.VM -> {
-                    add("console" to "kvm")
-                    add("novnc" to "1")
-                }
-                ConsoleKind.CONTAINER -> {
-                    add("console" to "lxc")
-                    add("xtermjs" to "1")
-                }
-                ConsoleKind.NODE -> {
-                    add("console" to "shell")
-                    add("xtermjs" to "1")
-                }
-            }
-            if (kind != ConsoleKind.NODE) {
-                add("vmid" to requireNotNull(vmid) { "$kind console needs a vmid" }.toString())
-                add("vmname" to name.orEmpty())
-            }
-            add("node" to node)
-            // noVNC scales the VM's screen to the phone instead of showing a cut-off corner.
-            if (kind == ConsoleKind.VM) add("resize" to "scale")
-            add("cmd" to "")
+    private val guestPath: String
+        get() = requireNotNull(vmid) { "$kind console needs a vmid" }.let { id ->
+            if (kind == ConsoleKind.VM) "nodes/$node/qemu/$id" else "nodes/$node/lxc/$id"
         }
-        val query = params.joinToString("&") { (k, v) -> "$k=${URLEncoder.encode(v, "UTF-8")}" }
-        return "${baseUrl.trimEnd('/')}/?$query"
-    }
+
+    /** `POST`: `vncproxy` for VMs, `termproxy` for containers and nodes. */
+    val proxyPath: String
+        get() = when (kind) {
+            ConsoleKind.VM -> "$guestPath/vncproxy"
+            ConsoleKind.CONTAINER -> "$guestPath/termproxy"
+            ConsoleKind.NODE -> "nodes/$node/termproxy"
+        }
+
+    /** `GET` upgraded to a WebSocket, with `port` and `vncticket` from the proxy call. */
+    val websocketPath: String
+        get() = if (kind == ConsoleKind.NODE) "nodes/$node/vncwebsocket" else "$guestPath/vncwebsocket"
 }
 
 /**
- * Keys a phone keyboard lacks, for the terminal consoles. They are sent to xterm.js as synthetic
- * `keydown` events on its input element, so they reach the shell like real key presses.
+ * Answer of `vncproxy` / `termproxy`. Proxmox sends the port as a number or a string depending on
+ * the version, so it is kept as a primitive.
+ *
+ * @property password VMs only, with `generate-password=1` (PVE 7.1+): the VNC password. Older
+ *   servers use the [ticket] as the password.
  */
-enum class TerminalKey(val label: String, val key: String, val keyCode: Int, val ctrl: Boolean = false) {
-    ESC("Esc", "Escape", 27),
-    TAB("Tab", "Tab", 9),
-    CTRL_C("Ctrl+C", "c", 67, ctrl = true),
-    CTRL_D("Ctrl+D", "d", 68, ctrl = true),
-    UP("↑", "ArrowUp", 38),
-    DOWN("↓", "ArrowDown", 40),
-    LEFT("←", "ArrowLeft", 37),
-    RIGHT("→", "ArrowRight", 39),
-    ;
+@Serializable
+data class ConsoleProxy(
+    val port: JsonPrimitive,
+    val ticket: String,
+    val user: String? = null,
+    val upid: String? = null,
+    val password: String? = null,
+) {
+    val portNumber: String get() = port.contentOrNull.orEmpty()
+    val vncPassword: String get() = password ?: ticket
+}
 
-    /** JavaScript for `WebView.evaluateJavascript`; evaluates to `true` if a terminal took the key. */
-    fun script(): String =
-        """
-        (function () {
-          var t = document.querySelector('.xterm-helper-textarea');
-          if (!t) return false;
-          t.focus();
-          var e = new KeyboardEvent('keydown', {key: '$key', ctrlKey: $ctrl, bubbles: true, cancelable: true});
-          Object.defineProperty(e, 'keyCode', {get: function () { return $keyCode; }});
-          Object.defineProperty(e, 'which', {get: function () { return $keyCode; }});
-          t.dispatchEvent(e);
-          return true;
-        })();
-        """.trimIndent()
+/**
+ * Proxmox's terminal protocol over the WebSocket (the one its xterm.js page speaks):
+ * - the client first sends `user:ticket\n`; the server answers `OK`, then the terminal output;
+ * - input: `0:<UTF-8 byte length>:<data>`;
+ * - resize: `1:<cols>:<rows>:`;
+ * - keep-alive: `2`, every 30 seconds.
+ */
+object TermProxyProtocol {
+    const val PING = "2"
+    const val PING_INTERVAL_MILLIS = 30_000L
+
+    fun auth(user: String, ticket: String): String = "$user:$ticket\n"
+
+    fun input(data: String): String = "0:${data.toByteArray(Charsets.UTF_8).size}:$data"
+
+    fun resize(cols: Int, rows: Int): String = "1:$cols:$rows:"
+
+    /** Whether the first message accepts the session; anything else means the ticket was refused. */
+    fun isAccepted(first: ByteArray): Boolean = first.size >= 2 && first[0] == 'O'.code.toByte() && first[1] == 'K'.code.toByte()
+}
+
+/** Keys phone keyboards lack, for terminals: sent as the bytes a real keyboard would produce. */
+enum class TerminalKey(val label: String, val sequence: String) {
+    ESC("Esc", "\u001b"),
+    TAB("Tab", "\t"),
+    CTRL_C("Ctrl+C", "\u0003"),
+    CTRL_D("Ctrl+D", "\u0004"),
+    UP("↑", "\u001b[A"),
+    DOWN("↓", "\u001b[B"),
+    LEFT("←", "\u001b[D"),
+    RIGHT("→", "\u001b[C"),
+}
+
+/** Keys phone keyboards lack, for the VM screen: X11 keysyms sent through noVNC. */
+enum class VncKey(val label: String, val keysym: Int) {
+    ESC("Esc", 0xff1b),
+    TAB("Tab", 0xff09),
+    UP("↑", 0xff52),
+    DOWN("↓", 0xff54),
+    LEFT("←", 0xff51),
+    RIGHT("→", 0xff53),
+    ENTER("Enter", 0xff0d),
 }

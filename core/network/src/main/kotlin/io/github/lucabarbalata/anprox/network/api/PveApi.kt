@@ -6,6 +6,7 @@ import io.github.lucabarbalata.anprox.model.pve.AgentOsInfo
 import io.github.lucabarbalata.anprox.model.pve.AgentResult
 import io.github.lucabarbalata.anprox.model.pve.ClusterResource
 import io.github.lucabarbalata.anprox.model.pve.ClusterStatusEntry
+import io.github.lucabarbalata.anprox.model.pve.ConsoleProxy
 import io.github.lucabarbalata.anprox.model.pve.GuestSnapshot
 import io.github.lucabarbalata.anprox.model.pve.GuestStatus
 import io.github.lucabarbalata.anprox.model.pve.LxcInterface
@@ -160,6 +161,19 @@ interface PveApi {
     @FormUrlEncoded
     @POST("nodes/{node}/lxc")
     suspend fun createLxc(@Path("node") node: String, @FieldMap params: Map<String, String>): ApiEnvelope<String>
+
+    // ------------------------------------------------------------------ consoles (Q15)
+
+    /**
+     * `vncproxy` / `termproxy` at [path] (see `ConsoleTarget.proxyPath`): a one-time ticket and
+     * port for the console WebSocket. VMs take `websocket=1` and `generate-password=1`.
+     */
+    @FormUrlEncoded
+    @POST("{path}")
+    suspend fun consoleProxy(
+        @Path("path", encoded = true) path: String,
+        @FieldMap params: Map<String, String>,
+    ): ApiEnvelope<ConsoleProxy>
 
     // ------------------------------------------------------------------ clone, template, migrate (Q18)
 

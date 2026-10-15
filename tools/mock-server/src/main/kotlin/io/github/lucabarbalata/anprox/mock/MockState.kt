@@ -10,6 +10,7 @@ import io.github.lucabarbalata.anprox.model.pve.AgentOsInfo
 import io.github.lucabarbalata.anprox.model.pve.BackupVerification
 import io.github.lucabarbalata.anprox.model.pve.ClusterResource
 import io.github.lucabarbalata.anprox.model.pve.ClusterStatusEntry
+import io.github.lucabarbalata.anprox.model.pve.ConsoleProxy
 import io.github.lucabarbalata.anprox.model.pve.CpuInfo
 import io.github.lucabarbalata.anprox.model.pve.FsUsage
 import io.github.lucabarbalata.anprox.model.pve.GuestSnapshot
@@ -29,6 +30,7 @@ import io.github.lucabarbalata.anprox.model.pve.TaskLogLine
 import io.github.lucabarbalata.anprox.model.pve.TaskStatus
 import io.github.lucabarbalata.anprox.model.pve.TaskSummary
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import java.net.URLEncoder
@@ -208,6 +210,25 @@ class MockState(
 
     /** Accepted `POST /nodes/{node}/status` calls (node, command); the mock nodes keep running. */
     val nodePowerRequests: MutableList<Pair<String, String>> = java.util.Collections.synchronizedList(mutableListOf())
+
+    /** Console tickets from `termproxy` / `vncproxy`; each opens one WebSocket. */
+    private val consoleTickets = java.util.concurrent.ConcurrentHashMap<String, MockConsoleTicket>()
+
+    /**
+     * Hands out a console ticket like Proxmox. For VNC with [generatePassword] (PVE 7.1+) the
+     * client must answer the VNC challenge with the returned password, otherwise with the ticket.
+     */
+    fun issueConsole(user: String, websocketPath: String, name: String, vnc: Boolean, generatePassword: Boolean): ConsoleProxy {
+        val ticket = "PVEVNC:${hexTime()}::${token()}"
+        val password = if (vnc && generatePassword) token().take(8) else null
+        val port = (5900 + consoleTickets.size % 100).toString()
+        consoleTickets[ticket] = MockConsoleTicket(ticket, port, user, websocketPath, name, vncPassword = if (vnc) password ?: ticket else null)
+        return ConsoleProxy(port = JsonPrimitive(port), ticket = ticket, user = user, password = password)
+    }
+
+    /** The ticket's console if [ticket] and [port] match one handed out for [websocketPath]; each ticket works once. */
+    fun takeConsole(ticket: String?, port: String?, websocketPath: String): MockConsoleTicket? =
+        ticket?.let(consoleTickets::remove)?.takeIf { it.port == port && it.websocketPath == websocketPath }
 
     fun guest(vmid: Int): Guest? = synchronized(lock) { guests.firstOrNull { it.vmid == vmid } }
     fun node(name: String): Node? = nodes.firstOrNull { it.name == name }

@@ -470,18 +470,32 @@ def options():
     back()
 
 
-@step("Container console in a WebView, with the extra keys")
+@step("Container console: terminal through the app's own connection, with the extra keys")
 def console():
     tap_node(scroll_to("nginx-proxy"))
     tap_node(scroll_to("Console"))
-    # The mock's console page puts "(signed in)" in its title when the session cookie works;
-    # the app shows the page title under the screen title.
-    find("(signed in)", timeout=45)
-    tap("Esc")                             # extra key row → keydown in the page's xterm input
-    find("Keys: 27", timeout=15)
+    # The status under the title comes from the app's connection to the (mock) termproxy.
+    # An emulator whose Android System WebView is too old for the bundled pages says so instead.
+    node = find_any(["Connected", "Android System WebView"], timeout=45)
+    if "Connected" in " ".join(labels(node)):
+        tap("Esc")                         # extra key row → sent to the terminal
+        tap("Keyboard")                    # focuses the terminal and asks for the soft keyboard
+        time.sleep(1)
     screenshot("11f-console")
     back()
     scroll_to("The container's terminal")  # back on the guest screen
+    back()
+
+
+@step("VM screen: noVNC bundled in the app, over the app's connection")
+def vm_console():
+    tap_node(scroll_to("k8s-master"))
+    tap_node(scroll_to("Console"))
+    # noVNC completes the VNC handshake (with the generated password) and reports the desktop name.
+    find_any(["Connected · k8s-master", "Android System WebView"], timeout=45)
+    screenshot("11f2-vm-console")
+    back()
+    scroll_to("The VM's screen (noVNC)")
     back()
 
 

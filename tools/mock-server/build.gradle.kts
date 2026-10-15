@@ -30,6 +30,7 @@ dependencies {
     api(libs.ktor.server.core)
     api(libs.ktor.server.netty)
     implementation(libs.ktor.server.content.negotiation)
+    implementation(libs.ktor.server.websockets)
     implementation(libs.ktor.serialization.kotlinx.json)
     implementation(libs.ktor.network.tls.certificates)
     runtimeOnly(libs.slf4j.simple)

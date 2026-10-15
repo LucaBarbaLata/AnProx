@@ -56,15 +56,23 @@ Tick each line, or note what happened instead.
 6. Container: the field is called **Hostname**.
 
 ### D. Consoles (Tools → Console, Node → Shell)
-1. Test VM → **Console**: the VM's screen appears (noVNC). Type, click, rotate to landscape.
-2. Test container → **Console**: a login prompt. Log in with the soft keyboard. Try the key row:
+Rebuilt after beta.2 (the VM screen looped and terminals stayed empty). Test with a CI build
+newer than beta.2 (section 1). The subtitle under the title says **Connecting…**, then
+**Connected** (terminals) or **Connected · *VM name*** (VM screen).
+1. Test VM → **Console**: the VM's screen appears and stays (no reconnect loop). Tap and drag on
+   it, rotate to landscape. Tap **Keyboard** and type; try **Esc**, **Tab**, the arrows,
+   **Enter** and **Ctrl+Alt+Del** on the key row.
+2. Test container → **Console**: a login prompt. Tap **Keyboard**, log in. Try the key row:
    **Esc**, **Tab** (completion), **Ctrl+C** (stop `ping 1.1.1.1`), **Ctrl+D** (log out), arrows
-   (shell history).
-3. Node → **Shell**: a root shell (needs root@pam or Sys.Console).
-4. Leave a console open for a while, lock the phone, come back, tap **Reconnect** (top right).
-5. If your server uses a self-signed certificate, this works only because "Allow insecure
-   certificate" is on for it. Turning it off (More → Servers → edit) should make the console show
-   a certificate message instead.
+   (shell history). Rotate the phone: the same session continues, with the text redrawn for the
+   new width. (The VM screen reconnects when you rotate; that's expected.)
+3. Node → **Shell**: a root shell (needs root@pam or Sys.Console). Same checks as the container.
+4. Leave a console open, lock the phone for a minute, come back. If it says **Disconnected**, tap
+   **Reconnect**.
+5. Self-signed certificates no longer need anything special: the console uses the same
+   connection as the rest of the app.
+6. If a console shows "Android System WebView is too old", update **Android System WebView** in
+   the Play Store (or your store) and try again.
 
 ### E. Snapshots (Tools → Snapshots)
 1. **Take snapshot** on the running test VM with **Include RAM** → "VM snapshot finished"; it
