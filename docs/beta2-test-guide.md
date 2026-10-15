@@ -152,6 +152,22 @@ Hardware → Display → SPICE in the web UI).
    the last check) and whether anything was notified twice. Some phones stop background work
    for apps with battery optimisation; say which phone you have.
 
+### D7. Backup jobs (Dashboard → your cluster → Datacenter → Backup jobs), new after beta.2
+Compare everything with Datacenter → Backup in the web UI.
+1. The list matches the web UI: schedule, storage, which guests, mode, next run. Jobs you set
+   up in the web UI with options the app doesn't edit (fleecing, bandwidth limits) must keep
+   them after you edit the job in the app: check that.
+2. Switch a job off and on → the web UI's Enabled column follows.
+3. **Add backup job** → pick a schedule preset, then type your own (`sat 02:00`) → "Next runs"
+   shows when it would run. Type nonsense → "Proxmox can't read this schedule."
+4. Try each guest choice (All / Selected / All but / Pool) and retention (Storage / Custom /
+   Keep all) → **Create job** → open it in the web UI and check every field.
+5. **Run now** on a small job → a backup task per node → "Backup job finished"; the backups
+   appear under the guests' Backups.
+6. "Not backed up" lists the guests no enabled job covers (compare with Datacenter → Backup →
+   "Show guests without backup job" in the web UI).
+7. Delete the test job.
+
 ### E. Snapshots (Tools → Snapshots)
 1. **Take snapshot** on the running test VM with **Include RAM** → "VM snapshot finished"; it
    appears in the tree with a RAM badge.

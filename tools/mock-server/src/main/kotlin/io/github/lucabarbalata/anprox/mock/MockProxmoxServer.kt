@@ -298,7 +298,17 @@ class MockProxmoxServer(
         post("nodes/{node}/vzdump") {
             val s = call.authed() ?: return@post
             val p = call.receiveParameters()
-            val vmid = p["vmid"]?.toIntOrNull()
+            val single = p["vmid"]?.takeIf { ',' !in it }?.toIntOrNull()
+            if (single == null && (p["all"] == "1" || p["pool"] != null || p["vmid"] != null)) {
+                // A whole selection, as "Run now" on a backup job sends it.
+                if (state.isReadOnly(s.user)) return@post call.fail(403, "Permission check failed (/, VM.Backup)")
+                val params = p.names().associateWith { p[it].orEmpty() }
+                return@post state.backupSelection(call.parameters["node"]!!, params, s.user).fold(
+                    onSuccess = { call.ok(it) },
+                    onFailure = { call.fail(500, it.message ?: "error") },
+                )
+            }
+            val vmid = single
                 ?: return@post call.fail(400, "Parameter verification failed.", mapOf("vmid" to "property is missing and it is not optional"))
             val g = state.guest(vmid)?.takeIf { it.node == call.parameters["node"] }
                 ?: return@post call.fail(500, "guest $vmid is not on node '${call.parameters["node"]}'")
@@ -307,6 +317,49 @@ class MockProxmoxServer(
                 onSuccess = { call.ok(it) },
                 onFailure = { call.fail(500, it.message ?: "error") },
             )
+        }
+        get("cluster/backup") {
+            call.authed() ?: return@get
+            call.ok(state.backupJobs())
+        }
+        post("cluster/backup") {
+            val s = call.authed() ?: return@post
+            if (state.isReadOnly(s.user)) return@post call.fail(403, "Permission check failed (/, Sys.Modify)")
+            val p = call.receiveParameters()
+            val error = state.createBackupJob(p.names().associateWith { p[it].orEmpty() })
+            if (error != null) call.fail(400, error) else call.ok(JsonNull)
+        }
+        put("cluster/backup/{id}") {
+            val s = call.authed() ?: return@put
+            if (state.isReadOnly(s.user)) return@put call.fail(403, "Permission check failed (/, Sys.Modify)")
+            val p = call.receiveParameters()
+            val error = state.updateBackupJob(call.parameters["id"]!!, p.names().associateWith { p[it].orEmpty() })
+            if (error != null) call.fail(400, error) else call.ok(JsonNull)
+        }
+        delete("cluster/backup/{id}") {
+            val s = call.authed() ?: return@delete
+            if (state.isReadOnly(s.user)) return@delete call.fail(403, "Permission check failed (/, Sys.Modify)")
+            val error = state.deleteBackupJob(call.parameters["id"]!!)
+            if (error != null) call.fail(404, error) else call.ok(JsonNull)
+        }
+        get("cluster/backup-info/not-backed-up") {
+            call.authed() ?: return@get
+            call.ok(state.notBackedUp())
+        }
+        get("cluster/jobs/schedule-analyze") {
+            call.authed() ?: return@get
+            val q = call.request.queryParameters
+            val runs = MockSchedule.analyze(q["schedule"].orEmpty(), System.currentTimeMillis() / 1000, q["iterations"]?.toIntOrNull() ?: 10)
+                ?: return@get call.fail(400, "Parameter verification failed.", mapOf("schedule" to "value does not look like a valid calendar event"))
+            call.ok(runs)
+        }
+        get("storage") {
+            call.authed() ?: return@get
+            call.ok(state.storageConfigs())
+        }
+        get("pools") {
+            call.authed() ?: return@get
+            call.ok(state.pools())
         }
         // Proxmox returns the id as a string.
         get("cluster/nextid") {

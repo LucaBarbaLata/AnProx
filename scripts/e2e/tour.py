@@ -681,6 +681,27 @@ def alerts():
     back()
 
 
+@step("Datacenter: backup jobs, add one with a preset schedule, run one now")
+def backup_jobs():
+    tap("Overview")
+    tap_node(scroll_to("Datacenter", exact=True))   # the button on the cluster's card
+    tap_node(scroll_to("Backup jobs"))
+    find("Every day at 21:00", timeout=30)         # the mock's nightly job
+    tap_node(scroll_to("Add backup job"))
+    find("Next runs:", timeout=30)                 # Proxmox's reading of the default schedule
+    tap("Weekdays at 21:00")
+    tap_node(scroll_to("Create job"))
+    find("Add backup job", timeout=30)             # back on the list
+    find("Weekdays at 21:00", timeout=30)
+    screenshot("13c-backup-jobs")
+    tap_node(scroll_to("Run now"))                 # the nightly job's play button
+    find("Run this backup job now?", timeout=10)
+    tap("Run now", pick="lowest")                  # the dialog's button
+    find("Backup job finished", timeout=90)        # one backup task per online node
+    back()
+    back()
+
+
 @step("Light theme, the app lock without a screen lock, favourites on the dashboard")
 def light_theme():
     tap("More")
@@ -718,7 +739,7 @@ def main():
     try:
         for s in (launch, add_pve, add_pbs, resources, performance, guest_start, snapshots, backups,
                   options, hardware, console, vm_console, cloud_init, bulk, clone_migrate, tasks, create_vm, alerts,
-                  light_theme):
+                  backup_jobs, light_theme):
             s()
         ok = True
     finally:

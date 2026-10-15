@@ -57,8 +57,15 @@ All notable changes to AnProx are documented here. The format follows
 - **Home-screen widget** "Proxmox status": each server with nodes online, guests running and
   current problems, as of the last background check; tap it to open the dashboard.
 
+- **Backup jobs** (Dashboard → Datacenter → Backup jobs): every scheduled backup with its next
+  run; switch a job on or off, run it now, or create and edit one: schedule (presets, or any
+  Proxmox calendar event with a preview of the next runs), storage, node, which guests (all,
+  selected, all but some, a pool), mode, compression, retention and notes. The screen also lists
+  guests that no enabled job backs up.
+
 ### Changed
 - The bulk-action summary on the Resources list stays on screen longer.
+- After creating or cloning a guest, the form scrolls to the result and its **Open it** button.
 
 ### Fixed
 - **Consoles work on real servers.** In 0.1.0-beta.2 the VM screen reconnected endlessly and node

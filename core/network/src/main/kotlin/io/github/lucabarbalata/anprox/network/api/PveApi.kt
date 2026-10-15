@@ -15,8 +15,12 @@ import io.github.lucabarbalata.anprox.model.pve.MigrationCheck
 import io.github.lucabarbalata.anprox.model.pve.NodeNetwork
 import io.github.lucabarbalata.anprox.model.pve.NodeStatus
 import io.github.lucabarbalata.anprox.model.pve.NodeStorage
+import io.github.lucabarbalata.anprox.model.pve.NotBackedUp
 import io.github.lucabarbalata.anprox.model.pve.PendingEntry
+import io.github.lucabarbalata.anprox.model.pve.ResourcePool
 import io.github.lucabarbalata.anprox.model.pve.RrdPoint
+import io.github.lucabarbalata.anprox.model.pve.ScheduledRun
+import io.github.lucabarbalata.anprox.model.pve.StorageConfig
 import io.github.lucabarbalata.anprox.model.pve.StorageContentItem
 import io.github.lucabarbalata.anprox.model.pve.TaskLogLine
 import io.github.lucabarbalata.anprox.model.pve.TaskStatus
@@ -48,6 +52,36 @@ interface PveApi {
     /** The most recent tasks of the whole cluster (what the web UI's bottom panel shows). */
     @GET("cluster/tasks")
     suspend fun clusterTasks(): ApiEnvelope<List<TaskSummary>>
+
+    /** Scheduled backup jobs; raw objects because their options vary between versions. */
+    @GET("cluster/backup")
+    suspend fun backupJobs(): ApiEnvelope<List<JsonObject>>
+
+    @FormUrlEncoded
+    @POST("cluster/backup")
+    suspend fun createBackupJob(@FieldMap params: Map<String, String>): ApiEnvelope<JsonElement>
+
+    @FormUrlEncoded
+    @PUT("cluster/backup/{id}")
+    suspend fun updateBackupJob(@Path("id") id: String, @FieldMap params: Map<String, String>): ApiEnvelope<JsonElement>
+
+    @DELETE("cluster/backup/{id}")
+    suspend fun deleteBackupJob(@Path("id") id: String): ApiEnvelope<JsonElement>
+
+    /** Guests that no enabled backup job covers. */
+    @GET("cluster/backup-info/not-backed-up")
+    suspend fun notBackedUp(): ApiEnvelope<List<NotBackedUp>>
+
+    /** When a calendar event would run next; fails for a schedule Proxmox can't parse. */
+    @GET("cluster/jobs/schedule-analyze")
+    suspend fun analyzeSchedule(@Query("schedule") schedule: String, @Query("iterations") iterations: Int): ApiEnvelope<List<ScheduledRun>>
+
+    /** Storages as configured for the whole cluster. */
+    @GET("storage")
+    suspend fun storageConfigs(): ApiEnvelope<List<StorageConfig>>
+
+    @GET("pools")
+    suspend fun pools(): ApiEnvelope<List<ResourcePool>>
 
     /** Ceph health; fails on a cluster without Ceph. */
     @GET("cluster/ceph/status")

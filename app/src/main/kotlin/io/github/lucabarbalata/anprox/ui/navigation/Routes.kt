@@ -39,6 +39,12 @@ import kotlinx.serialization.Serializable
 @Serializable data class CreateGuestRoute(val serverId: String, val node: String, val type: String)
 @Serializable data class TaskLogRoute(val serverId: String, val node: String, val upid: String)
 
+// Datacenter (M4)
+@Serializable data class DatacenterRoute(val serverId: String, val title: String)
+@Serializable data class BackupJobsRoute(val serverId: String)
+// "" = a new job
+@Serializable data class BackupJobEditorRoute(val serverId: String, val jobId: String = "")
+
 // Settings
 @Serializable data object SettingsRoute
 @Serializable data object AlertsRoute

@@ -12,7 +12,7 @@ Status legend: ✅ done · 🚧 in progress · 🗓 planned
 | [M1](#m1--daily-driver) | Daily driver: app lock, SSO, snapshots, backups, charts, notifications | 🚧 snapshots, charts, app lock, backups, guest IPs, bulk actions, favourites done |
 | [M2](#m2--consoles--guest-configuration) | Consoles and guest configuration | 🚧 consoles, options, clone, templates, migration done |
 | [M3](#m3--alerts--android-integration) | Alerts and Android integration | 🚧 |
-| [M4](#m4--datacenter) | Datacenter: storage, backup jobs, HA, replication, firewall | 🗓 |
+| [M4](#m4--datacenter) | Datacenter: storage, backup jobs, HA, replication, firewall | 🚧 |
 | [M5](#m5--node-administration) | Node administration | 🗓 |
 | [M6](#m6--ceph--sdn) | Ceph and SDN | 🗓 |
 | [M7](#m7--access-control) | Users, groups, roles, ACLs, realms, tokens, TFA | 🗓 |
@@ -114,8 +114,12 @@ Everything marked ✅ in M1 and M2 below. Gates:
 - ✅ **Quick Settings tile** (Q28): the last check at a glance; opens the dashboard.
 
 ## M4 — Datacenter
+*Status: 🚧 in progress.* Dashboard → a cluster's **Datacenter** button.
+- ✅ **Backup jobs** (Q20): list with next run, enable/disable, run now, create/edit/delete
+  (schedule presets or any calendar event with Proxmox's preview of the next runs, storage,
+  node, all/selected/all-but/pool, mode, compression, retention, notes template, comment), and
+  the guests no job covers.
 - Storage: add/edit/remove every storage type, content browser, upload ISO/templates, download from URL.
-- **Backup jobs** (Q20): create/edit schedules, retention, notes templates, job details.
 - **High Availability** (Q21): resources, node affinity rules/groups, CRM/LRM status, maintenance mode.
 - **Storage replication** (Q21): jobs, schedule, status, run now.
 - **Firewall, full management** (Q24): datacenter/node/guest rules, security groups, IP sets, aliases, options, log.

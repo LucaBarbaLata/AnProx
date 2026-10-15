@@ -127,6 +127,21 @@ dependency: `androidx.glance:glance-appwidget` 1.1.1) both read it and are refre
 worker after every check; both open the dashboard. The widget draws with fixed Midnight Glass
 colours, since widgets can't use the app's Compose theme.
 
+**M4: backup jobs.** `BackupJob` is read from raw JSON objects, because Proxmox VE 8 sends
+`prune-backups` as a property string and newer versions as an object, and jobs can carry options
+the app doesn't edit. `BackupJobForm` builds the create and edit calls; an edit sends every
+value and deletes what no longer applies (switching from a list to "all" deletes `vmid`), and
+leaves unknown options alone. The schedule preview is Proxmox's own (`schedule-analyze`), so the
+app never has to parse calendar events; the mock has a small parser for the presets and simple
+events. "Run now" posts the job's settings to `vzdump` on each node it covers, like the web UI,
+and limits a "selected guests" job to the guests on each node. The Datacenter screen opens from
+the cluster card on the dashboard and lists the rest of M4 as planned.
+
+**Tour, again.** On Android 8 the alerts screen's last card is below the fold, and uiautomator
+lists it with empty bounds; on Android 14 the **Open it** button after creating a VM ended up
+under the result snackbar at the end of the form. The create and clone screens now scroll to
+their result, and the tour waits for the snackbar to close.
+
 Not alerted on purpose: a server that can't be reached. A phone that leaves the home network
 would otherwise notify every 15 minutes; the Alerts screen lists unreachable servers instead.
 A session that stops working is notified once ("Sign in to … again").

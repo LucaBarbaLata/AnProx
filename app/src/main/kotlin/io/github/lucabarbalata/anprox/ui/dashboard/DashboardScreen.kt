@@ -26,6 +26,7 @@ import androidx.compose.material.icons.outlined.Computer
 import androidx.compose.material.icons.outlined.Dns
 import androidx.compose.material.icons.outlined.Inventory2
 import androidx.compose.material.icons.outlined.Storage
+import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material.icons.outlined.WarningAmber
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -80,6 +81,7 @@ fun DashboardScreen(
     onNode: (serverId: String, node: String) -> Unit,
     onResources: () -> Unit,
     onGuest: (GuestRef) -> Unit,
+    onDatacenter: (serverId: String, title: String) -> Unit,
     viewModel: DashboardViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -117,7 +119,12 @@ fun DashboardScreen(
                 }
                 item(span = { GridItemSpan(maxLineSpan) }) { SectionHeader(stringResource(R.string.dashboard_servers)) }
                 items(state.servers, key = { it.server.id }) { s ->
-                    ServerCard(s, onLogin = { onLogin(s.server.id) }, onNode = { node -> onNode(s.server.id, node) })
+                    ServerCard(
+                        s,
+                        onLogin = { onLogin(s.server.id) },
+                        onNode = { node -> onNode(s.server.id, node) },
+                        onDatacenter = { title -> onDatacenter(s.server.id, title) },
+                    )
                 }
             }
         }
@@ -234,7 +241,7 @@ private fun alertText(alert: DashboardAlert): Pair<Tone, String> = when (alert) 
 }
 
 @Composable
-private fun ServerCard(s: SnapshotState, onLogin: () -> Unit, onNode: (String) -> Unit) {
+private fun ServerCard(s: SnapshotState, onLogin: () -> Unit, onNode: (String) -> Unit, onDatacenter: (title: String) -> Unit) {
     val c = AnProxTheme.colors
     val snapshot = s.snapshot
     GlassCard(Modifier.fillMaxWidth()) {
@@ -283,7 +290,7 @@ private fun ServerCard(s: SnapshotState, onLogin: () -> Unit, onNode: (String) -
                 Spacer(Modifier.width(10.dp))
                 Text(stringResource(R.string.dashboard_connecting), color = c.textSecondary, style = MaterialTheme.typography.bodyMedium)
             }
-            snapshot is PveSnapshot -> PveBody(snapshot, onNode)
+            snapshot is PveSnapshot -> PveBody(snapshot, onNode) { onDatacenter(snapshot.clusterName ?: s.server.profile.name) }
             snapshot is PbsSnapshot -> PbsBody(snapshot)
         }
 
@@ -299,7 +306,7 @@ private fun ServerCard(s: SnapshotState, onLogin: () -> Unit, onNode: (String) -
 }
 
 @Composable
-private fun PveBody(snap: PveSnapshot, onNode: (String) -> Unit) {
+private fun PveBody(snap: PveSnapshot, onNode: (String) -> Unit, onDatacenter: () -> Unit) {
     val c = AnProxTheme.colors
     val cpu = stringResource(R.string.metric_cpu)
     val ram = stringResource(R.string.metric_ram)
@@ -341,6 +348,14 @@ private fun PveBody(snap: PveSnapshot, onNode: (String) -> Unit) {
             }
         }
     }
+    Spacer(Modifier.height(8.dp))
+    AnProxButton(
+        stringResource(R.string.dashboard_datacenter),
+        onClick = onDatacenter,
+        style = ButtonStyle.SECONDARY,
+        icon = Icons.Outlined.Tune,
+        modifier = Modifier.fillMaxWidth(),
+    )
 }
 
 @Composable

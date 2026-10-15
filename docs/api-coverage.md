@@ -38,7 +38,8 @@ Code: `core/network/src/main/kotlin/.../network/api/` (`AccessApi`, `PveApi`, `P
 | `GET /cluster/log` | Cluster log | 🗓 M4 |
 | `GET /cluster/nextid` | Free VMID for create/clone/restore | ✅ (create, restore, clone) |
 | `/cluster/options` | Datacenter options | 🗓 M4 |
-| `/cluster/backup`, `/cluster/backup-info/not-backed-up` | Backup jobs | 🗓 M4 |
+| `/cluster/backup` (list, create, edit, delete) | Backup jobs | ✅ (run now uses `POST /nodes/{node}/vzdump` per node, like the web UI) |
+| `GET /cluster/backup-info/not-backed-up` | Guests no enabled job covers | ✅ |
 | `/cluster/replication` | Storage replication jobs | 🗓 M4 |
 | `/cluster/ha/{resources,groups,rules,status}` | High availability | 🗓 M4 |
 | `/cluster/firewall/*` | Datacenter firewall, groups, IP sets, aliases, options | 🗓 M4 |
@@ -50,7 +51,8 @@ Code: `core/network/src/main/kotlin/.../network/api/` (`AccessApi`, `PveApi`, `P
 | `/cluster/metrics/*` | External metric servers | 🗓 M9 |
 | `/cluster/acme/*` | ACME accounts & plugins | 🗓 M9 |
 | `/cluster/config/*` | Create/join cluster, corosync | 🗓 M9 |
-| `/cluster/jobs/*` | Realm sync jobs, schedule analysis | 🗓 M7 |
+| `GET /cluster/jobs/schedule-analyze` | Next runs of a calendar event (backup job preview) | ✅ |
+| `/cluster/jobs/realm-sync` | Realm sync jobs | 🗓 M7 |
 
 ### `/nodes/{node}`
 
@@ -115,13 +117,15 @@ Code: `core/network/src/main/kotlin/.../network/api/` (`AccessApi`, `PveApi`, `P
 | Endpoint | Purpose | Status |
 |---|---|---|
 | storage rows in `/cluster/resources` | Usage on dashboard/resources | ✅ |
-| `/storage` (CRUD) | Storage configuration | 🗓 M4 |
+| `GET /storage` | Storage configuration (backup targets for jobs) | ✅ |
+| `/storage` (create, edit, delete) | Storage configuration | 🗓 M4 |
 | `GET /nodes/{node}/storage` | Storages a node can use (backup targets) | ✅ |
 | `GET /nodes/{node}/storage/{storage}/content` | Browse ISOs, templates, backups, disks | 🔸 backups ✅, the rest M4 |
 | `POST …/upload`, `POST …/download-url` | Upload / download ISO & templates | 🗓 M4 |
 | `GET …/rrddata` | Storage charts | 🗓 M1 |
 | `…/file-restore/{list,download}` | File-level restore from PBS-backed backups | 🗓 M8 |
-| `/pools` | Resource pools | 🗓 M4 |
+| `GET /pools` | Resource pools (backup job selection) | ✅ |
+| `/pools` (create, edit, delete, members) | Resource pools | 🗓 M4 |
 
 ---
 

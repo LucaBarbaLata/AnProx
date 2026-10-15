@@ -45,6 +45,9 @@ import io.github.lucabarbalata.anprox.ui.cloudinit.CloudInitScreen
 import io.github.lucabarbalata.anprox.ui.console.ConsoleScreen
 import io.github.lucabarbalata.anprox.ui.create.CreateGuestScreen
 import io.github.lucabarbalata.anprox.ui.dashboard.DashboardScreen
+import io.github.lucabarbalata.anprox.ui.datacenter.BackupJobEditorScreen
+import io.github.lucabarbalata.anprox.ui.datacenter.BackupJobsScreen
+import io.github.lucabarbalata.anprox.ui.datacenter.DatacenterScreen
 import io.github.lucabarbalata.anprox.ui.guest.CloneScreen
 import io.github.lucabarbalata.anprox.ui.guest.GuestScreen
 import io.github.lucabarbalata.anprox.ui.guest.GuestTool
@@ -57,12 +60,15 @@ import io.github.lucabarbalata.anprox.ui.backups.BackupsScreen
 import io.github.lucabarbalata.anprox.ui.navigation.AboutRoute
 import io.github.lucabarbalata.anprox.ui.navigation.AlertsRoute
 import io.github.lucabarbalata.anprox.ui.navigation.AppLinks
+import io.github.lucabarbalata.anprox.ui.navigation.BackupJobEditorRoute
+import io.github.lucabarbalata.anprox.ui.navigation.BackupJobsRoute
 import io.github.lucabarbalata.anprox.ui.navigation.BackupsRoute
 import io.github.lucabarbalata.anprox.ui.navigation.DashboardRoute
 import io.github.lucabarbalata.anprox.ui.navigation.CloneRoute
 import io.github.lucabarbalata.anprox.ui.navigation.CloudInitRoute
 import io.github.lucabarbalata.anprox.ui.navigation.ConsoleRoute
 import io.github.lucabarbalata.anprox.ui.navigation.CreateGuestRoute
+import io.github.lucabarbalata.anprox.ui.navigation.DatacenterRoute
 import io.github.lucabarbalata.anprox.ui.navigation.GuestRoute
 import io.github.lucabarbalata.anprox.ui.navigation.LoginRoute
 import io.github.lucabarbalata.anprox.ui.navigation.MoreRoute
@@ -206,7 +212,25 @@ fun AnProxApp() {
                     onNode = openNode,
                     onResources = { nav.selectTab(Tab.RESOURCES) },
                     onGuest = openGuest,
+                    onDatacenter = { serverId, title -> nav.navigate(DatacenterRoute(serverId, title)) },
                 )
+            }
+            composable<DatacenterRoute> { entry ->
+                val route = entry.toRoute<DatacenterRoute>()
+                DatacenterScreen(route.title, onBack = back, onBackupJobs = { nav.navigate(BackupJobsRoute(route.serverId)) })
+            }
+            composable<BackupJobsRoute> { entry ->
+                val route = entry.toRoute<BackupJobsRoute>()
+                BackupJobsScreen(
+                    serverId = route.serverId,
+                    onBack = back,
+                    onEdit = { jobId -> nav.navigate(BackupJobEditorRoute(route.serverId, jobId.orEmpty())) },
+                    onTask = openTask,
+                )
+            }
+            composable<BackupJobEditorRoute> { entry ->
+                val route = entry.toRoute<BackupJobEditorRoute>()
+                BackupJobEditorScreen(route.serverId, route.jobId.ifEmpty { null }, onBack = back)
             }
             composable<ResourcesRoute> {
                 ResourcesScreen(

@@ -215,6 +215,7 @@ class MockState(
     }
 
     private val hardware = MockHardware(storages, nodes)
+    private val jobs = MockJobs(storages, clockMillis)
 
     /** Accepted `POST /nodes/{node}/status` calls (node, command); the mock nodes keep running. */
     val nodePowerRequests: MutableList<Pair<String, String>> = java.util.Collections.synchronizedList(mutableListOf())
@@ -888,6 +889,40 @@ class MockState(
             .replace("{{guestname}}", g.name).replace("{{vmid}}", g.vmid.toString())
             .replace("{{node}}", g.node).replace("{{cluster}}", clusterName)
         Result.success(startTask(g.node, "vzdump", g.vmid.toString(), user) { backups += newBackup(storage, g, clockMillis(), notes) })
+    }
+
+    // ------------------------------------------------------------------ backup jobs, pools, storage config
+
+    fun backupJobs(): List<JsonObject> = synchronized(lock) { jobs.list() }
+    fun createBackupJob(params: Map<String, String>): String? = synchronized(lock) { jobs.create(params) }
+    fun updateBackupJob(id: String, params: Map<String, String>): String? = synchronized(lock) { jobs.update(id, params) }
+    fun deleteBackupJob(id: String): String? = synchronized(lock) { jobs.delete(id) }
+    fun backupJob(id: String): Map<String, String>? = synchronized(lock) { jobs.job(id) }
+    fun notBackedUp() = synchronized(lock) { jobs.notBackedUp(guests) }
+    fun storageConfigs() = jobs.storageConfigs()
+    fun pools() = jobs.pools
+
+    /**
+     * `POST /nodes/{node}/vzdump` with `all`, `exclude` or `pool` instead of one `vmid`: one task
+     * that backs up every matching guest on [nodeName].
+     */
+    fun backupSelection(nodeName: String, params: Map<String, String>, user: String): Result<String> = synchronized(lock) {
+        settleTasks()
+        fun fail(msg: String) = Result.failure<String>(IllegalStateException(msg))
+        val storage = params["storage"].orEmpty()
+        val s = storages.firstOrNull { it.node == nodeName && it.id == storage } ?: return fail("storage '$storage' does not exist")
+        if ("backup" !in s.content.split(',')) return fail("storage '$storage' does not support backups")
+        val selected = jobs.selected(params, guests, nodeName)
+        val notes = params["notes-template"].orEmpty()
+        Result.success(
+            startTask(nodeName, "vzdump", "", user) {
+                selected.forEach { g ->
+                    val text = notes.replace("{{guestname}}", g.name).replace("{{vmid}}", g.vmid.toString())
+                        .replace("{{node}}", g.node).replace("{{cluster}}", clusterName)
+                    backups += newBackup(storage, g, clockMillis(), text)
+                }
+            },
+        )
     }
 
     /** The lowest unused VMID, like `/cluster/nextid`. */

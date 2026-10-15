@@ -7,6 +7,7 @@ import io.github.lucabarbalata.anprox.alerts.TaskTracker
 import io.github.lucabarbalata.anprox.data.alerts.AlertRepository
 import io.github.lucabarbalata.anprox.data.backup.BackupRepository
 import io.github.lucabarbalata.anprox.data.console.ConsoleRepository
+import io.github.lucabarbalata.anprox.data.datacenter.BackupJobRepository
 import io.github.lucabarbalata.anprox.data.hardware.HardwareRepository
 import io.github.lucabarbalata.anprox.data.guest.GuestRef
 import io.github.lucabarbalata.anprox.data.guest.GuestRepository
@@ -27,6 +28,8 @@ import io.github.lucabarbalata.anprox.storage.KeystoreSecretStore
 import io.github.lucabarbalata.anprox.storage.SettingsRepository
 import io.github.lucabarbalata.anprox.ui.alerts.AlertsViewModel
 import io.github.lucabarbalata.anprox.ui.cloudinit.CloudInitViewModel
+import io.github.lucabarbalata.anprox.ui.datacenter.BackupJobEditorViewModel
+import io.github.lucabarbalata.anprox.ui.datacenter.BackupJobsViewModel
 import io.github.lucabarbalata.anprox.ui.navigation.AppLinks
 import io.github.lucabarbalata.anprox.ui.console.ConsoleViewModel
 import io.github.lucabarbalata.anprox.ui.create.CreateGuestViewModel
@@ -94,6 +97,7 @@ val appModule = module {
     single { BackupRepository(get()) }
     single { ConsoleRepository(get()) }
     single { HardwareRepository(get()) }
+    single { BackupJobRepository(get()) }
 
     // Background alerts
     single { AlertStore(androidContext()) }
@@ -124,4 +128,7 @@ val appModule = module {
     viewModel { (serverId: String, node: String, upid: String) -> TaskLogViewModel(serverId, node, upid, get()) }
     viewModel { SettingsViewModel(get()) }
     viewModel { AlertsViewModel(get(), get(), get()) }
+    viewModel { (serverId: String) -> BackupJobsViewModel(serverId, get(), get()) }
+    // "" = a new job
+    viewModel { (serverId: String, jobId: String) -> BackupJobEditorViewModel(serverId, jobId.ifEmpty { null }, get()) }
 }
