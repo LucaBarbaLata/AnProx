@@ -317,17 +317,27 @@ def fill(label, value, fallback_index=None, password=False):
         complete_typing(label, value)
 
 
-def complete_typing(label, value, attempts=3):
+def complete_typing(label, value, attempts=5):
     """
-    Android 14 sometimes loses the last injected key (seen twice on CI: a URL arrived without its
-    final letter, and the app never got that keystroke). Types what is missing, if the field holds
-    the start of [value].
+    Android 14 sometimes loses the last injected key (seen on CI: a URL arrived without its final
+    letter). Once it showed up in the field first and was gone a second later, so the text has to
+    read right twice, a moment apart. Types what is missing if the field holds the start of [value].
     """
+    confirmed = False
     for _ in range(attempts):
         root = dump()
         texts = [n.get("text") or "" for n in root.iter("node") if n.get("class") == "android.widget.EditText"]
         if value in texts:
-            return
+            if confirmed:
+                return
+            confirmed = True
+            time.sleep(1.5)
+            continue
+        confirmed = False
+        if not any(texts):
+            # A dump taken while a dialog or the keyboard is (re)drawn can miss the fields.
+            time.sleep(1.0)
+            continue
         partial = [t for t in texts if t and value.startswith(t)]
         if not partial:
             return  # can't tell which field it is (or the app reformatted the text)
@@ -734,7 +744,9 @@ def storage():
     tap("From URL")
     find("Download from URL", timeout=10)
     fill("URL", "https://example.com/images/tiny-test.iso", fallback_index=0)
-    tap("Download", pick="lowest")              # the dialog's button; the file name was filled in
+    # The file name comes from the URL the app received, so it shows the whole URL arrived.
+    wait_until(lambda: bool(matches(dump(), "tiny-test.iso", exact=True)), "the file name to be filled in", timeout=15)
+    tap("Download", pick="lowest")              # the dialog's button
     wait_until(lambda: not visible("Download from URL"), "the download dialog to close", timeout=10)
     find("tiny-test.iso", timeout=60)           # listed once the node's download task has finished
     screenshot("13d-storage")
@@ -835,11 +847,12 @@ def pools():
     find("Production", timeout=30)                 # the prod pool's comment
     find("Guests: 3 · Storages: 1", timeout=10)
     tap("lab")                                    # exact matches win
-    find("Guests (1)", timeout=30)                 # lab-vm
+    find("104 · lab-vm", timeout=30)               # its only guest
     tap("Add guests")
     tap("103 · k8s-master")
     tap("Add (1)")
-    find("Guests (2)", timeout=30)
+    wait_until(lambda: not visible("Add (1)"), "the dialog to close", timeout=10)
+    find("103 · k8s-master", timeout=30)           # now in the pool too
     screenshot("13h-pool")
     back()
     back()

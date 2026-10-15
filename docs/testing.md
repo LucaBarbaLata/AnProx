@@ -134,7 +134,7 @@ so no test code is compiled into the app. `scripts/e2e/run.sh` starts the mock s
 22. Datacenter → **Firewall** → the mock's rules → **Add rule** (TCP, port 9100) → it is listed first → **Security groups** → `webserver` shows its HTTPS rule → **IP sets** shows the blocklist → **Options** → **Firewall on** → **Save**.
 23. Datacenter → **High availability** → "Manager: pve1" → `100 · web` (managed in the mock) → **Ignored** → **Save** → "HA settings saved".
 24. Datacenter → **Replication** → `103 · k8s-master → pve1` and the failing job to the offline pve3 → **Add replication job** → **Add** → `100 · web → pve2` is listed.
-25. Datacenter → **Resource pools** → `prod` ("Guests: 3 · Storages: 1") → `lab` → **Add guests** → `103 · k8s-master` → **Add (1)** → "Guests (2)".
+25. Datacenter → **Resource pools** → `prod` ("Guests: 3 · Storages: 1") → `lab` (`104 · lab-vm`) → **Add guests** → `103 · k8s-master` → **Add (1)** → it is listed in the pool.
 26. Settings → Light theme; turning on the app lock explains that the emulator has no screen lock → dashboard in light mode, with the starred VM under Favourites.
 
 After every step the script checks that the app process is alive and that logcat has no

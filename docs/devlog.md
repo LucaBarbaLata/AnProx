@@ -224,6 +224,11 @@ It wasn't the whole story: a later run lost the final "o" again, and this time t
 never saw it either, so the key event itself was lost on the emulator. The tour's `fill` now
 reads the field back and types whatever is missing (and says so in the log). The field change
 stays, since the overwrite it prevents is real.
+The next run lost it again *after* the check had seen the whole URL, so the check now wants the
+text right twice, 1.5 s apart, retries when a dump catches no text fields at all, and the
+download step waits for the file name the app derives from the URL before tapping Download. The
+same run showed `SectionHeader` draws its text in capitals ("GUESTS (1)"), so the pools step looks
+for guest rows instead of headers.
 
 Not alerted on purpose: a server that can't be reached. A phone that leaves the home network
 would otherwise notify every 15 minutes; the Alerts screen lists unreachable servers instead.
