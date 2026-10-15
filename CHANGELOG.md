@@ -118,6 +118,10 @@ All notable changes to AnProx are documented here. The format follows
     (type the device), and **Create storage** on unused disks: directory, LVM, LVM-thin or ZFS
     (RAID level, compression), added as a storage if you like.
 
+- **Instant alerts guide** ([docs/push-notifications.md](docs/push-notifications.md)): Proxmox's own
+  notifications to the phone through ntfy or Gotify, without Google services, alongside the
+  app's background checks.
+
 - **Move to another phone** (More → Settings): export your servers to a file protected with a
   passphrase, optionally with saved passwords (after the fingerprint or screen lock), and import
   it on the new phone. Servers already there are replaced, the rest added.

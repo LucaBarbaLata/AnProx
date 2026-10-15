@@ -12,6 +12,7 @@ back to one of its 40 answers, cited as **Q1–Q40**.
 - [Security](security.md): how credentials are stored, the TLS switch, the threat model
 - [Glossary](glossary.md): Proxmox and Android vocabulary
 - [Beta testing](beta-testing.md): install the beta, what to try, how to report problems
+- [Instant alerts](push-notifications.md): Proxmox notifications to your phone through ntfy or Gotify, without Google
 
 ## For developers (and people learning Android)
 

@@ -11,7 +11,7 @@ Status legend: ✅ done · 🚧 in progress · 🗓 planned
 | [M0](#m0--foundation) | Foundation: servers, login, dashboard, resources, power, tasks | ✅ released as **0.1.0-beta.1** (M1 work so far: **0.1.0-beta.2**) |
 | [M1](#m1--daily-driver) | Daily driver: app lock, SSO, snapshots, backups, charts, notifications | 🚧 snapshots, charts, app lock, backups, guest IPs, bulk actions, favourites done |
 | [M2](#m2--consoles--guest-configuration) | Consoles and guest configuration | 🚧 all but the built-in SSH client |
-| [M3](#m3--alerts--android-integration) | Alerts and Android integration | 🚧 alerts, links, shortcuts, tile, widget done |
+| [M3](#m3--alerts--android-integration) | Alerts and Android integration | ✅ (beta.3 candidate) |
 | [M4](#m4--datacenter) | Datacenter: storage, backup jobs, HA, replication, firewall | 🚧 all but editing HA groups/rules and maintenance mode |
 | [M5](#m5--node-administration) | Node administration | ✅ (beta.3 candidate) |
 | [M6](#m6--ceph--sdn) | Ceph and SDN | 🗓 |
@@ -100,12 +100,13 @@ Everything marked ✅ in M1 and M2 below. Gates:
 - ✅ **Migration** (pulled into 0.1.0-beta.2): live for VMs (copying local disks), restart mode for containers, offline when stopped; uses Proxmox's pre-flight check.
 
 ## M3 — Alerts & Android integration
-*Status: 🚧 in progress.*
+*Status: ✅ done (favourite guests on the widget still to come).*
 - ✅ **Background polling** with WorkManager (Q26) for the alert types in Q27: node or guest down,
   quorum lost, failed tasks and backups, CPU/RAM/storage thresholds, Ceph health. More → Alerts:
   interval (15 min to 3 h), kinds, limits, **Check now**, the last check's summary.
-- **Real-time push** (Q26): a setup guide for PVE notification webhooks → ntfy/Gotify →
-  UnifiedPush, with no Google services.
+- ✅ **Real-time push** (Q26): [setup guide](push-notifications.md) for Proxmox's notification
+  targets → ntfy (webhook) or Gotify, with no Google services. Receiving UnifiedPush in AnProx
+  itself comes after 1.0.
 - ✅ **Live task notifications** (Q28): tasks started from the app, followed until they end.
 - ✅ **App shortcuts and in-app links** (Q28): Resources, Tasks, Alerts; notifications open the
   node, guest or task they are about (`anprox://` links, explicit intents only).
