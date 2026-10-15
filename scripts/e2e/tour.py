@@ -744,6 +744,21 @@ def firewall():
     back()
 
 
+@step("Datacenter: high availability, the manager's status, ignore a managed guest")
+def high_availability():
+    tap("Overview")
+    tap_node(scroll_to("Datacenter", exact=True))
+    tap_node(scroll_to("High availability", exact=True))
+    find("Manager: pve1", timeout=30)
+    tap_node(scroll_to("100 · web"))               # managed by HA in the mock, group prefer-pve1
+    tap("Ignored")
+    tap_node(scroll_to("Save", exact=True))
+    find("HA settings saved", timeout=20)
+    screenshot("13f-high-availability")
+    back()
+    back()
+
+
 @step("Light theme, the app lock without a screen lock, favourites on the dashboard")
 def light_theme():
     tap("More")
@@ -781,7 +796,7 @@ def main():
     try:
         for s in (launch, add_pve, add_pbs, resources, performance, guest_start, snapshots, backups,
                   options, hardware, console, vm_console, cloud_init, bulk, clone_migrate, tasks, create_vm, alerts,
-                  backup_jobs, storage, firewall, light_theme):
+                  backup_jobs, storage, firewall, high_availability, light_theme):
             s()
         ok = True
     finally:
