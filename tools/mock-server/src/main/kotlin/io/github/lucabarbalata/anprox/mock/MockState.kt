@@ -20,8 +20,10 @@ import io.github.lucabarbalata.anprox.model.pve.LocalDisk
 import io.github.lucabarbalata.anprox.model.pve.LxcInterface
 import io.github.lucabarbalata.anprox.model.pve.MemoryUsage
 import io.github.lucabarbalata.anprox.model.pve.MigrationCheck
+import io.github.lucabarbalata.anprox.model.pve.NodeNetwork
 import io.github.lucabarbalata.anprox.model.pve.NodeStatus
 import io.github.lucabarbalata.anprox.model.pve.NodeStorage
+import io.github.lucabarbalata.anprox.model.pve.PendingEntry
 import io.github.lucabarbalata.anprox.model.pve.RrdPoint
 import io.github.lucabarbalata.anprox.model.pve.RrdTimeframe
 import io.github.lucabarbalata.anprox.model.pve.SnapshotName
@@ -161,9 +163,9 @@ class MockState(
         var node: String,
         var name: String,
         var status: String,
-        val cpus: Int,
-        val maxmem: Long,
-        val maxdisk: Long,
+        var cpus: Int,
+        var maxmem: Long,
+        var maxdisk: Long,
         var template: Boolean = false,
         var tags: String? = null,
         var agent: Boolean = false,
@@ -207,6 +209,8 @@ class MockState(
             Storage(n.name, "pbs", "pbs", "backup", shared = true, total = 12000 * GIB, used = 7300 * GIB),
         )
     }
+
+    private val hardware = MockHardware(storages, nodes)
 
     /** Accepted `POST /nodes/{node}/status` calls (node, command); the mock nodes keep running. */
     val nodePowerRequests: MutableList<Pair<String, String>> = java.util.Collections.synchronizedList(mutableListOf())
@@ -504,9 +508,19 @@ class MockState(
         }
         val upid = startTask(g.node, prefix + action, g.vmid.toString(), user) {
             when (action) {
-                "start" -> { g.status = "running"; g.paused = false; g.startedAtMillis = clockMillis() }
+                "start" -> {
+                    hardware.applyPending(g)
+                    g.status = "running"
+                    g.paused = false
+                    g.startedAtMillis = clockMillis()
+                }
                 "shutdown", "stop" -> { g.status = "stopped"; g.paused = false }
-                "reboot", "reset" -> { g.startedAtMillis = clockMillis(); g.paused = false }
+                "reboot" -> {
+                    hardware.applyPending(g)
+                    g.startedAtMillis = clockMillis()
+                    g.paused = false
+                }
+                "reset" -> { g.startedAtMillis = clockMillis(); g.paused = false }
                 "suspend" -> g.paused = true
                 "resume" -> g.paused = false
             }
@@ -597,37 +611,48 @@ class MockState(
     // ------------------------------------------------------------------ guest config
 
     private fun Guest.digest(): String =
-        Integer.toHexString(listOf(name, tags, agent, onBoot, protection, description).hashCode()).padStart(8, '0')
+        Integer.toHexString(listOf(name, tags, agent, onBoot, protection, description, hardware.digestPart(this)).hashCode()).padStart(8, '0')
 
-    /** The keys of `GET …/config` the app reads, plus a few others for realism. */
+    /** `GET …/config`: the options, then the hardware with pending values applied (Proxmox's default). */
     fun guestConfig(g: Guest): JsonObject = synchronized(lock) {
+        settleTasks()
         buildJsonObject {
             put(if (g.type == "qemu") "name" else "hostname", g.name)
             put("onboot", if (g.onBoot) 1 else 0)
             if (g.protection) put("protection", 1)
             if (g.description.isNotEmpty()) put("description", g.description)
             g.tags?.let { put("tags", it) }
-            if (g.type == "qemu") {
-                if (g.agent) put("agent", "enabled=1,fstrim_cloned_disks=1")
-                put("cores", g.cpus)
-                put("memory", (g.maxmem / MIB).toString())
-                put("ostype", "l26")
-            } else {
-                put("cores", g.cpus)
-                put("memory", g.maxmem / MIB)
-                put("ostype", "debian")
+            if (g.type == "qemu" && g.agent) put("agent", "enabled=1,fstrim_cloned_disks=1")
+            hardware.effective(g).forEach { (k, v) ->
+                // Proxmox sends numbers as numbers for some keys and strings for others; the app must cope with both.
+                if (k == "cores" || k == "sockets" || (k == "memory" && g.type == "lxc")) put(k, v.toIntOrNull() ?: 0) else put(k, v)
             }
             put("digest", g.digest())
         }
     }
 
-    /** `PUT …/config` for the options the app edits. Returns an error message, or null when applied. */
+    /** `GET …/pending`. */
+    fun guestPending(g: Guest): List<PendingEntry> = synchronized(lock) {
+        settleTasks()
+        hardware.pendingEntries(g)
+    }
+
+    /**
+     * `PUT …/config` (and `POST` for VMs): options and hardware. Returns an error message, or null
+     * when applied.
+     */
     fun updateGuestConfig(g: Guest, params: Map<String, String>): String? = synchronized(lock) {
+        settleTasks()
         params["digest"]?.let { if (it != g.digest()) return "detected modified configuration - file changed by other user? Try again." }
         val nameKey = if (g.type == "qemu") "name" else "hostname"
         val nameRule = Regex("^(?:(?:[a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9])\\.)*(?:[a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9])$")
         params[nameKey]?.let { if (!nameRule.matches(it)) return "$nameKey: invalid format - value does not look like a valid DNS name" }
         val delete = params["delete"]?.split(',')?.map { it.trim() }.orEmpty()
+        hardware.update(
+            g,
+            params.filterKeys { it !in hardware.optionKeys },
+            delete.filter { it !in hardware.optionKeys },
+        )?.let { return it }
         params[nameKey]?.let { g.name = it }
         params["onboot"]?.let { g.onBoot = it == "1" }
         params["protection"]?.let { g.protection = it == "1" }
@@ -638,6 +663,41 @@ class MockState(
         if ("tags" in delete) g.tags = null
         null
     }
+
+    /** `POST …/qemu/{vmid}/config`: the same change, reported as a task. */
+    fun updateVmConfigAsync(g: Guest, params: Map<String, String>, user: String): Result<String> = synchronized(lock) {
+        updateGuestConfig(g, params)?.let { return Result.failure(IllegalStateException(it)) }
+        Result.success(startTask(g.node, "qmconfig", g.vmid.toString(), user))
+    }
+
+    /** `PUT …/resize`: grows the disk at once, reported as a task. */
+    fun resize(g: Guest, params: Map<String, String>, user: String): Result<String> = synchronized(lock) {
+        settleTasks()
+        params["digest"]?.let { if (it != g.digest()) return Result.failure(IllegalStateException("detected modified configuration - file changed by other user? Try again.")) }
+        val disk = params["disk"] ?: return Result.failure(IllegalStateException("missing disk"))
+        val size = params["size"] ?: return Result.failure(IllegalStateException("missing size"))
+        hardware.resize(g, disk, size)?.let { return Result.failure(IllegalStateException(it)) }
+        Result.success(startTask(g.node, "resize", g.vmid.toString(), user))
+    }
+
+    /** `move_disk` (VMs) / `move_volume` (containers). */
+    fun moveVolume(g: Guest, params: Map<String, String>, user: String): Result<String> = synchronized(lock) {
+        settleTasks()
+        params["digest"]?.let { if (it != g.digest()) return Result.failure(IllegalStateException("detected modified configuration - file changed by other user? Try again.")) }
+        val key = params[if (g.type == "qemu") "disk" else "volume"] ?: return Result.failure(IllegalStateException("missing disk"))
+        val storage = params["storage"] ?: return Result.failure(IllegalStateException("missing storage"))
+        hardware.checkMove(g, key, storage)?.let { return Result.failure(IllegalStateException(it)) }
+        val delete = params["delete"] == "1"
+        Result.success(
+            startTask(g.node, if (g.type == "qemu") "qmmove" else "move_volume", g.vmid.toString(), user) {
+                hardware.moveEffect(g, key, storage, delete)
+            },
+        )
+    }
+
+    /** `GET /nodes/{node}/network`; [type] `any_bridge` lists bridges only. */
+    fun nodeNetworks(type: String?): List<NodeNetwork> =
+        if (type == "any_bridge" || type == "bridge") hardware.bridges.filter { it.isBridge } else hardware.bridges
 
     // ------------------------------------------------------------------ guest agent
 
@@ -756,14 +816,19 @@ class MockState(
         .filter { it.node == n.name && (content == null || content in it.content.split(',')) }
         .map { NodeStorage(it.id, it.plugin, it.content, active = n.online, enabled = true, shared = it.shared, total = it.total, used = it.used, avail = it.total - it.used) }
 
-    /** `null` if the storage doesn't exist on that node. The mock only stores backups. */
+    /** `null` if the storage doesn't exist on that node. The mock stores backups and ISO images. */
     fun storageContent(n: Node, storage: String, content: String?, vmid: Int?): List<StorageContentItem>? = synchronized(lock) {
         settleTasks()
         val s = storages.firstOrNull { it.node == n.name && it.id == storage } ?: return null
-        if (content != null && content != "backup") return emptyList()
+        val isos = if ((content == null || content == "iso") && vmid == null) {
+            hardware.isos.filter { it.storage == storage }.map { it.item(bootMillis / 1000 - 40 * DAY / 1000) }
+        } else {
+            emptyList()
+        }
+        if (content != null && content != "backup") return isos
         backups
             .filter { it.storage == storage && (s.shared || it.node == n.name) && (vmid == null || it.vmid == vmid) }
-            .map { it.toItem() }
+            .map { it.toItem() } + isos
     }
 
     /** `vzdump` for one guest. Returns a UPID, or an error message (500). */
@@ -808,6 +873,7 @@ class MockState(
                     snaps.remove(vmid)
                     snapHead.remove(vmid)
                 }
+                hardware.forget(vmid)
                 guests += Guest(vmid, type, nodeName, b.guestName, "stopped", b.cpus, b.maxmem, b.maxdisk, tags = existing?.tags)
             },
         )

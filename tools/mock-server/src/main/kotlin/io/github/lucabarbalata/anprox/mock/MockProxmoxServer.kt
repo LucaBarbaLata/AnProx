@@ -203,6 +203,42 @@ class MockProxmoxServer(
             val error = state.updateGuestConfig(g, p.entries().associate { it.key to it.value.first() })
             if (error != null) call.fail(500, error) else call.ok(JsonNull)
         }
+        get("nodes/{node}/{type}/{vmid}/pending") {
+            call.authed() ?: return@get
+            val g = call.guest() ?: return@get
+            call.ok(state.guestPending(g))
+        }
+        post("nodes/{node}/qemu/{vmid}/config") {
+            val s = call.authed() ?: return@post
+            val g = call.guest("qemu") ?: return@post
+            val p = call.receiveParameters()
+            if (state.isReadOnly(s.user)) return@post call.fail(403, "Permission check failed (/vms/${g.vmid}, VM.Config.Disk)")
+            state.updateVmConfigAsync(g, p.entries().associate { it.key to it.value.first() }, s.user)
+                .fold(onSuccess = { call.ok(it) }, onFailure = { call.fail(500, it.message ?: "error") })
+        }
+        put("nodes/{node}/{type}/{vmid}/resize") {
+            val s = call.authed() ?: return@put
+            val g = call.guest() ?: return@put
+            val p = call.receiveParameters()
+            if (state.isReadOnly(s.user)) return@put call.fail(403, "Permission check failed (/vms/${g.vmid}, VM.Config.Disk)")
+            state.resize(g, p.entries().associate { it.key to it.value.first() }, s.user)
+                .fold(onSuccess = { call.ok(it) }, onFailure = { call.fail(500, it.message ?: "error") })
+        }
+        post("nodes/{node}/qemu/{vmid}/move_disk") {
+            val s = call.authed() ?: return@post
+            val g = call.guest("qemu") ?: return@post
+            call.moveVolume(s, g)
+        }
+        post("nodes/{node}/lxc/{vmid}/move_volume") {
+            val s = call.authed() ?: return@post
+            val g = call.guest("lxc") ?: return@post
+            call.moveVolume(s, g)
+        }
+        get("nodes/{node}/network") {
+            call.authed() ?: return@get
+            state.node(call.parameters["node"]!!) ?: return@get call.fail(404, "no such node")
+            call.ok(state.nodeNetworks(call.request.queryParameters["type"]))
+        }
         get("nodes/{node}/qemu/{vmid}/agent/{command}") {
             call.authed() ?: return@get
             val g = call.guest("qemu") ?: return@get
@@ -463,6 +499,13 @@ class MockProxmoxServer(
     }
 
     /** The guest named by the path; [type] for routes with a literal `qemu`/`lxc` segment. */
+    private suspend fun ApplicationCall.moveVolume(s: MockState.Session, g: MockState.Guest) {
+        val p = receiveParameters()
+        if (state.isReadOnly(s.user)) return fail(403, "Permission check failed (/vms/${g.vmid}, VM.Config.Disk)")
+        state.moveVolume(g, p.entries().associate { it.key to it.value.first() }, s.user)
+            .fold(onSuccess = { ok(it) }, onFailure = { fail(500, it.message ?: "error") })
+    }
+
     private suspend fun ApplicationCall.guest(type: String? = null): MockState.Guest? {
         val vmid = parameters["vmid"]?.toIntOrNull()
         val wanted = type ?: parameters["type"]

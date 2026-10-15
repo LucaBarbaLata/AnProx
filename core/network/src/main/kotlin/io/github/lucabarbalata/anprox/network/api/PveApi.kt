@@ -11,8 +11,10 @@ import io.github.lucabarbalata.anprox.model.pve.GuestSnapshot
 import io.github.lucabarbalata.anprox.model.pve.GuestStatus
 import io.github.lucabarbalata.anprox.model.pve.LxcInterface
 import io.github.lucabarbalata.anprox.model.pve.MigrationCheck
+import io.github.lucabarbalata.anprox.model.pve.NodeNetwork
 import io.github.lucabarbalata.anprox.model.pve.NodeStatus
 import io.github.lucabarbalata.anprox.model.pve.NodeStorage
+import io.github.lucabarbalata.anprox.model.pve.PendingEntry
 import io.github.lucabarbalata.anprox.model.pve.RrdPoint
 import io.github.lucabarbalata.anprox.model.pve.StorageContentItem
 import io.github.lucabarbalata.anprox.model.pve.TaskLogLine
@@ -110,6 +112,55 @@ interface PveApi {
         @Path("vmid") vmid: Int,
         @FieldMap params: Map<String, String>,
     ): ApiEnvelope<JsonElement>
+
+    /** Every config key with its current value and, if any, the change waiting for the next start. */
+    @GET("nodes/{node}/{type}/{vmid}/pending")
+    suspend fun guestPending(
+        @Path("node") node: String,
+        @Path("type") type: String,
+        @Path("vmid") vmid: Int,
+    ): ApiEnvelope<List<PendingEntry>>
+
+    /** VMs only: the config change as a task (used for allocating disks). Answers a UPID. */
+    @FormUrlEncoded
+    @POST("nodes/{node}/qemu/{vmid}/config")
+    suspend fun updateVmConfigAsync(
+        @Path("node") node: String,
+        @Path("vmid") vmid: Int,
+        @FieldMap params: Map<String, String>,
+    ): ApiEnvelope<String>
+
+    /** Grows a disk (`disk`, `size` like `+10G`). A UPID on Proxmox VE 8 and for containers; older VMs answer null. */
+    @FormUrlEncoded
+    @PUT("nodes/{node}/{type}/{vmid}/resize")
+    suspend fun resizeDisk(
+        @Path("node") node: String,
+        @Path("type") type: String,
+        @Path("vmid") vmid: Int,
+        @FieldMap params: Map<String, String>,
+    ): ApiEnvelope<String>
+
+    /** Moves a VM disk to another storage (`disk`, `storage`, `delete`). Answers a UPID. */
+    @FormUrlEncoded
+    @POST("nodes/{node}/qemu/{vmid}/move_disk")
+    suspend fun moveVmDisk(
+        @Path("node") node: String,
+        @Path("vmid") vmid: Int,
+        @FieldMap params: Map<String, String>,
+    ): ApiEnvelope<String>
+
+    /** Moves a container volume to another storage (`volume`, `storage`, `delete`). Answers a UPID. */
+    @FormUrlEncoded
+    @POST("nodes/{node}/lxc/{vmid}/move_volume")
+    suspend fun moveCtVolume(
+        @Path("node") node: String,
+        @Path("vmid") vmid: Int,
+        @FieldMap params: Map<String, String>,
+    ): ApiEnvelope<String>
+
+    /** A node's network interfaces; [type] `any_bridge` lists Linux and OVS bridges. */
+    @GET("nodes/{node}/network")
+    suspend fun nodeNetworks(@Path("node") node: String, @Query("type") type: String?): ApiEnvelope<List<NodeNetwork>>
 
     // ------------------------------------------------------------------ guest agent (Q18)
 
