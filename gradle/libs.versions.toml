@@ -12,7 +12,7 @@ okhttp = "5.4.0"
 retrofit = "3.0.0"
 ktor = "3.6.0"
 koin = "4.1.1"
-junit = "5.10.1"
+junit = "5.14.4"
 slf4j = "2.0.20"
 
 # AndroidX (Google Maven)
