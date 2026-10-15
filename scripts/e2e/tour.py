@@ -320,6 +320,11 @@ def back():
     time.sleep(1.2)
 
 
+def wait_for_snackbar_to_close():
+    """A task's result snackbar (with **View log**) stays 10 s and covers the bottom of the screen."""
+    wait_until(lambda: not visible("View log"), "the result snackbar to close", timeout=20)
+
+
 def leave_console(marker="Reconnect"):
     """
     Presses Back until the console (recognised by its top bar's [marker]) is gone. The first Back may only hide
@@ -615,6 +620,7 @@ def clone_migrate():
     tap_node(scroll_to("Create clone"))
     find("Open it", timeout=60)            # the clone task finished
     screenshot("11h-cloned")
+    wait_for_snackbar_to_close()           # it covers the end of the form, where the button is
     tap_node(scroll_to("Open it"))
     find("ubuntu-2404-template-clone", timeout=30)
     tap_node(scroll_to("Migrate"))
@@ -646,6 +652,7 @@ def create_vm():
     tap("Create VM", pick="lowest")        # the button, not the title
     find("Open it", timeout=60)            # the create task has finished
     screenshot("12b-created")
+    wait_for_snackbar_to_close()
     tap_node(scroll_to("Open it"))
     find("Start", timeout=30)              # the new VM's screen; it is stopped
     back()                                 # to the node
@@ -664,7 +671,7 @@ def alerts():
         adb("shell", "pm", "grant", PKG, "android.permission.POST_NOTIFICATIONS", check=False)
     # Opened the way notifications and shortcuts do: an anprox:// link for the main activity.
     adb("shell", "am", "start", "-n", f"{PKG}/{ACTIVITY}", "-a", "android.intent.action.VIEW", "-d", "anprox://alerts")
-    find("No check has run yet.", timeout=15)
+    scroll_to("No check has run yet.")     # the last card, below the settings
     tap("Background alerts")
     tap_node(scroll_to("Check now"))
     # Both servers answer; the mock's offline node pve3 and two full storages are reported.

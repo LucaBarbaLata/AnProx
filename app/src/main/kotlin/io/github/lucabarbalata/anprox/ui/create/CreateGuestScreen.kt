@@ -17,6 +17,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -86,6 +87,12 @@ fun CreateGuestScreen(
     TaskResultSnackbar(state.result, snackbar, serverId, node, onTask, viewModel::consumeResult)
     val isVm = type == GuestType.QEMU
 
+    // The result card with **Open it** appears at the end of the form: bring it into view.
+    val scroll = rememberScrollState()
+    LaunchedEffect(state.created) {
+        if (state.created != null) scroll.animateScrollTo(scroll.maxValue)
+    }
+
     AnProxScaffold(
         title = stringResource(if (isVm) R.string.create_vm_title else R.string.create_ct_title),
         subtitle = stringResource(R.string.create_on_node, node),
@@ -93,7 +100,7 @@ fun CreateGuestScreen(
         snackbarHostState = snackbar,
     ) { inner ->
         Column(
-            Modifier.verticalScroll(rememberScrollState()).padding(contentPadding(inner)),
+            Modifier.verticalScroll(scroll).padding(contentPadding(inner)),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             state.error?.let { ErrorBanner(it.asString(), actionLabel = stringResource(R.string.action_retry), onAction = viewModel::load) }

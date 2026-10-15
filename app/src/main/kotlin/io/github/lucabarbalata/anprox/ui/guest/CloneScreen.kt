@@ -20,6 +20,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -70,6 +71,12 @@ fun CloneScreen(
 
     val isVm = ref.type == GuestType.QEMU
     val typeLabel = stringResource(if (isVm) R.string.guest_type_vm else R.string.guest_type_ct)
+    // The result card with **Open it** appears at the end of the form: bring it into view.
+    val scroll = rememberScrollState()
+    LaunchedEffect(state.created) {
+        if (state.created != null) scroll.animateScrollTo(scroll.maxValue)
+    }
+
     AnProxScaffold(
         title = stringResource(R.string.clone_title),
         subtitle = "$guestName · $typeLabel ${ref.vmid}",
@@ -82,7 +89,7 @@ fun CloneScreen(
         },
     ) { inner ->
         Column(
-            Modifier.verticalScroll(rememberScrollState()).padding(contentPadding(inner)),
+            Modifier.verticalScroll(scroll).padding(contentPadding(inner)),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             state.error?.let { error ->
