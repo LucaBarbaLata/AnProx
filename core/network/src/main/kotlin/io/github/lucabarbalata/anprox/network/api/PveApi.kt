@@ -4,6 +4,8 @@ import io.github.lucabarbalata.anprox.model.ApiEnvelope
 import io.github.lucabarbalata.anprox.model.pve.AgentInterface
 import io.github.lucabarbalata.anprox.model.pve.AgentOsInfo
 import io.github.lucabarbalata.anprox.model.pve.AgentResult
+import io.github.lucabarbalata.anprox.model.pve.AptRepositories
+import io.github.lucabarbalata.anprox.model.pve.AptUpdate
 import io.github.lucabarbalata.anprox.model.pve.CephStatus
 import io.github.lucabarbalata.anprox.model.pve.CifsShare
 import io.github.lucabarbalata.anprox.model.pve.ClusterResource
@@ -25,9 +27,12 @@ import io.github.lucabarbalata.anprox.model.pve.LxcInterface
 import io.github.lucabarbalata.anprox.model.pve.MigrationCheck
 import io.github.lucabarbalata.anprox.model.pve.NfsExport
 import io.github.lucabarbalata.anprox.model.pve.NodeNetwork
+import io.github.lucabarbalata.anprox.model.pve.NodeService
 import io.github.lucabarbalata.anprox.model.pve.NodeStatus
 import io.github.lucabarbalata.anprox.model.pve.NodeStorage
+import io.github.lucabarbalata.anprox.model.pve.NodeSubscription
 import io.github.lucabarbalata.anprox.model.pve.NotBackedUp
+import io.github.lucabarbalata.anprox.model.pve.PackageVersion
 import io.github.lucabarbalata.anprox.model.pve.PbsDatastore
 import io.github.lucabarbalata.anprox.model.pve.PendingEntry
 import io.github.lucabarbalata.anprox.model.pve.PoolDetail
@@ -551,6 +556,56 @@ interface PveApi {
     @FormUrlEncoded
     @POST("nodes/{node}/lxc")
     suspend fun createLxc(@Path("node") node: String, @FieldMap params: Map<String, String>): ApiEnvelope<String>
+
+    // ------------------------------------------------------------------ node administration (Q22)
+
+    @GET("nodes/{node}/apt/update")
+    suspend fun aptUpdates(@Path("node") node: String): ApiEnvelope<List<AptUpdate>>
+
+    /** `apt-get update` as a task; returns its UPID. */
+    @FormUrlEncoded
+    @POST("nodes/{node}/apt/update")
+    suspend fun refreshAptIndex(@Path("node") node: String, @Field("notify") notify: Int = 0): ApiEnvelope<String>
+
+    /** The package's changelog as plain text. */
+    @GET("nodes/{node}/apt/changelog")
+    suspend fun aptChangelog(@Path("node") node: String, @Query("name") name: String, @Query("version") version: String?): ApiEnvelope<String>
+
+    @GET("nodes/{node}/apt/versions")
+    suspend fun packageVersions(@Path("node") node: String): ApiEnvelope<List<PackageVersion>>
+
+    @GET("nodes/{node}/apt/repositories")
+    suspend fun aptRepositories(@Path("node") node: String): ApiEnvelope<AptRepositories>
+
+    /** Switches the repository at [index] of [path] on or off. */
+    @FormUrlEncoded
+    @POST("nodes/{node}/apt/repositories")
+    suspend fun setAptRepositoryEnabled(
+        @Path("node") node: String,
+        @Field("path") path: String,
+        @Field("index") index: Int,
+        @Field("enabled") enabled: Int,
+        @Field("digest") digest: String?,
+    ): ApiEnvelope<JsonElement>
+
+    /** Adds a standard repository ([handle]: `no-subscription`, `enterprise`, `test`, …). */
+    @FormUrlEncoded
+    @PUT("nodes/{node}/apt/repositories")
+    suspend fun addStandardAptRepository(@Path("node") node: String, @Field("handle") handle: String, @Field("digest") digest: String?): ApiEnvelope<JsonElement>
+
+    @GET("nodes/{node}/subscription")
+    suspend fun subscription(@Path("node") node: String): ApiEnvelope<NodeSubscription>
+
+    @GET("nodes/{node}/services")
+    suspend fun services(@Path("node") node: String): ApiEnvelope<List<NodeService>>
+
+    /** [action]: `start`, `stop`, `restart`, `reload`. Returns a UPID. */
+    @POST("nodes/{node}/services/{service}/{action}")
+    suspend fun serviceAction(@Path("node") node: String, @Path("service") service: String, @Path("action") action: String): ApiEnvelope<String>
+
+    /** The newest [lastEntries] journal lines, between `-- cursor:` markers. */
+    @GET("nodes/{node}/journal")
+    suspend fun journal(@Path("node") node: String, @Query("lastentries") lastEntries: Int): ApiEnvelope<List<String>>
 
     // ------------------------------------------------------------------ consoles (Q15)
 

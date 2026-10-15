@@ -170,7 +170,10 @@ class ConsoleRepository(private val hub: ServerHub) {
 
     /** VMs ask for a generated VNC password (PVE 7.1+); older servers reject the parameter. */
     private suspend fun proxy(conn: ProxmoxConnection, target: ConsoleTarget): ConsoleProxy {
-        if (target.kind != ConsoleKind.VM) return conn.pve { consoleProxy(target.proxyPath, emptyMap()) }
+        if (target.kind != ConsoleKind.VM) {
+            val params = target.command?.takeIf { target.kind == ConsoleKind.NODE }?.let { mapOf("cmd" to it) }.orEmpty()
+            return conn.pve { consoleProxy(target.proxyPath, params) }
+        }
         return try {
             conn.pve { consoleProxy(target.proxyPath, mapOf("websocket" to "1", "generate-password" to "1")) }
         } catch (_: ApiException.Validation) {

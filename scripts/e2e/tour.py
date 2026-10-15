@@ -859,6 +859,30 @@ def pools():
     back()
 
 
+@step("Node administration: updates, repositories, a service, the system log")
+def node_admin():
+    tap("Resources")
+    tap_node(scroll_to("pve1", exact=True))      # the node
+    tap_node(scroll_to("Updates", exact=True))
+    find("pve-manager", timeout=30)              # upgradable in the mock
+    screenshot("15-updates")
+    tap("Repositories")
+    find("The enterprise repository is enabled", timeout=30)
+    tap_node(scroll_to("Add No-Subscription", exact=True))
+    wait_until(lambda: not visible("Add No-Subscription"), "the repository to be added", timeout=30)
+    back()                                       # to Updates
+    back()                                       # to the node
+    tap_node(scroll_to("Services", exact=True))
+    tap_node(scroll_to("ksmtuned", exact=True))  # stopped in the mock
+    tap("Start", pick="lowest")
+    wait_until(lambda: row_shows("ksmtuned", "Running"), "ksmtuned to run", timeout=60)
+    back()
+    tap_node(scroll_to("System log", exact=True))
+    find("pvestatd", timeout=30)
+    back()
+    back()                                       # to Resources
+
+
 @step("Light theme, the app lock without a screen lock, favourites on the dashboard")
 def light_theme():
     tap("More")
@@ -896,7 +920,7 @@ def main():
     try:
         for s in (launch, add_pve, add_pbs, resources, performance, guest_start, snapshots, backups,
                   options, hardware, console, vm_console, cloud_init, bulk, clone_migrate, tasks, create_vm, alerts,
-                  backup_jobs, storage, storage_setup, firewall, high_availability, replication, pools, light_theme):
+                  backup_jobs, storage, storage_setup, firewall, high_availability, replication, pools, node_admin, light_theme):
             s()
         ok = True
     finally:

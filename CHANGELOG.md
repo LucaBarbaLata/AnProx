@@ -100,6 +100,17 @@ All notable changes to AnProx are documented here. The format follows
   whether it is enabled or shared, and how many backups to keep. **Remove storage** takes it
   out of the configuration without deleting its data (type its name to confirm).
 
+- **Node administration** (Node → Administration):
+  - **Updates**: the subscription status, **Refresh** (apt update as a task), the packages with
+    a newer version (tap one for its changelog), installed versions, and **Upgrade**, which
+    opens the node's terminal running the upgrade, as the web interface does.
+  - **Repositories**: every APT source with Proxmox's warnings (enterprise without a
+    subscription, no Proxmox repository); switch one on or off, or add the no-subscription,
+    enterprise or test repository.
+  - **Services**: start, stop, restart or reload; stopping what the connection depends on
+    (pveproxy, pvedaemon, pve-cluster, corosync, sshd) asks first.
+  - **System log**: the newest 500 journal lines, with a filter.
+
 - **Move to another phone** (More → Settings): export your servers to a file protected with a
   passphrase, optionally with saved passwords (after the fingerprint or screen lock), and import
   it on the new phone. Servers already there are replaced, the rest added.

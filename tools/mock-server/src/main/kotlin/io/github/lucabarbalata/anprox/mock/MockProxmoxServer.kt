@@ -609,6 +609,77 @@ class MockProxmoxServer(
         }
         post("nodes/{node}/qemu") { call.createOrRestore("qemu") }
         post("nodes/{node}/lxc") { call.createOrRestore("lxc") }
+        get("nodes/{node}/apt/update") {
+            call.authed() ?: return@get
+            val node = state.node(call.parameters["node"]!!) ?: return@get call.fail(404, "no such node")
+            if (!node.online) return@get call.fail(595, "Connection refused")
+            call.ok(state.aptUpdates(node.name).orEmpty())
+        }
+        post("nodes/{node}/apt/update") {
+            val s = call.authed() ?: return@post
+            if (state.isReadOnly(s.user)) return@post call.fail(403, "Permission check failed (/nodes/${call.parameters["node"]}, Sys.Modify)")
+            val node = state.node(call.parameters["node"]!!) ?: return@post call.fail(404, "no such node")
+            if (!node.online) return@post call.fail(595, "Connection refused")
+            call.ok(state.refreshAptIndex(node.name, s.user))
+        }
+        get("nodes/{node}/apt/changelog") {
+            call.authed() ?: return@get
+            val node = call.parameters["node"]!!
+            val name = call.request.queryParameters["name"].orEmpty()
+            call.ok(state.aptChangelog(node, name) ?: return@get call.fail(500, "changelog for '$name' not available"))
+        }
+        get("nodes/{node}/apt/versions") {
+            call.authed() ?: return@get
+            call.ok(state.packageVersions(call.parameters["node"]!!).orEmpty())
+        }
+        get("nodes/{node}/apt/repositories") {
+            call.authed() ?: return@get
+            val node = state.node(call.parameters["node"]!!) ?: return@get call.fail(404, "no such node")
+            if (!node.online) return@get call.fail(595, "Connection refused")
+            call.ok(state.aptRepositories(node.name) ?: return@get call.fail(500, "no repositories"))
+        }
+        post("nodes/{node}/apt/repositories") {
+            val s = call.authed() ?: return@post
+            if (state.isReadOnly(s.user)) return@post call.fail(403, "Permission check failed (/nodes/${call.parameters["node"]}, Sys.Modify)")
+            val p = call.receiveParameters()
+            val error = state.setAptRepositoryEnabled(
+                call.parameters["node"]!!, p["path"].orEmpty(), p["index"]?.toIntOrNull() ?: -1, p["enabled"] == "1", p["digest"],
+            )
+            if (error != null) call.fail(400, error) else call.ok(JsonNull)
+        }
+        put("nodes/{node}/apt/repositories") {
+            val s = call.authed() ?: return@put
+            if (state.isReadOnly(s.user)) return@put call.fail(403, "Permission check failed (/nodes/${call.parameters["node"]}, Sys.Modify)")
+            val p = call.receiveParameters()
+            val error = state.addStandardAptRepository(call.parameters["node"]!!, p["handle"].orEmpty(), p["digest"])
+            if (error != null) call.fail(400, error) else call.ok(JsonNull)
+        }
+        get("nodes/{node}/subscription") {
+            call.authed() ?: return@get
+            call.ok(state.subscription())
+        }
+        get("nodes/{node}/services") {
+            call.authed() ?: return@get
+            val node = state.node(call.parameters["node"]!!) ?: return@get call.fail(404, "no such node")
+            if (!node.online) return@get call.fail(595, "Connection refused")
+            call.ok(state.services(node.name).orEmpty())
+        }
+        post("nodes/{node}/services/{service}/{action}") {
+            val s = call.authed() ?: return@post
+            if (state.isReadOnly(s.user)) return@post call.fail(403, "Permission check failed (/nodes/${call.parameters["node"]}, Sys.Modify)")
+            val node = state.node(call.parameters["node"]!!) ?: return@post call.fail(404, "no such node")
+            if (!node.online) return@post call.fail(595, "Connection refused")
+            state.serviceAction(node.name, call.parameters["service"]!!, call.parameters["action"]!!, s.user).fold(
+                onSuccess = { call.ok(it) },
+                onFailure = { call.fail(400, it.message ?: "error") },
+            )
+        }
+        get("nodes/{node}/journal") {
+            call.authed() ?: return@get
+            val node = state.node(call.parameters["node"]!!) ?: return@get call.fail(404, "no such node")
+            if (!node.online) return@get call.fail(595, "Connection refused")
+            call.ok(state.journal(node.name, call.request.queryParameters["lastentries"]?.toIntOrNull() ?: 500))
+        }
         post("nodes/{node}/termproxy") { call.consoleProxy(type = null) }
         post("nodes/{node}/lxc/{vmid}/termproxy") { call.consoleProxy(type = "lxc") }
         post("nodes/{node}/qemu/{vmid}/vncproxy") { call.consoleProxy(type = "qemu") }

@@ -30,7 +30,10 @@ import kotlinx.serialization.Serializable
 @Serializable data class HardwareRoute(val serverId: String, val node: String, val type: String, val vmid: Int, val name: String)
 @Serializable data class CloudInitRoute(val serverId: String, val node: String, val vmid: Int, val name: String)
 /** [kind] is a [io.github.lucabarbalata.anprox.model.pve.ConsoleKind] name; [vmid] is 0 for a node shell. */
-@Serializable data class ConsoleRoute(val serverId: String, val node: String, val kind: String, val vmid: Int, val name: String)
+// command: node shells only, e.g. "upgrade" (empty: a login shell).
+@Serializable data class ConsoleRoute(val serverId: String, val node: String, val kind: String, val vmid: Int, val name: String, val command: String = "")
+// page: a NodeAdminPage name.
+@Serializable data class NodeAdminRoute(val serverId: String, val node: String, val page: String)
 @Serializable data class CloneRoute(val serverId: String, val node: String, val type: String, val vmid: Int, val name: String)
 @Serializable data class MigrateRoute(val serverId: String, val node: String, val type: String, val vmid: Int, val name: String)
 @Serializable data class BackupsRoute(val serverId: String, val node: String, val type: String, val vmid: Int, val name: String)

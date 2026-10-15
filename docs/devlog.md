@@ -200,6 +200,14 @@ constructor parameter; the app uses 600,000. The UI uses the system file pickers
 (`CreateDocument` / `OpenDocument`), so no storage permission. Not in the emulator tour: the
 system pickers' UI differs between Android versions.
 
+**M5: updates, repositories, services, system log.** `termproxy` takes `cmd=upgrade`, so the
+upgrade runs in the app's existing terminal (`ConsoleTarget.command`) rather than as a blind
+task: apt asks questions (config files, kernel prompts) that need a human. Repositories come
+with Proxmox's own `infos` (origin, warnings) and `standard-repos` (handles with a status:
+null means not configured, so it can be added); changes send the digest. Services run as
+tasks, and the app waits for them like guest actions. The journal endpoint wraps its lines in
+`-- cursor:` markers, which `Journal.lines` drops.
+
 **M4: the rest of the firewall.** A security group's rules sit at the group's own path
 (`/cluster/firewall/groups/{group}/{pos}`), not under `…/rules`, so `FirewallScope` gained a
 `rulesPath` and a `Group` case, and the rules screen serves groups unchanged (minus options, and

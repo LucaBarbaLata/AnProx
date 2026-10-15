@@ -9,10 +9,10 @@ testing debug builds on **real hardware**.
 |---|---|---|---|
 | Unit: parsing, formatting, URL rules, UPID/TFA parsing, snapshot tree and names, chart scales, backup listings, guest agent replies, guest options, clone and migration rules, console endpoints and terminal protocol, property strings and hardware forms (VM and container), IP address checks, new VM and container forms, cloud-init (SSH key encoding, IP configs), SPICE files, alerts, app links, backup jobs, storage content, firewall, high availability, replication, pools, storage setup, firewall groups, aliases and IP sets | `core/model/src/test` | JVM | 96 |
 | Integration: HTTP client ↔ mock server over real HTTPS (auth, TFA, failover, TLS, errors, renewal, PBS) | `core/network/src/test` | JVM | 16 |
-| Integration: multi-server hub, sessions, dashboard snapshots, guest actions, guest snapshots, performance history, app lock rules, backup and restore, guest network info, guest options, clone/template/migrate, console sessions (terminal and VNC handshake), node power, hardware (disks, drives, network, pending changes, container volumes), creating VMs and containers, cloud-init, SPICE, alerts, task notifications, backup jobs, storage, firewall, high availability, replication, pools, storage setup, encrypted server export, firewall groups, aliases, IP sets and log | `core/data/src/test` | JVM | 97 |
+| Integration: multi-server hub, sessions, dashboard snapshots, guest actions, guest snapshots, performance history, app lock rules, backup and restore, guest network info, guest options, clone/template/migrate, console sessions (terminal and VNC handshake), node power, hardware (disks, drives, network, pending changes, container volumes), creating VMs and containers, cloud-init, SPICE, alerts, task notifications, backup jobs, storage, firewall, high availability, replication, pools, storage setup, encrypted server export, firewall groups, aliases, IP sets and log, node updates, repositories, services and journal | `core/data/src/test` | JVM | 100 |
 | Android lint | `:app:lintDebug` | CI | — |
 | Build: debug and R8-minified release | `:app:assemble*` | CI | — |
-| **End-to-end tour** of the minified release APK on emulators against the mock server | `scripts/e2e/tour.py` | CI (Android 8.0 + 14), Release workflow | 26 steps |
+| **End-to-end tour** of the minified release APK on emulators against the mock server | `scripts/e2e/tour.py` | CI (Android 8.0 + 14), Release workflow | 27 steps |
 | UI / screenshot tests | planned (M1) | — | — |
 | Manual on real hardware | [checklist below](#manual-test-checklist-real-hardware) | owner | — |
 
@@ -135,7 +135,8 @@ so no test code is compiled into the app. `scripts/e2e/run.sh` starts the mock s
 23. Datacenter → **High availability** → "Manager: pve1" → `100 · web` (managed in the mock) → **Ignored** → **Save** → "HA settings saved".
 24. Datacenter → **Replication** → `103 · k8s-master → pve1` and the failing job to the offline pve3 → **Add replication job** → **Add** → `100 · web → pve2` is listed.
 25. Datacenter → **Resource pools** → `prod` ("Guests: 3 · Storages: 1") → `lab` (`104 · lab-vm`) → **Add guests** → `103 · k8s-master` → **Add (1)** → it is listed in the pool.
-26. Settings → Light theme; turning on the app lock explains that the emulator has no screen lock → dashboard in light mode, with the starred VM under Favourites.
+26. Resources → `pve1` → **Updates** (pve-manager is upgradable) → **Repositories** shows the enterprise warning → add **No-Subscription** → **Services** → start `ksmtuned` → **System log** shows the journal.
+27. Settings → Light theme; turning on the app lock explains that the emulator has no screen lock → dashboard in light mode, with the starred VM under Favourites.
 
 After every step the script checks that the app process is alive and that logcat has no
 `FATAL EXCEPTION` for the app. Screenshots of each step, plus UI dumps and logcat on failure,

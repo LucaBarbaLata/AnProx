@@ -90,6 +90,7 @@ import io.github.lucabarbalata.anprox.ui.navigation.HardwareRoute
 import io.github.lucabarbalata.anprox.ui.navigation.LoginRoute
 import io.github.lucabarbalata.anprox.ui.navigation.MigrateRoute
 import io.github.lucabarbalata.anprox.ui.navigation.MoreRoute
+import io.github.lucabarbalata.anprox.ui.navigation.NodeAdminRoute
 import io.github.lucabarbalata.anprox.ui.navigation.NodeRoute
 import io.github.lucabarbalata.anprox.ui.navigation.OptionsRoute
 import io.github.lucabarbalata.anprox.ui.navigation.PoolRoute
@@ -107,7 +108,12 @@ import io.github.lucabarbalata.anprox.ui.navigation.StorageRoute
 import io.github.lucabarbalata.anprox.ui.navigation.TaskLogRoute
 import io.github.lucabarbalata.anprox.ui.navigation.TasksRoute
 import io.github.lucabarbalata.anprox.ui.navigation.firewallScope
+import io.github.lucabarbalata.anprox.ui.node.JournalScreen
+import io.github.lucabarbalata.anprox.ui.node.NodeAdminPage
 import io.github.lucabarbalata.anprox.ui.node.NodeScreen
+import io.github.lucabarbalata.anprox.ui.node.RepositoriesScreen
+import io.github.lucabarbalata.anprox.ui.node.ServicesScreen
+import io.github.lucabarbalata.anprox.ui.node.UpdatesScreen
 import io.github.lucabarbalata.anprox.ui.resources.ResourcesScreen
 import io.github.lucabarbalata.anprox.ui.servers.ServerEditorScreen
 import io.github.lucabarbalata.anprox.ui.servers.ServersScreen
@@ -432,7 +438,7 @@ fun AnProxApp() {
             composable<ConsoleRoute> { entry ->
                 val r = entry.toRoute<ConsoleRoute>()
                 val kind = ConsoleKind.valueOf(r.kind)
-                val target = ConsoleTarget(kind, r.node, r.vmid.takeIf { kind != ConsoleKind.NODE }, r.name)
+                val target = ConsoleTarget(kind, r.node, r.vmid.takeIf { kind != ConsoleKind.NODE }, r.name, r.command.ifEmpty { null })
                 ConsoleScreen(r.serverId, target, onBack = back)
             }
             composable<StorageRoute> { entry ->
@@ -458,7 +464,24 @@ fun AnProxApp() {
                     onShell = { nav.navigate(ConsoleRoute(r.serverId, r.node, ConsoleKind.NODE.name, 0, r.node)) },
                     onCreate = { type -> nav.navigate(CreateGuestRoute(r.serverId, r.node, type.apiName)) },
                     onFirewall = { nav.navigate(FirewallRoute(r.serverId, "node", r.node, r.node)) },
+                    onAdmin = { page -> nav.navigate(NodeAdminRoute(r.serverId, r.node, page.name)) },
                 )
+            }
+            composable<NodeAdminRoute> { entry ->
+                val r = entry.toRoute<NodeAdminRoute>()
+                when (NodeAdminPage.valueOf(r.page)) {
+                    NodeAdminPage.UPDATES -> UpdatesScreen(
+                        r.serverId,
+                        r.node,
+                        onBack = back,
+                        onRepositories = { nav.navigate(NodeAdminRoute(r.serverId, r.node, NodeAdminPage.REPOSITORIES.name)) },
+                        onUpgrade = { nav.navigate(ConsoleRoute(r.serverId, r.node, ConsoleKind.NODE.name, 0, r.node, command = "upgrade")) },
+                        onTask = openTask,
+                    )
+                    NodeAdminPage.REPOSITORIES -> RepositoriesScreen(r.serverId, r.node, onBack = back, onTask = openTask)
+                    NodeAdminPage.SERVICES -> ServicesScreen(r.serverId, r.node, onBack = back, onTask = openTask)
+                    NodeAdminPage.JOURNAL -> JournalScreen(r.serverId, r.node, onBack = back)
+                }
             }
             composable<TaskLogRoute> { entry ->
                 val r = entry.toRoute<TaskLogRoute>()

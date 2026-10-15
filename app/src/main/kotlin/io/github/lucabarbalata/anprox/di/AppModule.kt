@@ -20,6 +20,7 @@ import io.github.lucabarbalata.anprox.data.hardware.HardwareRepository
 import io.github.lucabarbalata.anprox.data.hub.ServerHub
 import io.github.lucabarbalata.anprox.data.metrics.MetricsRepository
 import io.github.lucabarbalata.anprox.data.metrics.MetricsSource
+import io.github.lucabarbalata.anprox.data.node.NodeAdminRepository
 import io.github.lucabarbalata.anprox.data.security.AppLock
 import io.github.lucabarbalata.anprox.data.snapshot.SnapshotRepository
 import io.github.lucabarbalata.anprox.data.store.ProfileStore
@@ -63,7 +64,11 @@ import io.github.lucabarbalata.anprox.ui.hardware.HardwareViewModel
 import io.github.lucabarbalata.anprox.ui.login.LoginViewModel
 import io.github.lucabarbalata.anprox.ui.metrics.PerformanceViewModel
 import io.github.lucabarbalata.anprox.ui.navigation.AppLinks
+import io.github.lucabarbalata.anprox.ui.node.JournalViewModel
 import io.github.lucabarbalata.anprox.ui.node.NodeViewModel
+import io.github.lucabarbalata.anprox.ui.node.RepositoriesViewModel
+import io.github.lucabarbalata.anprox.ui.node.ServicesViewModel
+import io.github.lucabarbalata.anprox.ui.node.UpdatesViewModel
 import io.github.lucabarbalata.anprox.ui.resources.ResourcesViewModel
 import io.github.lucabarbalata.anprox.ui.servers.ServerEditorViewModel
 import io.github.lucabarbalata.anprox.ui.servers.ServersViewModel
@@ -126,6 +131,7 @@ val appModule = module {
     single { PoolRepository(get()) }
     single { StorageSetupRepository(get()) }
     single { ProfileTransfer(get(), get()) }
+    single { NodeAdminRepository(get()) }
 
     // Background alerts
     single { AlertStore(androidContext()) }
@@ -152,6 +158,10 @@ val appModule = module {
     viewModel { (source: MetricsSource) -> PerformanceViewModel(source, get()) }
     viewModel { (scope: BackupScope) -> BackupsViewModel(scope, get(), get()) }
     viewModel { (serverId: String, node: String) -> NodeViewModel(serverId, node, get(), get()) }
+    viewModel { (serverId: String, node: String) -> UpdatesViewModel(serverId, node, get(), get()) }
+    viewModel { (serverId: String, node: String) -> RepositoriesViewModel(serverId, node, get()) }
+    viewModel { (serverId: String, node: String) -> ServicesViewModel(serverId, node, get(), get()) }
+    viewModel { (serverId: String, node: String) -> JournalViewModel(serverId, node, get()) }
     viewModel { TasksViewModel(get()) }
     viewModel { (serverId: String, node: String, upid: String) -> TaskLogViewModel(serverId, node, upid, get()) }
     viewModel { SettingsViewModel(get()) }

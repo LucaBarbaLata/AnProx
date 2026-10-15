@@ -225,6 +225,7 @@ class MockState(
     private val firewall = MockFirewall()
     private val haManager = MockHa(guests)
     private val replication = MockReplication(clockMillis)
+    private val nodeAdmin = MockNodeAdmin(nodes.map { it.name })
 
     /** Accepted `POST /nodes/{node}/status` calls (node, command); the mock nodes keep running. */
     val nodePowerRequests: MutableList<Pair<String, String>> = java.util.Collections.synchronizedList(mutableListOf())
@@ -980,6 +981,30 @@ class MockState(
     private val DISK_KEY = Regex("^(scsi|virtio|sata|ide|efidisk|tpmstate|unused|mp)\\d+$|^rootfs$")
 
     // ------------------------------------------------------------------ high availability
+
+    fun aptUpdates(node: String) = synchronized(lock) { nodeAdmin.updates(node) }
+    fun aptChangelog(node: String, name: String) = synchronized(lock) { nodeAdmin.changelog(node, name) }
+    fun packageVersions(node: String) = synchronized(lock) { nodeAdmin.versions(node) }
+    fun subscription() = nodeAdmin.subscription()
+    fun aptRepositories(node: String) = synchronized(lock) { nodeAdmin.repositories(node) }
+    fun setAptRepositoryEnabled(node: String, path: String, index: Int, enabled: Boolean, digest: String?) =
+        synchronized(lock) { nodeAdmin.setEnabled(node, path, index, enabled, digest) }
+    fun addStandardAptRepository(node: String, handle: String, digest: String?) = synchronized(lock) { nodeAdmin.addStandard(node, handle, digest) }
+    fun services(node: String) = synchronized(lock) {
+        settleTasks()
+        nodeAdmin.services(node)
+    }
+    fun journal(node: String, last: Int) = nodeAdmin.journal(node, last)
+
+    /** `POST …/services/{service}/{action}`: a task that changes the service's state when it ends. */
+    fun serviceAction(node: String, service: String, action: String, user: String): Result<String> {
+        synchronized(lock) { nodeAdmin.checkServiceAction(node, service, action) }?.let { return Result.failure(IllegalArgumentException(it)) }
+        val type = "srv$action"
+        return Result.success(startTask(node, type, service, user) { nodeAdmin.applyServiceAction(node, service, action) })
+    }
+
+    /** `apt-get update` as a task. */
+    fun refreshAptIndex(node: String, user: String): String = startTask(node, "aptupdate", "", user)
 
     fun replicationJobs() = synchronized(lock) { replication.list() }
     fun replicationStatus(nodeName: String) = synchronized(lock) { replication.status(nodeName, ::guestNode) }

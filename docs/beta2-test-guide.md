@@ -252,6 +252,16 @@ Needs two nodes and a guest whose disks are on local ZFS storage that exists on 
 4. On a second phone or emulator (or after removing a server): import → the servers appear;
    with passwords included, they sign in without asking.
 
+### D14. Node administration (Node → Administration), new after beta.2
+1. **Updates**: the list matches the web UI's Node → Updates after **Refresh**; tap a package →
+   its changelog. **Installed versions** matches the web UI's Package versions.
+2. **Upgrade** opens a terminal running the upgrade; answer its questions there (try it on a
+   test node first).
+3. **Repositories**: the warnings match the web UI's Repositories; add No-Subscription and
+   switch the enterprise one off → check /etc/apt/sources.list* on the node.
+4. **Services**: restart `pvestatd` (harmless) → "done"; stopping `pveproxy` asks first.
+5. **System log**: the newest lines match `journalctl -n 500`; the filter narrows them.
+
 ### E. Snapshots (Tools → Snapshots)
 1. **Take snapshot** on the running test VM with **Include RAM** → "VM snapshot finished"; it
    appears in the tree with a RAM badge.

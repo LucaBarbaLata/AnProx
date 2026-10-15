@@ -1294,6 +1294,46 @@
     <string name="transfer_import_confirm">Import</string>
     <string name="transfer_imported">Servers imported: %1$d added, %2$d replaced</string>
 
+    <!-- Node administration (Node → Administration) -->
+    <string name="node_admin">Administration</string>
+    <string name="updates_title">Updates</string>
+    <string name="updates_open_body">Packages with newer versions, refresh, upgrade</string>
+    <string name="updates_subscription">Subscription</string>
+    <string name="updates_subscription_active">Active</string>
+    <string name="updates_subscription_none">None</string>
+    <string name="updates_subscription_none_body">Without a subscription, use the no-subscription repository (Repositories) to get updates.</string>
+    <string name="updates_refresh">Refresh</string>
+    <string name="updates_upgrade">Upgrade</string>
+    <string name="updates_versions">Installed versions</string>
+    <string name="updates_refreshed">Package lists refreshed</string>
+    <string name="updates_refresh_failed">Refreshing the package lists failed</string>
+    <string name="updates_none_title">Up to date</string>
+    <string name="updates_none_body">No package has a newer version. Refresh to check the repositories again.</string>
+    <string name="updates_available">Available (%1$d)</string>
+    <string name="updates_version_change">%1$s → %2$s</string>
+    <string name="updates_changelog">Changelog</string>
+    <string name="repos_title">Repositories</string>
+    <string name="repos_open_body">Where the node gets its packages</string>
+    <string name="repos_enabled">Repository switched on</string>
+    <string name="repos_disabled">Repository switched off</string>
+    <string name="repos_added">%1$s repository added</string>
+    <string name="repos_add">Add a Proxmox repository</string>
+    <string name="repos_add_one">Add %1$s</string>
+    <string name="services_title">Services</string>
+    <string name="services_open_body">Start, stop and restart Proxmox\'s services</string>
+    <string name="services_running">%1$s…</string>
+    <string name="services_done">%1$s: done</string>
+    <string name="services_failed">%1$s: failed</string>
+    <string name="services_start">Start</string>
+    <string name="services_stop">Stop</string>
+    <string name="services_restart">Restart</string>
+    <string name="services_reload">Reload</string>
+    <string name="services_not_installed">Not installed</string>
+    <string name="services_confirm_title">%1$s %2$s?</string>
+    <string name="services_confirm_body">AnProx and the web interface talk to the node through this service, or the cluster depends on it. The connection drops for a moment; stopping it cuts it until the service is started again on the node.</string>
+    <string name="journal_title">System log</string>
+    <string name="journal_open_body">The newest 500 lines of the journal</string>
+
     <!-- Resource pools (Datacenter → Resource pools) -->
     <string name="pools_open_body">Groups of guests and storages for permissions and backups</string>
     <string name="pools_create">Create pool</string>

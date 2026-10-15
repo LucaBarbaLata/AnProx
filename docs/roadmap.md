@@ -13,7 +13,7 @@ Status legend: ✅ done · 🚧 in progress · 🗓 planned
 | [M2](#m2--consoles--guest-configuration) | Consoles and guest configuration | 🚧 all but the built-in SSH client |
 | [M3](#m3--alerts--android-integration) | Alerts and Android integration | 🚧 alerts, links, shortcuts, tile, widget done |
 | [M4](#m4--datacenter) | Datacenter: storage, backup jobs, HA, replication, firewall | 🚧 all but editing HA groups/rules and maintenance mode |
-| [M5](#m5--node-administration) | Node administration | 🗓 |
+| [M5](#m5--node-administration) | Node administration | 🚧 updates, repositories, services, system log done |
 | [M6](#m6--ceph--sdn) | Ceph and SDN | 🗓 |
 | [M7](#m7--access-control) | Users, groups, roles, ACLs, realms, tokens, TFA | 🗓 |
 | [M8](#m8--backup-server-complete) | Proxmox Backup Server complete | 🗓 |
@@ -153,10 +153,15 @@ Everything marked ✅ in M1 and M2 below. Gates:
   optional and behind the screen lock, sessions never exported.
 
 ## M5 — Node administration
-- **Updates and repositories** (Q22): refresh, upgradable list with changelogs, upgrade in a terminal, repository management.
+*Status: 🚧 in progress.* Node → Administration.
+- ✅ **Updates and repositories** (Q22): subscription status, refresh the package lists (a
+  task), upgradable packages with changelogs, installed versions, the upgrade in a terminal;
+  repositories with Proxmox's warnings, switch on/off, add no-subscription/enterprise/test.
+- ✅ **Services** (start, stop, restart, reload; the ones the connection depends on ask first)
+  and the **system log** (newest 500 journal lines, filter).
 - **Disks** (Q22): SMART, wipe, initialise GPT, create ZFS/LVM/LVM-thin/directory storage.
 - **Network interfaces** (Q22): bridges, bonds, VLANs, a pending-changes diff, apply/revert.
-- Services, syslog/journal, DNS/hosts/time, power (reboot/shutdown node), subscription status.
+- DNS/hosts/time, entering a subscription key. (Node power is done, under M0/M1.)
 
 ## M6 — Ceph & SDN
 - **Ceph** (Q21): health and status, OSDs (in/out, up/down, create/destroy), pools, monitors,

@@ -77,12 +77,17 @@ Code: `core/network/src/main/kotlin/.../network/api/` (`AccessApi`, `PveApi`, `P
 | `POST /nodes/{node}/vzdump` | Backup now | ✅ (one guest; storage, mode, notes) |
 | `/nodes/{node}/{startall,stopall,migrateall}` | Bulk actions | 🗓 M4 |
 | `/nodes/{node}/{termproxy,vncshell,vncwebsocket}` | Node shell | ✅ `termproxy` + `vncwebsocket` through the app's connection, bundled xterm.js ([ADR 0014](adr/0014-consoles-through-the-app.md)) |
-| `/nodes/{node}/apt/*` | Updates, changelog, repositories | 🗓 M5 |
+| `GET/POST /nodes/{node}/apt/update`, `GET …/apt/changelog`, `GET …/apt/versions` | Upgradable packages, refreshing the index (a task), changelogs, installed versions | ✅ |
+| `GET/POST/PUT /nodes/{node}/apt/repositories` | Repositories with Proxmox's warnings; switch on/off; add a standard repository | ✅ |
+| `POST /nodes/{node}/termproxy` with `cmd=upgrade` | The upgrade in a terminal, like the web UI | ✅ |
 | `/nodes/{node}/disks/*` | SMART, wipe, GPT, ZFS, LVM, LVM-thin, directory | 🗓 M5 |
 | `/nodes/{node}/network` | Interfaces, bridges, bonds, VLANs, apply/revert | 🔸 `GET ?type=any_bridge` ✅ (bridges for network devices); editing 🗓 M5 |
-| `/nodes/{node}/services`, `/syslog`, `/journal` | Services and logs | 🗓 M5 |
+| `GET /nodes/{node}/services`, `POST …/services/{service}/{start,stop,restart,reload}` | Services (tasks) | ✅ |
+| `GET /nodes/{node}/journal?lastentries=` | System log (newest 500 lines) | ✅ |
+| `GET /nodes/{node}/syslog` | The older syslog view | 🗓 (the journal covers it) |
 | `/nodes/{node}/{dns,hosts,time}` | System settings | 🗓 M5 |
-| `/nodes/{node}/subscription` | Subscription status | 🗓 M5 |
+| `GET /nodes/{node}/subscription` | Subscription status (on the Updates screen) | ✅ |
+| `PUT/POST /nodes/{node}/subscription` | Entering a key | 🗓 M5 |
 | `/nodes/{node}/certificates/*` | Certificates, ACME orders | 🗓 M9 |
 | `/nodes/{node}/firewall/{rules,options}` | Node firewall | ✅ |
 | `/nodes/{node}/firewall/log` | Node firewall log | 🗓 M4 |

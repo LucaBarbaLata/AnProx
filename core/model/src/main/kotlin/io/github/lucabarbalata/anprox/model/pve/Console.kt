@@ -25,7 +25,14 @@ enum class ConsoleKind {
  * session. Going through the app's own HTTP client (rather than letting a WebView connect)
  * means self-signed certificates, custom headers and failover work exactly as for the API.
  */
-data class ConsoleTarget(val kind: ConsoleKind, val node: String, val vmid: Int? = null, val name: String? = null) {
+data class ConsoleTarget(
+    val kind: ConsoleKind,
+    val node: String,
+    val vmid: Int? = null,
+    val name: String? = null,
+    /** Node shells only: what to run instead of a login shell (`upgrade` runs `apt dist-upgrade`). */
+    val command: String? = null,
+) {
 
     private val guestPath: String
         get() = requireNotNull(vmid) { "$kind console needs a vmid" }.let { id ->

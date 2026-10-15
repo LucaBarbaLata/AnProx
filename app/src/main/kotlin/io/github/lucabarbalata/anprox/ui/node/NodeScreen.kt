@@ -66,6 +66,7 @@ fun NodeScreen(
     onShell: () -> Unit,
     onCreate: (GuestType) -> Unit,
     onFirewall: () -> Unit,
+    onAdmin: (NodeAdminPage) -> Unit,
     viewModel: NodeViewModel = koinViewModel(key = "node-$serverId-$node") { parametersOf(serverId, node) },
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -97,6 +98,8 @@ fun NodeScreen(
                             MenuRow(Icons.Outlined.Shield, stringResource(R.string.firewall_title), stringResource(R.string.firewall_open_body_node), onFirewall)
                         }
                     }
+                    item { SectionHeader(stringResource(R.string.node_admin)) }
+                    item { NodeAdminCard(onAdmin) }
                 }
                 if (state.online) {
                     item { SectionHeader(stringResource(R.string.perf_title)) }
