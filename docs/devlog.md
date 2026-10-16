@@ -245,6 +245,15 @@ resize. The download dialog's URL field took a keyboard's word completion (`.iso
 `.isolated` on the Android 14 emulator, the "lost last letter" seen before); it now asks for no
 suggestions.
 
+The evidence came from the first run: on the Android 14 emulator the terminal received its 69
+bytes but measured **46×1**, and the VM screen received 250 KiB but measured **412×0**, while the
+page itself was 412×704. Headless Chromium without the stylesheets gives 45×24, so the CSS was
+there and full-height elements collapsed. Cause: `AndroidView` leaves a view without layout
+params as `WRAP_CONTENT`, and a WebView whose height wraps its content lays the page out with a
+zero-height viewport (Chromium's "force zero layout height"), even though `innerHeight` and the
+view's own size are right. The console WebView now gets `MATCH_PARENT` layout params, and the
+tour fails if the terminal has fewer than 5 rows or the VM screen is under 100 px high.
+
 **M2: the SSH client.** JSch (mwiede fork) with Bouncy Castle, see [ADR 0015](adr/0015-ssh-client.md).
 Two surprises: JSch chooses between its JDK and Bouncy Castle classes by Java version, and
 Android's `java.specification.version` reads as an old one, so `JschSetup` picks the Bouncy

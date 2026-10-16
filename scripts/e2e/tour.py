@@ -627,16 +627,30 @@ def console_probe(tag):
             print(f"    [{tag}] no WebView in the dump", flush=True)
     except Exception as e:
         print(f"    [{tag}] probe failed: {e}", flush=True)
+    details = ""
     try:
         tap("Console details", timeout=10)
         root = dump(attempts=3)
-        texts = [t for n in root.iter("node") for t in [n.get("text") or ""] if t.strip()]
-        print(f"    [{tag}] details: {' | '.join(texts)[:1500]!r}", flush=True)
+        details = " | ".join(t for n in root.iter("node") for t in [n.get("text") or ""] if t.strip())
+        print(f"    [{tag}] details: {details[:1500]!r}", flush=True)
         tap("Close", timeout=10)
     except Exception as e:
         print(f"    [{tag}] details failed: {e}", flush=True)
-    for line in adb("logcat", "-d", "-s", "AnProxConsole:*", check=False).strip().splitlines()[-20:]:
+    for line in adb("logcat", "-d", "-s", "AnProxConsole:*", check=False).strip().splitlines()[-12:]:
         print(f"    [{tag}] {line}", flush=True)
+    adb("logcat", "-c", check=False)
+    return details
+
+
+def assert_console_fills(details, what):
+    """The page reports its terminal or screen size; a 0 px high viewport left one row / 0 px."""
+    sizes = re.findall(rf"{what} (?:size )?(\d+)x(\d+)", details)
+    if not sizes:
+        raise AssertionError(f"the console details don't report the {what} size: {details[:300]!r}")
+    w, h = map(int, sizes[-1])
+    minimum = 5 if what == "terminal" else 100
+    if h < minimum:
+        raise AssertionError(f"the console's {what} is {w}x{h}: the page has no height")
 
 
 @step("Container console: terminal through the app's own connection, with the extra keys")
@@ -648,7 +662,7 @@ def console():
     node = find_any(["Connected", "Android System WebView"], timeout=45)
     if "Connected" in " ".join(labels(node)):
         time.sleep(2)
-        console_probe("terminal")
+        assert_console_fills(console_probe("terminal"), "terminal")
         tap("Esc")                         # extra key row → sent to the terminal
         tap("Keyboard")                    # focuses the terminal and asks for the soft keyboard
         time.sleep(1)
@@ -666,7 +680,7 @@ def vm_console():
     node = find_any(["Connected · k8s-master", "Android System WebView"], timeout=45)
     if "Connected" in " ".join(labels(node)):
         time.sleep(2)
-        console_probe("vnc")               # the mock's screen is #1e293b
+        assert_console_fills(console_probe("vnc"), "screen")  # the mock's screen is #1e293b
     screenshot("11f2-vm-console")
     leave_console()
     scroll_to("The VM's screen (noVNC)")
@@ -1013,7 +1027,8 @@ def ssh():
     find("Connected", timeout=45)
     tap("Add key")                                # the banner: signed in with a password
     tap_node(find("Tour phone", timeout=15))
-    find_any(["was added"], timeout=30)
+    # The "… was added" snackbar is short; the banner going away says the same.
+    wait_until(lambda: not visible("Signed in with a password"), "the key to be added", timeout=30)
     screenshot("16c-ssh-connected")
     tap("Change connection")
     tap_node(scroll_to("Connect", exact=True))   # the form, now on the key just added

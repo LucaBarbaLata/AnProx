@@ -151,6 +151,10 @@ All notable changes to AnProx are documented here. The format follows
 - After creating or cloning a guest, the form scrolls to the result and its **Open it** button.
 
 ### Fixed
+- **Console output is visible.** The node and container terminals showed no output (typing
+  worked) and the VM screen stayed blank, on real servers too: the console's WebView laid its
+  page out 0 px high. It now fills the screen. The emulator tour checks the terminal's rows and
+  the VM screen's height from now on.
 - Text fields no longer lose characters when typing fast (seen on Android 14).
 - **Consoles work on real servers.** In 0.1.0-beta.2 the VM screen reconnected endlessly and node
   and container terminals stayed empty, without a keyboard. The app now connects to the console

@@ -3,6 +3,7 @@ package io.github.lucabarbalata.anprox.ui.console
 import android.annotation.SuppressLint
 import android.content.Context
 import android.util.Log
+import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
 import android.webkit.ConsoleMessage
 import android.webkit.JavascriptInterface
@@ -347,6 +348,10 @@ private class ConsoleBridge(private val viewModel: ConsoleViewModel) {
  */
 @SuppressLint("SetJavaScriptEnabled", "JavascriptInterface")
 private fun consoleWebView(context: Context, page: String, bridge: ConsoleBridge): WebView = WebView(context).apply {
+    // Without layout params AndroidView leaves WRAP_CONTENT, and a WebView that wraps its content
+    // lays the page out with a viewport 0 px high: the terminal got one row and the VM screen
+    // none, although the data arrived (seen on Proxmox VE 8 with Android 17, and on Android 14).
+    layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
     // The page's console goes to logcat; its errors also show on the screen.
     webChromeClient = object : WebChromeClient() {
         override fun onConsoleMessage(message: ConsoleMessage): Boolean {
