@@ -293,8 +293,11 @@ def disable_soft_keyboards():
     for ime in adb("shell", "ime", "list", "-s", check=False).split():
         adb("shell", "ime", "disable", ime, check=False)
     # The AOSP keyboard can't always be switched off; the first time it shows for a URL field it
-    # asks for the contacts, and that dialog covers the app. Answer it up front.
-    adb("shell", "pm", "grant", "com.android.inputmethod.latin", "android.permission.READ_CONTACTS", check=False)
+    # asks for the contacts, and that dialog covers the app. Deny it for good up front (granting
+    # it made the keyboard's suggestions change what the tour typed).
+    latin = "com.android.inputmethod.latin"
+    adb("shell", "pm", "revoke", latin, "android.permission.READ_CONTACTS", check=False)
+    adb("shell", "pm", "set-permission-flags", latin, "android.permission.READ_CONTACTS", "user-fixed", check=False)
 
 
 def fill(label, value, fallback_index=None, password=False):
