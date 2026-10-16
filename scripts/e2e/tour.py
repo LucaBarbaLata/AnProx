@@ -298,6 +298,9 @@ def disable_soft_keyboards():
     latin = "com.android.inputmethod.latin"
     adb("shell", "pm", "revoke", latin, "android.permission.READ_CONTACTS", check=False)
     adb("shell", "pm", "set-permission-flags", latin, "android.permission.READ_CONTACTS", "user-fixed", check=False)
+    # On Android 14 it stays bound after "ime disable" and still edits what the tour types
+    # (a trailing space, ".iso" completed to ".isolated"); switch the app off entirely.
+    print(adb("shell", "pm", "disable-user", "--user", "0", latin, check=False).strip(), flush=True)
 
 
 def fill(label, value, fallback_index=None, password=False):

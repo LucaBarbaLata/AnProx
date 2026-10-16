@@ -89,7 +89,13 @@ fun GlassTextField(
         minLines = minLines,
         enabled = enabled,
         visualTransformation = visualTransformation,
-        keyboardOptions = keyboardOptions,
+        // Single-line fields hold IDs, addresses, paths and names: a keyboard's corrections and
+        // word completion only break those (".iso" became ".isolated"). Notes keep them.
+        keyboardOptions = if (singleLine && keyboardOptions.autoCorrectEnabled == null) {
+            keyboardOptions.copy(autoCorrectEnabled = false)
+        } else {
+            keyboardOptions
+        },
         keyboardActions = keyboardActions,
         trailingIcon = trailingIcon,
         shape = RoundedCornerShape(16.dp),
