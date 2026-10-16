@@ -286,6 +286,11 @@
     <string name="console_keyboard">Keyboard</string>
     <string name="console_ctrl_alt_del">Ctrl+Alt+Del</string>
     <string name="console_webview_old_title">Android System WebView is too old</string>
+    <string name="console_details">Console details</string>
+    <string name="console_details_body">Status: %1$s\nAndroid System WebView: %2$s\nPage loads: %3$d\nReceived: %4$d messages, %5$s\nSent: %6$s</string>
+    <string name="console_details_events">Recent events</string>
+    <string name="console_details_none">none</string>
+    <string name="console_page_error">The console page reported an error: %1$s</string>
     <string name="console_webview_old_body">Consoles need Android System WebView %1$d or newer; this phone has %2$s. Update it from the Play Store.</string>
 
     <!-- SSH client (Q15) -->

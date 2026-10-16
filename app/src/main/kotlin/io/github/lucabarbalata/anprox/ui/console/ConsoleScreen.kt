@@ -2,8 +2,11 @@ package io.github.lucabarbalata.anprox.ui.console
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.util.Log
 import android.view.inputmethod.InputMethodManager
+import android.webkit.ConsoleMessage
 import android.webkit.JavascriptInterface
+import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -15,24 +18,30 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Keyboard
 import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -52,7 +61,10 @@ import io.github.lucabarbalata.anprox.R
 import io.github.lucabarbalata.anprox.core.designsystem.component.EmptyState
 import io.github.lucabarbalata.anprox.core.designsystem.component.ErrorBanner
 import io.github.lucabarbalata.anprox.core.designsystem.component.LocalBottomBarPadding
+import io.github.lucabarbalata.anprox.core.designsystem.component.Tone
 import io.github.lucabarbalata.anprox.core.designsystem.theme.AnProxTheme
+import io.github.lucabarbalata.anprox.core.designsystem.theme.MonoStyle
+import io.github.lucabarbalata.anprox.model.format.Formatters
 import io.github.lucabarbalata.anprox.model.pve.ConsoleKind
 import io.github.lucabarbalata.anprox.model.pve.ConsoleTarget
 import io.github.lucabarbalata.anprox.model.pve.TerminalKey
@@ -93,6 +105,7 @@ fun ConsoleView(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     var webView by remember { mutableStateOf<WebView?>(null) }
+    var details by remember { mutableStateOf(false) }
     val webViewVersion = remember { webViewVersion() }
     val supported = (webViewVersion?.substringBefore('.')?.toIntOrNull() ?: 0) >= MIN_WEBVIEW_MAJOR
     val terminal = target.kind.isTerminal
@@ -119,6 +132,9 @@ fun ConsoleView(
         snackbarHostState = snackbarHostState,
         actions = {
             actions()
+            IconButton(onClick = { details = true }) {
+                Icon(Icons.Outlined.Info, contentDescription = stringResource(R.string.console_details))
+            }
             IconButton(onClick = viewModel::reconnect, enabled = supported) {
                 Icon(Icons.Outlined.Refresh, contentDescription = stringResource(R.string.console_reconnect))
             }
@@ -138,6 +154,9 @@ fun ConsoleView(
                 return@Column
             }
             extra()
+            state.pageError?.let {
+                ErrorBanner(stringResource(R.string.console_page_error, it), tone = Tone.WARNING, modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp))
+            }
             if (state.status == ConsoleStatus.FAILED || state.status == ConsoleStatus.CLOSED) {
                 ErrorBanner(
                     state.message?.asString() ?: stringResource(R.string.console_closed),
@@ -150,7 +169,14 @@ fun ConsoleView(
                 key(state.generation) {
                     AndroidView(
                         factory = { context ->
-                            consoleWebView(context, if (terminal) "terminal" else "vnc", ConsoleBridge(viewModel)).also { webView = it }
+                            consoleWebView(context, if (terminal) "terminal" else "vnc", ConsoleBridge(viewModel)).also { view ->
+                                view.addOnLayoutChangeListener { v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom ->
+                                    if (right - left != oldRight - oldLeft || bottom - top != oldBottom - oldTop) {
+                                        viewModel.note("view ${v.width}x${v.height}")
+                                    }
+                                }
+                                webView = view
+                            }
                         },
                         onRelease = { view ->
                             if (webView === view) webView = null
@@ -171,6 +197,36 @@ fun ConsoleView(
                 onCtrlAltDel = { webView?.evaluateJavascript("anprox.ctrlAltDel()", null) },
             )
         }
+    }
+
+    if (details) {
+        val d = remember(details) { viewModel.diagnostics() }
+        val none = stringResource(R.string.console_details_none)
+        AlertDialog(
+            onDismissRequest = { details = false },
+            containerColor = AnProxTheme.colors.surfaceSolid,
+            title = { Text(stringResource(R.string.console_details)) },
+            text = {
+                Column(Modifier.verticalScroll(rememberScrollState())) {
+                    Text(
+                        stringResource(
+                            R.string.console_details_body,
+                            statusText(state, target.kind),
+                            webViewVersion ?: "—",
+                            d.pageLoads,
+                            d.messagesIn,
+                            Formatters.bytes(d.bytesIn),
+                            Formatters.bytes(d.bytesOut),
+                        ),
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                    Spacer(Modifier.height(10.dp))
+                    Text(stringResource(R.string.console_details_events), style = MaterialTheme.typography.titleSmall)
+                    Text(d.events.joinToString("\n").ifEmpty { none }, style = MonoStyle)
+                }
+            },
+            confirmButton = { TextButton(onClick = { details = false }) { Text(stringResource(R.string.action_close)) } },
+        )
     }
 }
 
@@ -244,6 +300,10 @@ private fun KeyChip(label: String, onClick: () -> Unit) {
 
 /** What the bundled page calls (on the WebView's bridge thread). */
 private class ConsoleBridge(private val viewModel: ConsoleViewModel) {
+    fun pageError(text: String) {
+        viewModel.pageError(text)
+    }
+
     @JavascriptInterface
     fun ready() {
         viewModel.pageReady()
@@ -273,6 +333,12 @@ private class ConsoleBridge(private val viewModel: ConsoleViewModel) {
     fun status(state: String, detail: String) {
         viewModel.vncStatus(state, detail)
     }
+
+    /** Facts the page reports about itself (its size, the framebuffer size), for the details dialog. */
+    @JavascriptInterface
+    fun log(message: String) {
+        viewModel.note(message.take(200))
+    }
 }
 
 /**
@@ -281,6 +347,14 @@ private class ConsoleBridge(private val viewModel: ConsoleViewModel) {
  */
 @SuppressLint("SetJavaScriptEnabled", "JavascriptInterface")
 private fun consoleWebView(context: Context, page: String, bridge: ConsoleBridge): WebView = WebView(context).apply {
+    // The page's console goes to logcat; its errors also show on the screen.
+    webChromeClient = object : WebChromeClient() {
+        override fun onConsoleMessage(message: ConsoleMessage): Boolean {
+            val text = "${message.message()} (${message.sourceId().substringAfterLast('/')}:${message.lineNumber()})"
+            if (message.messageLevel() == ConsoleMessage.MessageLevel.ERROR) bridge.pageError(text) else Log.d(ConsoleViewModel.LOG_TAG, text)
+            return true
+        }
+    }
     setBackgroundColor(android.graphics.Color.rgb(0x0b, 0x0f, 0x1a))
     settings.javaScriptEnabled = true
     settings.allowFileAccess = false

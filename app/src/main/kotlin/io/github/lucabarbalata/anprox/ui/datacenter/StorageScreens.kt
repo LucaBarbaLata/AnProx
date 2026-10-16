@@ -21,6 +21,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
@@ -49,6 +50,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleResumeEffect
@@ -379,6 +381,8 @@ private fun DownloadDialog(state: StorageContentState, viewModel: StorageContent
                     onValueChange = { u -> viewModel.editDownload { copy(url = u.trim()) } },
                     label = stringResource(R.string.storage_download_url),
                     isError = form.url.isNotEmpty() && problem == DownloadUrlForm.Problem.URL,
+                    // No suggestions: a keyboard's word completion turned "….iso" into "….isolated".
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri, autoCorrectEnabled = false),
                 )
                 TextButton(onClick = viewModel::checkUrl, enabled = problem != DownloadUrlForm.Problem.URL && !state.checkingUrl) {
                     Text(stringResource(R.string.storage_download_check))
@@ -393,6 +397,7 @@ private fun DownloadDialog(state: StorageContentState, viewModel: StorageContent
                     onValueChange = { n -> viewModel.editDownload { copy(filename = n) } },
                     label = stringResource(R.string.storage_download_name),
                     isError = form.filename.isNotEmpty() && (problem == DownloadUrlForm.Problem.FILENAME || problem == DownloadUrlForm.Problem.EXTENSION),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri, autoCorrectEnabled = false),
                 )
                 GlassTextField(
                     value = form.checksum,
@@ -400,6 +405,7 @@ private fun DownloadDialog(state: StorageContentState, viewModel: StorageContent
                     label = stringResource(R.string.storage_download_checksum),
                     supportingText = stringResource(R.string.storage_download_checksum_hint),
                     isError = problem == DownloadUrlForm.Problem.CHECKSUM,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Ascii, autoCorrectEnabled = false),
                 )
                 if (form.checksum.isNotBlank()) {
                     ChoiceChips(DownloadUrlForm.ALGORITHMS, form.algorithm, { it.uppercase() }) { a -> viewModel.editDownload { copy(algorithm = a) } }

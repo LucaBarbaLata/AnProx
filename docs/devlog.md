@@ -231,6 +231,20 @@ from the start of the file; the first call asks for one line to learn `total`, t
 the last 500 (`ApiEnvelope` gained `total`, and `ProxmoxConnection.pveEnvelope` returns the
 whole envelope). That completes M4.
 
+**Consoles on a real Proxmox VE 8: still blank.** The owner's first test of the rebuilt consoles:
+the node shell takes input (commands run) but shows no output, and the VM screen shows nothing.
+Both pages work in headless Chromium when fed bytes the way the app feeds them, and the tour's
+"Connected" status never proved that anything was drawn. So this round adds evidence instead of
+guesses: a **Console details** dialog (bytes and messages received and sent, page loads, the
+WebView version, recent events such as the page's size and the terminal size) and the page's
+JavaScript errors in logcat (tag `AnProxConsole`) and on screen; the tour prints the WebView's
+bounds, its text, pixels from its middle and those details into the job log. The pages also
+gained polyfills for WebView 80–96 (`Array.prototype.at`, `replaceAll`, `WeakRef`, which noVNC
+and xterm.js use) and the terminal refits when its container changes size, not only on window
+resize. The download dialog's URL field took a keyboard's word completion (`.iso` became
+`.isolated` on the Android 14 emulator, the "lost last letter" seen before); it now asks for no
+suggestions.
+
 **M2: the SSH client.** JSch (mwiede fork) with Bouncy Castle, see [ADR 0015](adr/0015-ssh-client.md).
 Two surprises: JSch chooses between its JDK and Bouncy Castle classes by Java version, and
 Android's `java.specification.version` reads as an old one, so `JschSetup` picks the Bouncy

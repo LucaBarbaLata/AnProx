@@ -142,6 +142,11 @@ All notable changes to AnProx are documented here. The format follows
   it on the new phone. Servers already there are replaced, the rest added.
 
 ### Changed
+- Consoles have a **Console details** button (the ⓘ in the top bar): what the connection
+  received and sent, the Android System WebView version, the page's size and any error the page
+  reported. Page errors also show above the console. This is for reporting console problems.
+- URL, file name and checksum fields in the download dialog no longer take keyboard suggestions
+  (a keyboard turned `….iso` into `….isolated`).
 - The bulk-action summary on the Resources list stays on screen longer.
 - After creating or cloning a guest, the form scrolls to the result and its **Open it** button.
 

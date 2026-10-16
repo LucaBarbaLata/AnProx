@@ -17,6 +17,7 @@ Env:    ANPROX_PACKAGE (default io.github.lucabarbalata.anprox)
 """
 import os
 import re
+import struct
 import subprocess
 import sys
 import time
@@ -602,6 +603,42 @@ def hardware():
     back()
 
 
+def console_probe(tag):
+    """
+    Prints what the console shows, to the job log: the WebView's bounds, the text it exposes, a
+    pixel from its middle, the app's "Console details" and its console log lines. A blank console
+    with a live connection (seen on a real Proxmox VE 8) looks "Connected" otherwise.
+    """
+    try:
+        root = dump(attempts=3)
+        views = [n for n in root.iter("node") if n.get("class") == "android.webkit.WebView"]
+        if views:
+            x1, y1, x2, y2 = bounds(views[0])
+            texts = [t for n in views[0].iter("node") for t in [n.get("text") or ""] if t.strip()]
+            print(f"    [{tag}] webview [{x1},{y1}][{x2},{y2}], text: {' | '.join(texts)[:400]!r}", flush=True)
+            raw = subprocess.run(["adb", "exec-out", "screencap"], capture_output=True, timeout=60).stdout
+            w, h = struct.unpack("<II", raw[:8])
+            offset = len(raw) - w * h * 4
+            for fx, fy in ((0.5, 0.5), (0.1, 0.05), (0.5, 0.2)):
+                px, py = int(x1 + (x2 - x1) * fx), int(y1 + (y2 - y1) * fy)
+                i = offset + (py * w + px) * 4
+                print(f"    [{tag}] pixel at ({px},{py}): #{raw[i]:02x}{raw[i + 1]:02x}{raw[i + 2]:02x}", flush=True)
+        else:
+            print(f"    [{tag}] no WebView in the dump", flush=True)
+    except Exception as e:
+        print(f"    [{tag}] probe failed: {e}", flush=True)
+    try:
+        tap("Console details", timeout=10)
+        root = dump(attempts=3)
+        texts = [t for n in root.iter("node") for t in [n.get("text") or ""] if t.strip()]
+        print(f"    [{tag}] details: {' | '.join(texts)[:1500]!r}", flush=True)
+        tap("Close", timeout=10)
+    except Exception as e:
+        print(f"    [{tag}] details failed: {e}", flush=True)
+    for line in adb("logcat", "-d", "-s", "AnProxConsole:*", check=False).strip().splitlines()[-20:]:
+        print(f"    [{tag}] {line}", flush=True)
+
+
 @step("Container console: terminal through the app's own connection, with the extra keys")
 def console():
     tap_node(scroll_to("nginx-proxy"))
@@ -610,6 +647,8 @@ def console():
     # An emulator whose Android System WebView is too old for the bundled pages says so instead.
     node = find_any(["Connected", "Android System WebView"], timeout=45)
     if "Connected" in " ".join(labels(node)):
+        time.sleep(2)
+        console_probe("terminal")
         tap("Esc")                         # extra key row → sent to the terminal
         tap("Keyboard")                    # focuses the terminal and asks for the soft keyboard
         time.sleep(1)
@@ -624,7 +663,10 @@ def vm_console():
     tap_node(scroll_to("k8s-master"))
     tap_node(scroll_to("Console"))
     # noVNC completes the VNC handshake (with the generated password) and reports the desktop name.
-    find_any(["Connected · k8s-master", "Android System WebView"], timeout=45)
+    node = find_any(["Connected · k8s-master", "Android System WebView"], timeout=45)
+    if "Connected" in " ".join(labels(node)):
+        time.sleep(2)
+        console_probe("vnc")               # the mock's screen is #1e293b
     screenshot("11f2-vm-console")
     leave_console()
     scroll_to("The VM's screen (noVNC)")

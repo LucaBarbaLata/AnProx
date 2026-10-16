@@ -1,8 +1,9 @@
 // VM screen page: noVNC's RFB client. Instead of opening a WebSocket itself it gets a channel
 // whose bytes the app carries over its own connection to Proxmox (see bridge.js).
+import './polyfills.js';
 import RFB from '@novnc/novnc';
 import keysyms from '../node_modules/@novnc/novnc/core/input/keysymdef.js';
-import { native, fromBase64, toBase64 } from './bridge.js';
+import { native, fromBase64, toBase64, report } from './bridge.js';
 
 /** The minimum of a WebSocket that noVNC's Websock.attach() needs. */
 class BridgeChannel {
@@ -72,7 +73,10 @@ window.anprox = {
         rfb.resizeSession = false;
         rfb.showDotCursor = true;
         rfb.background = '#0b0f1a';
-        rfb.addEventListener('connect', () => native.status('connected', ''));
+        rfb.addEventListener('connect', () => {
+            native.status('connected', '');
+            report(`page ${window.innerWidth}x${window.innerHeight}, screen ${screen.clientWidth}x${screen.clientHeight}`);
+        });
         rfb.addEventListener('desktopname', (e) => native.status('desktop', e.detail.name || ''));
         rfb.addEventListener('disconnect', (e) => native.status('disconnected', e.detail.clean ? '' : 'error'));
         rfb.addEventListener('securityfailure', (e) => native.status('failed', e.detail.reason || 'Authentication failed'));

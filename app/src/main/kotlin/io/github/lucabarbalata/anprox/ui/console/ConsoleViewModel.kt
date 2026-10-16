@@ -1,5 +1,6 @@
 package io.github.lucabarbalata.anprox.ui.console
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.github.lucabarbalata.anprox.data.console.ConsoleConnection
@@ -19,6 +20,7 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.Base64
+import java.util.concurrent.atomic.AtomicLong
 
 enum class ConsoleStatus { CONNECTING, CONNECTED, CLOSED, FAILED }
 
@@ -31,6 +33,18 @@ data class ConsoleState(
     val message: UiText? = null,
     /** Bumped by Reconnect: the page is created again and opens a new session. */
     val generation: Int = 0,
+    /** The page's last JavaScript error, if it had one. */
+    val pageError: String? = null,
+)
+
+/** What the console details dialog shows, to tell a connection problem from a display problem. */
+data class ConsoleDiagnostics(
+    val pageLoads: Int,
+    val messagesIn: Long,
+    val bytesIn: Long,
+    val bytesOut: Long,
+    /** The latest events: page size, terminal size, VNC state, errors. */
+    val events: List<String>,
 )
 
 /** Something for the page to do, tagged with the page it is meant for. */
@@ -88,6 +102,7 @@ class ConsoleViewModel(
     fun pageReady() {
         viewModelScope.launch {
             val page = ++currentPage
+            note("page $page loaded")
             if (target.kind.isTerminal && session != null && ui.value.status == ConsoleStatus.CONNECTED) {
                 commands.send(PageCommand.Connected(page))
                 if (history.isNotEmpty()) commands.send(PageCommand.Write(page, encode(history.joined())))
@@ -127,6 +142,7 @@ class ConsoleViewModel(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
+                note("open failed: ${e.javaClass.simpleName} ${e.message.orEmpty().take(120)}")
                 ui.update { it.copy(status = ConsoleStatus.FAILED, message = e.toUiText()) }
                 return@launch
             }
@@ -134,6 +150,7 @@ class ConsoleViewModel(
             opened.events.collect { event ->
                 when (event) {
                     ConsoleEvent.Connected -> if (target.kind.isTerminal) {
+                        note("connected")
                         ui.update { it.copy(status = ConsoleStatus.CONNECTED) }
                         commands.send(PageCommand.Connected(currentPage))
                     } else {
@@ -141,14 +158,20 @@ class ConsoleViewModel(
                         commands.send(PageCommand.Start(currentPage, opened.vncPassword.orEmpty()))
                     }
                     is ConsoleEvent.Output -> {
+                        if (messagesIn.incrementAndGet() == 1L) note("first output: ${event.bytes.size} bytes")
+                        bytesIn.addAndGet(event.bytes.size.toLong())
                         if (target.kind.isTerminal) keep(event.bytes)
                         commands.send(PageCommand.Write(currentPage, encode(event.bytes)))
                     }
                     is ConsoleEvent.Closed -> {
+                        note("closed: ${event.reason ?: "no reason"}")
                         ui.update { s -> s.copy(status = ConsoleStatus.CLOSED, message = event.reason?.let(UiText::Raw) ?: s.message) }
                         commands.send(PageCommand.Closed(currentPage))
                     }
-                    is ConsoleEvent.Failed -> ui.update { it.copy(status = ConsoleStatus.FAILED, message = UiText.Raw(event.message)) }
+                    is ConsoleEvent.Failed -> {
+                        note("failed: ${event.message}")
+                        ui.update { it.copy(status = ConsoleStatus.FAILED, message = UiText.Raw(event.message)) }
+                    }
                 }
             }
         }
@@ -169,18 +192,52 @@ class ConsoleViewModel(
 
     private fun encode(bytes: ByteArray): String = Base64.getEncoder().encodeToString(bytes)
 
+    // ---- diagnostics
+
+    private val messagesIn = AtomicLong()
+    private val bytesIn = AtomicLong()
+    private val bytesOut = AtomicLong()
+    private val events = ArrayDeque<String>()
+
+    /** Something worth knowing when the console misbehaves; also written to logcat. */
+    fun note(event: String) {
+        Log.i(LOG_TAG, "${target.kind} ${target.node}: $event")
+        synchronized(events) {
+            events.addLast(event)
+            while (events.size > MAX_EVENTS) events.removeFirst()
+        }
+    }
+
+    /** A JavaScript error in the page (from the WebView's console). */
+    fun pageError(message: String) {
+        note("page error: $message")
+        ui.update { it.copy(pageError = message) }
+    }
+
+    fun diagnostics() = ConsoleDiagnostics(
+        pageLoads = currentPage,
+        messagesIn = messagesIn.get(),
+        bytesIn = bytesIn.get(),
+        bytesOut = bytesOut.get(),
+        events = synchronized(events) { events.toList() },
+    )
+
     // ---- from the page (any thread)
 
     fun input(text: String) {
+        bytesOut.addAndGet(text.toByteArray(Charsets.UTF_8).size.toLong())
         session?.sendInput(text)
     }
 
     fun resize(cols: Int, rows: Int) {
+        if (session != null) note("terminal size ${cols}x$rows")
         session?.resize(cols, rows)
     }
 
     fun sendVnc(base64: String) {
-        session?.sendBinary(Base64.getDecoder().decode(base64))
+        val bytes = Base64.getDecoder().decode(base64)
+        bytesOut.addAndGet(bytes.size.toLong())
+        session?.sendBinary(bytes)
     }
 
     fun closeFromPage() {
@@ -189,6 +246,7 @@ class ConsoleViewModel(
 
     /** noVNC's events: `connected`, `desktop` (name), `disconnected`, `failed` (reason). */
     fun vncStatus(state: String, detail: String) {
+        note("vnc $state ${detail.take(80)}".trim())
         ui.update {
             when (state) {
                 "connected" -> it.copy(status = ConsoleStatus.CONNECTED)
@@ -211,8 +269,12 @@ class ConsoleViewModel(
         session?.close()
     }
 
-    private companion object {
+    companion object {
+        /** Logcat tag for console events and the page's console messages. */
+        const val LOG_TAG = "AnProxConsole"
+        private const val MAX_EVENTS = 12
+
         /** Enough for the recent screens and some scrollback after a rotation. */
-        const val HISTORY_LIMIT = 256 * 1024
+        private const val HISTORY_LIMIT = 256 * 1024
     }
 }

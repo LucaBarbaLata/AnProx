@@ -1,8 +1,9 @@
 // Terminal page: xterm.js. Keys go to the app (which wraps them in Proxmox's termproxy
 // protocol); output comes back from the app as base64.
+import './polyfills.js';
 import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
-import { native, fromBase64 } from './bridge.js';
+import { native, fromBase64, report } from './bridge.js';
 
 const container = document.getElementById('terminal');
 const term = new Terminal({
@@ -25,6 +26,8 @@ function refit() {
 }
 
 window.addEventListener('resize', refit);
+// The WebView may get its final size after the page has loaded; follow the container itself.
+if (typeof ResizeObserver !== 'undefined') new ResizeObserver(refit).observe(container);
 // Tapping the terminal shows the keyboard (the app also has a keyboard button).
 container.addEventListener('click', () => term.focus());
 
@@ -35,8 +38,14 @@ window.anprox = {
     /** The server accepted the ticket: report the size and take the focus. */
     connected() {
         refit();
+        report(`page ${window.innerWidth}x${window.innerHeight}, terminal ${term.cols}x${term.rows}`);
         native.resize(term.cols, term.rows);
         term.focus();
+        // Proxmox's own page fits again a moment later, once the layout has settled.
+        setTimeout(() => {
+            refit();
+            native.resize(term.cols, term.rows);
+        }, 250);
     },
     write(b64) {
         term.write(fromBase64(b64));

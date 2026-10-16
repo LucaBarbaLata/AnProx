@@ -11,7 +11,13 @@ export const native = window.AnProxNative || {
     send(b64) { console.log('native.send', b64.length); },
     close() { console.log('native.close'); },
     status(state, detail) { console.log('native.status', state, detail); },
+    log(message) { console.log('native.log', message); },
 };
+
+/** Reports a fact for the app's console details dialog (older app builds lack log()). */
+export function report(message) {
+    if (typeof native.log === 'function') native.log(message);
+}
 
 export function fromBase64(b64) {
     const binary = atob(b64);
