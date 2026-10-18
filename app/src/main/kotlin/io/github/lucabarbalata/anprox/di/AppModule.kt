@@ -14,6 +14,7 @@ import io.github.lucabarbalata.anprox.data.datacenter.FirewallRepository
 import io.github.lucabarbalata.anprox.data.datacenter.HaRepository
 import io.github.lucabarbalata.anprox.data.datacenter.PoolRepository
 import io.github.lucabarbalata.anprox.data.datacenter.ReplicationRepository
+import io.github.lucabarbalata.anprox.data.datacenter.SdnRepository
 import io.github.lucabarbalata.anprox.data.datacenter.StorageRepository
 import io.github.lucabarbalata.anprox.data.datacenter.StorageSetupRepository
 import io.github.lucabarbalata.anprox.data.favourites.FavouriteRepository
@@ -96,6 +97,9 @@ import io.github.lucabarbalata.anprox.ui.node.ServicesViewModel
 import io.github.lucabarbalata.anprox.ui.node.SystemSettingsViewModel
 import io.github.lucabarbalata.anprox.ui.node.UpdatesViewModel
 import io.github.lucabarbalata.anprox.ui.resources.ResourcesViewModel
+import io.github.lucabarbalata.anprox.ui.sdn.SdnIpamViewModel
+import io.github.lucabarbalata.anprox.ui.sdn.SdnViewModel
+import io.github.lucabarbalata.anprox.ui.sdn.SdnVnetViewModel
 import io.github.lucabarbalata.anprox.ui.servers.ServerEditorViewModel
 import io.github.lucabarbalata.anprox.ui.servers.ServersViewModel
 import io.github.lucabarbalata.anprox.ui.settings.SettingsViewModel
@@ -159,6 +163,7 @@ val appModule = module {
     single { PoolRepository(get()) }
     single { AccessRepository(get()) }
     single { CephRepository(get()) }
+    single { SdnRepository(get()) }
     single { StorageSetupRepository(get()) }
     single { ProfileTransfer(get(), get()) }
     single { NodeAdminRepository(get()) }
@@ -238,6 +243,9 @@ val appModule = module {
     viewModel { (serverId: String) -> CephPoolsViewModel(serverId, get(), get()) }
     viewModel { (serverId: String) -> CephServicesViewModel(serverId, get(), get()) }
     viewModel { (serverId: String, kind: CephText) -> CephTextViewModel(serverId, kind, get()) }
+    viewModel { (serverId: String) -> SdnViewModel(serverId, get(), get()) }
+    viewModel { (serverId: String, vnet: String) -> SdnVnetViewModel(serverId, vnet, get()) }
+    viewModel { (serverId: String, ipam: String) -> SdnIpamViewModel(serverId, ipam, get()) }
     viewModel { (serverId: String) -> UsersViewModel(serverId, get()) }
     viewModel { (serverId: String, userId: String) -> UserViewModel(serverId, userId, get()) }
     // userId "" adds a new user.

@@ -1022,4 +1022,45 @@ interface PveApi {
 
     @GET("nodes/{node}/ceph/log")
     suspend fun cephLog(@Path("node") node: String, @Query("limit") limit: Int): ApiEnvelope<List<TaskLogLine>>
+    // ---- SDN (M6). Changes stay pending until applied with [applySdn].
+
+    /** [kind] is `zones`, `vnets`, `controllers`, `ipams` or `dns`. */
+    @GET("cluster/sdn/{kind}")
+    suspend fun sdnList(@Path("kind") kind: String, @Query("pending") pending: Int? = 1): ApiEnvelope<JsonElement>
+
+    @FormUrlEncoded
+    @POST("cluster/sdn/{kind}")
+    suspend fun createSdn(@Path("kind") kind: String, @FieldMap params: Map<String, String>): ApiEnvelope<JsonElement>
+
+    @FormUrlEncoded
+    @PUT("cluster/sdn/{kind}/{id}")
+    suspend fun updateSdn(@Path("kind") kind: String, @Path("id") id: String, @FieldMap params: Map<String, String>): ApiEnvelope<JsonElement>
+
+    @DELETE("cluster/sdn/{kind}/{id}")
+    suspend fun deleteSdn(@Path("kind") kind: String, @Path("id") id: String): ApiEnvelope<JsonElement>
+
+    @GET("cluster/sdn/vnets/{vnet}/subnets")
+    suspend fun sdnSubnets(@Path("vnet") vnet: String, @Query("pending") pending: Int = 1): ApiEnvelope<JsonElement>
+
+    @FormUrlEncoded
+    @POST("cluster/sdn/vnets/{vnet}/subnets")
+    suspend fun createSdnSubnet(@Path("vnet") vnet: String, @FieldMap params: Map<String, String>): ApiEnvelope<JsonElement>
+
+    @FormUrlEncoded
+    @PUT("cluster/sdn/vnets/{vnet}/subnets/{subnet}")
+    suspend fun updateSdnSubnet(@Path("vnet") vnet: String, @Path("subnet") subnet: String, @FieldMap params: Map<String, String>): ApiEnvelope<JsonElement>
+
+    @DELETE("cluster/sdn/vnets/{vnet}/subnets/{subnet}")
+    suspend fun deleteSdnSubnet(@Path("vnet") vnet: String, @Path("subnet") subnet: String): ApiEnvelope<JsonElement>
+
+    @GET("cluster/sdn/ipams/{ipam}/status")
+    suspend fun ipamStatus(@Path("ipam") ipam: String): ApiEnvelope<JsonElement>
+
+    /** Applies the pending SDN configuration on every node; answers the task's UPID. */
+    @PUT("cluster/sdn")
+    suspend fun applySdn(): ApiEnvelope<String>
+
+    /** Throws the pending changes away (Proxmox VE 8.4 and later). */
+    @POST("cluster/sdn/rollback")
+    suspend fun rollbackSdn(): ApiEnvelope<JsonElement>
 }

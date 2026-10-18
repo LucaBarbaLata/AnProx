@@ -54,7 +54,7 @@ Code: `core/network/src/main/kotlin/.../network/api/` (`AccessApi`, `PveApi`, `P
 | `…/firewall/ipset` (sets: list, create, delete with `force`; entries: list, add with `nomatch`, delete) for the datacenter and guests | IP sets | ✅ |
 | `GET /nodes/{node}/firewall/log`, `GET /nodes/{node}/{type}/{vmid}/firewall/log` | Firewall log (newest 500 lines, via the response's `total`) | ✅ |
 | `GET /cluster/firewall/refs` | Alias and IP set suggestions in the rule editor | 🗓 later |
-| `/cluster/sdn/*` | Zones, VNets, subnets, IPAM, DHCP, controllers, fabrics | 🗓 M6 |
+| `/cluster/sdn` (+ `zones`, `vnets`, `vnets/{vnet}/subnets`, `controllers`, `ipams`, `dns`, `rollback`) | Zones (simple, VLAN, QinQ, VXLAN, EVPN), VNets, subnets with gateway, SNAT and a DHCP range, EVPN/BGP controllers, NetBox/phpIPAM, PowerDNS, the IPAM's addresses; pending changes, apply and discard | ✅ M6 (fabrics, route maps, prefix lists, the lock and IS-IS controllers 🗓 M9) |
 | `GET /cluster/ceph/status` | Ceph health for background alerts | ✅ (the Ceph screen reads `/nodes/{node}/ceph/status`) |
 | `/cluster/ceph/flags` (+ `/{flag}`) | OSD map flags (noout for maintenance, …) | ✅ M6 (`metadata`, `health-mute`, `restart-bulk` 🗓 M9) |
 | `/cluster/mapping/{pci,usb,dir}` | Resource mappings | 🗓 M9 |
@@ -98,7 +98,7 @@ Code: `core/network/src/main/kotlin/.../network/api/` (`AccessApi`, `PveApi`, `P
 | `/nodes/{node}/firewall/{rules,options}` | Node firewall | ✅ |
 | `/nodes/{node}/firewall/log` | Node firewall log | 🗓 M4 |
 | `/nodes/{node}/ceph/*` | Status; OSDs (create on an unused disk, in/out, scrub, start/stop/restart, destroy); pools (create, edit, delete); monitors, managers and metadata servers (add, start/stop/restart, remove); CephFS (list, create); `cfg/raw`, `cfg/db`, `crush`, `log`, `rules` | ✅ M6 (`init`, installing Ceph and removing a CephFS stay in the web UI) |
-| `/nodes/{node}/sdn/*` | Node SDN status | 🗓 M6 |
+| `/nodes/{node}/sdn/*` | Per-node SDN status (zone and VNet health on each node) | 🗓 M9 |
 | `/nodes/{node}/replication/*` | Replication status / run now | 🗓 M4 |
 | `/nodes/{node}/aplinfo` | Container template catalogue | 🗓 M4 |
 | `GET /nodes/{node}/scan/{nfs,cifs,pbs,lvm,lvmthin,zfs}` | Storage discovery for the storage editor | ✅ |

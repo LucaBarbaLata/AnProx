@@ -12,7 +12,7 @@ testing debug builds on **real hardware**.
 | Integration: multi-server hub, sessions, dashboard snapshots, guest actions, guest snapshots, performance history, app lock rules, backup and restore, guest network info, guest options, clone/template/migrate, console sessions (terminal and VNC handshake), node power, hardware (disks, drives, network, pending changes, container volumes), creating VMs and containers, cloud-init, SPICE, alerts, task notifications, backup jobs, storage, firewall, high availability, replication, pools, storage setup, encrypted server export, firewall groups, aliases, IP sets and log, node updates, repositories, services, journal, DNS, hosts, time, network and disks | `core/data/src/test` | JVM | 104 |
 | Android lint | `:app:lintDebug` | CI | — |
 | Build: debug and R8-minified release | `:app:assemble*` | CI | — |
-| **End-to-end tour** of the minified release APK on emulators against the mock server | `scripts/e2e/tour.py` | CI (Android 8.0 + 14), Release workflow | 30 steps |
+| **End-to-end tour** of the minified release APK on emulators against the mock server | `scripts/e2e/tour.py` | CI (Android 8.0 + 14), Release workflow | 31 steps |
 | UI / screenshot tests | planned (M1) | — | — |
 | Manual on real hardware | [checklist below](#manual-test-checklist-real-hardware) | owner | — |
 
@@ -139,9 +139,10 @@ so no test code is compiled into the app. `scripts/e2e/run.sh` starts the mock s
 25. Datacenter → **Resource pools** → `prod` ("Guests: 3 · Storages: 1") → `lab` (`104 · lab-vm`) → **Add guests** → `103 · k8s-master` → **Add (1)** → it is listed in the pool.
 26. Datacenter → **Users** → **Add user** `dave` (pve realm, two passwords, group `ops`) → **Create user** → `dave@pve` → **Add API token** `ci` → "API token created" with `dave@pve!ci` and the secret, once → **Permissions** → **Add permission** `/storage`, group `auditors`, role `Operator` → it is listed → **Realms** → **Sync** `corp` as a preview → **View log** lists `adding user 'bob@corp'`.
 27. Datacenter → **Ceph** → "2 osds down" (pve3 is offline in the mock) → the **noout** switch → "noout set" → **OSDs** → `osd.5` (down and out) offers **Mark in** → **Pools** → **Create pool** `fast` → "Pool fast created".
-28. Resources → `pve1` → **Updates** (pve-manager is upgradable) → **Repositories** shows the enterprise warning → add **No-Subscription** → **Services** → start `ksmtuned` → **Network** → a new bridge is pending → **Revert** → **System log** shows the journal.
-29. Settings → **SSH keys** → **New key** "Tour phone" → Resources → `pve1` → **SSH** → host `10.0.2.2`, port `2222`, password → **Trust this server?** → **Trust** → "Connected" → **Add key** → "Tour phone" → **Change connection** → **Connect** with the key, without a host key question.
-30. Settings → Light theme; turning on the app lock explains that the emulator has no screen lock → dashboard in light mode, with the starred VM under Favourites.
+28. Datacenter → **SDN** → "1 change not applied yet" (the mock's new VNet `iot`) → `iot` → **Add subnet** `10.40.0.0/24`, gateway `10.40.0.1` → it is listed → **Apply** → "SDN changes applied".
+29. Resources → `pve1` → **Updates** (pve-manager is upgradable) → **Repositories** shows the enterprise warning → add **No-Subscription** → **Services** → start `ksmtuned` → **Network** → a new bridge is pending → **Revert** → **System log** shows the journal.
+30. Settings → **SSH keys** → **New key** "Tour phone" → Resources → `pve1` → **SSH** → host `10.0.2.2`, port `2222`, password → **Trust this server?** → **Trust** → "Connected" → **Add key** → "Tour phone" → **Change connection** → **Connect** with the key, without a host key question.
+31. Settings → Light theme; turning on the app lock explains that the emulator has no screen lock → dashboard in light mode, with the starred VM under Favourites.
 
 After every step the script checks that the app process is alive and that logcat has no
 `FATAL EXCEPTION` for the app. Screenshots of each step, plus UI dumps and logcat on failure,
@@ -303,3 +304,10 @@ Run this before closing a milestone. Note the PVE/PBS versions you tested agains
 - [ ] Pools: create a small test pool (with **Add as storage**) → it and its RBD storage appear; change min. size; delete it (type its name) with its storage.
 - [ ] Monitors, managers and metadata servers match the web UI; **Restart** a manager → the task finishes and it comes back.
 - [ ] Configuration shows ceph.conf; the CRUSH map and the cluster log load.
+
+**SDN** (Datacenter → SDN; use a test zone, guests on changed VNets can lose their network briefly)
+- [ ] Zones, VNets and subnets match the web UI (Datacenter → SDN), including what is pending there.
+- [ ] Add a simple zone `test` with automatic DHCP, a VNet `testnet` in it and a subnet 10.99.0.0/24 with gateway 10.99.0.1, SNAT and a DHCP range → "3 changes not applied yet" → **Apply** → the task log shows each node; the web UI shows them applied.
+- [ ] Attach a test container's NIC to `testnet` (web UI) → it gets an address from the range; the IPAM `pve` lists it.
+- [ ] Change the VNet's alias → marked Changed → **Discard** (Proxmox VE 8.4+) → back as it was.
+- [ ] Delete the subnet, the VNet and the zone → marked to remove → **Apply** → gone.

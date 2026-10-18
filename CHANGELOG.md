@@ -169,6 +169,14 @@ All notable changes to AnProx are documented here. The format follows
   - **Configuration** (ceph.conf and the configuration database), the **CRUSH map** and the
     **cluster log**.
 
+- **SDN** (Dashboard → Datacenter → SDN): **zones** (simple with automatic DHCP, VLAN on a
+  bridge, QinQ, VXLAN with its peers, EVPN with a controller and exit nodes; MTU, which nodes,
+  IPAM and DNS), **VNets** (VLAN tag or VXLAN ID as the zone needs, alias, VLAN aware, isolated
+  ports) with their **subnets** (gateway, SNAT, a DHCP range), EVPN and BGP **controllers**,
+  **IPAMs** (NetBox, phpIPAM; and the addresses Proxmox's own IPAM handed out) and **PowerDNS**.
+  Changes are marked New, Changed or To remove until you **Apply** them on the nodes (a task) or
+  **Discard** them.
+
 - **Instant alerts guide** ([docs/push-notifications.md](docs/push-notifications.md)): Proxmox's own
   notifications to the phone through ntfy or Gotify, without Google services, alongside the
   app's background checks.

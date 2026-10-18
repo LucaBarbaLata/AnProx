@@ -11,6 +11,7 @@ import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.Domain
 import androidx.compose.material.icons.outlined.Group
 import androidx.compose.material.icons.outlined.Hub
+import androidx.compose.material.icons.outlined.Lan
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material.icons.outlined.Storage
@@ -41,6 +42,7 @@ fun DatacenterScreen(
     onReplication: () -> Unit,
     onPools: () -> Unit,
     onCeph: () -> Unit,
+    onSdn: () -> Unit,
     onAccess: (AccessPage) -> Unit,
 ) {
     AnProxScaffold(title = stringResource(R.string.datacenter_title), subtitle = title, onBack = onBack) { inner ->
@@ -54,6 +56,7 @@ fun DatacenterScreen(
                     MenuRow(Icons.Outlined.ContentCopy, stringResource(R.string.datacenter_replication), stringResource(R.string.replication_open_body), onReplication)
                     MenuRow(Icons.Outlined.Workspaces, stringResource(R.string.datacenter_pools), stringResource(R.string.pools_open_body), onPools)
                     MenuRow(Icons.Outlined.Hub, stringResource(R.string.ceph_title), stringResource(R.string.ceph_open_body), onCeph)
+                    MenuRow(Icons.Outlined.Lan, stringResource(R.string.sdn_title), stringResource(R.string.sdn_open_body), onSdn)
                 }
             }
             item { SectionHeader(stringResource(R.string.access_section)) }

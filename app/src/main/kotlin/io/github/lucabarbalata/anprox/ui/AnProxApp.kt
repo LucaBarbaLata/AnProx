@@ -124,6 +124,9 @@ import io.github.lucabarbalata.anprox.ui.navigation.RealmsRoute
 import io.github.lucabarbalata.anprox.ui.navigation.ReplicationRoute
 import io.github.lucabarbalata.anprox.ui.navigation.ResourcesRoute
 import io.github.lucabarbalata.anprox.ui.navigation.RolesRoute
+import io.github.lucabarbalata.anprox.ui.navigation.SdnIpamRoute
+import io.github.lucabarbalata.anprox.ui.navigation.SdnRoute
+import io.github.lucabarbalata.anprox.ui.navigation.SdnVnetRoute
 import io.github.lucabarbalata.anprox.ui.navigation.ServerEditorRoute
 import io.github.lucabarbalata.anprox.ui.navigation.ServersRoute
 import io.github.lucabarbalata.anprox.ui.navigation.SettingsRoute
@@ -150,6 +153,9 @@ import io.github.lucabarbalata.anprox.ui.node.ServicesScreen
 import io.github.lucabarbalata.anprox.ui.node.SystemSettingsScreen
 import io.github.lucabarbalata.anprox.ui.node.UpdatesScreen
 import io.github.lucabarbalata.anprox.ui.resources.ResourcesScreen
+import io.github.lucabarbalata.anprox.ui.sdn.SdnIpamScreen
+import io.github.lucabarbalata.anprox.ui.sdn.SdnScreen
+import io.github.lucabarbalata.anprox.ui.sdn.SdnVnetScreen
 import io.github.lucabarbalata.anprox.ui.servers.ServerEditorScreen
 import io.github.lucabarbalata.anprox.ui.servers.ServersScreen
 import io.github.lucabarbalata.anprox.ui.settings.AboutScreen
@@ -295,6 +301,7 @@ fun AnProxApp() {
                     onReplication = { nav.navigate(ReplicationRoute(route.serverId)) },
                     onPools = { nav.navigate(PoolsRoute(route.serverId)) },
                     onCeph = { nav.navigate(CephRoute(route.serverId)) },
+                    onSdn = { nav.navigate(SdnRoute(route.serverId)) },
                     onAccess = { page ->
                         when (page) {
                             AccessPage.USERS -> nav.navigate(UsersRoute(route.serverId))
@@ -305,6 +312,24 @@ fun AnProxApp() {
                         }
                     },
                 )
+            }
+            composable<SdnRoute> { entry ->
+                val route = entry.toRoute<SdnRoute>()
+                SdnScreen(
+                    route.serverId,
+                    onBack = back,
+                    onVnet = { vnet -> nav.navigate(SdnVnetRoute(route.serverId, vnet)) },
+                    onIpam = { ipam -> nav.navigate(SdnIpamRoute(route.serverId, ipam)) },
+                    onTask = openTask,
+                )
+            }
+            composable<SdnVnetRoute> { entry ->
+                val route = entry.toRoute<SdnVnetRoute>()
+                SdnVnetScreen(route.serverId, route.vnet, onBack = back)
+            }
+            composable<SdnIpamRoute> { entry ->
+                val route = entry.toRoute<SdnIpamRoute>()
+                SdnIpamScreen(route.serverId, route.ipam, onBack = back)
             }
             composable<CephRoute> { entry ->
                 val route = entry.toRoute<CephRoute>()

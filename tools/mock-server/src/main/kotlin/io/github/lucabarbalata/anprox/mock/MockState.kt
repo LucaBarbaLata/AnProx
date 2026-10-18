@@ -233,6 +233,8 @@ class MockState(
     private val replication = MockReplication(clockMillis)
     private val nodeAdmin = MockNodeAdmin(nodes.map { it.name })
 
+    internal val sdn = MockSdn()
+
     /** Ceph across the three nodes; off until a test or the runnable mock sets `installed`. */
     val ceph = MockCeph(
         online = { n -> node(n)?.online == true },

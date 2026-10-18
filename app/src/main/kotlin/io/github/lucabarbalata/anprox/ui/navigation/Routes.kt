@@ -67,6 +67,10 @@ import kotlinx.serialization.Serializable
 @Serializable data class CephServicesRoute(val serverId: String)
 // kind: a CephText name (CONFIG, CRUSH, LOG).
 @Serializable data class CephTextRoute(val serverId: String, val kind: String)
+// SDN (M6)
+@Serializable data class SdnRoute(val serverId: String)
+@Serializable data class SdnVnetRoute(val serverId: String, val vnet: String)
+@Serializable data class SdnIpamRoute(val serverId: String, val ipam: String)
 // Permissions (M7)
 @Serializable data class UsersRoute(val serverId: String)
 @Serializable data class UserRoute(val serverId: String, val userId: String)

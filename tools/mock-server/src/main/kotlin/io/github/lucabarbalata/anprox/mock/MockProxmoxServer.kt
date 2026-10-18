@@ -169,6 +169,72 @@ class MockProxmoxServer(
     }
 
     /** `/access/…` administration (milestone M7). Changes need a user who isn't read-only. */
+    private fun Route.sdn() {
+        val sdn = state.sdn
+        suspend fun ApplicationCall.params(): Map<String, String> = receiveParameters().let { p -> p.names().associateWith { p[it].orEmpty() } }
+        suspend fun ApplicationCall.writer(): MockState.Session? {
+            val s = authed() ?: return null
+            if (state.isReadOnly(s.user)) {
+                fail(403, "Permission check failed (/sdn, SDN.Allocate)")
+                return null
+            }
+            return s
+        }
+        suspend fun ApplicationCall.done(error: String?) = if (error != null) fail(400, error) else ok(JsonNull)
+
+        for (kind in listOf("zones", "vnets", "controllers", "ipams", "dns")) {
+            get("cluster/sdn/$kind") {
+                call.authed() ?: return@get
+                val pending = call.request.queryParameters["pending"]
+                // Like Proxmox: IPAMs and DNS servers have no pending state, and refuse the parameter.
+                if (pending != null && kind in setOf("ipams", "dns")) return@get call.fail(400, "Parameter verification failed.", mapOf("pending" to "property is not defined in schema and the schema does not allow additional properties"))
+                call.ok(sdn.list(kind, pending == "1") ?: JsonArray(emptyList()))
+            }
+            post("cluster/sdn/$kind") {
+                call.writer() ?: return@post
+                call.done(sdn.create(kind, call.params()))
+            }
+            put("cluster/sdn/$kind/{id}") {
+                call.writer() ?: return@put
+                call.done(sdn.update(kind, call.parameters["id"]!!, call.params()))
+            }
+            delete("cluster/sdn/$kind/{id}") {
+                call.writer() ?: return@delete
+                call.done(sdn.delete(kind, call.parameters["id"]!!))
+            }
+        }
+        get("cluster/sdn/vnets/{vnet}/subnets") {
+            call.authed() ?: return@get
+            call.ok(sdn.list("subnets", call.request.queryParameters["pending"] == "1", call.parameters["vnet"]!!) ?: JsonArray(emptyList()))
+        }
+        post("cluster/sdn/vnets/{vnet}/subnets") {
+            call.writer() ?: return@post
+            call.done(sdn.createSubnet(call.parameters["vnet"]!!, call.params()))
+        }
+        put("cluster/sdn/vnets/{vnet}/subnets/{subnet}") {
+            call.writer() ?: return@put
+            call.done(sdn.updateSubnet(call.parameters["vnet"]!!, call.parameters["subnet"]!!, call.params()))
+        }
+        delete("cluster/sdn/vnets/{vnet}/subnets/{subnet}") {
+            call.writer() ?: return@delete
+            call.done(sdn.deleteSubnet(call.parameters["vnet"]!!, call.parameters["subnet"]!!))
+        }
+        get("cluster/sdn/ipams/{ipam}/status") {
+            call.authed() ?: return@get
+            call.ok(sdn.ipamStatus(call.parameters["ipam"]!!) ?: return@get call.fail(500, "no such ipam"))
+        }
+        put("cluster/sdn") {
+            val s = call.writer() ?: return@put
+            val node = state.nodes.first { it.online }.name
+            call.ok(state.startTask(node, "reloadnetworkall", "", s.user, log = listOf("pve1: reloading network config", "pve2: reloading network config", "pve3: no answer (node offline)")) { sdn.apply() })
+        }
+        post("cluster/sdn/rollback") {
+            call.writer() ?: return@post
+            sdn.rollback()
+            call.ok(JsonNull)
+        }
+    }
+
     private fun Route.ceph() {
         val ceph = state.ceph
         suspend fun ApplicationCall.params(): Map<String, String> = receiveParameters().let { p -> p.names().associateWith { p[it].orEmpty() } }
@@ -484,6 +550,7 @@ class MockProxmoxServer(
     private fun Route.pve() {
         accessAdmin()
         ceph()
+        sdn()
         get("cluster/status") {
             call.authed() ?: return@get
             call.ok(state.clusterStatus())

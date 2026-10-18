@@ -54,6 +54,26 @@ configuration, CRUSH map and log. Written from Proxmox's own API code
   alert lists; the runnable mock (and so the emulator tour) turns it on.
 - 5 model tests and 6 integration tests; tour step 27.
 
+**M6: SDN.** Datacenter → SDN, written from `pve-network`'s API and plugin code:
+- Zones, VNets, subnets and controllers are edited in a pending configuration; the nodes only
+  get it on `PUT /cluster/sdn` (a task). Lists are read with `pending=1`: a changed entry keeps
+  its running values at the top and lists what changes under `pending` (a removed option as the
+  string `deleted`), a new one has only its ID and type at the top. `sdnEffective()` overlays the
+  two, so the screens show what the network will be, with a New / Changed / To remove pill.
+- IPAMs and DNS servers have no pending state, and Proxmox *refuses* `pending=1` for them (the
+  schema doesn't allow it); the mock does the same so the client can't regress.
+- A subnet's ID is `zone-network-prefix` (`lan-10.10.0.0-24`), not its CIDR.
+- VNet tags depend on the zone: VLAN 1–4094 for VLAN and QinQ zones, a VXLAN ID up to 16777215
+  for VXLAN and EVPN, none for simple zones; the form checks this before Proxmox does.
+- **Discard** uses `POST /cluster/sdn/rollback`, which only Proxmox VE 8.4 and later have; older
+  versions answer with an error that the snackbar shows.
+- Mock (`MockSdn`): running and edited configurations with Proxmox's pending computation, a
+  running simple zone with DHCP and a VLAN zone, two VNets with subnets, an EVPN controller, the
+  `pve` IPAM with a few addresses, and one pending VNet; apply is a task that copies the edited
+  configuration over.
+- 5 model tests and 3 integration tests; tour step 28. `CheckRow` and `PasswordField` moved to
+  `ui/common` for the SDN forms.
+
 ---
 
 ## 2026-10-15 — Session 4: consoles rebuilt

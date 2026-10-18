@@ -4,21 +4,28 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import io.github.lucabarbalata.anprox.R
 import io.github.lucabarbalata.anprox.core.designsystem.component.GlassTextField
@@ -104,4 +111,34 @@ fun BridgePicker(bridges: List<NodeNetwork>?, bridge: String, onBridge: (String)
             bridges.firstOrNull { it.iface == bridge }?.comments?.trim()?.takeIf { it.isNotEmpty() }?.let { FormHint(it) }
         }
     }
+}
+
+/** A row with a checkbox; the whole row toggles. */
+@Composable
+fun CheckRow(label: String, checked: Boolean, enabled: Boolean = true, onToggle: () -> Unit) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .toggleable(value = checked, enabled = enabled, role = Role.Checkbox, onValueChange = { onToggle() })
+            .padding(vertical = 2.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Checkbox(checked = checked, onCheckedChange = null, enabled = enabled)
+        Spacer(Modifier.width(8.dp))
+        Text(label, style = MaterialTheme.typography.bodyMedium, color = AnProxTheme.colors.textPrimary)
+    }
+}
+
+/** A text field that hides what is typed. */
+@Composable
+fun PasswordField(value: String, onValueChange: (String) -> Unit, label: String, supportingText: String? = null, isError: Boolean = false) {
+    GlassTextField(
+        value = value,
+        onValueChange = onValueChange,
+        label = label,
+        supportingText = supportingText,
+        isError = isError,
+        visualTransformation = PasswordVisualTransformation(),
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+    )
 }

@@ -1034,6 +1034,28 @@ def ceph():
     back()
 
 
+@step("Datacenter: SDN - a VNet waiting to be applied, a subnet for it, apply on the nodes")
+def sdn():
+    tap("Overview")
+    tap_node(scroll_to("Datacenter", exact=True))
+    tap_node(scroll_to("Software-defined networks: zones, VNets, subnets, IPAM"))   # SDN
+    find("1 change not applied yet", timeout=30)  # the mock's new VNet iot
+    tap_node(scroll_to("IoT · Zone vlans"))
+    find("No subnets yet", timeout=30)
+    tap("Add subnet")
+    fill("Subnet (CIDR)", "10.40.0.0/24", fallback_index=0)
+    fill("Gateway", "10.40.0.1", fallback_index=1)
+    tap("Create", pick="lowest")
+    find("10.40.0.0/24", timeout=30)
+    screenshot("13k-sdn-vnet")
+    back()                                        # to SDN
+    tap_node(scroll_to("Apply", exact=True))      # on the pending card
+    tap("Apply", pick="lowest")                   # the confirmation
+    find("SDN changes applied", timeout=60)
+    back()                                        # to Datacenter
+    back()
+
+
 @step("Node administration: updates, repositories, a service, a pending network change, the system log")
 def node_admin():
     tap("Resources")
@@ -1165,7 +1187,7 @@ def main():
     try:
         for s in (launch, add_pve, add_pbs, resources, performance, guest_start, snapshots, backups,
                   options, hardware, console, vm_console, cloud_init, bulk, clone_migrate, tasks, create_vm, alerts,
-                  backup_jobs, storage, storage_setup, firewall, high_availability, replication, pools, permissions, ceph, node_admin, ssh,
+                  backup_jobs, storage, storage_setup, firewall, high_availability, replication, pools, permissions, ceph, sdn, node_admin, ssh,
                   light_theme):
             s()
         ok = True
