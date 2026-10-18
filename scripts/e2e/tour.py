@@ -1089,21 +1089,32 @@ def node_admin():
     back()                                       # to Resources
 
 
-def replace_field(label, value, fallback_index=None):
-    """Like [fill], for a field that already holds text: deletes it first."""
-    root = dump()
-    found = matches(root, label, exact=True)
-    fields = [n for n in root.iter("node") if n.get("class") == "android.widget.EditText"]
-    node = found[0] if found else (fields[fallback_index] if fallback_index is not None and len(fields) > fallback_index else None)
-    if node is None:
-        save_dump(root, f"field-{slug(label)}")
-        raise AssertionError(f"text field '{label}' not found")
-    tap_node(node)
-    adb("shell", "input", "keyevent", "KEYCODE_MOVE_END")
-    adb("shell", "input", "keyevent", *(["KEYCODE_DEL"] * 24))
-    adb("shell", "input", "text", value)
-    time.sleep(0.6)
-    complete_typing(label, value)
+def replace_field(label, value, fallback_index=None, attempts=3):
+    """
+    Like [fill], for a field that already holds text: deletes it first. The tap can leave the
+    cursor anywhere and MOVE_END doesn't always land (CI once kept the last "1" of 10.0.0.11 and
+    connected to 10.0.2.21), so it deletes backwards from the end and forwards from the start, and
+    starts over until the field reads exactly [value].
+    """
+    for attempt in range(attempts):
+        root = dump()
+        found = matches(root, label, exact=True)
+        fields = [n for n in root.iter("node") if n.get("class") == "android.widget.EditText"]
+        node = found[0] if found else (fields[fallback_index] if fallback_index is not None and len(fields) > fallback_index else None)
+        if node is None:
+            save_dump(root, f"field-{slug(label)}")
+            raise AssertionError(f"text field '{label}' not found")
+        tap_node(node)
+        adb("shell", "input", "keyevent", "KEYCODE_MOVE_END", *(["KEYCODE_DEL"] * 40))
+        adb("shell", "input", "keyevent", "KEYCODE_MOVE_HOME", *(["KEYCODE_FORWARD_DEL"] * 40))
+        adb("shell", "input", "text", value)
+        time.sleep(0.6)
+        complete_typing(label, value)
+        texts = [n.get("text") or "" for n in dump().iter("node") if n.get("class") == "android.widget.EditText"]
+        if value in texts:
+            return
+        print(f"    '{label}' reads {texts} instead of {value!r}; clearing it again", flush=True)
+    raise AssertionError(f"couldn't get '{label}' to read {value!r}")
 
 
 @step("SSH: a key made on the phone, password sign-in with the host key check, then the key")

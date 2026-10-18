@@ -74,6 +74,12 @@ configuration, CRUSH map and log. Written from Proxmox's own API code
 - 5 model tests and 3 integration tests; tour step 28. `CheckRow` and `PasswordField` moved to
   `ui/common` for the SDN forms.
 
+**Tour.** CI run for M7: Android 8.0 passed all 28 steps; on Android 14 every new step passed, but
+the SSH step connected to `10.0.2.21` instead of `10.0.2.2`: clearing the prefilled `10.0.0.11`
+had left its last "1" (the tap put the cursor before it and MOVE_END didn't land). `replace_field`
+now deletes backwards from the end and forwards from the start, and starts over until the field
+reads exactly the new value.
+
 ---
 
 ## 2026-10-15 — Session 4: consoles rebuilt
