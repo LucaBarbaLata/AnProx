@@ -327,6 +327,18 @@ def fill(label, value, fallback_index=None, password=False):
         complete_typing(label, value)
 
 
+def fill_password(n, value):
+    """Types [value] into the n-th password field on screen (a form may have several)."""
+    root = dump()
+    fields = [x for x in root.iter("node") if x.get("class") == "android.widget.EditText" and x.get("password") == "true"]
+    if len(fields) <= n:
+        save_dump(root, f"password-{n}")
+        raise AssertionError(f"password field {n} not found")
+    tap_node(fields[n])
+    adb("shell", "input", "text", value)
+    time.sleep(0.6)
+
+
 def fix_field(value):
     """Finds the text field that holds the start of [value], moves to its end and types the rest."""
     root = dump()
@@ -952,6 +964,51 @@ def pools():
     back()
 
 
+@step("Datacenter: permissions - a user in a group, an API token shown once, a role for a group, a sync preview")
+def permissions():
+    tap("Overview")
+    tap_node(scroll_to("Datacenter", exact=True))
+    tap_node(scroll_to("Accounts, passwords, API tokens and second factors"))   # Users
+    find("alice@corp", timeout=30)
+    tap("Add user")
+    fill("User name", "dave", fallback_index=0)
+    fill_password(0, "dave-pass-1")
+    fill_password(1, "dave-pass-1")
+    tap_node(scroll_to("ops", exact=True))         # its only group
+    tap_node(scroll_to("Create user", exact=True))
+    tap_node(scroll_to("dave@pve", exact=True))
+    find("Change password", timeout=30)
+    tap_node(scroll_to("Add API token", exact=True))
+    fill("Token name", "ci", fallback_index=0)
+    tap("Create", pick="lowest")
+    find("API token created", timeout=30)
+    find("dave@pve!ci", timeout=10)               # the secret is shown once, under it
+    tap("I've saved it")
+    find("Own permissions", timeout=30)           # the new token, with separated privileges
+    back()                                        # to Users
+    back()                                        # to Datacenter
+    tap_node(scroll_to("Who has which role, and where"))
+    find("/pool/prod", timeout=30)                # given to an API token in the mock
+    tap("Add permission")
+    tap("/storage")
+    tap("Group")
+    tap("auditors")
+    tap("Operator")                               # the mock's custom role
+    tap("Add", pick="lowest")
+    find("Operator given to auditors on /storage", timeout=30)
+    screenshot("13i-permissions")
+    back()
+    tap_node(scroll_to("Where users sign in from"))   # Realms
+    find("Active Directory", timeout=30)          # corp
+    tap("Sync")
+    tap("Preview", pick="lowest")                 # a dry run is the default
+    tap("View log", timeout=20)
+    find("adding user 'bob@corp'", timeout=30)
+    back()                                        # to Realms
+    back()                                        # to Datacenter
+    back()
+
+
 @step("Node administration: updates, repositories, a service, a pending network change, the system log")
 def node_admin():
     tap("Resources")
@@ -1083,7 +1140,7 @@ def main():
     try:
         for s in (launch, add_pve, add_pbs, resources, performance, guest_start, snapshots, backups,
                   options, hardware, console, vm_console, cloud_init, bulk, clone_migrate, tasks, create_vm, alerts,
-                  backup_jobs, storage, storage_setup, firewall, high_availability, replication, pools, node_admin, ssh,
+                  backup_jobs, storage, storage_setup, firewall, high_availability, replication, pools, permissions, node_admin, ssh,
                   light_theme):
             s()
         ok = True

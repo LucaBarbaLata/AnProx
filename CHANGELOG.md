@@ -133,6 +133,25 @@ All notable changes to AnProx are documented here. The format follows
     (type the device), and **Create storage** on unused disks: directory, LVM, LVM-thin or ZFS
     (RAID level, compression), added as a storage if you like.
 
+- **Permissions** (Dashboard → Datacenter → Users, Groups, Roles, Permissions, Realms), like the
+  web interface's Datacenter → Permissions:
+  - **Users**: create (with a password for the pve realm), edit name, email, comment, groups,
+    expiry and whether the account is enabled, change a password, delete. Each user lists its
+    **API tokens** (create one with or without separate privileges and an expiry; the secret is
+    shown once, ready to copy), its **second factors** (add an authenticator app with an
+    `otpauth://` link or the secret and its first code; create recovery keys; switch a factor off
+    or remove it; unlock a user locked out by wrong codes) and **what the user may do** on each
+    path. Signed in as anyone but root@pam, Proxmox asks for your own password for password and
+    second-factor changes, and the app asks for it there.
+  - **Groups**: create, comment, delete; members are chosen on each user.
+  - **Roles**: the built-in roles with their privileges; create, edit and delete your own with a
+    privilege picker grouped by area.
+  - **Permissions**: who has which role on which path, grouped by path; give a user, group or API
+    token a role on a path (with or without propagation), or take it away.
+  - **Realms**: add or edit LDAP, Active Directory and OpenID Connect realms; **Sync** a
+    directory (users, groups or both; enable new users; what to remove for vanished ones) with a
+    **preview** that only lists the changes in the task log; remove a realm.
+
 - **Instant alerts guide** ([docs/push-notifications.md](docs/push-notifications.md)): Proxmox's own
   notifications to the phone through ntfy or Gotify, without Google services, alongside the
   app's background checks.

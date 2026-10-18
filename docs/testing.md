@@ -12,7 +12,7 @@ testing debug builds on **real hardware**.
 | Integration: multi-server hub, sessions, dashboard snapshots, guest actions, guest snapshots, performance history, app lock rules, backup and restore, guest network info, guest options, clone/template/migrate, console sessions (terminal and VNC handshake), node power, hardware (disks, drives, network, pending changes, container volumes), creating VMs and containers, cloud-init, SPICE, alerts, task notifications, backup jobs, storage, firewall, high availability, replication, pools, storage setup, encrypted server export, firewall groups, aliases, IP sets and log, node updates, repositories, services, journal, DNS, hosts, time, network and disks | `core/data/src/test` | JVM | 104 |
 | Android lint | `:app:lintDebug` | CI | — |
 | Build: debug and R8-minified release | `:app:assemble*` | CI | — |
-| **End-to-end tour** of the minified release APK on emulators against the mock server | `scripts/e2e/tour.py` | CI (Android 8.0 + 14), Release workflow | 28 steps |
+| **End-to-end tour** of the minified release APK on emulators against the mock server | `scripts/e2e/tour.py` | CI (Android 8.0 + 14), Release workflow | 29 steps |
 | UI / screenshot tests | planned (M1) | — | — |
 | Manual on real hardware | [checklist below](#manual-test-checklist-real-hardware) | owner | — |
 
@@ -137,9 +137,10 @@ so no test code is compiled into the app. `scripts/e2e/run.sh` starts the mock s
 23. Datacenter → **High availability** → "Manager: pve1" → `100 · web` (managed in the mock) → **Ignored** → **Save** → "HA settings saved".
 24. Datacenter → **Replication** → `103 · k8s-master → pve1` and the failing job to the offline pve3 → **Add replication job** → **Add** → `100 · web → pve2` is listed.
 25. Datacenter → **Resource pools** → `prod` ("Guests: 3 · Storages: 1") → `lab` (`104 · lab-vm`) → **Add guests** → `103 · k8s-master` → **Add (1)** → it is listed in the pool.
-26. Resources → `pve1` → **Updates** (pve-manager is upgradable) → **Repositories** shows the enterprise warning → add **No-Subscription** → **Services** → start `ksmtuned` → **Network** → a new bridge is pending → **Revert** → **System log** shows the journal.
-27. Settings → **SSH keys** → **New key** "Tour phone" → Resources → `pve1` → **SSH** → host `10.0.2.2`, port `2222`, password → **Trust this server?** → **Trust** → "Connected" → **Add key** → "Tour phone" → **Change connection** → **Connect** with the key, without a host key question.
-28. Settings → Light theme; turning on the app lock explains that the emulator has no screen lock → dashboard in light mode, with the starred VM under Favourites.
+26. Datacenter → **Users** → **Add user** `dave` (pve realm, two passwords, group `ops`) → **Create user** → `dave@pve` → **Add API token** `ci` → "API token created" with `dave@pve!ci` and the secret, once → **Permissions** → **Add permission** `/storage`, group `auditors`, role `Operator` → it is listed → **Realms** → **Sync** `corp` as a preview → **View log** lists `adding user 'bob@corp'`.
+27. Resources → `pve1` → **Updates** (pve-manager is upgradable) → **Repositories** shows the enterprise warning → add **No-Subscription** → **Services** → start `ksmtuned` → **Network** → a new bridge is pending → **Revert** → **System log** shows the journal.
+28. Settings → **SSH keys** → **New key** "Tour phone" → Resources → `pve1` → **SSH** → host `10.0.2.2`, port `2222`, password → **Trust this server?** → **Trust** → "Connected" → **Add key** → "Tour phone" → **Change connection** → **Connect** with the key, without a host key question.
+29. Settings → Light theme; turning on the app lock explains that the emulator has no screen lock → dashboard in light mode, with the starred VM under Favourites.
 
 After every step the script checks that the app process is alive and that logcat has no
 `FATAL EXCEPTION` for the app. Screenshots of each step, plus UI dumps and logcat on failure,
@@ -278,3 +279,17 @@ Run this before closing a milestone. Note the PVE/PBS versions you tested agains
 - [ ] Theme: System / Light / Dark / Pure black all render correctly, and status bar icons stay readable.
 - [ ] Refresh interval changes how often the dashboard updates.
 - [ ] TalkBack: gauges read as "CPU 42 percent"; buttons have labels.
+
+**Permissions** (Datacenter → Users, Groups, Roles, Permissions, Realms; use a test user)
+- [ ] Users matches the web UI (Datacenter → Permissions → Users), including disabled and expired accounts.
+- [ ] Add user `test` in the pve realm with a password and a group → sign in to the web UI as `test@pve` with it.
+- [ ] Change its password; signed in as someone other than root@pam, Proxmox asks for your own password too.
+- [ ] Add an API token: the secret is shown once; `curl -k -H 'Authorization: PVEAPIToken=…' https://host:8006/api2/json/version` works with it; delete the token and the same call fails.
+- [ ] Authenticator app: **Open in authenticator app** adds the account (or type the secret); the 6-digit code is accepted; the web UI login now asks for it. A wrong code keeps the dialog open with Proxmox's message.
+- [ ] Recovery keys: 10 keys, shown once; one of them signs in to the web UI.
+- [ ] Disable, then remove a second factor; the web UI agrees.
+- [ ] A user's **What … may do** matches the web UI's Permissions → "Effective permissions".
+- [ ] Groups: create one with a comment, add a user to it on the user's editor, delete it.
+- [ ] Roles: built-in ones are read-only; create a custom role with two privileges, edit it, delete it.
+- [ ] Permissions: add `/vms/100` for the test user with PVEVMUser (propagate on), then remove it.
+- [ ] Realms (if you have LDAP or AD): edit the comment; **Sync** as a preview → the task log lists what would change; a real sync adds the users.

@@ -21,12 +21,12 @@ Code: `core/network/src/main/kotlin/.../network/api/` (`AccessApi`, `PveApi`, `P
 | `GET /access/domains` | Realms for the login screen (unauthenticated) | ✅ |
 | `POST /access/ticket` | Login, TFA challenge answer, ticket renewal | ✅ (password, TOTP, recovery, Yubico; WebAuthn 🗓 M1) |
 | `/access/openid/{auth-url,login}` | OpenID Connect SSO | 🗓 M1 |
-| `GET /access/permissions` | Current user's privileges (hide what you can't do) | 🗓 M1 |
-| `PUT /access/password` | Change password | 🗓 M7 |
-| `/access/users` (+ `/token`, `/tfa`, `/unlock-tfa`) | Users, API tokens, TFA admin | 🗓 M7 |
-| `/access/groups`, `/access/roles`, `/access/acl` | Groups, roles, permissions | 🗓 M7 |
-| `/access/domains/{realm}` (+ `/sync`) | Realm config, LDAP/AD sync | 🗓 M7 |
-| `/access/tfa` | Own TFA entries (add TOTP/WebAuthn/recovery) | 🗓 M7 |
+| `GET /access/permissions` | A user's effective privileges (Users → a user); hiding what you can't do 🗓 M9 | ✅ M7 |
+| `PUT /access/password` | Change password (with the confirmation password PVE 8.1+ asks for) | ✅ M7 |
+| `/access/users` (+ `/token`, `/unlock-tfa`) | Users (create, edit, delete, groups, expiry), API tokens (secret shown once), unlock TFA | ✅ M7 |
+| `/access/groups`, `/access/roles`, `/access/acl` | Groups, roles (custom ones with a privilege picker), permissions | ✅ M7 |
+| `/access/domains` (+ `/{realm}`, `/sync`) | LDAP, AD and OpenID realms; directory sync with a dry run | ✅ M7 |
+| `/access/tfa` | Second factors of any user: TOTP (secret + `otpauth://` link), recovery keys, enable/disable, remove; WebAuthn 🗓 | ✅ M7 |
 
 ### `/cluster`
 
@@ -63,7 +63,7 @@ Code: `core/network/src/main/kotlin/.../network/api/` (`AccessApi`, `PveApi`, `P
 | `/cluster/acme/*` | ACME accounts & plugins | 🗓 M9 |
 | `/cluster/config/*` | Create/join cluster, corosync | 🗓 M9 |
 | `GET /cluster/jobs/schedule-analyze` | Next runs of a calendar event (backup job preview) | ✅ |
-| `/cluster/jobs/realm-sync` | Realm sync jobs | 🗓 M7 |
+| `/cluster/jobs/realm-sync` | Scheduled realm sync jobs | 🗓 M9 |
 
 ### `/nodes/{node}`
 

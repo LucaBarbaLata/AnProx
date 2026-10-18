@@ -813,4 +813,130 @@ interface PveApi {
         @Query("start") start: Int,
         @Query("limit") limit: Int,
     ): ApiEnvelope<List<TaskLogLine>>
+
+    // ------------------------------------------------------------------ access control (Q23, M7)
+
+    @GET("access/users")
+    suspend fun users(@Query("full") full: Int = 1): ApiEnvelope<JsonElement>
+
+    @GET("access/users/{userid}")
+    suspend fun user(@Path("userid") userId: String): ApiEnvelope<JsonObject>
+
+    @FormUrlEncoded
+    @POST("access/users")
+    suspend fun createUser(@FieldMap params: Map<String, String>): ApiEnvelope<JsonElement>
+
+    @FormUrlEncoded
+    @PUT("access/users/{userid}")
+    suspend fun updateUser(@Path("userid") userId: String, @FieldMap params: Map<String, String>): ApiEnvelope<JsonElement>
+
+    @DELETE("access/users/{userid}")
+    suspend fun deleteUser(@Path("userid") userId: String): ApiEnvelope<JsonElement>
+
+    /** [params]: `userid`, `password`, and `confirmation-password` (the caller's own) on PVE 8.1+. */
+    @FormUrlEncoded
+    @PUT("access/password")
+    suspend fun changePassword(@FieldMap params: Map<String, String>): ApiEnvelope<JsonElement>
+
+    /** Lifts a TOTP/TFA lockout after too many wrong codes (PVE 7.3+). */
+    @PUT("access/users/{userid}/unlock-tfa")
+    suspend fun unlockTfa(@Path("userid") userId: String): ApiEnvelope<JsonElement>
+
+    @GET("access/users/{userid}/token")
+    suspend fun tokens(@Path("userid") userId: String): ApiEnvelope<JsonElement>
+
+    @FormUrlEncoded
+    @POST("access/users/{userid}/token/{tokenid}")
+    suspend fun createToken(
+        @Path("userid") userId: String,
+        @Path("tokenid") tokenId: String,
+        @FieldMap params: Map<String, String>,
+    ): ApiEnvelope<JsonObject>
+
+    @DELETE("access/users/{userid}/token/{tokenid}")
+    suspend fun deleteToken(@Path("userid") userId: String, @Path("tokenid") tokenId: String): ApiEnvelope<JsonElement>
+
+    @GET("access/groups")
+    suspend fun groups(): ApiEnvelope<JsonElement>
+
+    @GET("access/groups/{groupid}")
+    suspend fun group(@Path("groupid") id: String): ApiEnvelope<JsonObject>
+
+    @FormUrlEncoded
+    @POST("access/groups")
+    suspend fun createGroup(@FieldMap params: Map<String, String>): ApiEnvelope<JsonElement>
+
+    @FormUrlEncoded
+    @PUT("access/groups/{groupid}")
+    suspend fun updateGroup(@Path("groupid") id: String, @FieldMap params: Map<String, String>): ApiEnvelope<JsonElement>
+
+    @DELETE("access/groups/{groupid}")
+    suspend fun deleteGroup(@Path("groupid") id: String): ApiEnvelope<JsonElement>
+
+    @GET("access/roles")
+    suspend fun roles(): ApiEnvelope<JsonElement>
+
+    @FormUrlEncoded
+    @POST("access/roles")
+    suspend fun createRole(@FieldMap params: Map<String, String>): ApiEnvelope<JsonElement>
+
+    @FormUrlEncoded
+    @PUT("access/roles/{roleid}")
+    suspend fun updateRole(@Path("roleid") id: String, @FieldMap params: Map<String, String>): ApiEnvelope<JsonElement>
+
+    @DELETE("access/roles/{roleid}")
+    suspend fun deleteRole(@Path("roleid") id: String): ApiEnvelope<JsonElement>
+
+    @GET("access/acl")
+    suspend fun acl(): ApiEnvelope<JsonElement>
+
+    /** Adds (or with `delete=1` removes) `roles` for `users`/`groups`/`tokens` on `path`. */
+    @FormUrlEncoded
+    @PUT("access/acl")
+    suspend fun updateAcl(@FieldMap params: Map<String, String>): ApiEnvelope<JsonElement>
+
+    @GET("access/domains/{realm}")
+    suspend fun realmConfig(@Path("realm") realm: String): ApiEnvelope<JsonObject>
+
+    @FormUrlEncoded
+    @POST("access/domains")
+    suspend fun createRealm(@FieldMap params: Map<String, String>): ApiEnvelope<JsonElement>
+
+    @FormUrlEncoded
+    @PUT("access/domains/{realm}")
+    suspend fun updateRealm(@Path("realm") realm: String, @FieldMap params: Map<String, String>): ApiEnvelope<JsonElement>
+
+    @DELETE("access/domains/{realm}")
+    suspend fun deleteRealm(@Path("realm") realm: String): ApiEnvelope<JsonElement>
+
+    /** Syncs users and groups from an LDAP/AD realm. Returns a UPID. */
+    @FormUrlEncoded
+    @POST("access/domains/{realm}/sync")
+    suspend fun syncRealm(@Path("realm") realm: String, @FieldMap params: Map<String, String>): ApiEnvelope<String>
+
+    @GET("access/tfa")
+    suspend fun tfa(): ApiEnvelope<JsonElement>
+
+    /** Adds a factor; answers its id, and the keys for `type=recovery`. */
+    @FormUrlEncoded
+    @POST("access/tfa/{userid}")
+    suspend fun addTfa(@Path("userid") userId: String, @FieldMap params: Map<String, String>): ApiEnvelope<JsonObject>
+
+    @FormUrlEncoded
+    @PUT("access/tfa/{userid}/{id}")
+    suspend fun updateTfa(
+        @Path("userid") userId: String,
+        @Path("id") id: String,
+        @FieldMap params: Map<String, String>,
+    ): ApiEnvelope<JsonElement>
+
+    @DELETE("access/tfa/{userid}/{id}")
+    suspend fun deleteTfa(
+        @Path("userid") userId: String,
+        @Path("id") id: String,
+        @Query("password") password: String?,
+    ): ApiEnvelope<JsonElement>
+
+    @GET("access/permissions")
+    suspend fun permissions(@Query("userid") userId: String?, @Query("path") path: String?): ApiEnvelope<JsonObject>
 }

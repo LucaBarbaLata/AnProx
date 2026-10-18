@@ -60,6 +60,17 @@ import kotlinx.serialization.Serializable
 @Serializable data class ReplicationRoute(val serverId: String)
 @Serializable data class PoolsRoute(val serverId: String)
 @Serializable data class PoolRoute(val serverId: String, val poolId: String)
+// Permissions (M7)
+@Serializable data class UsersRoute(val serverId: String)
+@Serializable data class UserRoute(val serverId: String, val userId: String)
+// userId "" adds a new user.
+@Serializable data class UserEditorRoute(val serverId: String, val userId: String = "")
+@Serializable data class GroupsRoute(val serverId: String)
+@Serializable data class RolesRoute(val serverId: String)
+@Serializable data class AclRoute(val serverId: String)
+@Serializable data class RealmsRoute(val serverId: String)
+// realm "" adds a new realm of [type] (`ldap`, `ad`, `openid`).
+@Serializable data class RealmEditorRoute(val serverId: String, val realm: String = "", val type: String = "ldap")
 // kind: "dc", "node" or "guest"; node, type and vmid as far as the kind needs them.
 @Serializable data class FirewallRoute(val serverId: String, val kind: String, val title: String, val node: String = "", val type: String = "", val vmid: Int = 0, val group: String = "")
 // what: a FirewallExtra name (GROUPS, ALIASES, IPSETS, LOG) of the firewall described like FirewallRoute.

@@ -7,6 +7,7 @@ import io.github.lucabarbalata.anprox.alerts.TaskTracker
 import io.github.lucabarbalata.anprox.data.alerts.AlertRepository
 import io.github.lucabarbalata.anprox.data.backup.BackupRepository
 import io.github.lucabarbalata.anprox.data.console.ConsoleRepository
+import io.github.lucabarbalata.anprox.data.datacenter.AccessRepository
 import io.github.lucabarbalata.anprox.data.datacenter.BackupJobRepository
 import io.github.lucabarbalata.anprox.data.datacenter.FirewallRepository
 import io.github.lucabarbalata.anprox.data.datacenter.HaRepository
@@ -33,6 +34,7 @@ import io.github.lucabarbalata.anprox.diagnostics.CrashReporter
 import io.github.lucabarbalata.anprox.model.pve.ConsoleTarget
 import io.github.lucabarbalata.anprox.model.pve.FirewallScope
 import io.github.lucabarbalata.anprox.model.pve.GuestType
+import io.github.lucabarbalata.anprox.model.pve.RealmType
 import io.github.lucabarbalata.anprox.network.ProxmoxConnection
 import io.github.lucabarbalata.anprox.storage.AlertStore
 import io.github.lucabarbalata.anprox.storage.DataStoreProfileStore
@@ -40,6 +42,14 @@ import io.github.lucabarbalata.anprox.storage.KeystoreSecretStore
 import io.github.lucabarbalata.anprox.storage.SettingsRepository
 import io.github.lucabarbalata.anprox.storage.SshStore
 import io.github.lucabarbalata.anprox.storage.WidgetStore
+import io.github.lucabarbalata.anprox.ui.access.AclViewModel
+import io.github.lucabarbalata.anprox.ui.access.GroupsViewModel
+import io.github.lucabarbalata.anprox.ui.access.RealmEditorViewModel
+import io.github.lucabarbalata.anprox.ui.access.RealmsViewModel
+import io.github.lucabarbalata.anprox.ui.access.RolesViewModel
+import io.github.lucabarbalata.anprox.ui.access.UserEditorViewModel
+import io.github.lucabarbalata.anprox.ui.access.UserViewModel
+import io.github.lucabarbalata.anprox.ui.access.UsersViewModel
 import io.github.lucabarbalata.anprox.ui.alerts.AlertsViewModel
 import io.github.lucabarbalata.anprox.ui.backups.BackupScope
 import io.github.lucabarbalata.anprox.ui.backups.BackupsViewModel
@@ -140,6 +150,7 @@ val appModule = module {
     single { HaRepository(get()) }
     single { ReplicationRepository(get()) }
     single { PoolRepository(get()) }
+    single { AccessRepository(get()) }
     single { StorageSetupRepository(get()) }
     single { ProfileTransfer(get(), get()) }
     single { NodeAdminRepository(get()) }
@@ -214,4 +225,13 @@ val appModule = module {
     // storageId "" adds a new storage.
     viewModel { (serverId: String, storageId: String) -> StorageEditorViewModel(serverId, storageId.ifEmpty { null }, get()) }
     viewModel { (serverId: String, node: String, storage: String) -> StorageContentViewModel(serverId, node, storage, get(), get()) }
+    viewModel { (serverId: String) -> UsersViewModel(serverId, get()) }
+    viewModel { (serverId: String, userId: String) -> UserViewModel(serverId, userId, get()) }
+    // userId "" adds a new user.
+    viewModel { (serverId: String, userId: String) -> UserEditorViewModel(serverId, userId.ifEmpty { null }, get()) }
+    viewModel { (serverId: String) -> GroupsViewModel(serverId, get()) }
+    viewModel { (serverId: String) -> RolesViewModel(serverId, get()) }
+    viewModel { (serverId: String) -> AclViewModel(serverId, get()) }
+    viewModel { (serverId: String) -> RealmsViewModel(serverId, get()) }
+    viewModel { (serverId: String, realm: String, type: RealmType) -> RealmEditorViewModel(serverId, realm.ifEmpty { null }, type, get()) }
 }

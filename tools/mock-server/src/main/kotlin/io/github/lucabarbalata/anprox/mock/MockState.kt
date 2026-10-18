@@ -103,8 +103,14 @@ class MockState(
         data object Failed : LoginOutcome
     }
 
+    /** Users, groups, roles, the ACL, realms and second factors (milestone M7). */
+    internal val access = MockAccess { clockMillis() / 1000 }
+
     fun login(username: String, password: String, tfaChallenge: String?): LoginOutcome = synchronized(lock) {
-        val user = users[username] ?: return LoginOutcome.Failed
+        // Users added through /access log in with the password set there.
+        val user = users[username]
+            ?: (if (product == ProxmoxProduct.PVE) access.password(username)?.let { User(username, it) } else null)
+            ?: return LoginOutcome.Failed
         // Ticket renewal: the "password" is a still-valid ticket of the same user.
         sessions[password]?.let { s ->
             if (s.user == username && !expired(s)) return issue(user.id)
@@ -415,6 +421,8 @@ class MockState(
         val exitStatus: String,
         val effect: (() -> Unit)?,
         var applied: Boolean = false,
+        /** Extra lines for the task log, between "starting" and "TASK OK". */
+        val log: List<String> = emptyList(),
     )
 
     private val tasks = mutableListOf<Task>()
@@ -462,10 +470,18 @@ class MockState(
     }
 
     /** Creates a task that finishes after [taskDurationMillis] and then runs [effect]. */
-    fun startTask(node: String, type: String, id: String, user: String, exitStatus: String = "OK", effect: (() -> Unit)? = null): String =
+    fun startTask(
+        node: String,
+        type: String,
+        id: String,
+        user: String,
+        exitStatus: String = "OK",
+        log: List<String> = emptyList(),
+        effect: (() -> Unit)? = null,
+    ): String =
         synchronized(lock) {
             val now = clockMillis()
-            val t = Task(upid(node, type, id, user, now), node, type, id, user, now, now + taskDurationMillis, exitStatus, effect)
+            val t = Task(upid(node, type, id, user, now), node, type, id, user, now, now + taskDurationMillis, exitStatus, effect, log = log)
             tasks += t
             if (taskDurationMillis <= 0) settleTasks()
             t.upid
@@ -504,6 +520,7 @@ class MockState(
                 add(TaskLogLine(2, "INFO: starting new backup job: vzdump --all 1 --mode snapshot --storage pbs"))
                 add(TaskLogLine(3, "INFO: Backup job finished successfully"))
             }
+            t.log.forEach { add(TaskLogLine(size + 1, it)) }
             if (t.applied) add(TaskLogLine(size + 1, "TASK ${if (t.exitStatus == "OK") "OK" else "ERROR: ${t.exitStatus}"}"))
         }
     }

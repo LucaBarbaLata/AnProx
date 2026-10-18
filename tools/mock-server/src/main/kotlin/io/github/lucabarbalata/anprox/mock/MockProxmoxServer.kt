@@ -140,7 +140,7 @@ class MockProxmoxServer(
     }
 
     private fun Route.access() {
-        get("access/domains") { call.ok(state.realms) }
+        get("access/domains") { call.ok(if (product == ProxmoxProduct.PVE) state.access.realmList() else state.realms) }
 
         post("access/ticket") {
             val p = call.receiveParameters()
@@ -167,7 +167,157 @@ class MockProxmoxServer(
         }
     }
 
+    /** `/access/…` administration (milestone M7). Changes need a user who isn't read-only. */
+    private fun Route.accessAdmin() {
+        val access = state.access
+        suspend fun ApplicationCall.params(): Map<String, String> = receiveParameters().let { p -> p.names().associateWith { p[it].orEmpty() } }
+        suspend fun ApplicationCall.writer(): MockState.Session? {
+            val s = authed() ?: return null
+            if (state.isReadOnly(s.user)) {
+                fail(403, "Permission check failed (/access, User.Modify)")
+                return null
+            }
+            return s
+        }
+        suspend fun ApplicationCall.done(error: String?) = if (error != null) fail(400, error) else ok(JsonNull)
+
+        get("access/users") {
+            call.authed() ?: return@get
+            call.ok(access.users())
+        }
+        get("access/users/{userid}") {
+            call.authed() ?: return@get
+            call.ok(access.user(call.parameters["userid"]!!) ?: return@get call.fail(500, "no such user"))
+        }
+        post("access/users") {
+            call.writer() ?: return@post
+            call.done(access.createUser(call.params()))
+        }
+        put("access/users/{userid}") {
+            call.writer() ?: return@put
+            call.done(access.updateUser(call.parameters["userid"]!!, call.params()))
+        }
+        delete("access/users/{userid}") {
+            call.writer() ?: return@delete
+            call.done(access.deleteUser(call.parameters["userid"]!!))
+        }
+        put("access/password") {
+            val s = call.authed() ?: return@put
+            call.done(access.changePassword(s.user, call.params()))
+        }
+        put("access/users/{userid}/unlock-tfa") {
+            call.writer() ?: return@put
+            call.done(access.unlockTfa(call.parameters["userid"]!!))
+        }
+        get("access/users/{userid}/token") {
+            call.authed() ?: return@get
+            call.ok(access.tokens(call.parameters["userid"]!!) ?: return@get call.fail(500, "no such user"))
+        }
+        post("access/users/{userid}/token/{tokenid}") {
+            call.writer() ?: return@post
+            val (token, error) = access.createToken(call.parameters["userid"]!!, call.parameters["tokenid"]!!, call.params())
+            if (token != null) call.ok(token) else call.fail(400, error.orEmpty())
+        }
+        delete("access/users/{userid}/token/{tokenid}") {
+            call.writer() ?: return@delete
+            call.done(access.deleteToken(call.parameters["userid"]!!, call.parameters["tokenid"]!!))
+        }
+        get("access/groups") {
+            call.authed() ?: return@get
+            call.ok(access.groups())
+        }
+        get("access/groups/{groupid}") {
+            call.authed() ?: return@get
+            call.ok(access.group(call.parameters["groupid"]!!) ?: return@get call.fail(500, "group does not exist"))
+        }
+        post("access/groups") {
+            call.writer() ?: return@post
+            call.done(access.createGroup(call.params()))
+        }
+        put("access/groups/{groupid}") {
+            call.writer() ?: return@put
+            call.done(access.updateGroup(call.parameters["groupid"]!!, call.params()))
+        }
+        delete("access/groups/{groupid}") {
+            call.writer() ?: return@delete
+            call.done(access.deleteGroup(call.parameters["groupid"]!!))
+        }
+        get("access/roles") {
+            call.authed() ?: return@get
+            call.ok(access.roles())
+        }
+        post("access/roles") {
+            call.writer() ?: return@post
+            call.done(access.createRole(call.params()))
+        }
+        put("access/roles/{roleid}") {
+            call.writer() ?: return@put
+            call.done(access.updateRole(call.parameters["roleid"]!!, call.params()))
+        }
+        delete("access/roles/{roleid}") {
+            call.writer() ?: return@delete
+            call.done(access.deleteRole(call.parameters["roleid"]!!))
+        }
+        get("access/acl") {
+            call.authed() ?: return@get
+            call.ok(access.acl())
+        }
+        put("access/acl") {
+            call.writer() ?: return@put
+            call.done(access.updateAcl(call.params()))
+        }
+        get("access/domains/{realm}") {
+            call.authed() ?: return@get
+            call.ok(access.realmConfig(call.parameters["realm"]!!) ?: return@get call.fail(500, "domain does not exist"))
+        }
+        post("access/domains") {
+            call.writer() ?: return@post
+            call.done(access.createRealm(call.params()))
+        }
+        put("access/domains/{realm}") {
+            call.writer() ?: return@put
+            call.done(access.updateRealm(call.parameters["realm"]!!, call.params()))
+        }
+        delete("access/domains/{realm}") {
+            call.writer() ?: return@delete
+            call.done(access.deleteRealm(call.parameters["realm"]!!))
+        }
+        post("access/domains/{realm}/sync") {
+            val s = call.writer() ?: return@post
+            val realm = call.parameters["realm"]!!
+            val (log, effect) = try {
+                access.sync(realm, call.params())
+            } catch (e: IllegalArgumentException) {
+                return@post call.fail(400, e.message.orEmpty())
+            }
+            call.ok(state.startTask(state.nodes.first().name, "auth-realm-sync", realm, s.user, log = log, effect = effect))
+        }
+        get("access/tfa") {
+            call.authed() ?: return@get
+            call.ok(access.tfaList())
+        }
+        post("access/tfa/{userid}") {
+            val s = call.authed() ?: return@post
+            val (result, error) = access.addTfa(s.user, call.parameters["userid"]!!, call.params())
+            if (result != null) call.ok(result) else call.fail(400, error.orEmpty())
+        }
+        put("access/tfa/{userid}/{id}") {
+            val s = call.authed() ?: return@put
+            call.done(access.updateTfa(s.user, call.parameters["userid"]!!, call.parameters["id"]!!, call.params()))
+        }
+        delete("access/tfa/{userid}/{id}") {
+            val s = call.authed() ?: return@delete
+            call.done(access.deleteTfa(s.user, call.parameters["userid"]!!, call.parameters["id"]!!, call.request.queryParameters["password"]))
+        }
+        get("access/permissions") {
+            val s = call.authed() ?: return@get
+            val user = call.request.queryParameters["userid"] ?: s.user
+            call.ok(access.permissions(user, call.request.queryParameters["path"]))
+        }
+    }
+
     private fun Route.pve() {
+        accessAdmin()
         get("cluster/status") {
             call.authed() ?: return@get
             call.ok(state.clusterStatus())

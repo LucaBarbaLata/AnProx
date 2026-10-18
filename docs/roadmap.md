@@ -15,7 +15,7 @@ Status legend: ✅ done · 🚧 in progress · 🗓 planned
 | [M4](#m4--datacenter) | Datacenter: storage, backup jobs, HA, replication, firewall | ✅ (beta.3 candidate) |
 | [M5](#m5--node-administration) | Node administration | ✅ (beta.3 candidate) |
 | [M6](#m6--ceph--sdn) | Ceph and SDN | 🗓 |
-| [M7](#m7--access-control) | Users, groups, roles, ACLs, realms, tokens, TFA | 🗓 |
+| [M7](#m7--access-control) | Users, groups, roles, ACLs, realms, tokens, TFA | ✅ (beta.3 candidate) |
 | [M8](#m8--backup-server-complete) | Proxmox Backup Server complete | 🗓 |
 | [M9](#m9--parity--10) | Parity sweep, polish, translations → 1.0 | 🗓 |
 
@@ -64,7 +64,7 @@ Everything marked ✅ in M1 and M2 below. Gates:
 ### Beta 0.1.0-beta.3: 🚧 candidate, owner testing
 Everything marked ✅ in M2–M5 (guest configuration, SSH, alerts and Android integration,
 datacenter, node administration). Gates:
-- [ ] CI green: tests, lint, debug and release builds, and the emulator tour on Android 8.0 and 14 (28 steps)
+- [ ] CI green: tests, lint, debug and release builds, and the emulator tour on Android 8.0 and 14 (29 steps)
 - [x] `CHANGELOG.md` entries, store changelog (`fastlane/…/changelogs/10023.txt`), README
 - [x] [Test guide](beta2-test-guide.md) sections D1–D15 for the owner
 - [ ] Owner: run the test guide on real hardware (Proxmox VE 8; 9 later)
@@ -189,9 +189,15 @@ datacenter, node administration). Gates:
   managers, CephFS, configuration, crush map, log.
 - **SDN** (Q21): zones, VNets, subnets, IPAM, DHCP, controllers, fabrics, pending changes and apply.
 
-## M7 — Access control
+## M7 — Access control ✅
 - **Full permissions management** (Q23): users, groups, roles, ACLs, realms (incl. sync),
   API tokens, TFA management for any user, password changes.
+- Done: Datacenter → Permissions with Users (create, edit, delete, password, expiry, groups,
+  API tokens with the secret shown once, second factors: TOTP, recovery keys, enable/disable,
+  unlock, and the user's effective permissions), Groups, Roles (custom roles with a privilege
+  picker), Permissions (ACL by path) and Realms (LDAP, AD, OpenID; directory sync with a dry run).
+- Later (M9): WebAuthn registration (needs a browser flow), scheduled realm sync jobs, hiding
+  controls the signed-in user may not use.
 
 ## M8 — Backup Server complete
 - **Datastores** (Q20): create, configure, maintenance mode, usage history.

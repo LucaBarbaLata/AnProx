@@ -40,6 +40,15 @@ import io.github.lucabarbalata.anprox.model.link.AppLink
 import io.github.lucabarbalata.anprox.model.pve.ConsoleKind
 import io.github.lucabarbalata.anprox.model.pve.ConsoleTarget
 import io.github.lucabarbalata.anprox.model.pve.GuestType
+import io.github.lucabarbalata.anprox.model.pve.RealmType
+import io.github.lucabarbalata.anprox.ui.access.AclScreen
+import io.github.lucabarbalata.anprox.ui.access.GroupsScreen
+import io.github.lucabarbalata.anprox.ui.access.RealmEditorScreen
+import io.github.lucabarbalata.anprox.ui.access.RealmsScreen
+import io.github.lucabarbalata.anprox.ui.access.RolesScreen
+import io.github.lucabarbalata.anprox.ui.access.UserEditorScreen
+import io.github.lucabarbalata.anprox.ui.access.UserScreen
+import io.github.lucabarbalata.anprox.ui.access.UsersScreen
 import io.github.lucabarbalata.anprox.ui.alerts.AlertsScreen
 import io.github.lucabarbalata.anprox.ui.backups.BackupScope
 import io.github.lucabarbalata.anprox.ui.backups.BackupsScreen
@@ -47,6 +56,7 @@ import io.github.lucabarbalata.anprox.ui.cloudinit.CloudInitScreen
 import io.github.lucabarbalata.anprox.ui.console.ConsoleScreen
 import io.github.lucabarbalata.anprox.ui.create.CreateGuestScreen
 import io.github.lucabarbalata.anprox.ui.dashboard.DashboardScreen
+import io.github.lucabarbalata.anprox.ui.datacenter.AccessPage
 import io.github.lucabarbalata.anprox.ui.datacenter.BackupJobEditorScreen
 import io.github.lucabarbalata.anprox.ui.datacenter.BackupJobsScreen
 import io.github.lucabarbalata.anprox.ui.datacenter.DatacenterScreen
@@ -71,6 +81,7 @@ import io.github.lucabarbalata.anprox.ui.guest.OptionsScreen
 import io.github.lucabarbalata.anprox.ui.hardware.HardwareScreen
 import io.github.lucabarbalata.anprox.ui.login.LoginScreen
 import io.github.lucabarbalata.anprox.ui.navigation.AboutRoute
+import io.github.lucabarbalata.anprox.ui.navigation.AclRoute
 import io.github.lucabarbalata.anprox.ui.navigation.AlertsRoute
 import io.github.lucabarbalata.anprox.ui.navigation.AppLinks
 import io.github.lucabarbalata.anprox.ui.navigation.BackupJobEditorRoute
@@ -84,6 +95,7 @@ import io.github.lucabarbalata.anprox.ui.navigation.DashboardRoute
 import io.github.lucabarbalata.anprox.ui.navigation.DatacenterRoute
 import io.github.lucabarbalata.anprox.ui.navigation.FirewallExtraRoute
 import io.github.lucabarbalata.anprox.ui.navigation.FirewallRoute
+import io.github.lucabarbalata.anprox.ui.navigation.GroupsRoute
 import io.github.lucabarbalata.anprox.ui.navigation.GuestRoute
 import io.github.lucabarbalata.anprox.ui.navigation.HaRoute
 import io.github.lucabarbalata.anprox.ui.navigation.HardwareRoute
@@ -95,8 +107,11 @@ import io.github.lucabarbalata.anprox.ui.navigation.NodeRoute
 import io.github.lucabarbalata.anprox.ui.navigation.OptionsRoute
 import io.github.lucabarbalata.anprox.ui.navigation.PoolRoute
 import io.github.lucabarbalata.anprox.ui.navigation.PoolsRoute
+import io.github.lucabarbalata.anprox.ui.navigation.RealmEditorRoute
+import io.github.lucabarbalata.anprox.ui.navigation.RealmsRoute
 import io.github.lucabarbalata.anprox.ui.navigation.ReplicationRoute
 import io.github.lucabarbalata.anprox.ui.navigation.ResourcesRoute
+import io.github.lucabarbalata.anprox.ui.navigation.RolesRoute
 import io.github.lucabarbalata.anprox.ui.navigation.ServerEditorRoute
 import io.github.lucabarbalata.anprox.ui.navigation.ServersRoute
 import io.github.lucabarbalata.anprox.ui.navigation.SettingsRoute
@@ -109,6 +124,9 @@ import io.github.lucabarbalata.anprox.ui.navigation.StorageListRoute
 import io.github.lucabarbalata.anprox.ui.navigation.StorageRoute
 import io.github.lucabarbalata.anprox.ui.navigation.TaskLogRoute
 import io.github.lucabarbalata.anprox.ui.navigation.TasksRoute
+import io.github.lucabarbalata.anprox.ui.navigation.UserEditorRoute
+import io.github.lucabarbalata.anprox.ui.navigation.UserRoute
+import io.github.lucabarbalata.anprox.ui.navigation.UsersRoute
 import io.github.lucabarbalata.anprox.ui.navigation.firewallScope
 import io.github.lucabarbalata.anprox.ui.node.DisksScreen
 import io.github.lucabarbalata.anprox.ui.node.JournalScreen
@@ -264,7 +282,50 @@ fun AnProxApp() {
                     onHa = { nav.navigate(HaRoute(route.serverId)) },
                     onReplication = { nav.navigate(ReplicationRoute(route.serverId)) },
                     onPools = { nav.navigate(PoolsRoute(route.serverId)) },
+                    onAccess = { page ->
+                        when (page) {
+                            AccessPage.USERS -> nav.navigate(UsersRoute(route.serverId))
+                            AccessPage.GROUPS -> nav.navigate(GroupsRoute(route.serverId))
+                            AccessPage.ROLES -> nav.navigate(RolesRoute(route.serverId))
+                            AccessPage.ACL -> nav.navigate(AclRoute(route.serverId))
+                            AccessPage.REALMS -> nav.navigate(RealmsRoute(route.serverId))
+                        }
+                    },
                 )
+            }
+            composable<UsersRoute> { entry ->
+                val route = entry.toRoute<UsersRoute>()
+                UsersScreen(
+                    route.serverId,
+                    onBack = back,
+                    onUser = { id -> nav.navigate(UserRoute(route.serverId, id)) },
+                    onAdd = { nav.navigate(UserEditorRoute(route.serverId)) },
+                )
+            }
+            composable<UserRoute> { entry ->
+                val route = entry.toRoute<UserRoute>()
+                UserScreen(route.serverId, route.userId, onBack = back, onEdit = { nav.navigate(UserEditorRoute(route.serverId, route.userId)) })
+            }
+            composable<UserEditorRoute> { entry ->
+                val route = entry.toRoute<UserEditorRoute>()
+                UserEditorScreen(route.serverId, route.userId.ifEmpty { null }, onDone = back)
+            }
+            composable<GroupsRoute> { entry -> GroupsScreen(entry.toRoute<GroupsRoute>().serverId, onBack = back) }
+            composable<RolesRoute> { entry -> RolesScreen(entry.toRoute<RolesRoute>().serverId, onBack = back) }
+            composable<AclRoute> { entry -> AclScreen(entry.toRoute<AclRoute>().serverId, onBack = back) }
+            composable<RealmsRoute> { entry ->
+                val route = entry.toRoute<RealmsRoute>()
+                RealmsScreen(
+                    route.serverId,
+                    onBack = back,
+                    onAdd = { type -> nav.navigate(RealmEditorRoute(route.serverId, type = type.apiName)) },
+                    onEdit = { realm -> nav.navigate(RealmEditorRoute(route.serverId, realm = realm)) },
+                    onTask = openTask,
+                )
+            }
+            composable<RealmEditorRoute> { entry ->
+                val route = entry.toRoute<RealmEditorRoute>()
+                RealmEditorScreen(route.serverId, route.realm.ifEmpty { null }, RealmType.fromApi(route.type) ?: RealmType.LDAP, onDone = back)
             }
             composable<HaRoute> { entry ->
                 HaScreen(entry.toRoute<HaRoute>().serverId, onBack = back, onTask = openTask)

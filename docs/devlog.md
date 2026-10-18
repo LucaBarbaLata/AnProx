@@ -5,6 +5,36 @@ solved. Newest first.
 
 ---
 
+## 2026-10-18 — Session 5: the rest of the app (M7, M6, M8), while the owner prepares a real host
+
+The owner asked to "complete the rest of the app and do as many tests as possible" while they
+set up a real Proxmox host for testing.
+
+**M7: access control.** Datacenter → Users, Groups, Roles, Permissions and Realms.
+- Model (`model/pve/Access.kt`): users, API tokens, groups, roles, ACL entries, realm forms
+  (LDAP, AD, OpenID) and sync options, second factors, `TotpSetup` (a random 160-bit secret,
+  RFC 4648 Base32 and the `otpauth://` link), `ExpiryDate` and effective permissions. A small
+  `model/json/JsonFields.kt` reads Proxmox's loosely typed JSON (numbers as strings, booleans as
+  0/1, lists as arrays or comma-separated strings). Forms send `delete=` for fields that were
+  emptied, the way the web UI does, and never send a realm's username claim on update (Proxmox
+  refuses to change it).
+- Password and second-factor changes: since Proxmox VE 8.1 everyone but root@pam must confirm
+  them with their *own* password (`confirmation-password`, or `password` for `/access/tfa`). The
+  dialogs ask for it only when the signed-in user isn't root@pam.
+- Mock (`MockAccess`): users, tokens, groups, roles, ACL, realms, a directory sync that runs as a
+  task with a log (and changes nothing in a dry run), and TOTP checked with a real RFC 6238
+  implementation (`MockTotp`), so the tests type the code an authenticator app would show.
+  Signing in as a user created in the mock works with the password set for it.
+- 6 model tests (Base32 test vectors, the `otpauth` link, forms, ACL, realms, dates) and 5
+  integration tests (user lifecycle including signing in with the changed password, tokens,
+  groups/roles/ACL, realms and sync, second factors).
+- Tour step 26: a user with two password fields, an API token shown once, a role for a group,
+  and a sync preview whose task log lists the user it would add.
+- Not done: WebAuthn registration (needs the browser's credential API), scheduled realm sync
+  jobs, and hiding controls the signed-in user may not use (all M9).
+
+---
+
 ## 2026-10-15 — Session 4: consoles rebuilt
 
 **0.1.0-beta.2 released** by the owner (Release run 3, commit `4881937`). The session couldn't
