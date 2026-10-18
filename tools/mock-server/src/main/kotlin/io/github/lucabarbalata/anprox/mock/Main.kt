@@ -8,6 +8,7 @@ import io.github.lucabarbalata.anprox.model.ProxmoxProduct
  */
 fun main() {
     val pve = MockProxmoxServer(ProxmoxProduct.PVE, requestedPort = 8006, host = "0.0.0.0", taskDurationMillis = 2_000).start()
+    pve.state.ceph.installed = true
     val pbs = MockProxmoxServer(ProxmoxProduct.PBS, requestedPort = 8007, host = "0.0.0.0", taskDurationMillis = 2_000).start()
     val ssh = MockSshServer(requestedPort = 2222, host = "0.0.0.0").start()
     println(
@@ -26,6 +27,8 @@ fun main() {
             root@pam      full access
             admin@pve     full access + TOTP (code 123456, recovery keys aaaa-bbbb-cccc / dddd-eeee-ffff)
             auditor@pve   read-only
+
+          Ceph is set up on the Proxmox VE cluster; pve3 is offline, so it reports HEALTH_WARN.
 
         Press Ctrl+C to stop.
         """.trimIndent(),

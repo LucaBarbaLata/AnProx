@@ -939,4 +939,87 @@ interface PveApi {
 
     @GET("access/permissions")
     suspend fun permissions(@Query("userid") userId: String?, @Query("path") path: String?): ApiEnvelope<JsonObject>
+    // ---- Ceph (M6). Most calls run on any node with Ceph; destroying an OSD or a service runs on its host.
+
+    @GET("nodes/{node}/ceph/status")
+    suspend fun cephOverview(@Path("node") node: String): ApiEnvelope<JsonObject>
+
+    @GET("nodes/{node}/ceph/osd")
+    suspend fun cephOsds(@Path("node") node: String): ApiEnvelope<JsonObject>
+
+    @FormUrlEncoded
+    @POST("nodes/{node}/ceph/osd")
+    suspend fun createCephOsd(@Path("node") node: String, @FieldMap params: Map<String, String>): ApiEnvelope<String>
+
+    @DELETE("nodes/{node}/ceph/osd/{id}")
+    suspend fun destroyCephOsd(@Path("node") node: String, @Path("id") id: Int, @Query("cleanup") cleanup: Int): ApiEnvelope<String>
+
+    @POST("nodes/{node}/ceph/osd/{id}/in")
+    suspend fun cephOsdIn(@Path("node") node: String, @Path("id") id: Int): ApiEnvelope<JsonElement>
+
+    @POST("nodes/{node}/ceph/osd/{id}/out")
+    suspend fun cephOsdOut(@Path("node") node: String, @Path("id") id: Int): ApiEnvelope<JsonElement>
+
+    @FormUrlEncoded
+    @POST("nodes/{node}/ceph/osd/{id}/scrub")
+    suspend fun cephOsdScrub(@Path("node") node: String, @Path("id") id: Int, @Field("deep") deep: Int): ApiEnvelope<JsonElement>
+
+    @GET("nodes/{node}/ceph/pool")
+    suspend fun cephPools(@Path("node") node: String): ApiEnvelope<JsonElement>
+
+    @FormUrlEncoded
+    @POST("nodes/{node}/ceph/pool")
+    suspend fun createCephPool(@Path("node") node: String, @FieldMap params: Map<String, String>): ApiEnvelope<String>
+
+    @FormUrlEncoded
+    @PUT("nodes/{node}/ceph/pool/{name}")
+    suspend fun updateCephPool(@Path("node") node: String, @Path("name") name: String, @FieldMap params: Map<String, String>): ApiEnvelope<String>
+
+    @DELETE("nodes/{node}/ceph/pool/{name}")
+    suspend fun deleteCephPool(@Path("node") node: String, @Path("name") name: String, @Query("remove_storages") removeStorages: Int): ApiEnvelope<String>
+
+    @GET("nodes/{node}/ceph/rules")
+    suspend fun cephRules(@Path("node") node: String): ApiEnvelope<JsonElement>
+
+    /** [type] is `mon`, `mgr` or `mds`. */
+    @GET("nodes/{node}/ceph/{type}")
+    suspend fun cephServices(@Path("node") node: String, @Path("type") type: String): ApiEnvelope<JsonElement>
+
+    /** Creates a monitor, manager or metadata server on [node], named after it. */
+    @POST("nodes/{node}/ceph/{type}/{name}")
+    suspend fun createCephService(@Path("node") node: String, @Path("type") type: String, @Path("name") name: String): ApiEnvelope<String>
+
+    @DELETE("nodes/{node}/ceph/{type}/{name}")
+    suspend fun destroyCephService(@Path("node") node: String, @Path("type") type: String, @Path("name") name: String): ApiEnvelope<String>
+
+    /** [action] is `start`, `stop` or `restart`; [service] e.g. `osd.3` or `mon.pve1`. */
+    @FormUrlEncoded
+    @POST("nodes/{node}/ceph/{action}")
+    suspend fun cephServiceAction(@Path("node") node: String, @Path("action") action: String, @Field("service") service: String): ApiEnvelope<String>
+
+    @GET("nodes/{node}/ceph/fs")
+    suspend fun cephFs(@Path("node") node: String): ApiEnvelope<JsonElement>
+
+    @FormUrlEncoded
+    @POST("nodes/{node}/ceph/fs/{name}")
+    suspend fun createCephFs(@Path("node") node: String, @Path("name") name: String, @FieldMap params: Map<String, String>): ApiEnvelope<String>
+
+    @GET("cluster/ceph/flags")
+    suspend fun cephFlags(): ApiEnvelope<JsonElement>
+
+    @FormUrlEncoded
+    @PUT("cluster/ceph/flags/{flag}")
+    suspend fun setCephFlag(@Path("flag") flag: String, @Field("value") value: Int): ApiEnvelope<JsonElement>
+
+    @GET("nodes/{node}/ceph/cfg/raw")
+    suspend fun cephConfig(@Path("node") node: String): ApiEnvelope<String>
+
+    @GET("nodes/{node}/ceph/cfg/db")
+    suspend fun cephConfigDb(@Path("node") node: String): ApiEnvelope<JsonElement>
+
+    @GET("nodes/{node}/ceph/crush")
+    suspend fun cephCrush(@Path("node") node: String): ApiEnvelope<String>
+
+    @GET("nodes/{node}/ceph/log")
+    suspend fun cephLog(@Path("node") node: String, @Query("limit") limit: Int): ApiEnvelope<List<TaskLogLine>>
 }

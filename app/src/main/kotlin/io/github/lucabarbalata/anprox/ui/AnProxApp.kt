@@ -52,6 +52,13 @@ import io.github.lucabarbalata.anprox.ui.access.UsersScreen
 import io.github.lucabarbalata.anprox.ui.alerts.AlertsScreen
 import io.github.lucabarbalata.anprox.ui.backups.BackupScope
 import io.github.lucabarbalata.anprox.ui.backups.BackupsScreen
+import io.github.lucabarbalata.anprox.ui.ceph.CephOsdsScreen
+import io.github.lucabarbalata.anprox.ui.ceph.CephPage
+import io.github.lucabarbalata.anprox.ui.ceph.CephPoolsScreen
+import io.github.lucabarbalata.anprox.ui.ceph.CephScreen
+import io.github.lucabarbalata.anprox.ui.ceph.CephServicesScreen
+import io.github.lucabarbalata.anprox.ui.ceph.CephText
+import io.github.lucabarbalata.anprox.ui.ceph.CephTextScreen
 import io.github.lucabarbalata.anprox.ui.cloudinit.CloudInitScreen
 import io.github.lucabarbalata.anprox.ui.console.ConsoleScreen
 import io.github.lucabarbalata.anprox.ui.create.CreateGuestScreen
@@ -87,6 +94,11 @@ import io.github.lucabarbalata.anprox.ui.navigation.AppLinks
 import io.github.lucabarbalata.anprox.ui.navigation.BackupJobEditorRoute
 import io.github.lucabarbalata.anprox.ui.navigation.BackupJobsRoute
 import io.github.lucabarbalata.anprox.ui.navigation.BackupsRoute
+import io.github.lucabarbalata.anprox.ui.navigation.CephOsdsRoute
+import io.github.lucabarbalata.anprox.ui.navigation.CephPoolsRoute
+import io.github.lucabarbalata.anprox.ui.navigation.CephRoute
+import io.github.lucabarbalata.anprox.ui.navigation.CephServicesRoute
+import io.github.lucabarbalata.anprox.ui.navigation.CephTextRoute
 import io.github.lucabarbalata.anprox.ui.navigation.CloneRoute
 import io.github.lucabarbalata.anprox.ui.navigation.CloudInitRoute
 import io.github.lucabarbalata.anprox.ui.navigation.ConsoleRoute
@@ -282,6 +294,7 @@ fun AnProxApp() {
                     onHa = { nav.navigate(HaRoute(route.serverId)) },
                     onReplication = { nav.navigate(ReplicationRoute(route.serverId)) },
                     onPools = { nav.navigate(PoolsRoute(route.serverId)) },
+                    onCeph = { nav.navigate(CephRoute(route.serverId)) },
                     onAccess = { page ->
                         when (page) {
                             AccessPage.USERS -> nav.navigate(UsersRoute(route.serverId))
@@ -292,6 +305,31 @@ fun AnProxApp() {
                         }
                     },
                 )
+            }
+            composable<CephRoute> { entry ->
+                val route = entry.toRoute<CephRoute>()
+                CephScreen(
+                    route.serverId,
+                    onBack = back,
+                    onPage = { page ->
+                        when (page) {
+                            CephPage.OSDS -> nav.navigate(CephOsdsRoute(route.serverId))
+                            CephPage.POOLS -> nav.navigate(CephPoolsRoute(route.serverId))
+                            CephPage.SERVICES -> nav.navigate(CephServicesRoute(route.serverId))
+                            CephPage.CONFIG -> nav.navigate(CephTextRoute(route.serverId, CephText.CONFIG.name))
+                            CephPage.CRUSH -> nav.navigate(CephTextRoute(route.serverId, CephText.CRUSH.name))
+                            CephPage.LOG -> nav.navigate(CephTextRoute(route.serverId, CephText.LOG.name))
+                        }
+                    },
+                    onTask = openTask,
+                )
+            }
+            composable<CephOsdsRoute> { entry -> CephOsdsScreen(entry.toRoute<CephOsdsRoute>().serverId, onBack = back, onTask = openTask) }
+            composable<CephPoolsRoute> { entry -> CephPoolsScreen(entry.toRoute<CephPoolsRoute>().serverId, onBack = back, onTask = openTask) }
+            composable<CephServicesRoute> { entry -> CephServicesScreen(entry.toRoute<CephServicesRoute>().serverId, onBack = back, onTask = openTask) }
+            composable<CephTextRoute> { entry ->
+                val route = entry.toRoute<CephTextRoute>()
+                CephTextScreen(route.serverId, CephText.entries.firstOrNull { it.name == route.kind } ?: CephText.CONFIG, onBack = back)
             }
             composable<UsersRoute> { entry ->
                 val route = entry.toRoute<UsersRoute>()

@@ -60,6 +60,13 @@ import kotlinx.serialization.Serializable
 @Serializable data class ReplicationRoute(val serverId: String)
 @Serializable data class PoolsRoute(val serverId: String)
 @Serializable data class PoolRoute(val serverId: String, val poolId: String)
+// Ceph (M6)
+@Serializable data class CephRoute(val serverId: String)
+@Serializable data class CephOsdsRoute(val serverId: String)
+@Serializable data class CephPoolsRoute(val serverId: String)
+@Serializable data class CephServicesRoute(val serverId: String)
+// kind: a CephText name (CONFIG, CRUSH, LOG).
+@Serializable data class CephTextRoute(val serverId: String, val kind: String)
 // Permissions (M7)
 @Serializable data class UsersRoute(val serverId: String)
 @Serializable data class UserRoute(val serverId: String, val userId: String)

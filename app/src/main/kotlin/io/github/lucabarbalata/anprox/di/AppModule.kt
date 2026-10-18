@@ -9,6 +9,7 @@ import io.github.lucabarbalata.anprox.data.backup.BackupRepository
 import io.github.lucabarbalata.anprox.data.console.ConsoleRepository
 import io.github.lucabarbalata.anprox.data.datacenter.AccessRepository
 import io.github.lucabarbalata.anprox.data.datacenter.BackupJobRepository
+import io.github.lucabarbalata.anprox.data.datacenter.CephRepository
 import io.github.lucabarbalata.anprox.data.datacenter.FirewallRepository
 import io.github.lucabarbalata.anprox.data.datacenter.HaRepository
 import io.github.lucabarbalata.anprox.data.datacenter.PoolRepository
@@ -53,6 +54,12 @@ import io.github.lucabarbalata.anprox.ui.access.UsersViewModel
 import io.github.lucabarbalata.anprox.ui.alerts.AlertsViewModel
 import io.github.lucabarbalata.anprox.ui.backups.BackupScope
 import io.github.lucabarbalata.anprox.ui.backups.BackupsViewModel
+import io.github.lucabarbalata.anprox.ui.ceph.CephOsdsViewModel
+import io.github.lucabarbalata.anprox.ui.ceph.CephPoolsViewModel
+import io.github.lucabarbalata.anprox.ui.ceph.CephServicesViewModel
+import io.github.lucabarbalata.anprox.ui.ceph.CephText
+import io.github.lucabarbalata.anprox.ui.ceph.CephTextViewModel
+import io.github.lucabarbalata.anprox.ui.ceph.CephViewModel
 import io.github.lucabarbalata.anprox.ui.cloudinit.CloudInitViewModel
 import io.github.lucabarbalata.anprox.ui.console.ConsoleOpener
 import io.github.lucabarbalata.anprox.ui.console.ConsoleViewModel
@@ -151,6 +158,7 @@ val appModule = module {
     single { ReplicationRepository(get()) }
     single { PoolRepository(get()) }
     single { AccessRepository(get()) }
+    single { CephRepository(get()) }
     single { StorageSetupRepository(get()) }
     single { ProfileTransfer(get(), get()) }
     single { NodeAdminRepository(get()) }
@@ -225,6 +233,11 @@ val appModule = module {
     // storageId "" adds a new storage.
     viewModel { (serverId: String, storageId: String) -> StorageEditorViewModel(serverId, storageId.ifEmpty { null }, get()) }
     viewModel { (serverId: String, node: String, storage: String) -> StorageContentViewModel(serverId, node, storage, get(), get()) }
+    viewModel { (serverId: String) -> CephViewModel(serverId, get(), get()) }
+    viewModel { (serverId: String) -> CephOsdsViewModel(serverId, get(), get()) }
+    viewModel { (serverId: String) -> CephPoolsViewModel(serverId, get(), get()) }
+    viewModel { (serverId: String) -> CephServicesViewModel(serverId, get(), get()) }
+    viewModel { (serverId: String, kind: CephText) -> CephTextViewModel(serverId, kind, get()) }
     viewModel { (serverId: String) -> UsersViewModel(serverId, get()) }
     viewModel { (serverId: String, userId: String) -> UserViewModel(serverId, userId, get()) }
     // userId "" adds a new user.

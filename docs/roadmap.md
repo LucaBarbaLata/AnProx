@@ -14,7 +14,7 @@ Status legend: ✅ done · 🚧 in progress · 🗓 planned
 | [M3](#m3--alerts--android-integration) | Alerts and Android integration | ✅ (beta.3 candidate) |
 | [M4](#m4--datacenter) | Datacenter: storage, backup jobs, HA, replication, firewall | ✅ (beta.3 candidate) |
 | [M5](#m5--node-administration) | Node administration | ✅ (beta.3 candidate) |
-| [M6](#m6--ceph--sdn) | Ceph and SDN | 🗓 |
+| [M6](#m6--ceph--sdn) | Ceph and SDN | 🚧 Ceph done (beta.3 candidate), SDN next |
 | [M7](#m7--access-control) | Users, groups, roles, ACLs, realms, tokens, TFA | ✅ (beta.3 candidate) |
 | [M8](#m8--backup-server-complete) | Proxmox Backup Server complete | 🗓 |
 | [M9](#m9--parity--10) | Parity sweep, polish, translations → 1.0 | 🗓 |
@@ -64,7 +64,7 @@ Everything marked ✅ in M1 and M2 below. Gates:
 ### Beta 0.1.0-beta.3: 🚧 candidate, owner testing
 Everything marked ✅ in M2–M5 (guest configuration, SSH, alerts and Android integration,
 datacenter, node administration). Gates:
-- [ ] CI green: tests, lint, debug and release builds, and the emulator tour on Android 8.0 and 14 (29 steps)
+- [ ] CI green: tests, lint, debug and release builds, and the emulator tour on Android 8.0 and 14 (30 steps)
 - [x] `CHANGELOG.md` entries, store changelog (`fastlane/…/changelogs/10023.txt`), README
 - [x] [Test guide](beta2-test-guide.md) sections D1–D15 for the owner
 - [ ] Owner: run the test guide on real hardware (Proxmox VE 8; 9 later)
@@ -187,6 +187,13 @@ datacenter, node administration). Gates:
 ## M6 — Ceph & SDN
 - **Ceph** (Q21): health and status, OSDs (in/out, up/down, create/destroy), pools, monitors,
   managers, CephFS, configuration, crush map, log.
+  ✅ Done: Datacenter → Ceph with health checks, capacity and I/O, daemon counts, the OSD map
+  flags; OSDs by host (create on an unused disk with device class, encryption and a database
+  disk; in/out; scrub; start/stop/restart; destroy with disk wipe); pools (create with size,
+  min. size, autoscaler, PGs, application and an RBD storage; edit; delete); monitors, managers
+  and metadata servers (add, start/stop/restart, remove); CephFS (create); ceph.conf and the
+  configuration database, the CRUSH map and the cluster log. Installing and initialising Ceph
+  stays in the web UI (it needs the node's console).
 - **SDN** (Q21): zones, VNets, subnets, IPAM, DHCP, controllers, fabrics, pending changes and apply.
 
 ## M7 — Access control ✅

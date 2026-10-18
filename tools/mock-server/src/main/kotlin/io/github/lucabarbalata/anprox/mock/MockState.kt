@@ -232,6 +232,12 @@ class MockState(
     private val haManager = MockHa(guests)
     private val replication = MockReplication(clockMillis)
     private val nodeAdmin = MockNodeAdmin(nodes.map { it.name })
+
+    /** Ceph across the three nodes; off until a test or the runnable mock sets `installed`. */
+    val ceph = MockCeph(
+        online = { n -> node(n)?.online == true },
+        diskUsed = { n, dev, used -> if (used) nodeAdmin.markUsed(n, listOf(dev), "LVM") else nodeAdmin.markWiped(n, dev, gpt = false) },
+    )
     private val network = MockNetwork(nodes.map { it.name })
 
     /** Accepted `POST /nodes/{node}/status` calls (node, command); the mock nodes keep running. */

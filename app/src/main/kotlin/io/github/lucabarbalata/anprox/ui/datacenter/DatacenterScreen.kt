@@ -10,6 +10,7 @@ import androidx.compose.material.icons.outlined.Badge
 import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.Domain
 import androidx.compose.material.icons.outlined.Group
+import androidx.compose.material.icons.outlined.Hub
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material.icons.outlined.Storage
@@ -28,7 +29,7 @@ import io.github.lucabarbalata.anprox.ui.common.contentPadding
 /** The Permissions pages (milestone M7). */
 enum class AccessPage { USERS, GROUPS, ROLES, ACL, REALMS }
 
-/** Cluster-wide settings of one Proxmox VE server (milestones M4 and M7). */
+/** Cluster-wide settings of one Proxmox VE server (milestones M4, M6 and M7). */
 @Composable
 fun DatacenterScreen(
     title: String,
@@ -39,6 +40,7 @@ fun DatacenterScreen(
     onHa: () -> Unit,
     onReplication: () -> Unit,
     onPools: () -> Unit,
+    onCeph: () -> Unit,
     onAccess: (AccessPage) -> Unit,
 ) {
     AnProxScaffold(title = stringResource(R.string.datacenter_title), subtitle = title, onBack = onBack) { inner ->
@@ -51,6 +53,7 @@ fun DatacenterScreen(
                     MenuRow(Icons.Outlined.Sync, stringResource(R.string.ha_title), stringResource(R.string.ha_open_body), onHa)
                     MenuRow(Icons.Outlined.ContentCopy, stringResource(R.string.datacenter_replication), stringResource(R.string.replication_open_body), onReplication)
                     MenuRow(Icons.Outlined.Workspaces, stringResource(R.string.datacenter_pools), stringResource(R.string.pools_open_body), onPools)
+                    MenuRow(Icons.Outlined.Hub, stringResource(R.string.ceph_title), stringResource(R.string.ceph_open_body), onCeph)
                 }
             }
             item { SectionHeader(stringResource(R.string.access_section)) }

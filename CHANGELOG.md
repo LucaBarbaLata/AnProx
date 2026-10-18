@@ -152,6 +152,23 @@ All notable changes to AnProx are documented here. The format follows
     directory (users, groups or both; enable new users; what to remove for vanished ones) with a
     **preview** that only lists the changes in the task log; remove a realm.
 
+- **Ceph** (Dashboard → Datacenter → Ceph), on clusters where Ceph is set up:
+  - **Overview**: health with each check (tap for details), capacity and current I/O, OSDs up
+    and in, monitors in quorum, managers, metadata servers and placement-group states; the OSD
+    map **flags** as switches (set **noout** before rebooting a node; flags that stop I/O ask
+    first).
+  - **OSDs** by node with usage, latency, up/down and in/out: mark in or out, scrub or deep
+    scrub, start, stop or restart, and destroy one that is down and out (optionally wiping its
+    disk). **Create OSD** on an unused disk, with device class, encryption and an optional
+    faster database disk.
+  - **Pools** with copies, placement groups, autoscaler and usage: create (and add it as an RBD
+    storage), change copies, min. size, autoscaler or PGs, and delete (type its name; optionally
+    with its storages). Risky settings are pointed out.
+  - **Monitors, managers and metadata servers**: add one on a node, start, stop, restart or
+    remove it; **CephFS**: the file systems and their pools, create one.
+  - **Configuration** (ceph.conf and the configuration database), the **CRUSH map** and the
+    **cluster log**.
+
 - **Instant alerts guide** ([docs/push-notifications.md](docs/push-notifications.md)): Proxmox's own
   notifications to the phone through ntfy or Gotify, without Google services, alongside the
   app's background checks.

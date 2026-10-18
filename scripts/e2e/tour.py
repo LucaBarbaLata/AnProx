@@ -1009,6 +1009,31 @@ def permissions():
     back()
 
 
+@step("Datacenter: Ceph - health with pve3 down, the noout flag, an OSD that is out, a new pool")
+def ceph():
+    tap("Overview")
+    tap_node(scroll_to("Datacenter", exact=True))
+    tap_node(scroll_to("Health, OSDs, pools, monitors, CephFS and flags"))   # Ceph
+    find("2 osds down", timeout=30)               # pve3 is offline in the mock
+    screenshot("13j-ceph")
+    tap_node(scroll_to("OSDs will not automatically be marked out"))    # the noout switch
+    find("noout set", timeout=20)
+    tap_node(scroll_to("The disks that store the data, by node"))        # OSDs
+    tap_node(scroll_to("osd.5"))                  # down and out in the mock
+    find("Mark in", timeout=10)
+    tap("Close")
+    back()
+    tap_node(scroll_to("Replication, placement groups and usage"))       # Pools
+    find("vm-pool", timeout=30)
+    tap("Create pool")
+    fill("Pool name", "fast", fallback_index=0)
+    tap("Create", pick="lowest")
+    find("Pool fast created", timeout=60)
+    back()                                        # to Ceph
+    back()                                        # to Datacenter
+    back()
+
+
 @step("Node administration: updates, repositories, a service, a pending network change, the system log")
 def node_admin():
     tap("Resources")
@@ -1140,7 +1165,7 @@ def main():
     try:
         for s in (launch, add_pve, add_pbs, resources, performance, guest_start, snapshots, backups,
                   options, hardware, console, vm_console, cloud_init, bulk, clone_migrate, tasks, create_vm, alerts,
-                  backup_jobs, storage, storage_setup, firewall, high_availability, replication, pools, permissions, node_admin, ssh,
+                  backup_jobs, storage, storage_setup, firewall, high_availability, replication, pools, permissions, ceph, node_admin, ssh,
                   light_theme):
             s()
         ok = True

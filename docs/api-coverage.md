@@ -55,8 +55,8 @@ Code: `core/network/src/main/kotlin/.../network/api/` (`AccessApi`, `PveApi`, `P
 | `GET /nodes/{node}/firewall/log`, `GET /nodes/{node}/{type}/{vmid}/firewall/log` | Firewall log (newest 500 lines, via the response's `total`) | ✅ |
 | `GET /cluster/firewall/refs` | Alias and IP set suggestions in the rule editor | 🗓 later |
 | `/cluster/sdn/*` | Zones, VNets, subnets, IPAM, DHCP, controllers, fabrics | 🗓 M6 |
-| `GET /cluster/ceph/status` | Ceph health for background alerts | ✅ (health only; full status 🗓 M6) |
-| `/cluster/ceph/*` (flags, metadata) | Cluster-wide Ceph flags | 🗓 M6 |
+| `GET /cluster/ceph/status` | Ceph health for background alerts | ✅ (the Ceph screen reads `/nodes/{node}/ceph/status`) |
+| `/cluster/ceph/flags` (+ `/{flag}`) | OSD map flags (noout for maintenance, …) | ✅ M6 (`metadata`, `health-mute`, `restart-bulk` 🗓 M9) |
 | `/cluster/mapping/{pci,usb,dir}` | Resource mappings | 🗓 M9 |
 | `/cluster/notifications/*` | Notification targets & matchers (also used for push, M3) | 🗓 M3 (webhook setup) / M9 (full) |
 | `/cluster/metrics/*` | External metric servers | 🗓 M9 |
@@ -97,7 +97,7 @@ Code: `core/network/src/main/kotlin/.../network/api/` (`AccessApi`, `PveApi`, `P
 | `/nodes/{node}/certificates/*` | Certificates, ACME orders | 🗓 M9 |
 | `/nodes/{node}/firewall/{rules,options}` | Node firewall | ✅ |
 | `/nodes/{node}/firewall/log` | Node firewall log | 🗓 M4 |
-| `/nodes/{node}/ceph/*` | OSDs, pools, monitors, managers, MDS, FS, config, crush, log | 🗓 M6 |
+| `/nodes/{node}/ceph/*` | Status; OSDs (create on an unused disk, in/out, scrub, start/stop/restart, destroy); pools (create, edit, delete); monitors, managers and metadata servers (add, start/stop/restart, remove); CephFS (list, create); `cfg/raw`, `cfg/db`, `crush`, `log`, `rules` | ✅ M6 (`init`, installing Ceph and removing a CephFS stay in the web UI) |
 | `/nodes/{node}/sdn/*` | Node SDN status | 🗓 M6 |
 | `/nodes/{node}/replication/*` | Replication status / run now | 🗓 M4 |
 | `/nodes/{node}/aplinfo` | Container template catalogue | 🗓 M4 |

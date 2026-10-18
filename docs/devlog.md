@@ -33,6 +33,27 @@ set up a real Proxmox host for testing.
 - Not done: WebAuthn registration (needs the browser's credential API), scheduled realm sync
   jobs, and hiding controls the signed-in user may not use (all M9).
 
+**M6: Ceph.** Datacenter → Ceph with OSDs, pools, monitors/managers/metadata servers and CephFS,
+configuration, CRUSH map and log. Written from Proxmox's own API code
+(`PVE/API2/Ceph*.pm`) rather than the docs:
+- Proxmox serves Ceph per node (`/nodes/{node}/ceph/…`, proxied to that node). Reads go to the
+  first online node; destroying an OSD and starting or stopping a daemon go to the daemon's
+  host, since Proxmox runs them there (`proxyto => 'node'`, and destroy checks the OSD belongs
+  to the node).
+- `ceph status` changed shape over the releases: before Quincy the OSD map is nested one level
+  deeper (`osdmap.osdmap`). `CephOverview` reads both. Proxmox adds `health detail` to the
+  status, so checks carry their detail lines.
+- OSD `percent_used` is 0–100, a pool's is a fraction (0–1), as Ceph reports them.
+- A cluster without Ceph answers 500 with "binary not installed: /usr/bin/ceph-mon" (or
+  "rados_connect failed"); the screen shows "Ceph isn't set up" for those instead of an error.
+- `buildMap { put("size", size) }` put the *map's* size: the same shadowing as `keys` in M7.
+- Mock (`MockCeph`): three nodes, two OSDs each, pve3 offline (so OSDs and a monitor are down and
+  health is HEALTH_WARN), pools, monitors, managers, metadata servers, a CephFS, flags,
+  ceph.conf, a CRUSH map and a log. OSD creation uses the node's unused disks from the M5 disk
+  list and marks them used. Ceph is off by default so the existing alert tests keep their exact
+  alert lists; the runnable mock (and so the emulator tour) turns it on.
+- 5 model tests and 6 integration tests; tour step 27.
+
 ---
 
 ## 2026-10-15 — Session 4: consoles rebuilt

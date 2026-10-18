@@ -44,6 +44,7 @@ import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
 import io.ktor.http.Headers
 import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -168,6 +169,170 @@ class MockProxmoxServer(
     }
 
     /** `/access/…` administration (milestone M7). Changes need a user who isn't read-only. */
+    private fun Route.ceph() {
+        val ceph = state.ceph
+        suspend fun ApplicationCall.params(): Map<String, String> = receiveParameters().let { p -> p.names().associateWith { p[it].orEmpty() } }
+
+        /** The request's node if it is online and the cluster has Ceph; otherwise answers like Proxmox. */
+        suspend fun ApplicationCall.cephNode(): String? {
+            val name = parameters["node"]!!
+            val node = state.node(name)
+            when {
+                node == null -> fail(404, "no such node '$name'")
+                !node.online -> fail(595, "Connection refused")
+                !ceph.installed -> fail(500, MockCeph.NOT_INSTALLED)
+                else -> return name
+            }
+            return null
+        }
+        suspend fun ApplicationCall.writer(): MockState.Session? {
+            val s = authed() ?: return null
+            if (state.isReadOnly(s.user)) {
+                fail(403, "Permission check failed (/, Sys.Modify)")
+                return null
+            }
+            return s
+        }
+        suspend fun ApplicationCall.task(node: String, type: String, id: String, s: MockState.Session, change: MockCeph.Change) = when (change) {
+            is MockCeph.Change.Refused -> fail(500, change.reason)
+            is MockCeph.Change.Ok -> ok(state.startTask(node, type, id, s.user, effect = change.effect))
+        }
+        suspend fun ApplicationCall.done(error: String?) = if (error != null) fail(500, error) else ok(JsonNull)
+
+        get("nodes/{node}/ceph/status") {
+            call.authed() ?: return@get
+            call.cephNode() ?: return@get
+            call.ok(ceph.status())
+        }
+        get("nodes/{node}/ceph/osd") {
+            call.authed() ?: return@get
+            call.cephNode() ?: return@get
+            call.ok(ceph.osdTree())
+        }
+        post("nodes/{node}/ceph/osd") {
+            val s = call.writer() ?: return@post
+            val node = call.cephNode() ?: return@post
+            val p = call.params()
+            val dev = p["dev"].orEmpty()
+            val disk = state.disks(node)?.firstOrNull { it.devpath == dev } ?: return@post call.fail(500, "unable to get device info for '$dev'")
+            if (!disk.unused) return@post call.fail(500, "device '$dev' is already in use")
+            val deviceClass = p["crush-device-class"]?.takeIf { it.isNotBlank() } ?: disk.type?.takeIf { it in setOf("hdd", "ssd", "nvme") } ?: "hdd"
+            call.task(node, "cephcreateosd", dev.substringAfterLast('/'), s, ceph.createOsd(node, dev, deviceClass))
+        }
+        delete("nodes/{node}/ceph/osd/{id}") {
+            val s = call.writer() ?: return@delete
+            val node = call.cephNode() ?: return@delete
+            val id = call.parameters["id"]!!.toIntOrNull() ?: return@delete call.fail(400, "osdid: type check ('integer') failed")
+            call.task(node, "cephdestroyosd", "$id", s, ceph.destroyOsd(node, id, call.request.queryParameters["cleanup"] == "1"))
+        }
+        for (direction in listOf("in", "out")) {
+            post("nodes/{node}/ceph/osd/{id}/$direction") {
+                call.writer() ?: return@post
+                call.cephNode() ?: return@post
+                call.done(ceph.setIn(call.parameters["id"]!!.toIntOrNull() ?: -1, direction == "in"))
+            }
+        }
+        post("nodes/{node}/ceph/osd/{id}/scrub") {
+            call.writer() ?: return@post
+            call.cephNode() ?: return@post
+            call.done(ceph.scrub(call.parameters["id"]!!.toIntOrNull() ?: -1))
+        }
+        get("nodes/{node}/ceph/pool") {
+            call.authed() ?: return@get
+            call.cephNode() ?: return@get
+            call.ok(ceph.pools())
+        }
+        post("nodes/{node}/ceph/pool") {
+            val s = call.writer() ?: return@post
+            val node = call.cephNode() ?: return@post
+            val p = call.params()
+            call.task(node, "cephcreatepool", p["name"].orEmpty(), s, ceph.createPool(p))
+        }
+        put("nodes/{node}/ceph/pool/{name}") {
+            val s = call.writer() ?: return@put
+            val node = call.cephNode() ?: return@put
+            val name = call.parameters["name"]!!
+            call.task(node, "cephsetpool", name, s, ceph.updatePool(name, call.params()))
+        }
+        delete("nodes/{node}/ceph/pool/{name}") {
+            val s = call.writer() ?: return@delete
+            val node = call.cephNode() ?: return@delete
+            val name = call.parameters["name"]!!
+            call.task(node, "cephdestroypool", name, s, ceph.deletePool(name))
+        }
+        get("nodes/{node}/ceph/rules") {
+            call.authed() ?: return@get
+            call.cephNode() ?: return@get
+            call.ok(ceph.rules())
+        }
+        for (type in listOf("mon", "mgr", "mds")) {
+            get("nodes/{node}/ceph/$type") {
+                call.authed() ?: return@get
+                call.cephNode() ?: return@get
+                call.ok(ceph.services(type) ?: JsonArray(emptyList()))
+            }
+            post("nodes/{node}/ceph/$type/{name}") {
+                val s = call.writer() ?: return@post
+                val node = call.cephNode() ?: return@post
+                call.task(node, "cephcreate$type", call.parameters["name"]!!, s, ceph.createService(type, call.parameters["name"]!!))
+            }
+            delete("nodes/{node}/ceph/$type/{name}") {
+                val s = call.writer() ?: return@delete
+                val node = call.cephNode() ?: return@delete
+                call.task(node, "cephdestroy$type", call.parameters["name"]!!, s, ceph.destroyService(type, call.parameters["name"]!!))
+            }
+        }
+        for (action in listOf("start", "stop", "restart")) {
+            post("nodes/{node}/ceph/$action") {
+                val s = call.writer() ?: return@post
+                val node = call.cephNode() ?: return@post
+                val service = call.params()["service"].orEmpty().ifEmpty { "ceph.target" }
+                call.task(node, "srv$action", service, s, ceph.serviceAction(node, action, service))
+            }
+        }
+        get("nodes/{node}/ceph/fs") {
+            call.authed() ?: return@get
+            call.cephNode() ?: return@get
+            call.ok(ceph.filesystems())
+        }
+        post("nodes/{node}/ceph/fs/{name}") {
+            val s = call.writer() ?: return@post
+            val node = call.cephNode() ?: return@post
+            val name = call.parameters["name"]!!
+            call.task(node, "cephfscreate", name, s, ceph.createFs(name, call.params()))
+        }
+        get("nodes/{node}/ceph/cfg/raw") {
+            call.authed() ?: return@get
+            call.cephNode() ?: return@get
+            call.ok(ceph.config)
+        }
+        get("nodes/{node}/ceph/cfg/db") {
+            call.authed() ?: return@get
+            call.cephNode() ?: return@get
+            call.ok(ceph.configDb())
+        }
+        get("nodes/{node}/ceph/crush") {
+            call.authed() ?: return@get
+            call.cephNode() ?: return@get
+            call.ok(ceph.crushMap())
+        }
+        get("nodes/{node}/ceph/log") {
+            call.authed() ?: return@get
+            call.cephNode() ?: return@get
+            call.ok(ceph.log(call.request.queryParameters["limit"]?.toIntOrNull() ?: 50))
+        }
+        get("cluster/ceph/flags") {
+            call.authed() ?: return@get
+            if (!ceph.installed) return@get call.fail(500, MockCeph.NOT_INSTALLED)
+            call.ok(ceph.flags())
+        }
+        put("cluster/ceph/flags/{flag}") {
+            call.writer() ?: return@put
+            if (!ceph.installed) return@put call.fail(500, MockCeph.NOT_INSTALLED)
+            call.done(ceph.setFlag(call.parameters["flag"]!!, call.params()["value"] == "1"))
+        }
+    }
+
     private fun Route.accessAdmin() {
         val access = state.access
         suspend fun ApplicationCall.params(): Map<String, String> = receiveParameters().let { p -> p.names().associateWith { p[it].orEmpty() } }
@@ -318,6 +483,7 @@ class MockProxmoxServer(
 
     private fun Route.pve() {
         accessAdmin()
+        ceph()
         get("cluster/status") {
             call.authed() ?: return@get
             call.ok(state.clusterStatus())
@@ -332,8 +498,9 @@ class MockProxmoxServer(
         }
         get("cluster/ceph/status") {
             call.authed() ?: return@get
-            // Like a real cluster without Ceph unless a test sets a health status.
-            val health = state.cephHealth ?: return@get call.fail(500, "binary not installed: /usr/bin/ceph-mon")
+            // A test can force a health status; otherwise like a real cluster with or without Ceph.
+            val health = state.cephHealth ?: if (state.ceph.installed) state.ceph.healthStatus() else null
+            if (health == null) return@get call.fail(500, MockCeph.NOT_INSTALLED)
             call.ok(CephStatus(CephHealth(health)))
         }
         get("nodes/{node}/status") {
