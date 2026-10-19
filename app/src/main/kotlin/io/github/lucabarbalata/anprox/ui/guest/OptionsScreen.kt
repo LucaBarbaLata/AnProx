@@ -46,8 +46,12 @@ import io.github.lucabarbalata.anprox.data.guest.GuestRef
 import io.github.lucabarbalata.anprox.model.pve.DangerLevel
 import io.github.lucabarbalata.anprox.model.pve.GuestOptions
 import io.github.lucabarbalata.anprox.model.pve.GuestType
+import io.github.lucabarbalata.anprox.model.pve.StartupOrder
 import io.github.lucabarbalata.anprox.ui.common.AnProxScaffold
 import io.github.lucabarbalata.anprox.ui.common.ConfirmActionDialog
+import io.github.lucabarbalata.anprox.ui.common.FormHint
+import io.github.lucabarbalata.anprox.ui.common.FormLabel
+import io.github.lucabarbalata.anprox.ui.common.NumberField
 import io.github.lucabarbalata.anprox.ui.common.asString
 import io.github.lucabarbalata.anprox.ui.common.contentPadding
 import org.koin.compose.viewmodel.koinViewModel
@@ -127,6 +131,37 @@ fun OptionsScreen(ref: GuestRef, guestName: String, onBack: () -> Unit) {
     }
 }
 
+/** Start order, start delay and shutdown timeout (`startup`), under "Start at boot". */
+@Composable
+private fun StartOrderFields(startup: StartupOrder, editable: Boolean, viewModel: OptionsViewModel) {
+    Column(Modifier.padding(vertical = 6.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        FormLabel(stringResource(R.string.options_start_order_title))
+        FormHint(stringResource(R.string.options_start_order_body))
+        NumberField(
+            value = startup.order?.toString().orEmpty(),
+            onValueChange = { if (editable) viewModel.setStartOrder(it) },
+            label = stringResource(R.string.options_start_order),
+            supportingText = stringResource(R.string.options_start_order_help),
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Box(Modifier.weight(1f)) {
+                NumberField(
+                    value = startup.up?.toString().orEmpty(),
+                    onValueChange = { if (editable) viewModel.setStartDelay(it) },
+                    label = stringResource(R.string.options_start_delay),
+                )
+            }
+            Box(Modifier.weight(1f)) {
+                NumberField(
+                    value = startup.down?.toString().orEmpty(),
+                    onValueChange = { if (editable) viewModel.setShutdownTimeout(it) },
+                    label = stringResource(R.string.options_shutdown_timeout),
+                )
+            }
+        }
+    }
+}
+
 @Composable
 private fun OptionsForm(state: OptionsState, isVm: Boolean, viewModel: OptionsViewModel) {
     val c = AnProxTheme.colors
@@ -178,6 +213,7 @@ private fun OptionsForm(state: OptionsState, isVm: Boolean, viewModel: OptionsVi
                 checked = draft.onBoot,
                 onCheckedChange = { if (editable) viewModel.setOnBoot(it) },
             )
+            StartOrderFields(draft.startup, editable, viewModel)
             SwitchRow(
                 title = stringResource(R.string.options_protection),
                 description = stringResource(R.string.options_protection_body),

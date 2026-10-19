@@ -193,6 +193,19 @@ All notable changes to AnProx are documented here. The format follows
   - **Updates**, **Repositories**, **Services** and the **System log** of the Backup Server, in
     the same screens as a Proxmox VE node's. Backup Server tasks now open in the Tasks tab.
 
+- **Guest agent tools** for running VMs with the agent (Guest → Tools → Guest agent): see whether
+  the filesystems are frozen, **freeze** them (after a confirmation) and **thaw** them again,
+  **trim** them so thin storage gets the space back (with what each filesystem freed), and **set
+  the password** of a user inside the VM.
+
+- **Snapshot descriptions** can be edited or removed (a snapshot's ⋮ menu → Edit description).
+
+- **Storage usage history**: a storage's screen ends with a chart of its used space over the
+  last hour, day, week, month or year.
+
+- **Start and shutdown order** (Guest → Tools → Options): the order, the wait after starting and
+  the shutdown timeout Proxmox uses when a node boots or everything is started.
+
 - **Instant alerts guide** ([docs/push-notifications.md](docs/push-notifications.md)): Proxmox's own
   notifications to the phone through ntfy or Gotify, without Google services, alongside the
   app's background checks.
@@ -210,6 +223,8 @@ All notable changes to AnProx are documented here. The format follows
   addresses. Notes and descriptions keep them.
 - The bulk-action summary on the Resources list stays on screen longer.
 - After creating or cloning a guest, the form scrolls to the result and its **Open it** button.
+- The guest screen no longer lists the SSH client under "Coming later": it has been there since
+  M2 (Tools → SSH).
 
 ### Fixed
 - **Console output is visible.** The node and container terminals showed no output (typing

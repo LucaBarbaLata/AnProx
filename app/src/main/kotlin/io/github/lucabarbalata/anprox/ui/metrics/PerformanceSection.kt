@@ -35,8 +35,8 @@ import org.koin.core.parameter.parametersOf
 import java.util.Locale
 
 /**
- * Timeframe picker and history charts for a node or guest (questionnaire Q25). Meant to sit in
- * a LazyColumn item on the node and guest screens.
+ * Timeframe picker and history charts for a node, guest or storage (questionnaire Q25). Meant to
+ * sit in a LazyColumn item on the node, guest and storage screens.
  */
 @Composable
 fun PerformanceSection(source: MetricsSource) {
@@ -153,6 +153,17 @@ private fun chartSpecs(source: MetricsSource, points: List<RrdPoint>): List<Char
                     bytes,
                 ),
                 network,
+            )
+        }
+        is MetricsSource.Storage -> {
+            val usedSpace = points.map { it.used }
+            listOf(
+                ChartSpec(
+                    usage,
+                    listOf(ChartLine(used, usedSpace, c.accent)),
+                    points.mapNotNull { it.total }.maxOrNull() ?: autoTop(usedSpace, binary = true),
+                    bytes,
+                ),
             )
         }
     }

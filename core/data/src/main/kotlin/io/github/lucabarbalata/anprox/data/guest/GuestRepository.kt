@@ -2,7 +2,9 @@ package io.github.lucabarbalata.anprox.data.guest
 
 import io.github.lucabarbalata.anprox.data.hub.ServerHub
 import io.github.lucabarbalata.anprox.model.ProxmoxProduct
+import io.github.lucabarbalata.anprox.model.pve.AgentTrimPath
 import io.github.lucabarbalata.anprox.model.pve.CloneRequest
+import io.github.lucabarbalata.anprox.model.pve.FsFreezeStatus
 import io.github.lucabarbalata.anprox.model.pve.GuestNic
 import io.github.lucabarbalata.anprox.model.pve.GuestOptions
 import io.github.lucabarbalata.anprox.model.pve.GuestSnapshot
@@ -25,6 +27,9 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.intOrNull
+import kotlinx.serialization.json.jsonPrimitive
 
 /** Identifies a VM or container on a specific saved server. */
 data class GuestRef(val serverId: String, val node: String, val type: GuestType, val vmid: Int)
@@ -110,6 +115,31 @@ class GuestRepository(private val hub: ServerHub, private val taskObserver: Task
             GuestNetworkInfo(agentProblem = e.message)
         }
     }
+
+    // ------------------------------------------------------------------ guest agent tools (Q18)
+
+    suspend fun freezeStatus(ref: GuestRef): FsFreezeStatus =
+        FsFreezeStatus.fromApi(agent(ref, "fsfreeze-status").result?.jsonPrimitive?.contentOrNull)
+
+    /**
+     * Pauses writes to the VM's filesystems (for a consistent copy taken outside Proxmox) and
+     * returns how many were frozen. The guest stays frozen until [thaw].
+     */
+    suspend fun freeze(ref: GuestRef): Int = agent(ref, "fsfreeze-freeze").result?.jsonPrimitive?.intOrNull ?: 0
+
+    /** Resumes writes; returns how many filesystems were thawed. */
+    suspend fun thaw(ref: GuestRef): Int = agent(ref, "fsfreeze-thaw").result?.jsonPrimitive?.intOrNull ?: 0
+
+    /** Tells the guest to discard unused blocks so thin storage gets the space back. */
+    suspend fun trim(ref: GuestRef): List<AgentTrimPath> =
+        hub.use(ref.serverId) { it.pve { agentTrim(ref.node, ref.vmid) } }.result?.paths.orEmpty()
+
+    /** Changes the password of [username] inside the VM. The user must already exist there. */
+    suspend fun setGuestPassword(ref: GuestRef, username: String, password: String) {
+        hub.use(ref.serverId) { it.pveNoData { agentSetPassword(ref.node, ref.vmid, username.trim(), password) } }
+    }
+
+    private suspend fun agent(ref: GuestRef, command: String) = hub.use(ref.serverId) { it.pve { agentCommand(ref.node, ref.vmid, command) } }
 
     // ------------------------------------------------------------------ options (Q19)
 
@@ -205,6 +235,11 @@ class GuestRepository(private val hub: ServerHub, private val taskObserver: Task
     /** Rolls back to [name] and returns the task UPID. Everything since that snapshot is lost. */
     suspend fun rollbackSnapshot(ref: GuestRef, name: String): String =
         hub.use(ref.serverId) { it.pve { rollbackSnapshot(ref.node, ref.type.apiName, ref.vmid, name, emptyMap()) } }
+
+    /** Changes the description of snapshot [name]; no task. */
+    suspend fun setSnapshotDescription(ref: GuestRef, name: String, description: String) {
+        hub.use(ref.serverId) { it.pveNoData { updateSnapshot(ref.node, ref.type.apiName, ref.vmid, name, description.trim()) } }
+    }
 
     /** Deletes [name] (the guest's current state is unaffected) and returns the task UPID. */
     suspend fun deleteSnapshot(ref: GuestRef, name: String): String =

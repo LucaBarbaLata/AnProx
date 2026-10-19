@@ -32,8 +32,10 @@ import io.github.lucabarbalata.anprox.model.pve.TaskLogLine
 import io.github.lucabarbalata.anprox.model.pve.TaskStatus
 import io.github.lucabarbalata.anprox.model.pve.TaskSummary
 import io.github.lucabarbalata.anprox.model.pve.UrlMetadata
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import java.net.URLEncoder
@@ -183,6 +185,8 @@ class MockState(
         var onBoot: Boolean = false,
         var protection: Boolean = false,
         var description: String = "",
+        /** `startup` property string, e.g. `order=1,up=30`. */
+        var startup: String? = null,
         var paused: Boolean = false,
         var startedAtMillis: Long = 0,
         val ha: Boolean = false,
@@ -201,8 +205,8 @@ class MockState(
     private val bootMillis = clockMillis()
 
     val guests = mutableListOf(
-        Guest(100, "qemu", "pve1", "web", "running", 4, 8 * GIB, 64 * GIB, tags = "prod;web", agent = true, startedAtMillis = bootMillis - 9 * DAY, ha = true, diskStorage = "nas-nfs"),
-        Guest(101, "qemu", "pve1", "db", "running", 8, 16 * GIB, 256 * GIB, tags = "prod;db", agent = true, startedAtMillis = bootMillis - 9 * DAY, ha = true, diskStorage = "nas-nfs"),
+        Guest(100, "qemu", "pve1", "web", "running", 4, 8 * GIB, 64 * GIB, tags = "prod;web", agent = true, startedAtMillis = bootMillis - 9 * DAY, ha = true, diskStorage = "nas-nfs", startup = "order=2"),
+        Guest(101, "qemu", "pve1", "db", "running", 8, 16 * GIB, 256 * GIB, tags = "prod;db", agent = true, startedAtMillis = bootMillis - 9 * DAY, ha = true, diskStorage = "nas-nfs", startup = "order=1,up=30"),
         Guest(102, "qemu", "pve2", "win11", "stopped", 4, 8 * GIB, 128 * GIB, tags = "desktop"),
         Guest(103, "qemu", "pve2", "k8s-master", "running", 4, 8 * GIB, 64 * GIB, tags = "k8s", agent = true, startedAtMillis = bootMillis - 2 * DAY),
         Guest(104, "qemu", "pve3", "lab-vm", "stopped", 2, 4 * GIB, 32 * GIB, tags = "lab"),
@@ -420,6 +424,22 @@ class MockState(
         }
     }
 
+    /**
+     * Usage that grew to today's value: a slow climb plus small daily swings (backups come and go).
+     * `null` when [timeframe] is unknown.
+     */
+    fun storageRrd(s: Storage, timeframe: String): List<RrdPoint>? {
+        val tf = RrdTimeframe.entries.firstOrNull { it.apiName == timeframe } ?: return null
+        val times = sampleTimes(tf)
+        val seed = s.id.hashCode() and 0xff
+        return times.mapIndexed { index, t ->
+            val age = (times.size - 1 - index).toDouble() / times.size
+            val growth = 1 - 0.08 * age * (tf.ordinal + 1) / RrdTimeframe.entries.size
+            val swing = 1 + 0.02 * (history(seed, t, tf.stepSeconds * 9.0) - 0.5)
+            RrdPoint(time = t, used = (s.used * growth * swing).coerceAtMost(s.total.toDouble()), total = s.total.toDouble())
+        }
+    }
+
     // ------------------------------------------------------------------ tasks
 
     data class Task(
@@ -587,7 +607,7 @@ class MockState(
 
     // ------------------------------------------------------------------ snapshots
 
-    data class Snap(val name: String, var parent: String?, val description: String, val createdMillis: Long, val vmstate: Boolean)
+    data class Snap(val name: String, var parent: String?, var description: String, val createdMillis: Long, val vmstate: Boolean)
 
     /** vmid → its snapshots, and vmid → the snapshot it currently runs on (parent of `current`). */
     private val snaps = HashMap<Int, MutableList<Snap>>()
@@ -635,6 +655,14 @@ class MockState(
         Result.success(upid)
     }
 
+    /** Null on success, or Proxmox's error. */
+    fun setSnapshotDescription(g: Guest, name: String, description: String): String? = synchronized(lock) {
+        settleTasks()
+        val snap = snaps[g.vmid]?.firstOrNull { it.name == name } ?: return "snapshot '$name' does not exist"
+        snap.description = description
+        null
+    }
+
     /** A rollback stops the guest; a VM snapshot that includes RAM resumes running instead. */
     fun rollbackSnapshot(g: Guest, name: String, user: String): Result<String> = synchronized(lock) {
         settleTasks()
@@ -668,7 +696,7 @@ class MockState(
     // ------------------------------------------------------------------ guest config
 
     private fun Guest.digest(): String =
-        Integer.toHexString(listOf(name, tags, agent, onBoot, protection, description, hardware.digestPart(this)).hashCode()).padStart(8, '0')
+        Integer.toHexString(listOf(name, tags, agent, onBoot, protection, description, startup, hardware.digestPart(this)).hashCode()).padStart(8, '0')
 
     /** `GET …/config`: the options, then the hardware with pending values applied (Proxmox's default). */
     fun guestConfig(g: Guest): JsonObject = synchronized(lock) {
@@ -679,6 +707,7 @@ class MockState(
             if (g.protection) put("protection", 1)
             if (g.description.isNotEmpty()) put("description", g.description)
             g.tags?.let { put("tags", it) }
+            g.startup?.let { put("startup", it) }
             if (g.type == "qemu" && g.agent) put("agent", "enabled=1,fstrim_cloned_disks=1")
             hardware.effective(g).forEach { (k, v) ->
                 // Proxmox sends numbers as numbers for some keys and strings for others; the app must cope with both.
@@ -719,9 +748,14 @@ class MockState(
         params["protection"]?.let { g.protection = it == "1" }
         params["description"]?.let { g.description = it }
         params["tags"]?.let { g.tags = it }
+        params["startup"]?.let { value ->
+            if (!Regex("^(order=\\d+)?(,?up=\\d+)?(,?down=\\d+)?$").matches(value)) return "startup: invalid format - format error"
+            g.startup = value
+        }
         params["agent"]?.let { g.agent = it.startsWith("1") || it.contains("enabled=1") }
         if ("description" in delete) g.description = ""
         if ("tags" in delete) g.tags = null
+        if ("startup" in delete) g.startup = null
         null
     }
 
@@ -830,6 +864,53 @@ class MockState(
         settleTasks()
         agentProblem(g)?.let { return Result.failure(IllegalStateException(it)) }
         Result.success(agentOs[g.vmid] ?: AgentOsInfo("Debian GNU/Linux", "Debian GNU/Linux 12 (bookworm)", "12", id = "debian"))
+    }
+
+    /** VMs whose filesystems are frozen. */
+    private val frozen = mutableSetOf<Int>()
+
+    /** Passwords set through the agent, by VM and user (tests read them back). */
+    val agentPasswords = java.util.concurrent.ConcurrentHashMap<Pair<Int, String>, String>()
+
+    /** `fsfreeze-*` and `fstrim`: the result value Proxmox wraps in `{"result": …}`. */
+    fun agentCommand(g: Guest, command: String): Result<JsonElement> = synchronized(lock) {
+        settleTasks()
+        agentProblem(g)?.let { return Result.failure(IllegalStateException(it)) }
+        val filesystems = 2
+        when (command) {
+            "fsfreeze-status" -> Result.success(JsonPrimitive(if (g.vmid in frozen) "frozen" else "thawed"))
+            "fsfreeze-freeze" ->
+                if (frozen.add(g.vmid)) Result.success(JsonPrimitive(filesystems))
+                else Result.failure(IllegalStateException("Agent error: The command guest-fsfreeze-freeze has been disabled for this instance"))
+            "fsfreeze-thaw" -> Result.success(JsonPrimitive(if (frozen.remove(g.vmid)) filesystems else 0))
+            "fstrim" ->
+                if (g.vmid in frozen) Result.failure(IllegalStateException("Agent error: guest-fstrim failed: filesystems are frozen"))
+                else Result.success(
+                    buildJsonObject {
+                        put(
+                            "paths",
+                            buildJsonArray {
+                                add(buildJsonObject { put("path", "/"); put("trimmed", 3_221_225_472L); put("minimum", 0) })
+                                add(buildJsonObject { put("path", "/boot/efi"); put("trimmed", 0); put("minimum", 0) })
+                            },
+                        )
+                    },
+                )
+            else -> Result.failure(UnsupportedOperationException("the mock server doesn't implement this agent command"))
+        }
+    }
+
+    /** Accounts that exist inside the mock VMs. */
+    private fun guestUsers(g: Guest): Set<String> = setOf("root", agentOs[g.vmid]?.id ?: "debian")
+
+    fun agentSetPassword(g: Guest, username: String, password: String): Result<Unit> = synchronized(lock) {
+        settleTasks()
+        agentProblem(g)?.let { return Result.failure(IllegalStateException(it)) }
+        if (username !in guestUsers(g)) {
+            return Result.failure(IllegalStateException("Agent error: child process has failed to set user password: chpasswd: line 1: user '$username' does not exist"))
+        }
+        agentPasswords[g.vmid to username] = password
+        Result.success(Unit)
     }
 
     fun lxcInterfaces(g: Guest): Result<List<LxcInterface>> = synchronized(lock) {

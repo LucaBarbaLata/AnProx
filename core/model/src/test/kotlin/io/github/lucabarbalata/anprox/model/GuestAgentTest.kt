@@ -3,7 +3,10 @@ package io.github.lucabarbalata.anprox.model
 import io.github.lucabarbalata.anprox.model.json.ProxmoxJson
 import io.github.lucabarbalata.anprox.model.pve.AgentInterface
 import io.github.lucabarbalata.anprox.model.pve.AgentOsInfo
+import io.github.lucabarbalata.anprox.model.pve.AgentPassword
 import io.github.lucabarbalata.anprox.model.pve.AgentResult
+import io.github.lucabarbalata.anprox.model.pve.AgentTrimResult
+import io.github.lucabarbalata.anprox.model.pve.FsFreezeStatus
 import io.github.lucabarbalata.anprox.model.pve.GuestNic
 import io.github.lucabarbalata.anprox.model.pve.LxcInterface
 import kotlin.test.Test
@@ -57,5 +60,23 @@ class GuestAgentTest {
         assertEquals(listOf("eth0"), nics.map { it.name })
         assertEquals(listOf("10.0.1.10"), nics[0].ipv4)
         assertEquals(emptyList(), nics[0].ipv6)
+    }
+
+    @Test
+    fun `freeze status, trim results and password checks`() {
+        assertEquals(FsFreezeStatus.FROZEN, FsFreezeStatus.fromApi("frozen"))
+        assertEquals(FsFreezeStatus.THAWED, FsFreezeStatus.fromApi("thawed"))
+        assertEquals(FsFreezeStatus.UNKNOWN, FsFreezeStatus.fromApi(null))
+
+        // Shape of POST /nodes/pve1/qemu/100/agent/fstrim on a Linux guest.
+        val json = """{"data":{"result":{"paths":[{"path":"/","trimmed":1048576,"minimum":0},{"path":"/mnt/ro","error":"Read-only file system"}]}}}"""
+        val trim = ProxmoxJson.decodeFromString<ApiEnvelope<AgentResult<AgentTrimResult>>>(json).data!!.result!!
+        assertEquals(1048576L, trim.paths[0].trimmed)
+        assertEquals("Read-only file system", trim.paths[1].error)
+
+        assertEquals(AgentPassword.Problem.NO_USER, AgentPassword.validate(" ", "secret", "secret"))
+        assertEquals(AgentPassword.Problem.TOO_SHORT, AgentPassword.validate("root", "abcd", "abcd"))
+        assertEquals(AgentPassword.Problem.MISMATCH, AgentPassword.validate("root", "secret1", "secret2"))
+        assertEquals(null, AgentPassword.validate("root", "secret", "secret"))
     }
 }

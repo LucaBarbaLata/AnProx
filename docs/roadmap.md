@@ -64,7 +64,7 @@ Everything marked ✅ in M1 and M2 below. Gates:
 ### Beta 0.1.0-beta.3: 🚧 candidate, owner testing
 Everything marked ✅ in M2–M5 (guest configuration, SSH, alerts and Android integration,
 datacenter, node administration). Gates:
-- [ ] CI green: tests, lint, debug and release builds, and the emulator tour on Android 8.0 and 14 (32 steps)
+- [ ] CI green: tests, lint, debug and release builds, and the emulator tour on Android 8.0 and 14 (33 steps)
 - [x] `CHANGELOG.md` entries, store changelog (`fastlane/…/changelogs/10023.txt`), README
 - [x] [Test guide](beta2-test-guide.md) sections D1–D15 for the owner
 - [ ] Owner: run the test guide on real hardware (Proxmox VE 8; 9 later)
@@ -76,16 +76,15 @@ datacenter, node administration). Gates:
 - ✅ **App lock** (Q11): optional biometric/screen-lock check on launch and after a chosen time
   away, and re-authentication before `TYPE_TO_CONFIRM` actions ([ADR 0013](adr/0013-app-lock.md)).
 - **OpenID Connect** sign-in (Q9) through a browser tab or WebView, plus **WebAuthn** second factor.
-- ✅ **Snapshots** (Q18): list and tree, create (with RAM), roll back, delete. (Editing a
-  snapshot's description is still to do.)
+- ✅ **Snapshots** (Q18): list and tree, create (with RAM), roll back, delete, edit the description.
 - ✅ **Backup now and restore** (Q20): run vzdump on demand, restore to the same or a new VMID, browse backups
   per guest and per storage. (Choosing the restore target storage and deleting backups come with M4 storage.)
-- ✅ **Interactive charts** (Q25): RRD data for nodes and guests with hour/day/week/month/year
-  ranges and touch scrubbing. (Storage charts and pinch-zoom are still to do.)
-- 🔸 **Guest agent** (Q18): ✅ IP addresses (tap to copy) and OS info for VMs, IP addresses for containers;
-  fs-freeze/thaw and set user password are still to do.
+- ✅ **Interactive charts** (Q25): RRD data for nodes, guests and storages with
+  hour/day/week/month/year ranges and touch scrubbing. (Pinch-zoom is still to do.)
+- ✅ **Guest agent** (Q18): IP addresses (tap to copy) and OS info for VMs, IP addresses for
+  containers; fs-freeze/thaw, trim and set user password (Tools → Guest agent).
 - ✅ **Bulk actions** on the resource list (long-press to select; start, shut down, stop).
-- **Live task notifications** (Q28) for long operations started from the app.
+- ✅ **Live task notifications** (Q28) for long operations started from the app (shipped with M3).
 - ✅ **Favourites** pinned to the top of the dashboard (star on the guest screen).
 
 ## M2 — Consoles & guest configuration

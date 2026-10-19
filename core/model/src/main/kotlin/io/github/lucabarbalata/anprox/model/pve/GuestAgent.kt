@@ -72,3 +72,42 @@ data class GuestNic(val name: String, val mac: String?, val ipv4: List<String>, 
         private fun isNoiseV6(address: String) = address == "::1" || address.lowercase().startsWith("fe80:")
     }
 }
+
+/** `fsfreeze-status`: whether the guest has paused writes to its filesystems. */
+enum class FsFreezeStatus {
+    THAWED,
+    FROZEN,
+    UNKNOWN,
+    ;
+
+    companion object {
+        fun fromApi(value: String?): FsFreezeStatus = when (value?.lowercase()) {
+            "thawed" -> THAWED
+            "frozen" -> FROZEN
+            else -> UNKNOWN
+        }
+    }
+}
+
+/** One filesystem in the reply of `agent/fstrim`. Linux reports bytes trimmed; Windows only errors. */
+@Serializable
+data class AgentTrimPath(val path: String, val trimmed: Long? = null, val minimum: Long? = null, val error: String? = null)
+
+@Serializable
+data class AgentTrimResult(val paths: List<AgentTrimPath> = emptyList())
+
+/** Checks for `agent/set-user-password`, matching Proxmox (5 to 1024 characters). */
+object AgentPassword {
+    const val MIN = 5
+    const val MAX = 1024
+
+    enum class Problem { NO_USER, TOO_SHORT, TOO_LONG, MISMATCH }
+
+    fun validate(username: String, password: String, repeat: String): Problem? = when {
+        username.isBlank() -> Problem.NO_USER
+        password.length < MIN -> Problem.TOO_SHORT
+        password.length > MAX -> Problem.TOO_LONG
+        password != repeat -> Problem.MISMATCH
+        else -> null
+    }
+}

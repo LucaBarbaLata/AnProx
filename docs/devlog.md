@@ -5,7 +5,7 @@ solved. Newest first.
 
 ---
 
-## 2026-10-18 — Session 5: the rest of the app (M7, M6, M8), while the owner prepares a real host
+## 2026-10-18 — Session 5: the rest of the app (M7, M6, M8 and leftovers), while the owner prepares a real host
 
 The owner asked to "complete the rest of the app and do as many tests as possible" while they
 set up a real Proxmox host for testing.
@@ -101,6 +101,22 @@ and friends):
   that keeps per hour/day/week/month/year like PBS, maintenance modes, jobs and a remote. The
   Backup Server mock answers the node-administration calls for `localhost`.
 - 4 model tests and 5 integration tests; tour step 29.
+
+**Leftovers from M1 and M2.**
+- Snapshot descriptions: `PUT …/snapshot/{name}/config` with `description` (empty removes it).
+  A plain config write, not a task, so the screen reports it with a snackbar without a log.
+- Storage charts: `GET /nodes/{node}/storage/{storage}/rrddata` returns `used` and `total` in
+  bytes per sample; `MetricsSource.Storage` adds them to the charts the node and guest screens
+  already use. The mock's history grows towards today's usage.
+- Guest agent tools: `fsfreeze-status`, `-freeze`, `-thaw` and `fstrim` are `POST
+  …/agent/{command}`; the reply is `{"result": …}` with a string, a count or an object, so they
+  share one call returning `AgentResult<JsonElement>`. `set-user-password` needs 5 to 1024
+  characters and an existing user. The mock refuses a second freeze and a trim while frozen.
+- Start order: `startup` is a property string whose first part may be a bare number
+  (`3,up=10` means order 3). An empty form deletes the key.
+- The guest screen's "Coming later: built-in SSH client (M2)" card was out of date and is gone.
+- 3 model tests and 5 integration tests; tour step 6 (agent) and additions to the snapshot and
+  storage steps.
 
 ---
 

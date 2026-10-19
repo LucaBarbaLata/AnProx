@@ -20,6 +20,10 @@ sealed interface MetricsSource {
     data class Node(override val serverId: String, val node: String) : MetricsSource {
         override val key: String get() = "node-$serverId-$node"
     }
+
+    data class Storage(override val serverId: String, val node: String, val storage: String) : MetricsSource {
+        override val key: String get() = "storage-$serverId-$node-$storage"
+    }
 }
 
 /** Performance history from Proxmox's round-robin database (questionnaire Q25). */
@@ -33,6 +37,7 @@ class MetricsRepository(private val hub: ServerHub) {
                     guestRrd(source.ref.node, source.ref.type.apiName, source.ref.vmid, timeframe.apiName, AVERAGE)
                 }
                 is MetricsSource.Node -> conn.pve { nodeRrd(source.node, timeframe.apiName, AVERAGE) }
+                is MetricsSource.Storage -> conn.pve { storageRrd(source.node, source.storage, timeframe.apiName, AVERAGE) }
             }
         }
         return points.sortedBy { it.time }

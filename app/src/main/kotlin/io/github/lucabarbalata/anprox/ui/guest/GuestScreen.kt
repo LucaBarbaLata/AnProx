@@ -31,6 +31,7 @@ import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material.icons.outlined.StarOutline
 import androidx.compose.material.icons.outlined.StopCircle
+import androidx.compose.material.icons.outlined.SupportAgent
 import androidx.compose.material.icons.outlined.SwapHoriz
 import androidx.compose.material.icons.outlined.Terminal
 import androidx.compose.material.icons.outlined.Tune
@@ -197,6 +198,14 @@ fun GuestDetail(
                             stringResource(R.string.hardware_title),
                             stringResource(if (ref.type == GuestType.QEMU) R.string.hardware_open_body_vm else R.string.hardware_open_body_ct),
                         ) { onTool(GuestTool.HARDWARE, ref, state.title) }
+                        // Agent commands need the agent enabled in the config and a running VM.
+                        if (ref.type == GuestType.QEMU && status.agent && status.isRunning) {
+                            MenuRow(
+                                Icons.Outlined.SupportAgent,
+                                stringResource(R.string.agent_title),
+                                stringResource(R.string.agent_open_body),
+                            ) { onTool(GuestTool.AGENT, ref, state.title) }
+                        }
                         if (ref.type == GuestType.QEMU) {
                             MenuRow(
                                 Icons.Outlined.CloudQueue,
@@ -226,8 +235,6 @@ fun GuestDetail(
                         ) { onTool(GuestTool.MIGRATE, ref, state.title) }
                     }
                 }
-                item { SectionHeader(stringResource(R.string.guest_coming_later)) }
-                item { ComingSoon() }
             }
         }
     }
@@ -372,23 +379,6 @@ private fun Details(ref: GuestRef, s: GuestStatus) {
             s.runningMachine?.let { InfoRow(stringResource(R.string.guest_machine), it, mono = true) }
         }
         s.lock?.let { InfoRow(stringResource(R.string.guest_lock), it) }
-    }
-}
-
-/** Honest pointer to what is planned, matching docs/roadmap.md. */
-@Composable
-private fun ComingSoon() {
-    val c = AnProxTheme.colors
-    val items = listOf(
-        R.string.tool_ssh to "M2",
-    )
-    GlassCard(contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)) {
-        items.forEach { (label, milestone) ->
-            Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text(stringResource(label), style = MaterialTheme.typography.bodyMedium, color = c.textSecondary, modifier = Modifier.weight(1f))
-                TagChip(stringResource(R.string.coming_in, milestone))
-            }
-        }
     }
 }
 

@@ -30,6 +30,8 @@ enum class SnapshotAction(val danger: DangerLevel) {
     ROLLBACK(DangerLevel.TYPE_TO_CONFIRM),
     /** Only removes the saved state; the guest itself is unaffected. */
     DELETE(DangerLevel.CONFIRM),
+    /** Changes the snapshot's note; a plain config write, not a task. */
+    DESCRIBE(DangerLevel.SAFE),
 }
 
 data class SnapshotOp(val action: SnapshotAction, val name: String)
@@ -45,11 +47,15 @@ data class SnapshotsState(
     /** Rollback or delete waiting for confirmation. */
     val confirm: SnapshotOp? = null,
     val showCreate: Boolean = false,
+    /** Name of the snapshot whose description is being edited. */
+    val describing: String? = null,
     /** One-shot result shown as a snackbar. */
     val result: TaskResult? = null,
 ) {
     val snapshotNames: List<String> get() = rows.map { it.snapshot.name }.filterNot { it == GuestSnapshot.CURRENT }
     val isEmpty: Boolean get() = !loading && error == null && snapshotNames.isEmpty()
+
+    fun descriptionOf(name: String): String = rows.firstOrNull { it.snapshot.name == name }?.snapshot?.description?.trim().orEmpty()
 
     /** Saving RAM needs a running VM; Proxmox reports that on the `current` entry. */
     val canSaveRam: Boolean
@@ -115,7 +121,27 @@ class SnapshotsViewModel(
         when (op.action) {
             SnapshotAction.ROLLBACK -> run(op) { guests.rollbackSnapshot(ref, op.name) }
             SnapshotAction.DELETE -> run(op) { guests.deleteSnapshot(ref, op.name) }
-            SnapshotAction.CREATE -> Unit
+            SnapshotAction.CREATE, SnapshotAction.DESCRIBE -> Unit
+        }
+    }
+
+    fun openDescribe(name: String) = ui.update { it.copy(describing = name) }
+
+    fun dismissDescribe() = ui.update { it.copy(describing = null) }
+
+    fun saveDescription(description: String) {
+        val name = ui.value.describing ?: return
+        if (ui.value.busy != null) return
+        ui.update { it.copy(describing = null, busy = SnapshotOp(SnapshotAction.DESCRIBE, name)) }
+        viewModelScope.launch {
+            val result = try {
+                guests.setSnapshotDescription(ref, name, description)
+                TaskResult(UiText.res(R.string.snapshot_describe_saved, name), null, ok = true)
+            } catch (e: ApiException) {
+                TaskResult(e.toUiText(), null, ok = false)
+            }
+            ui.update { it.copy(busy = null, result = result) }
+            refresh()
         }
     }
 

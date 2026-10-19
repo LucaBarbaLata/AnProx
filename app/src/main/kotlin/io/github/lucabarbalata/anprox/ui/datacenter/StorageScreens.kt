@@ -62,6 +62,7 @@ import io.github.lucabarbalata.anprox.core.designsystem.component.EmptyState
 import io.github.lucabarbalata.anprox.core.designsystem.component.ErrorBanner
 import io.github.lucabarbalata.anprox.core.designsystem.component.GlassCard
 import io.github.lucabarbalata.anprox.core.designsystem.component.GlassTextField
+import io.github.lucabarbalata.anprox.core.designsystem.component.SectionHeader
 import io.github.lucabarbalata.anprox.core.designsystem.component.StatusDot
 import io.github.lucabarbalata.anprox.core.designsystem.component.SwitchRow
 import io.github.lucabarbalata.anprox.core.designsystem.component.TagChip
@@ -69,6 +70,7 @@ import io.github.lucabarbalata.anprox.core.designsystem.component.Tone
 import io.github.lucabarbalata.anprox.core.designsystem.component.UsageBar
 import io.github.lucabarbalata.anprox.core.designsystem.theme.AnProxTheme
 import io.github.lucabarbalata.anprox.data.datacenter.StorageOverview
+import io.github.lucabarbalata.anprox.data.metrics.MetricsSource
 import io.github.lucabarbalata.anprox.model.format.Formatters
 import io.github.lucabarbalata.anprox.model.pve.ContentType
 import io.github.lucabarbalata.anprox.model.pve.DangerLevel
@@ -85,6 +87,7 @@ import io.github.lucabarbalata.anprox.ui.common.FormLabel
 import io.github.lucabarbalata.anprox.ui.common.TaskResultSnackbar
 import io.github.lucabarbalata.anprox.ui.common.asString
 import io.github.lucabarbalata.anprox.ui.common.contentPadding
+import io.github.lucabarbalata.anprox.ui.metrics.PerformanceSection
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 
@@ -284,6 +287,8 @@ fun StorageContentScreen(
                     ContentRow(item, deletable = ContentType.fromApi(item.content)?.deletable == true && !state.busy) { viewModel.requestDelete(item) }
                 }
             }
+            item { SectionHeader(stringResource(R.string.storage_usage_history)) }
+            item { PerformanceSection(MetricsSource.Storage(serverId, node, storage)) }
         }
     }
 

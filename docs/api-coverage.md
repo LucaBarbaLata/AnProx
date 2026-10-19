@@ -119,10 +119,10 @@ Code: `core/network/src/main/kotlin/.../network/api/` (`AccessApi`, `PveApi`, `P
 | `GET/POST …/snapshot` | List (tree) and take snapshots, with RAM for VMs | ✅ |
 | `POST …/snapshot/{snap}/rollback` | Roll back | ✅ |
 | `DELETE …/snapshot/{snap}` | Delete a snapshot | ✅ |
-| `GET/PUT …/snapshot/{snap}/config` | Edit a snapshot's description | 🗓 M1 |
-| `/qemu/{vmid}/agent/*` | Guest agent: IPs, OS info, fs-freeze, set password, exec | 🔸 `network-get-interfaces`, `get-osinfo` ✅; the rest later |
+| `GET/PUT …/snapshot/{snap}/config` | Edit a snapshot's description | ✅ |
+| `/qemu/{vmid}/agent/*` | Guest agent: IPs, OS info, fs-freeze, trim, set password, exec | 🔸 `network-get-interfaces`, `get-osinfo`, `fsfreeze-status`/`-freeze`/`-thaw`, `fstrim`, `set-user-password` ✅; `exec` and file read/write 🗓 M9 |
 | `GET /lxc/{vmid}/interfaces` | A running container's IP addresses (PVE 7.2+) | ✅ |
-| `GET/POST/PUT …/config`, `GET …/pending` | Hardware & options | 🔸 options ✅ (name/hostname, tags, notes, start at boot, protection, QEMU agent); common hardware ✅ (VM: sockets, cores, CPU type, memory and ballooning, disks, CD/DVD, network devices, boot order; container: cores, memory, swap, mount points, network). Every change is sent with the config digest; `POST` for allocating VM disks as a task; pending keys are shown as "After restart". Advanced (passthrough, NUMA, CPU flags, cloud-init) 🗓 M2/M9 |
+| `GET/POST/PUT …/config`, `GET …/pending` | Hardware & options | 🔸 options ✅ (name/hostname, tags, notes, start at boot, start/shutdown order and delays, protection, QEMU agent); common hardware ✅ (VM: sockets, cores, CPU type, memory and ballooning, disks, CD/DVD, network devices, boot order; container: cores, memory, swap, mount points, network). Every change is sent with the config digest; `POST` for allocating VM disks as a task; pending keys are shown as "After restart". Advanced (passthrough, NUMA, CPU flags, cloud-init) 🗓 M2/M9 |
 | `PUT …/resize`, `POST …/move_disk` / `move_volume`, `POST …/unlink` | Disks | ✅ resize (grow only), move to another storage (keep or delete the source), detach and delete unused volumes through `config`; `unlink` not needed |
 | `POST …/clone`, `POST …/template` | Clone (full/linked, any node, target storage) / convert to template | ✅ |
 | `/qemu/{vmid}/cloudinit` (+ `/dump`) | Cloud-init | ✅ settings through `config` (`ciuser`, `cipassword`, `sshkeys` URL-encoded as Proxmox expects, `ipconfigN` per network device, `nameserver`, `searchdomain`, `ciupgrade`), add a cloud-init drive (`storage:cloudinit`), `PUT …/cloudinit` to regenerate; `/dump` not used |
@@ -148,7 +148,7 @@ Code: `core/network/src/main/kotlin/.../network/api/` (`AccessApi`, `PveApi`, `P
 | `DELETE /nodes/{node}/storage/{storage}/content/{volume}` | Delete ISO images, templates, snippets (backups from their screen) | ✅ |
 | `POST …/upload`, `POST …/download-url` | Upload / download ISO & templates | ✅ (upload streams from the phone with progress) |
 | `GET /nodes/{node}/query-url-metadata` | Name and size behind a download URL | ✅ |
-| `GET …/rrddata` | Storage charts | 🗓 M1 |
+| `GET …/rrddata` | Storage usage history (Storage → a node's storage) | ✅ |
 | `…/file-restore/{list,download}` | File-level restore from PBS-backed backups | 🗓 M8 |
 | `GET /pools` | Resource pools (list, backup job selection) | ✅ |
 | `GET /pools?poolid=`, `POST /pools`, `PUT /pools` (`vms`, `storage`, `delete`, `comment`), `DELETE /pools?poolid=` | One pool's members, create, add and remove members, comment, delete (Proxmox VE 8.1+) | ✅ |

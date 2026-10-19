@@ -10,6 +10,7 @@ import io.github.lucabarbalata.anprox.model.ProxmoxProduct
 import io.github.lucabarbalata.anprox.model.profile.Endpoint
 import io.github.lucabarbalata.anprox.model.profile.ServerProfile
 import io.github.lucabarbalata.anprox.model.pve.GuestType
+import io.github.lucabarbalata.anprox.model.pve.StartupOrder
 import io.github.lucabarbalata.anprox.network.ApiException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -66,6 +67,21 @@ class GuestOptionsTest {
         val cleared = guests.options(web)
         assertEquals("", cleared.description)
         assertEquals(emptyList(), cleared.tags)
+    }
+
+    @Test
+    fun `start order is read, changed and cleared`() = runBlocking {
+        val guests = repo()
+        val db = GuestRef("pve", "pve1", GuestType.QEMU, 101)
+        val old = guests.options(db)
+        assertEquals(StartupOrder(order = 1, up = 30), old.startup)
+
+        guests.saveOptions(db, old, old.copy(startup = StartupOrder(order = 1, up = 45, down = 120)))
+        val changed = guests.options(db)
+        assertEquals(StartupOrder(order = 1, up = 45, down = 120), changed.startup)
+
+        guests.saveOptions(db, changed, changed.copy(startup = StartupOrder()))
+        assertTrue(guests.options(db).startup.isDefault)
     }
 
     @Test

@@ -20,6 +20,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.PhotoCamera
@@ -136,6 +137,7 @@ fun SnapshotsScreen(
                                 row = row,
                                 enabled = state.busy == null,
                                 onRollback = { viewModel.requestRollback(row.snapshot.name) },
+                                onDescribe = { viewModel.openDescribe(row.snapshot.name) },
                                 onDelete = { viewModel.requestDelete(row.snapshot.name) },
                             )
                         }
@@ -153,6 +155,15 @@ fun SnapshotsScreen(
             problemOf = viewModel::nameProblem,
             onCreate = viewModel::create,
             onDismiss = viewModel::dismissCreate,
+        )
+    }
+
+    state.describing?.let { name ->
+        DescribeSnapshotDialog(
+            name = name,
+            initial = remember(name) { state.descriptionOf(name) },
+            onSave = viewModel::saveDescription,
+            onDismiss = viewModel::dismissDescribe,
         )
     }
 
@@ -176,7 +187,7 @@ fun SnapshotsScreen(
 }
 
 @Composable
-private fun SnapshotItem(row: SnapshotRow, enabled: Boolean, onRollback: () -> Unit, onDelete: () -> Unit) {
+private fun SnapshotItem(row: SnapshotRow, enabled: Boolean, onRollback: () -> Unit, onDescribe: () -> Unit, onDelete: () -> Unit) {
     val c = AnProxTheme.colors
     val s = row.snapshot
     Row(
@@ -231,6 +242,11 @@ private fun SnapshotItem(row: SnapshotRow, enabled: Boolean, onRollback: () -> U
                         onClick = { menu = false; onRollback() },
                     )
                     DropdownMenuItem(
+                        text = { Text(stringResource(R.string.snapshot_describe)) },
+                        leadingIcon = { Icon(Icons.Outlined.Edit, contentDescription = null) },
+                        onClick = { menu = false; onDescribe() },
+                    )
+                    DropdownMenuItem(
                         text = { Text(stringResource(R.string.action_delete), color = c.danger) },
                         leadingIcon = { Icon(Icons.Outlined.Delete, contentDescription = null, tint = c.danger) },
                         onClick = { menu = false; onDelete() },
@@ -265,6 +281,7 @@ private fun BusyCard(op: SnapshotOp) {
         SnapshotAction.CREATE -> R.string.snapshot_busy_create
         SnapshotAction.ROLLBACK -> R.string.snapshot_busy_rollback
         SnapshotAction.DELETE -> R.string.snapshot_busy_delete
+        SnapshotAction.DESCRIBE -> R.string.snapshot_busy_describe
     }
     GlassCard {
         Text(stringResource(text, op.name), style = MaterialTheme.typography.bodyMedium, color = c.textPrimary)
@@ -327,6 +344,32 @@ private fun CreateSnapshotDialog(
             TextButton(onClick = { onCreate(name, description, includeRam) }, enabled = problem == null) {
                 Text(stringResource(R.string.snapshots_take))
             }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
+        },
+    )
+}
+
+@Composable
+private fun DescribeSnapshotDialog(name: String, initial: String, onSave: (String) -> Unit, onDismiss: () -> Unit) {
+    var text by rememberSaveable(name) { mutableStateOf(initial) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = AnProxTheme.colors.surfaceSolid,
+        title = { Text(stringResource(R.string.snapshot_describe_title, name)) },
+        text = {
+            GlassTextField(
+                value = text,
+                onValueChange = { text = it },
+                label = stringResource(R.string.snapshot_description_label),
+                supportingText = stringResource(R.string.snapshot_describe_help),
+                singleLine = false,
+                minLines = 3,
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = { onSave(text) }, enabled = text.trim() != initial) { Text(stringResource(R.string.action_save)) }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }

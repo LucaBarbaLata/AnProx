@@ -528,6 +528,29 @@ def performance():
     find("Resources", timeout=20)
 
 
+@step("Guest agent: freeze and thaw the filesystems, then trim them")
+def agent():
+    tap_node(scroll_to("k8s-master"))      # running, with the agent enabled
+    tap_node(scroll_to("Guest agent"))
+    find("Writable", timeout=30)
+    tap("Freeze filesystems")
+    find("Every write inside the VM waits", timeout=10)
+    tap("Freeze filesystems", pick="lowest")   # the dialog's button
+    find("Filesystems frozen: 2", timeout=30)
+    find("Thaw filesystems", timeout=15)
+    screenshot("05b-agent-frozen")
+    tap("Thaw filesystems")
+    find("Filesystems thawed: 2", timeout=30)
+    find("Writable", timeout=15)
+    tap_node(scroll_to("Trim filesystems", pick="lowest"))   # the button, below the card's title
+    find("Trim finished", timeout=30)
+    scroll_to("freed")                         # "/  3.00 GiB freed", under the button
+    screenshot("05c-agent-trim")
+    back()
+    back()
+    find("Resources", timeout=20)
+
+
 @step("Guest detail, start a VM and follow its task")
 def guest_start():
     tap_node(scroll_to("win11"))
@@ -557,6 +580,13 @@ def snapshots():
     find("VM snapshot finished", timeout=60)
     find("snap-", timeout=20)              # the suggested name, now in the list
     screenshot("11-snapshot-taken")
+    wait_for_snackbar_to_close()
+    tap_node(scroll_to("Options for fresh-install"))   # the seeded snapshot's menu
+    tap("Edit description")
+    replace_field("Description", "pre-25H2-baseline", fallback_index=0)
+    tap("Save")
+    find("Description of fresh-install saved", timeout=30)
+    find("pre-25H2-baseline", timeout=15)  # shown under the snapshot after the reload
     back()
     # Back on the guest screen, which keeps its scroll position.
     scroll_to("Save this state and roll back to it later")
@@ -855,6 +885,12 @@ def storage():
                 raise
     find("tiny-test.iso", timeout=60)           # listed once the node's download task has finished
     screenshot("13d-storage")
+    scroll_to("Usage history")
+    scroll_to("Year")                           # the timeframe picker under the header
+    wait_until(lambda: any(v.startswith("Used ") and not v.endswith("—")
+                           for n in dump().iter("node") for v in labels(n)),
+               "the storage usage chart to show values", timeout=30)
+    screenshot("13e-storage-usage")
     back()
     back()
     back()
@@ -1225,7 +1261,7 @@ def main():
     print("Tour:", flush=True)
     ok = False
     try:
-        for s in (launch, add_pve, add_pbs, resources, performance, guest_start, snapshots, backups,
+        for s in (launch, add_pve, add_pbs, resources, performance, agent, guest_start, snapshots, backups,
                   options, hardware, console, vm_console, cloud_init, bulk, clone_migrate, tasks, create_vm, alerts,
                   backup_jobs, storage, storage_setup, firewall, high_availability, replication, pools, permissions, ceph, sdn, backup_server, node_admin, ssh,
                   light_theme):

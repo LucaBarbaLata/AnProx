@@ -4,6 +4,7 @@ import io.github.lucabarbalata.anprox.model.ApiEnvelope
 import io.github.lucabarbalata.anprox.model.pve.AgentInterface
 import io.github.lucabarbalata.anprox.model.pve.AgentOsInfo
 import io.github.lucabarbalata.anprox.model.pve.AgentResult
+import io.github.lucabarbalata.anprox.model.pve.AgentTrimResult
 import io.github.lucabarbalata.anprox.model.pve.AptRepositories
 import io.github.lucabarbalata.anprox.model.pve.AptUpdate
 import io.github.lucabarbalata.anprox.model.pve.CephStatus
@@ -465,6 +466,15 @@ interface PveApi {
         @Query("cf") cf: String,
     ): ApiEnvelope<List<RrdPoint>>
 
+    /** Usage history of a storage on one node (`used` and `total` in bytes). */
+    @GET("nodes/{node}/storage/{storage}/rrddata")
+    suspend fun storageRrd(
+        @Path("node") node: String,
+        @Path("storage") storage: String,
+        @Query("timeframe") timeframe: String,
+        @Query("cf") cf: String,
+    ): ApiEnvelope<List<RrdPoint>>
+
     // ------------------------------------------------------------------ guest config (Q19)
 
     /** The guest's current configuration (keys differ between VMs and containers). */
@@ -546,6 +556,23 @@ interface PveApi {
 
     @GET("nodes/{node}/qemu/{vmid}/agent/get-osinfo")
     suspend fun agentOsInfo(@Path("node") node: String, @Path("vmid") vmid: Int): ApiEnvelope<AgentResult<AgentOsInfo>>
+
+    /** `fsfreeze-status` answers `{"result": "thawed"}`; freeze and thaw answer the number of filesystems. */
+    @POST("nodes/{node}/qemu/{vmid}/agent/{command}")
+    suspend fun agentCommand(@Path("node") node: String, @Path("vmid") vmid: Int, @Path("command") command: String): ApiEnvelope<AgentResult<JsonElement>>
+
+    @POST("nodes/{node}/qemu/{vmid}/agent/fstrim")
+    suspend fun agentTrim(@Path("node") node: String, @Path("vmid") vmid: Int): ApiEnvelope<AgentResult<AgentTrimResult>>
+
+    /** Sets the password of an existing user inside the guest. */
+    @FormUrlEncoded
+    @POST("nodes/{node}/qemu/{vmid}/agent/set-user-password")
+    suspend fun agentSetPassword(
+        @Path("node") node: String,
+        @Path("vmid") vmid: Int,
+        @Field("username") username: String,
+        @Field("password") password: String,
+    ): ApiEnvelope<JsonElement>
 
     /** A running container's interfaces (PVE 7.2+); no agent needed. */
     @GET("nodes/{node}/lxc/{vmid}/interfaces")
@@ -793,6 +820,17 @@ interface PveApi {
         @Path("snapname") snapname: String,
         @FieldMap params: Map<String, String>,
     ): ApiEnvelope<String>
+
+    /** Changes a snapshot's description; answers no data. */
+    @FormUrlEncoded
+    @PUT("nodes/{node}/{type}/{vmid}/snapshot/{snapname}/config")
+    suspend fun updateSnapshot(
+        @Path("node") node: String,
+        @Path("type") type: String,
+        @Path("vmid") vmid: Int,
+        @Path("snapname") snapname: String,
+        @Field("description") description: String,
+    ): ApiEnvelope<JsonElement>
 
     /** Returns a UPID. */
     @DELETE("nodes/{node}/{type}/{vmid}/snapshot/{snapname}")

@@ -35,7 +35,7 @@ data class OptionsState(
     val canSave: Boolean get() = dirty && problem == null && !saving
 }
 
-/** Name, notes, tags, start at boot, protection and the guest agent flag of one guest (Q19). */
+/** Name, notes, tags, start at boot and start order, protection and the guest agent flag of one guest (Q19). */
 class OptionsViewModel(
     private val ref: GuestRef,
     private val guests: GuestRepository,
@@ -74,6 +74,19 @@ class OptionsViewModel(
 
     fun setOnBoot(on: Boolean) {
         edit { copy(onBoot = on) }
+    }
+
+    /** The start order fields take digits only; empty means Proxmox's default. */
+    fun setStartOrder(text: String) {
+        edit { copy(startup = startup.copy(order = text.toIntOrNull())) }
+    }
+
+    fun setStartDelay(text: String) {
+        edit { copy(startup = startup.copy(up = text.toIntOrNull())) }
+    }
+
+    fun setShutdownTimeout(text: String) {
+        edit { copy(startup = startup.copy(down = text.toIntOrNull())) }
     }
 
     fun setProtection(on: Boolean) {

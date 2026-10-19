@@ -80,6 +80,23 @@ class MetricsTest {
     }
 
     @Test
+    fun `storage history climbs to today's usage and keeps the size`() = runBlocking {
+        val repo = repo()
+        val points = repo.history(MetricsSource.Storage("pve", "pve1", "local-zfs"), RrdTimeframe.MONTH)
+        assertEquals(70, points.size)
+        val gib = 1024.0 * 1024 * 1024
+        assertTrue(points.all { it.total == 1800 * gib })
+        assertTrue(points.all { it.used!! <= it.total!! })
+        assertTrue(points.first().used!! < points.last().used!!)
+        assertTrue(points.last().used!! in (1600 * gib)..(1700 * gib))
+        assertNull(points.last().cpu)
+
+        val missing = assertFailsWith<ApiException.Server> { repo.history(MetricsSource.Storage("pve", "pve1", "nope"), RrdTimeframe.DAY) }
+        assertTrue("does not exist" in missing.message.orEmpty())
+        Unit
+    }
+
+    @Test
     fun `offline node fails like Proxmox does`() = runBlocking {
         val error = assertFailsWith<ApiException.Server> { repo().history(MetricsSource.Node("pve", "pve3"), RrdTimeframe.HOUR) }
         assertEquals(595, error.code)

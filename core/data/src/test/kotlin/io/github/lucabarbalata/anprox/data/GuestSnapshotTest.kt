@@ -79,6 +79,17 @@ class GuestSnapshotTest {
     }
 
     @Test
+    fun `a snapshot's description can be changed and cleared`() = runBlocking {
+        val repo = repo()
+        repo.setSnapshotDescription(pihole, "pre-update", "  Before the Pi-hole v6 update  ")
+        assertEquals("Before the Pi-hole v6 update", repo.snapshots(pihole).single { it.name == "pre-update" }.description)
+        repo.setSnapshotDescription(pihole, "pre-update", "")
+        assertTrue(repo.snapshots(pihole).single { it.name == "pre-update" }.description.isNullOrEmpty())
+        assertFailsWith<ApiException> { repo.setSnapshotDescription(pihole, "no-such-snapshot", "x") }
+        Unit
+    }
+
+    @Test
     fun `containers never save RAM`() = runBlocking {
         val guests = repo()
         guests.finish(pihole, guests.createSnapshot(pihole, "ct-snap", "", includeRam = true))

@@ -189,7 +189,6 @@
     <string name="guest_power">Power</string>
     <string name="guest_details">Details</string>
     <string name="guest_more_tools">Tools</string>
-    <string name="guest_coming_later">Coming later</string>
     <string name="guest_network_section">Network</string>
     <string name="guest_network_loading">Asking the guest for its addresses…</string>
     <string name="guest_os">Operating system</string>
@@ -220,8 +219,6 @@
     <string name="power_reset">Reset</string>
     <string name="power_pause">Pause</string>
     <string name="power_resume">Resume</string>
-    <string name="tool_ssh">Built-in SSH client</string>
-    <string name="coming_in">Coming in %1$s</string>
 
     <!-- Guest options (Q19) -->
     <string name="options_title">Options</string>
@@ -236,6 +233,12 @@
     <string name="options_notes_help">Shown on the guest\'s Summary page in Proxmox (Markdown).</string>
     <string name="options_onboot">Start at boot</string>
     <string name="options_onboot_body">Start this guest automatically when the node boots.</string>
+    <string name="options_start_order_title">Start and shutdown order</string>
+    <string name="options_start_order_body">When the node boots (or you start everything), guests start from the lowest order up and shut down in reverse. Leave a field empty for the Proxmox default.</string>
+    <string name="options_start_order">Order</string>
+    <string name="options_start_order_help">Guests without an order start last.</string>
+    <string name="options_start_delay">Wait after start (s)</string>
+    <string name="options_shutdown_timeout">Shutdown timeout (s)</string>
     <string name="options_protection">Protection</string>
     <string name="options_protection_body">Prevents removing the guest or its disks until turned off.</string>
     <string name="options_agent">QEMU guest agent</string>
@@ -533,6 +536,43 @@
     <string name="snapshot_rollback_message">%1$s returns to the state saved in this snapshot. Every change made since then is lost. Unless the snapshot includes RAM, the guest is stopped afterwards.</string>
     <string name="snapshot_delete_title">Delete snapshot %1$s?</string>
     <string name="snapshot_delete_message">The snapshot is removed for good. The guest’s current state is not affected.</string>
+    <string name="agent_title">Guest agent</string>
+    <string name="agent_open_body">Freeze or trim filesystems, set a user\'s password</string>
+    <string name="agent_unavailable">The guest agent isn\'t answering. Check that qemu-guest-agent is installed and running in the VM.\n\n%1$s</string>
+    <string name="agent_filesystems">Filesystems</string>
+    <string name="agent_state_thawed">Writable</string>
+    <string name="agent_state_frozen">Frozen</string>
+    <string name="agent_state_unknown">State unknown</string>
+    <string name="agent_thawed_body">Freezing pauses all writes inside the VM so a copy taken outside Proxmox (for example a storage snapshot) is consistent. Proxmox backups and snapshots do this on their own.</string>
+    <string name="agent_frozen_body">Programs inside the VM that write to disk are waiting. Thaw it as soon as your copy is done.</string>
+    <string name="agent_freeze">Freeze filesystems</string>
+    <string name="agent_thaw">Thaw filesystems</string>
+    <string name="agent_freeze_title">Freeze the filesystems of %1$s?</string>
+    <string name="agent_freeze_message">Every write inside the VM waits until you thaw it here. Services may time out if it stays frozen for long.</string>
+    <string name="agent_frozen">Filesystems frozen: %1$d</string>
+    <string name="agent_thawed">Filesystems thawed: %1$d</string>
+    <string name="agent_trim">Trim filesystems</string>
+    <string name="agent_trim_body">Tells the VM to release blocks it no longer uses, so thin-provisioned storage gets the space back.</string>
+    <string name="agent_trim_done">Trim finished</string>
+    <string name="agent_trim_freed">%1$s freed</string>
+    <string name="agent_trim_ok">Done</string>
+    <string name="agent_trim_none">The VM reported no filesystems to trim.</string>
+    <string name="agent_users">Users</string>
+    <string name="agent_password">Set user password</string>
+    <string name="agent_password_body">Changes the password of an account inside the VM, for example when you are locked out. The account must already exist.</string>
+    <string name="agent_password_user">User name in the VM</string>
+    <string name="agent_password_user_hint">For example root, or Administrator on Windows.</string>
+    <string name="agent_password_new">New password</string>
+    <string name="agent_password_repeat">Repeat the password</string>
+    <string name="agent_password_length">At least %1$d characters.</string>
+    <string name="agent_password_mismatch">The passwords don\'t match.</string>
+    <string name="agent_password_done">Password of %1$s changed</string>
+    <string name="snapshot_describe">Edit description</string>
+    <string name="snapshot_describe_title">Description of %1$s</string>
+    <string name="snapshot_description_label">Description</string>
+    <string name="snapshot_describe_help">Leave empty to remove it.</string>
+    <string name="snapshot_busy_describe">Saving the description of “%1$s”…</string>
+    <string name="snapshot_describe_saved">Description of %1$s saved</string>
 
     <!-- Node -->
     <string name="node_subtitle">Node</string>
@@ -1052,6 +1092,7 @@
 
     <!-- Storage (M4) -->
     <string name="storage_title">Storage</string>
+    <string name="storage_usage_history">Usage history</string>
     <string name="storage_shared">shared</string>
     <string name="storage_disabled">Disabled</string>
     <string name="storage_all_nodes">All nodes</string>

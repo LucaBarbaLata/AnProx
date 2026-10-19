@@ -9,6 +9,7 @@ import kotlinx.serialization.json.contentOrNull
  * The everyday options of a VM or container (questionnaire Q19, "common settings first"), read
  * from `GET …/{qemu|lxc}/{vmid}/config` and written with `PUT …/config`.
  *
+ * @property startup boot order and delays (`startup: order=2,up=30,down=60`).
  * @property agent VMs only: whether the QEMU guest agent is enabled (`agent: 1` or `enabled=1,…`).
  * @property digest the config's checksum; sending it back makes Proxmox refuse the change if
  *   someone else edited the guest in the meantime.
@@ -19,6 +20,7 @@ data class GuestOptions(
     val protection: Boolean = false,
     val description: String = "",
     val tags: List<String> = emptyList(),
+    val startup: StartupOrder = StartupOrder(),
     val agent: Boolean? = null,
     val digest: String? = null,
 ) {
@@ -50,6 +52,7 @@ data class GuestOptions(
                 protection = flag("protection"),
                 description = string("description").orEmpty(),
                 tags = parseTags(string("tags").orEmpty()),
+                startup = StartupOrder.parse(string("startup")),
                 // "1", "0", or a property string like "enabled=1,fstrim_cloned_disks=1" (or just "1,fstrim…").
                 agent = if (type == GuestType.QEMU) string("agent")?.let(::agentEnabled) ?: false else null,
                 digest = string("digest"),
@@ -78,11 +81,45 @@ data class GuestOptions(
             text("tags", old.tags.joinToString(";"), new.tags.joinToString(";"))
             if (old.onBoot != new.onBoot) set["onboot"] = if (new.onBoot) "1" else "0"
             if (old.protection != new.protection) set["protection"] = if (new.protection) "1" else "0"
+            if (old.startup != new.startup) {
+                if (new.startup.isDefault) delete += "startup" else set["startup"] = new.startup.toApi()
+            }
             if (type == GuestType.QEMU && new.agent != null && old.agent != new.agent) set["agent"] = if (new.agent) "1" else "0"
             if (set.isEmpty() && delete.isEmpty()) return emptyMap()
             if (delete.isNotEmpty()) set["delete"] = delete.joinToString(",")
             old.digest?.let { set["digest"] = it }
             return set
+        }
+    }
+}
+
+/**
+ * When a guest starts and stops relative to the others on its node (`startup`): guests start in
+ * ascending [order] (unordered ones last) and shut down in reverse. [up] is how many seconds to
+ * wait after starting this guest before the next one starts; [down] how long its shutdown may
+ * take before Proxmox stops it. `null` means Proxmox's default.
+ */
+data class StartupOrder(val order: Int? = null, val up: Int? = null, val down: Int? = null) {
+    val isDefault: Boolean get() = order == null && up == null && down == null
+
+    fun toApi(): String = listOfNotNull(order?.let { "order=$it" }, up?.let { "up=$it" }, down?.let { "down=$it" }).joinToString(",")
+
+    companion object {
+        /** `order=2,up=30,down=60`; the order may also come bare (`2,up=30`). Unknown parts are ignored. */
+        fun parse(value: String?): StartupOrder {
+            if (value.isNullOrBlank()) return StartupOrder()
+            var result = StartupOrder()
+            value.split(',').map { it.trim() }.filter { it.isNotEmpty() }.forEachIndexed { index, part ->
+                val key = if ('=' in part) part.substringBefore('=').trim() else if (index == 0) "order" else ""
+                val number = part.substringAfter('=').trim().toIntOrNull()
+                result = when (key) {
+                    "order" -> result.copy(order = number)
+                    "up" -> result.copy(up = number)
+                    "down" -> result.copy(down = number)
+                    else -> result
+                }
+            }
+            return result
         }
     }
 }

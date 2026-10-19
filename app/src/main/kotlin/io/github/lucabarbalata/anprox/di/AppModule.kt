@@ -89,6 +89,7 @@ import io.github.lucabarbalata.anprox.ui.datacenter.SecurityGroupsViewModel
 import io.github.lucabarbalata.anprox.ui.datacenter.StorageContentViewModel
 import io.github.lucabarbalata.anprox.ui.datacenter.StorageEditorViewModel
 import io.github.lucabarbalata.anprox.ui.datacenter.StorageListViewModel
+import io.github.lucabarbalata.anprox.ui.guest.AgentViewModel
 import io.github.lucabarbalata.anprox.ui.guest.CloneViewModel
 import io.github.lucabarbalata.anprox.ui.guest.GuestViewModel
 import io.github.lucabarbalata.anprox.ui.guest.MigrateViewModel
@@ -198,6 +199,7 @@ val appModule = module {
     viewModel { ResourcesViewModel(get(), get(), get(), get()) }
     viewModel { (ref: GuestRef) -> GuestViewModel(ref, get(), get(), get()) }
     viewModel { (ref: GuestRef) -> OptionsViewModel(ref, get()) }
+    viewModel { (ref: GuestRef) -> AgentViewModel(ref, get()) }
     viewModel { (ref: GuestRef) -> HardwareViewModel(ref, get(), get()) }
     viewModel { (ref: GuestRef) -> CloudInitViewModel(ref, get(), get()) }
     viewModel { (serverId: String, node: String, type: GuestType) -> CreateGuestViewModel(serverId, node, type, get(), get()) }

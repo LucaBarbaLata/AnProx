@@ -87,6 +87,7 @@ import io.github.lucabarbalata.anprox.ui.datacenter.SecurityGroupsScreen
 import io.github.lucabarbalata.anprox.ui.datacenter.StorageContentScreen
 import io.github.lucabarbalata.anprox.ui.datacenter.StorageEditorScreen
 import io.github.lucabarbalata.anprox.ui.datacenter.StorageListScreen
+import io.github.lucabarbalata.anprox.ui.guest.AgentScreen
 import io.github.lucabarbalata.anprox.ui.guest.CloneScreen
 import io.github.lucabarbalata.anprox.ui.guest.GuestScreen
 import io.github.lucabarbalata.anprox.ui.guest.GuestTool
@@ -98,6 +99,7 @@ import io.github.lucabarbalata.anprox.ui.navigation.AboutRoute
 import io.github.lucabarbalata.anprox.ui.navigation.AclRoute
 import io.github.lucabarbalata.anprox.ui.navigation.AlertsRoute
 import io.github.lucabarbalata.anprox.ui.navigation.AppLinks
+import io.github.lucabarbalata.anprox.ui.navigation.AgentRoute
 import io.github.lucabarbalata.anprox.ui.navigation.BackupGroupRoute
 import io.github.lucabarbalata.anprox.ui.navigation.BackupJobEditorRoute
 import io.github.lucabarbalata.anprox.ui.navigation.BackupJobsRoute
@@ -242,6 +244,7 @@ fun AnProxApp() {
             GuestTool.SSH -> nav.navigate(SshRoute(ref.serverId, ref.node, ref.vmid, type, name))
             GuestTool.CLONE -> nav.navigate(CloneRoute(ref.serverId, ref.node, type, ref.vmid, name))
             GuestTool.MIGRATE -> nav.navigate(MigrateRoute(ref.serverId, ref.node, type, ref.vmid, name))
+            GuestTool.AGENT -> nav.navigate(AgentRoute(ref.serverId, ref.node, ref.vmid, name))
         }
     }
     // After a migration the guest lives on another node: replace its old screen (phones). On
@@ -579,6 +582,10 @@ fun AnProxApp() {
                 val r = entry.toRoute<BackupsRoute>()
                 val ref = GuestRef(r.serverId, r.node, GuestType.fromApi(r.type) ?: GuestType.QEMU, r.vmid)
                 BackupsScreen(BackupScope.Guest(ref, r.name), onBack = back, onTask = openTask)
+            }
+            composable<AgentRoute> { entry ->
+                val r = entry.toRoute<AgentRoute>()
+                AgentScreen(GuestRef(r.serverId, r.node, GuestType.QEMU, r.vmid), guestName = r.name, onBack = back)
             }
             composable<OptionsRoute> { entry ->
                 val r = entry.toRoute<OptionsRoute>()

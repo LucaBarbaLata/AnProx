@@ -3,7 +3,7 @@ package io.github.lucabarbalata.anprox.model.pve
 import kotlinx.serialization.Serializable
 
 /**
- * One sample of `GET …/rrddata` (performance history of a node, VM or container).
+ * One sample of `GET …/rrddata` (performance history of a node, VM, container or storage).
  *
  * Proxmox leaves out a field when it has no data for that interval (for example while a guest
  * was stopped), so everything except [time] is nullable and a chart shows a gap there.
@@ -34,6 +34,9 @@ data class RrdPoint(
     val maxdisk: Double? = null,
     val diskread: Double? = null,
     val diskwrite: Double? = null,
+    // Storages (bytes)
+    val used: Double? = null,
+    val total: Double? = null,
 )
 
 /**

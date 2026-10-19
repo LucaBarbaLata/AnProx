@@ -3,6 +3,7 @@ package io.github.lucabarbalata.anprox.model
 import io.github.lucabarbalata.anprox.model.json.ProxmoxJson
 import io.github.lucabarbalata.anprox.model.pve.GuestOptions
 import io.github.lucabarbalata.anprox.model.pve.GuestType
+import io.github.lucabarbalata.anprox.model.pve.StartupOrder
 import kotlinx.serialization.json.JsonObject
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -55,6 +56,25 @@ class GuestOptionsTest {
         assertEquals(
             mapOf("hostname" to "ct-01", "digest" to "d1"),
             GuestOptions.changes(GuestType.LXC, old.copy(agent = null), old.copy(name = "ct-01", agent = null)),
+        )
+    }
+
+    @Test
+    fun `start order reads both spellings and is written only when changed`() {
+        assertEquals(StartupOrder(order = 2, up = 30, down = 60), StartupOrder.parse("order=2,up=30,down=60"))
+        assertEquals(StartupOrder(order = 3, up = 10), StartupOrder.parse("3,up=10"))
+        assertEquals(StartupOrder(down = 120), StartupOrder.parse("down=120,bogus=1"))
+        assertTrue(StartupOrder.parse(null).isDefault)
+        assertEquals("order=1,down=90", StartupOrder(order = 1, down = 90).toApi())
+
+        val old = GuestOptions(name = "db", startup = StartupOrder(order = 1, up = 30), digest = "d1")
+        assertEquals(
+            mapOf("startup" to "order=1,up=45", "digest" to "d1"),
+            GuestOptions.changes(GuestType.QEMU, old, old.copy(startup = StartupOrder(order = 1, up = 45))),
+        )
+        assertEquals(
+            mapOf("delete" to "startup", "digest" to "d1"),
+            GuestOptions.changes(GuestType.QEMU, old, old.copy(startup = StartupOrder())),
         )
     }
 

@@ -28,7 +28,7 @@ internal class MockHardware(
     private val pending = HashMap<Int, LinkedHashMap<String, String?>>()
 
     /** The keys [MockState] handles as options (name, tags…); everything else is hardware. */
-    val optionKeys = setOf("name", "hostname", "onboot", "protection", "description", "tags", "agent", "digest", "delete")
+    val optionKeys = setOf("name", "hostname", "onboot", "protection", "description", "tags", "startup", "agent", "digest", "delete")
 
     val bridges = listOf(
         NodeNetwork("vmbr0", "bridge", active = true, comments = "LAN", vlanAware = true),

@@ -700,6 +700,29 @@ class MockProxmoxServer(
                 else -> call.fail(501, "the mock server doesn't implement this agent command")
             }
         }
+        post("nodes/{node}/qemu/{vmid}/agent/set-user-password") {
+            val s = call.authed() ?: return@post
+            val g = call.guest("qemu") ?: return@post
+            val p = call.receiveParameters()
+            if (state.isReadOnly(s.user)) return@post call.fail(403, "Permission check failed (/vms/${g.vmid}, VM.GuestAgent.Unrestricted)")
+            val username = p["username"].orEmpty()
+            val password = p["password"].orEmpty()
+            if (username.isEmpty()) return@post call.fail(400, "Parameter verification failed.", mapOf("username" to "property is missing and it is not optional"))
+            if (password.length !in 5..1024) return@post call.fail(400, "Parameter verification failed.", mapOf("password" to "value must be at least 5 characters long"))
+            state.agentSetPassword(g, username, password).fold(
+                onSuccess = { call.ok(JsonObject(mapOf("result" to JsonObject(emptyMap())))) },
+                onFailure = { call.fail(500, it.message ?: "error") },
+            )
+        }
+        post("nodes/{node}/qemu/{vmid}/agent/{command}") {
+            val s = call.authed() ?: return@post
+            val g = call.guest("qemu") ?: return@post
+            if (state.isReadOnly(s.user)) return@post call.fail(403, "Permission check failed (/vms/${g.vmid}, VM.GuestAgent.FileSystemMgmt)")
+            state.agentCommand(g, call.parameters["command"]!!).fold(
+                onSuccess = { call.ok(JsonObject(mapOf("result" to it))) },
+                onFailure = { call.fail(if (it is UnsupportedOperationException) 501 else 500, it.message ?: "error") },
+            )
+        }
         get("nodes/{node}/lxc/{vmid}/interfaces") {
             call.authed() ?: return@get
             val g = call.guest("lxc") ?: return@get
@@ -1250,6 +1273,17 @@ class MockProxmoxServer(
                 ?: return@get call.fail(400, "Parameter verification failed.", mapOf("timeframe" to "value must be one of hour, day, week, month, year"))
             call.ok(data)
         }
+        get("nodes/{node}/storage/{storage}/rrddata") {
+            call.authed() ?: return@get
+            val node = state.node(call.parameters["node"]!!) ?: return@get call.fail(404, "no such node")
+            if (!node.online) return@get call.fail(595, "Connection refused")
+            val id = call.parameters["storage"]!!
+            val storage = state.storages.firstOrNull { it.node == node.name && it.id == id }
+                ?: return@get call.fail(500, "storage '$id' does not exist")
+            val data = state.storageRrd(storage, call.request.queryParameters["timeframe"].orEmpty())
+                ?: return@get call.fail(400, "Parameter verification failed.", mapOf("timeframe" to "value must be one of hour, day, week, month, year"))
+            call.ok(data)
+        }
         get("nodes/{node}/{type}/{vmid}/rrddata") {
             call.authed() ?: return@get
             val g = call.guest() ?: return@get
@@ -1305,6 +1339,13 @@ class MockProxmoxServer(
                 onSuccess = { call.ok(it) },
                 onFailure = { call.fail(500, it.message ?: "error") },
             )
+        }
+        put("nodes/{node}/{type}/{vmid}/snapshot/{snapname}/config") {
+            val s = call.authed() ?: return@put
+            val g = call.guest() ?: return@put
+            if (state.isReadOnly(s.user)) return@put call.fail(403, "Permission check failed (/vms/${g.vmid}, VM.Snapshot)")
+            val error = state.setSnapshotDescription(g, call.parameters["snapname"]!!, call.receiveParameters()["description"].orEmpty())
+            if (error != null) call.fail(500, error) else call.ok(JsonNull)
         }
         delete("nodes/{node}/{type}/{vmid}/snapshot/{snapname}") {
             val s = call.authed() ?: return@delete
