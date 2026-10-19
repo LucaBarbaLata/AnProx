@@ -52,8 +52,12 @@ data class BackupsState(
     val restoring: StorageContentItem? = null,
     /** Suggested id for "restore as new". */
     val nextVmid: Int? = null,
+    /** Storages the restored disks can go to; null while loading. */
+    val restoreStorages: List<NodeStorage>? = null,
     /** Waiting for the type-to-confirm step before replacing a guest. */
     val confirmReplace: StorageContentItem? = null,
+    /** Where the replacing restore puts the disks; null keeps the backup's storages. */
+    val replaceStorage: String? = null,
     val busy: BackupOp? = null,
     val result: TaskResult? = null,
 )
@@ -115,34 +119,45 @@ class BackupsViewModel(
     // ------------------------------------------------------------------ restore
 
     fun openRestore(item: StorageContentItem) {
-        ui.update { it.copy(restoring = item, nextVmid = null) }
+        ui.update { it.copy(restoring = item, nextVmid = null, restoreStorages = null) }
         viewModelScope.launch {
             try {
                 val id = backups.nextVmid(scope.serverId)
                 ui.update { it.copy(nextVmid = id) }
             } catch (e: ApiException) {
                 ui.update { it.copy(restoring = null, result = TaskResult(e.toUiText(), null, ok = false)) }
+                return@launch
             }
+            // Optional: without the list the backup's own storages are used.
+            val storages = item.guestType?.let { type ->
+                try {
+                    guests.diskStorages(scope.serverId, scope.node, type)
+                } catch (_: ApiException) {
+                    null
+                }
+            }
+            ui.update { it.copy(restoreStorages = storages.orEmpty()) }
         }
     }
 
     fun dismissRestore() = ui.update { it.copy(restoring = null) }
 
-    fun restoreAsNew(item: StorageContentItem, vmid: Int) {
+    fun restoreAsNew(item: StorageContentItem, vmid: Int, storage: String?) {
         ui.update { it.copy(restoring = null) }
-        run(BackupOp.RESTORE) { backups.restore(scope.serverId, scope.node, item, vmid, replace = false) }
+        run(BackupOp.RESTORE) { backups.restore(scope.serverId, scope.node, item, vmid, replace = false, storage = storage) }
     }
 
     /** Replacing a guest is a type-to-confirm action (Q12): ask first. */
-    fun requestReplace(item: StorageContentItem) = ui.update { it.copy(restoring = null, confirmReplace = item) }
+    fun requestReplace(item: StorageContentItem, storage: String?) = ui.update { it.copy(restoring = null, confirmReplace = item, replaceStorage = storage) }
 
     fun dismissReplace() = ui.update { it.copy(confirmReplace = null) }
 
     fun confirmReplace() {
         val item = ui.value.confirmReplace ?: return
         val vmid = replaceTarget(item) ?: return
+        val storage = ui.value.replaceStorage
         ui.update { it.copy(confirmReplace = null) }
-        run(BackupOp.RESTORE) { backups.restore(scope.serverId, scope.node, item, vmid, replace = true) }
+        run(BackupOp.RESTORE) { backups.restore(scope.serverId, scope.node, item, vmid, replace = true, storage = storage) }
     }
 
     /** The guest a "replace" restore overwrites: the scope's guest, or the one the backup came from. */

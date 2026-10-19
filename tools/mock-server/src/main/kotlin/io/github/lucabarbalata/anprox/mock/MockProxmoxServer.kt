@@ -1405,6 +1405,11 @@ class MockProxmoxServer(
                 onFailure = { call.fail(500, it.message ?: "error") },
             )
         }
+        get("nodes/{node}/tasks") {
+            call.authed() ?: return@get
+            val q = call.request.queryParameters
+            call.ok(state.taskHistory(call.parameters["node"]!!, q["start"]?.toIntOrNull() ?: 0, q["limit"]?.toIntOrNull() ?: 50, q["errors"] == "1"))
+        }
         get("nodes/{node}/tasks/{upid}/status") {
             call.authed() ?: return@get
             val st = state.taskStatus(call.parameters["upid"]!!) ?: return@get call.fail(404, "no such task")
@@ -1444,7 +1449,8 @@ class MockProxmoxServer(
         }
         get("nodes/localhost/tasks") {
             call.authed() ?: return@get
-            call.ok(state.recentTasks(call.request.queryParameters["limit"]?.toIntOrNull() ?: 50))
+            val q = call.request.queryParameters
+            call.ok(state.taskHistory(null, q["start"]?.toIntOrNull() ?: 0, q["limit"]?.toIntOrNull() ?: 50, q["errors"] == "1"))
         }
         get("nodes/localhost/tasks/{upid}/status") {
             call.authed() ?: return@get
@@ -1799,7 +1805,7 @@ class MockProxmoxServer(
         if (state.isReadOnly(s.user)) return fail(403, "Permission check failed (/vms/$vmid, VM.Allocate)")
         val backup = if (type == "qemu") p["archive"] else p["ostemplate"]?.takeIf { p["restore"] == "1" }
         val result = if (backup != null) {
-            state.restore(parameters["node"]!!, type, vmid, backup, p["force"] == "1", s.user)
+            state.restore(parameters["node"]!!, type, vmid, backup, p["force"] == "1", s.user, storage = p["storage"])
         } else {
             state.createGuest(parameters["node"]!!, type, p.entries().associate { it.key to it.value.first() }, s.user)
         }

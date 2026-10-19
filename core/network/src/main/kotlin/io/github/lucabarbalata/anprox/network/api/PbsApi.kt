@@ -37,6 +37,10 @@ interface PbsApi {
     @GET("nodes/localhost/tasks")
     suspend fun tasks(@Query("limit") limit: Int): ApiEnvelope<List<TaskSummary>>
 
+    /** The task history with paging; [errors] 1 keeps failed tasks only. */
+    @GET("nodes/localhost/tasks")
+    suspend fun taskHistory(@Query("start") start: Int, @Query("limit") limit: Int, @Query("errors") errors: Int?): ApiEnvelope<List<TaskSummary>>
+
     @GET("nodes/localhost/tasks/{upid}/status")
     suspend fun taskStatus(@Path("upid") upid: String): ApiEnvelope<TaskStatus>
 

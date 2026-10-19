@@ -216,6 +216,12 @@ All notable changes to AnProx are documented here. The format follows
   proxy, sender address, MAC address prefix, migration traffic and network, parallel jobs, what
   HA does with its guests when a node shuts down, the range for new guest IDs, and notes.
 
+- **Task history** of a node (Node → Task history; Backup Server → Task history): everything it
+  ran, page by page, or only the failed tasks.
+
+- **Restore to another storage**: the restore dialog lets you pick where the disks go, or keep the
+  storages recorded in the backup.
+
 - **Cluster log** (Datacenter → Cluster log): what every node logged, with errors and warnings
   coloured and a filter.
 

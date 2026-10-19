@@ -1149,7 +1149,7 @@ def backup_server():
     back()
 
 
-@step("Node administration: updates, repositories, a service, a pending network change, the system log, start all")
+@step("Node administration: updates, repositories, a service, a pending network change, the system log, start all, the task history")
 def node_admin():
     tap("Resources")
     tap_node(scroll_to("pve1", exact=True))      # the node
@@ -1184,6 +1184,11 @@ def node_admin():
     tap("Start all", pick="lowest")              # the dialog's button
     find("Start all guests finished", timeout=60)
     screenshot("15b-start-all")
+    tap_node(scroll_to("Task history", exact=True))
+    find("Start all guests", timeout=30)         # the newest task of pve1
+    tap("Failed")
+    wait_until(lambda: not visible("Start all guests"), "the failed tasks only", timeout=30)
+    back()                                       # to the node
     back()                                       # to Resources
 
 

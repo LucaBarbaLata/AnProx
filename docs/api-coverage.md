@@ -74,7 +74,7 @@ Code: `core/network/src/main/kotlin/.../network/api/` (`AccessApi`, `PveApi`, `P
 | `GET /nodes/{node}/tasks/{upid}/status` | Task status | ✅ |
 | `GET /nodes/{node}/tasks/{upid}/log` | Task log | ✅ |
 | `DELETE /nodes/{node}/tasks/{upid}` | Stop a running task (the task log's ⏹ button; Backup Server too) | ✅ |
-| `GET /nodes/{node}/tasks` | Node task history with filters | 🗓 M1 |
+| `GET /nodes/{node}/tasks` | Node → Task history, page by page, all or failed only (the Backup Server's too) | ✅ |
 | `GET /nodes/{node}/rrddata` | Performance history (charts) | ✅ |
 | `POST /nodes/{node}/vzdump` | Backup now | ✅ (one guest; storage, mode, notes) |
 | `/nodes/{node}/{startall,stopall,migrateall}` | Node → Start all (optionally only start-at-boot guests), Shut down all, Migrate all (target, local disks) | ✅ |
@@ -132,7 +132,7 @@ Code: `core/network/src/main/kotlin/.../network/api/` (`AccessApi`, `PveApi`, `P
 | `POST /qemu/{vmid}/spiceproxy` | SPICE `.vv` handoff | ✅ `proxy` = the address the app uses; the `.vv` file goes to a viewer app (aSPICE…) through a FileProvider |
 | `…/firewall/{rules,options}` | Guest firewall rules, policies, DHCP/NDP/RA and MAC/IP filters | ✅ |
 | `…/firewall/{aliases,ipset,log,refs}` | Guest aliases, IP sets, log | ✅ M4 (`refs` 🗓 later) |
-| `POST /nodes/{node}/qemu` (`archive=`) / `lxc` (`restore=1`) | Restore from backup | ✅ (as new with `unique=1`, or replace with `force=1`; target storage choice 🗓) |
+| `POST /nodes/{node}/qemu` (`archive=`) / `lxc` (`restore=1`) | Restore from backup | ✅ (as new with `unique=1`, or replace with `force=1`; the disks' target storage) |
 
 ### `/storage`, `/pools`, `/nodes/{node}/storage`
 

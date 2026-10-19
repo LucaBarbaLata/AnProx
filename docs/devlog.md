@@ -132,9 +132,12 @@ and friends):
 - `GET /cluster/options` answers `migration`, `ha` and `next-id` as objects (Proxmox parses
   `datacenter.cfg`), while `PUT` takes property strings, and `migration` may start with a bare
   type (`secure,network=…`). `DatacenterOptions` reads both shapes and writes property strings.
+- Node task history is `GET /nodes/{node}/tasks` with `start`, `limit`, `errors` and
+  `source=all` (without it Proxmox lists only finished tasks); the Backup Server takes the same
+  paging at `nodes/localhost/tasks`. A restore's `storage` parameter moves all disks there.
 - `GET /cluster/log` comes from pmxcfs with numeric `uid` and `pid`; newest first, so the
   repository sorts it oldest first for a log-style screen.
-- 6 model tests and 13 integration tests; tour step 6 (agent) and additions to the snapshot,
+- 6 model tests and 16 integration tests; tour step 6 (agent) and additions to the snapshot,
   clone (delete the clone again), tasks, storage (usage chart, template catalogue), SDN (cluster log,
   datacenter options) and node (Start all) steps.
 

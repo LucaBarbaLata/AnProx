@@ -62,7 +62,9 @@ import io.github.lucabarbalata.anprox.model.pve.StorageContentItem
 import io.github.lucabarbalata.anprox.security.LocalDangerousActionGuard
 import io.github.lucabarbalata.anprox.ui.common.AnProxScaffold
 import io.github.lucabarbalata.anprox.ui.common.ConfirmActionDialog
+import io.github.lucabarbalata.anprox.ui.common.FormLabel
 import io.github.lucabarbalata.anprox.ui.common.RadioRow
+import io.github.lucabarbalata.anprox.ui.common.StoragePicker
 import io.github.lucabarbalata.anprox.ui.common.TaskResultSnackbar
 import io.github.lucabarbalata.anprox.ui.common.asString
 import io.github.lucabarbalata.anprox.ui.common.contentPadding
@@ -152,9 +154,10 @@ fun BackupsScreen(
         RestoreDialog(
             item = item,
             nextVmid = state.nextVmid,
+            storages = state.restoreStorages,
             replaceLabel = replaceLabel(scope, item),
-            onAsNew = { vmid -> viewModel.restoreAsNew(item, vmid) },
-            onReplace = { viewModel.requestReplace(item) },
+            onAsNew = { vmid, storage -> viewModel.restoreAsNew(item, vmid, storage) },
+            onReplace = { storage -> viewModel.requestReplace(item, storage) },
             onDismiss = viewModel::dismissRestore,
         )
     }
@@ -334,13 +337,16 @@ private fun BackupNowDialog(
 private fun RestoreDialog(
     item: StorageContentItem,
     nextVmid: Int?,
+    storages: List<NodeStorage>?,
     replaceLabel: String?,
-    onAsNew: (Int) -> Unit,
-    onReplace: () -> Unit,
+    onAsNew: (vmid: Int, storage: String?) -> Unit,
+    onReplace: (storage: String?) -> Unit,
     onDismiss: () -> Unit,
 ) {
     val c = AnProxTheme.colors
     var replace by rememberSaveable { mutableStateOf(false) }
+    // null: the storages recorded in the backup.
+    var storage by rememberSaveable { mutableStateOf<String?>(null) }
     // Filled in once the next free id has loaded.
     var idText by rememberSaveable(nextVmid) { mutableStateOf(nextVmid?.toString().orEmpty()) }
     val id = idText.toIntOrNull()
@@ -378,10 +384,17 @@ private fun RestoreDialog(
                         body = stringResource(R.string.backup_restore_replace_body),
                     ) { replace = true }
                 }
+                FormLabel(stringResource(R.string.backup_restore_storage))
+                RadioRow(
+                    selected = storage == null,
+                    title = stringResource(R.string.backup_restore_storage_original),
+                    body = stringResource(R.string.backup_restore_storage_original_body),
+                ) { storage = null }
+                StoragePicker(storages, storage, { storage = it })
             }
         },
         confirmButton = {
-            TextButton(onClick = { if (replace) onReplace() else id?.let(onAsNew) }, enabled = replace || idValid) {
+            TextButton(onClick = { if (replace) onReplace(storage) else id?.let { onAsNew(it, storage) } }, enabled = replace || idValid) {
                 Text(stringResource(R.string.backup_restore_start), color = if (replace) c.danger else Color.Unspecified)
             }
         },

@@ -185,6 +185,7 @@ import io.github.lucabarbalata.anprox.ui.settings.SettingsScreen
 import io.github.lucabarbalata.anprox.ui.snapshots.SnapshotsScreen
 import io.github.lucabarbalata.anprox.ui.ssh.SshKeysScreen
 import io.github.lucabarbalata.anprox.ui.ssh.SshScreen
+import io.github.lucabarbalata.anprox.ui.tasks.TaskHistoryScreen
 import io.github.lucabarbalata.anprox.ui.tasks.TaskLogScreen
 import io.github.lucabarbalata.anprox.ui.tasks.TasksScreen
 import org.koin.compose.koinInject
@@ -692,6 +693,7 @@ fun AnProxApp() {
                     NodeAdminPage.REPOSITORIES -> RepositoriesScreen(r.serverId, r.node, onBack = back, onTask = openTask)
                     NodeAdminPage.SERVICES -> ServicesScreen(r.serverId, r.node, onBack = back, onTask = openTask)
                     NodeAdminPage.JOURNAL -> JournalScreen(r.serverId, r.node, onBack = back)
+                    NodeAdminPage.TASKS -> TaskHistoryScreen(r.serverId, r.node, onBack = back, onTask = openTask)
                     NodeAdminPage.SYSTEM -> SystemSettingsScreen(r.serverId, r.node, onBack = back, onTask = openTask)
                     NodeAdminPage.NETWORK -> NetworkScreen(r.serverId, r.node, onBack = back, onTask = openTask)
                     NodeAdminPage.DISKS -> DisksScreen(r.serverId, r.node, onBack = back, onTask = openTask)

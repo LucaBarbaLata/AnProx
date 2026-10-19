@@ -570,6 +570,15 @@ class MockState(
         entries.sortedByDescending { it.time }.take(max)
     }
 
+    /** `GET /nodes/{node}/tasks`: one page, newest first; [errors] keeps failed tasks. */
+    fun taskHistory(node: String?, start: Int, limit: Int, errors: Boolean): List<TaskSummary> = synchronized(lock) {
+        settleTasks()
+        tasks.filter { (node == null || it.node == node) && (!errors || (it.applied && it.exitStatus != "OK")) }
+            .sortedByDescending { it.startMillis }
+            .drop(start).take(limit)
+            .map { it.summary() }
+    }
+
     fun recentTasks(limit: Int = 50): List<TaskSummary> = synchronized(lock) {
         settleTasks()
         tasks.sortedByDescending { it.startMillis }.take(limit).map { it.summary() }
@@ -1455,7 +1464,7 @@ class MockState(
      * Restores [volid] as guest [vmid] on [nodeName]. Replacing an existing guest needs [force]
      * and a stopped guest on the same node; its snapshots are gone afterwards, like in Proxmox.
      */
-    fun restore(nodeName: String, type: String, vmid: Int, volid: String, force: Boolean, user: String): Result<String> = synchronized(lock) {
+    fun restore(nodeName: String, type: String, vmid: Int, volid: String, force: Boolean, user: String, storage: String? = null): Result<String> = synchronized(lock) {
         settleTasks()
         val label = if (type == "qemu") "VM" else "CT"
         fun fail(msg: String) = Result.failure<String>(IllegalStateException(msg))
@@ -1469,6 +1478,11 @@ class MockState(
             }
             if (existing.status == "running") return fail("unable to restore $label $vmid - $label is running")
         }
+        if (storage != null) {
+            val content = if (type == "qemu") "images" else "rootdir"
+            val s = storages.firstOrNull { it.node == nodeName && it.id == storage } ?: return fail("storage '$storage' does not exist")
+            if (content !in s.content.split(',')) return fail("storage '$storage' does not support $label disks ($content)")
+        }
         val prefix = if (type == "qemu") "qm" else "vz"
         Result.success(
             startTask(nodeName, prefix + "restore", vmid.toString(), user) {
@@ -1479,6 +1493,7 @@ class MockState(
                 }
                 hardware.forget(vmid)
                 guests += Guest(vmid, type, nodeName, b.guestName, "stopped", b.cpus, b.maxmem, b.maxdisk, tags = existing?.tags)
+                    .also { g -> storage?.let { g.diskStorage = it } }
             },
         )
     }

@@ -31,6 +31,7 @@ import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.Dns
 import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.Folder
+import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Inventory
 import androidx.compose.material.icons.outlined.Link
 import androidx.compose.material.icons.outlined.Refresh
@@ -230,6 +231,7 @@ fun BackupServerScreen(
                     MenuRow(Icons.Outlined.SystemUpdateAlt, stringResource(R.string.updates_title), stringResource(R.string.pbs_updates_body)) { onAdmin(NodeAdminPage.UPDATES) }
                     MenuRow(Icons.Outlined.Settings, stringResource(R.string.services_title), stringResource(R.string.pbs_services_body)) { onAdmin(NodeAdminPage.SERVICES) }
                     MenuRow(Icons.AutoMirrored.Outlined.List, stringResource(R.string.journal_title), stringResource(R.string.pbs_journal_body)) { onAdmin(NodeAdminPage.JOURNAL) }
+                    MenuRow(Icons.Outlined.History, stringResource(R.string.taskhistory_title), stringResource(R.string.taskhistory_open_body)) { onAdmin(NodeAdminPage.TASKS) }
                 }
             }
         }

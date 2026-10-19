@@ -77,12 +77,14 @@ class BackupRepository(private val hub: ServerHub) {
      * - [replace] `true`: overwrites that guest (it must be stopped); Proxmox needs `force=1`.
      * - [replace] `false`: creates a new guest; `unique=1` gives it new MAC addresses so it can
      *   run next to the original.
+     * - [storage]: where the disks go; `null` keeps the storages recorded in the backup.
      */
-    suspend fun restore(serverId: String, node: String, backup: StorageContentItem, targetVmid: Int, replace: Boolean): String {
+    suspend fun restore(serverId: String, node: String, backup: StorageContentItem, targetVmid: Int, replace: Boolean, storage: String? = null): String {
         val type = backup.guestType ?: throw IllegalArgumentException("Not a guest backup: ${backup.volid}")
         val params = buildMap {
             put("vmid", targetVmid.toString())
             if (replace) put("force", "1") else put("unique", "1")
+            storage?.let { put("storage", it) }
             when (type) {
                 GuestType.QEMU -> put("archive", backup.volid)
                 GuestType.LXC -> {

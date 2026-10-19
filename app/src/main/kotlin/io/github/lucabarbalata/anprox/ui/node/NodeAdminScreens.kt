@@ -26,6 +26,7 @@ import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.CloudDownload
 import androidx.compose.material.icons.outlined.Description
+import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Settings
@@ -556,6 +557,7 @@ fun NodeAdminCard(onOpen: (NodeAdminPage) -> Unit) {
                         NodeAdminPage.SYSTEM -> Icons.Outlined.Language
                         NodeAdminPage.NETWORK -> Icons.Outlined.SettingsEthernet
                         NodeAdminPage.DISKS -> Icons.Outlined.Storage
+                        NodeAdminPage.TASKS -> Icons.Outlined.History
                     },
                     contentDescription = null,
                     tint = c.accent,
@@ -578,6 +580,7 @@ private fun pageTitle(page: NodeAdminPage): Int = when (page) {
     NodeAdminPage.SYSTEM -> R.string.system_title
     NodeAdminPage.NETWORK -> R.string.network_title
     NodeAdminPage.DISKS -> R.string.disks_title
+    NodeAdminPage.TASKS -> R.string.taskhistory_title
 }
 
 private fun pageBody(page: NodeAdminPage): Int = when (page) {
@@ -588,6 +591,7 @@ private fun pageBody(page: NodeAdminPage): Int = when (page) {
     NodeAdminPage.SYSTEM -> R.string.system_open_body
     NodeAdminPage.NETWORK -> R.string.network_open_body
     NodeAdminPage.DISKS -> R.string.disks_open_body
+    NodeAdminPage.TASKS -> R.string.taskhistory_open_body
 }
 
 // ------------------------------------------------------------------------------ DNS, hosts, time

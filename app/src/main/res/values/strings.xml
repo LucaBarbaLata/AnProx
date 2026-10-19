@@ -509,6 +509,9 @@
     <string name="backup_restore_id">New ID</string>
     <string name="backup_restore_replace">Replace %1$s</string>
     <string name="backup_restore_replace_body">Overwrites its disks and settings, and its snapshots are lost. It must be stopped first.</string>
+    <string name="backup_restore_storage">Disks go to</string>
+    <string name="backup_restore_storage_original">Where they were</string>
+    <string name="backup_restore_storage_original_body">The storages recorded in the backup</string>
     <string name="backup_restore_start">Start restore</string>
     <string name="backup_target_guest">%1$s (ID %2$d)</string>
     <string name="backup_replace_confirm_title">Replace %1$s with this backup?</string>
@@ -634,6 +637,13 @@
     <string name="task_stop">Stop task</string>
     <string name="task_stop_title">Stop %1$s?</string>
     <string name="task_stop_message">Proxmox interrupts the task where it is. Whatever it already did stays done: a half-finished backup is removed, a half-copied disk may be left behind.</string>
+    <string name="taskhistory_title">Task history</string>
+    <string name="taskhistory_open_body">Every task it ran, the failed ones on their own</string>
+    <string name="taskhistory_all">All</string>
+    <string name="taskhistory_failed">Failed</string>
+    <string name="taskhistory_more">Load older tasks</string>
+    <string name="taskhistory_empty">No tasks</string>
+    <string name="taskhistory_empty_body">Nothing here for this filter.</string>
 
     <!-- More / settings / about -->
     <string name="more_title">More</string>

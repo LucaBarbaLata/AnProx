@@ -94,6 +94,17 @@ class BackupTest {
     }
 
     @Test
+    fun `restore can put the disks on another storage`() = runBlocking {
+        val r = repos()
+        val backup = r.backups.backups(win11).backups.single()
+        // `local` holds ISO images and backups, not VM disks.
+        assertFailsWith<ApiException.Server> { r.backups.restore("pve", "pve2", backup, 105, replace = false, storage = "local") }
+        r.finish("pve2", r.backups.restore("pve", "pve2", backup, 105, replace = false, storage = "nas-nfs"))
+        assertEquals("nas-nfs", pve.state.guests.single { it.vmid == 105 }.diskStorage)
+        Unit
+    }
+
+    @Test
     fun `replacing a running guest is refused until it is stopped`() = runBlocking {
         val r = repos()
         val backup = r.backups.backups(web).backups.first()

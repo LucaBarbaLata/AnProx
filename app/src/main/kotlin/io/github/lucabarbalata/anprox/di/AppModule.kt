@@ -121,6 +121,7 @@ import io.github.lucabarbalata.anprox.ui.settings.TransferViewModel
 import io.github.lucabarbalata.anprox.ui.snapshots.SnapshotsViewModel
 import io.github.lucabarbalata.anprox.ui.ssh.SshKeysViewModel
 import io.github.lucabarbalata.anprox.ui.ssh.SshViewModel
+import io.github.lucabarbalata.anprox.ui.tasks.TaskHistoryViewModel
 import io.github.lucabarbalata.anprox.ui.tasks.TaskLogViewModel
 import io.github.lucabarbalata.anprox.ui.tasks.TasksViewModel
 import kotlinx.coroutines.CoroutineScope
@@ -231,6 +232,7 @@ val appModule = module {
     viewModel { (serverId: String, node: String) -> RepositoriesViewModel(serverId, node, get()) }
     viewModel { (serverId: String, node: String) -> ServicesViewModel(serverId, node, get(), get()) }
     viewModel { (serverId: String, node: String) -> JournalViewModel(serverId, node, get()) }
+    viewModel { (serverId: String, node: String) -> TaskHistoryViewModel(serverId, node, get()) }
     viewModel { (serverId: String, node: String) -> SystemSettingsViewModel(serverId, node, get()) }
     viewModel { (serverId: String, node: String) -> NetworkViewModel(serverId, node, get(), get()) }
     viewModel { (serverId: String, node: String) -> DisksViewModel(serverId, node, get(), get()) }

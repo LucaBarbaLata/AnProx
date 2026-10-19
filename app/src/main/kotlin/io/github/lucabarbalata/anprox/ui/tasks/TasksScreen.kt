@@ -39,6 +39,7 @@ import io.github.lucabarbalata.anprox.core.designsystem.theme.AnProxTheme
 import io.github.lucabarbalata.anprox.model.ProxmoxProduct
 import io.github.lucabarbalata.anprox.model.format.TaskTypes
 import io.github.lucabarbalata.anprox.model.pve.TaskState
+import io.github.lucabarbalata.anprox.model.pve.TaskSummary
 import io.github.lucabarbalata.anprox.ui.common.AnProxScaffold
 import io.github.lucabarbalata.anprox.ui.common.asString
 import io.github.lucabarbalata.anprox.ui.common.contentPadding
@@ -93,8 +94,13 @@ fun TasksScreen(
 
 @Composable
 private fun TaskRow(item: TaskItem, showServer: Boolean, onClick: () -> Unit) {
+    TaskSummaryRow(item.task, listOfNotNull(if (showServer) item.serverName else null, item.task.node, item.task.user).joinToString(" · "), onClick)
+}
+
+/** One task: its type and target, [subtitle], its outcome, when it started and how long it took. */
+@Composable
+fun TaskSummaryRow(t: TaskSummary, subtitle: String, onClick: () -> Unit) {
     val c = AnProxTheme.colors
-    val t = item.task
     val (tone, icon) = when (t.state) {
         TaskState.RUNNING -> Tone.INFO to null
         TaskState.OK -> Tone.SUCCESS to Icons.Outlined.CheckCircle
@@ -121,7 +127,7 @@ private fun TaskRow(item: TaskItem, showServer: Boolean, onClick: () -> Unit) {
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    listOfNotNull(if (showServer) item.serverName else null, t.node, t.user).joinToString(" · "),
+                    subtitle,
                     style = MaterialTheme.typography.bodySmall,
                     color = c.textSecondary,
                     maxLines = 1,

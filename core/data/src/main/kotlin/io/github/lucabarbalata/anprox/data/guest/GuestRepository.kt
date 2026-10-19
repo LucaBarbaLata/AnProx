@@ -21,6 +21,7 @@ import io.github.lucabarbalata.anprox.model.pve.PowerAction
 import io.github.lucabarbalata.anprox.model.pve.ResourceType
 import io.github.lucabarbalata.anprox.model.pve.TaskLogLine
 import io.github.lucabarbalata.anprox.model.pve.TaskStatus
+import io.github.lucabarbalata.anprox.model.pve.TaskSummary
 import io.github.lucabarbalata.anprox.network.ApiException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -273,6 +274,16 @@ class GuestRepository(private val hub: ServerHub, private val taskObserver: Task
 
     suspend fun taskLog(serverId: String, node: String, upid: String, start: Int = 0, limit: Int = 500): List<TaskLogLine> =
         hub.use(serverId) { if (it.product == ProxmoxProduct.PBS) it.pbs { taskLog(upid, start, limit) } else it.pve { taskLog(node, upid, start, limit) } }
+
+    /**
+     * One page of [node]'s task history, newest first: [limit] tasks after skipping [start].
+     * [errorsOnly] keeps the failed ones. A Backup Server has one node, `localhost`.
+     */
+    suspend fun taskHistory(serverId: String, node: String, start: Int, limit: Int, errorsOnly: Boolean): List<TaskSummary> =
+        hub.use(serverId) {
+            val errors = if (errorsOnly) 1 else null
+            if (it.product == ProxmoxProduct.PBS) it.pbs { taskHistory(start, limit, errors) } else it.pve { nodeTasks(node, start, limit, errors, null) }
+        }
 
     /** Asks the server to stop a running task. Stopping one that already ended does nothing. */
     suspend fun stopTask(serverId: String, node: String, upid: String) {

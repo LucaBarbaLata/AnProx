@@ -887,6 +887,17 @@ interface PveApi {
         @Path("snapname") snapname: String,
     ): ApiEnvelope<String>
 
+    /** A node's task history, newest first; [errors] 1 keeps failed tasks only. */
+    @GET("nodes/{node}/tasks")
+    suspend fun nodeTasks(
+        @Path("node") node: String,
+        @Query("start") start: Int,
+        @Query("limit") limit: Int,
+        @Query("errors") errors: Int?,
+        @Query("vmid") vmid: Int?,
+        @Query("source") source: String = "all",
+    ): ApiEnvelope<List<TaskSummary>>
+
     @GET("nodes/{node}/tasks/{upid}/status")
     suspend fun taskStatus(@Path("node") node: String, @Path("upid") upid: String): ApiEnvelope<TaskStatus>
 
