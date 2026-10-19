@@ -64,7 +64,7 @@ Everything marked ✅ in M1 and M2 below. Gates:
 ### Beta 0.1.0-beta.3: 🚧 candidate, owner testing
 Everything marked ✅ in M2–M5 (guest configuration, SSH, alerts and Android integration,
 datacenter, node administration). Gates:
-- [ ] CI green: tests, lint, debug and release builds, and the emulator tour on Android 8.0 and 14 (33 steps)
+- [x] CI green: tests, lint, debug and release builds, and the emulator tour on Android 8.0 and 14 (33 steps, 2026-10-19)
 - [x] `CHANGELOG.md` entries, store changelog (`fastlane/…/changelogs/10023.txt`), README
 - [x] [Test guide](beta2-test-guide.md) sections D1–D15 for the owner
 - [ ] Owner: run the test guide on real hardware (Proxmox VE 8; 9 later)

@@ -110,6 +110,10 @@ and friends):
   instead of the Tools entry, so it now looks for the entry's description. The storage step
   looked for "Usage history", but section headers are drawn in upper case.
 
+**Real-server smoke test.** Before the owner's host is reachable: `RealServerSmokeTest` runs
+every read the app makes against a real Proxmox VE when `ANPROX_PVE_URL`, `ANPROX_PVE_USER` and
+`ANPROX_PVE_PASSWORD` are set (read-only; see testing.md), and against the mock otherwise.
+
 **Leftovers from M1 and M2.**
 - Snapshot descriptions: `PUT …/snapshot/{name}/config` with `description` (empty removes it).
   A plain config write, not a task, so the screen reports it with a snackbar without a log.

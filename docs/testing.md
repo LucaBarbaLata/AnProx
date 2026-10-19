@@ -162,6 +162,26 @@ scripts/e2e/run.sh app/build/outputs/apk/release/app-release.apk
 > `tap_node(scroll_to(...))`: it brings the item to mid-screen first, because edge-to-edge
 > content under the system navigation bar can't be tapped (the bar takes the touch).
 
+## Real-server smoke test
+
+`RealServerSmokeTest` (in `:core:data`) makes every read the app makes against a real Proxmox VE
+and checks that the answers parse: dashboard, node (status, history, tasks, updates,
+repositories, services, network, disks, DNS, time, journal, firewall), storages and their content
+and history, a few guests of each kind (status, options, snapshots, addresses, hardware,
+cloud-init, history, backups, firewall), and the datacenter (options, cluster log, backup jobs,
+firewall, HA, replication, pools, access control, SDN, Ceph). It changes nothing on the server.
+Features the server doesn't have (no Ceph, no guest agent) are reported, not failed.
+
+```bash
+ANPROX_PVE_URL=https://pve.example:8006 ANPROX_PVE_USER=anprox@pve ANPROX_PVE_PASSWORD=… \
+  ./gradlew -Panprox.jvmOnly=true :core:data:test --tests '*RealServerSmokeTest*' -i
+```
+
+Use a dedicated user with the **PVEAuditor** role on `/` and without a second factor; set
+`ANPROX_PVE_INSECURE=0` if the server has a trusted certificate. Without the variables the
+real-server test is skipped, and the same checks run against the mock instead, so they stay in
+working order. Each check prints ✓, – (not on this server) or ✗.
+
 ## Continuous integration
 
 `.github/workflows/ci.yml` runs on every push and pull request:
