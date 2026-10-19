@@ -20,6 +20,11 @@ internal class MockPools {
 
     fun members(id: String): Set<Int> = pools[id]?.vms.orEmpty()
 
+    /** Proxmox drops a destroyed guest from its pool. */
+    fun removeGuest(vmid: Int) {
+        pools.values.forEach { it.vms.remove(vmid) }
+    }
+
     fun poolOf(vmid: Int): String? = pools.entries.firstOrNull { vmid in it.value.vms }?.key
 
     fun detail(id: String, guests: List<MockState.Guest>, storages: List<MockState.Storage>): PoolDetail? {

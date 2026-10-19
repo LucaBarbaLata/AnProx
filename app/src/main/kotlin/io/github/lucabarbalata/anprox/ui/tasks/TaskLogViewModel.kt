@@ -10,10 +10,14 @@ import io.github.lucabarbalata.anprox.network.ApiException
 import io.github.lucabarbalata.anprox.ui.common.UiText
 import io.github.lucabarbalata.anprox.ui.common.toUiText
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 data class TaskLogState(
     val upid: Upid?,
@@ -21,6 +25,9 @@ data class TaskLogState(
     val lines: List<TaskLogLine> = emptyList(),
     val error: UiText? = null,
 )
+
+/** Stopping the task: waiting for confirmation, the request running, or why it failed. */
+data class TaskStopState(val confirm: Boolean = false, val stopping: Boolean = false, val error: UiText? = null)
 
 /** Follows a task's status and log, refreshing every 2 s until it finishes. */
 class TaskLogViewModel(
@@ -44,4 +51,24 @@ class TaskLogViewModel(
             delay(2_000)
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TaskLogState(Upid.parse(upid)))
+
+    private val stopUi = MutableStateFlow(TaskStopState())
+    val stop: StateFlow<TaskStopState> = stopUi.asStateFlow()
+
+    fun requestStop() = stopUi.update { it.copy(confirm = true, error = null) }
+
+    fun dismissStop() = stopUi.update { it.copy(confirm = false) }
+
+    /** The log keeps refreshing, so it shows the task ending ("interrupted by signal"). */
+    fun stopTask() {
+        stopUi.update { it.copy(confirm = false, stopping = true, error = null) }
+        viewModelScope.launch {
+            try {
+                guests.stopTask(serverId, node, upid)
+                stopUi.update { it.copy(stopping = false) }
+            } catch (e: ApiException) {
+                stopUi.update { it.copy(stopping = false, error = e.toUiText()) }
+            }
+        }
+    }
 }

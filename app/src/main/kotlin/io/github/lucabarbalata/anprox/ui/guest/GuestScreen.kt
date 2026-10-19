@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.Backup
@@ -19,6 +21,7 @@ import androidx.compose.material.icons.outlined.Bolt
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.CloudQueue
 import androidx.compose.material.icons.outlined.ContentCopy
+import androidx.compose.material.icons.outlined.DeleteForever
 import androidx.compose.material.icons.outlined.Key
 import androidx.compose.material.icons.outlined.Memory
 import androidx.compose.material.icons.outlined.Monitor
@@ -35,15 +38,23 @@ import androidx.compose.material.icons.outlined.SupportAgent
 import androidx.compose.material.icons.outlined.SwapHoriz
 import androidx.compose.material.icons.outlined.Terminal
 import androidx.compose.material.icons.outlined.Tune
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
@@ -71,7 +82,9 @@ import io.github.lucabarbalata.anprox.model.pve.DangerLevel
 import io.github.lucabarbalata.anprox.model.pve.GuestStatus
 import io.github.lucabarbalata.anprox.model.pve.GuestType
 import io.github.lucabarbalata.anprox.model.pve.PowerAction
+import io.github.lucabarbalata.anprox.security.LocalDangerousActionGuard
 import io.github.lucabarbalata.anprox.ui.common.AnProxScaffold
+import io.github.lucabarbalata.anprox.ui.common.CheckRow
 import io.github.lucabarbalata.anprox.ui.common.ConfirmActionDialog
 import io.github.lucabarbalata.anprox.ui.common.MenuRow
 import io.github.lucabarbalata.anprox.ui.common.TaskResultSnackbar
@@ -233,10 +246,34 @@ fun GuestDetail(
                             stringResource(R.string.migrate_title),
                             stringResource(R.string.migrate_open_body),
                         ) { onTool(GuestTool.MIGRATE, ref, state.title) }
+                        MenuRow(
+                            Icons.Outlined.DeleteForever,
+                            stringResource(if (ref.type == GuestType.QEMU) R.string.destroy_vm else R.string.destroy_ct),
+                            stringResource(R.string.destroy_open_body),
+                            viewModel::requestDestroy,
+                        )
                     }
                 }
             }
         }
+    }
+
+    // The guest is gone: leave its screen.
+    LaunchedEffect(state.destroyed) {
+        if (state.destroyed) (onBack ?: onClose)?.invoke()
+    }
+    if (state.showDestroy) {
+        val guard = LocalDangerousActionGuard.current
+        val reason = stringResource(R.string.lock_reason_destroy, state.title)
+        DestroyGuestDialog(
+            ref = ref,
+            name = state.title,
+            running = state.status?.isRunning == true || state.status?.isPaused == true,
+            busy = state.destroying,
+            error = state.destroyError?.asString(),
+            onConfirm = { purge, disks -> guard.confirm(reason) { viewModel.destroy(purge, disks) } },
+            onDismiss = viewModel::dismissDestroy,
+        )
     }
 
     state.confirm?.let { action ->
@@ -251,6 +288,65 @@ fun GuestDetail(
             onDismiss = viewModel::dismissConfirm,
         )
     }
+}
+
+/**
+ * Deleting a guest (questionnaire Q12): type its ID, like the Proxmox web interface asks. Running
+ * guests have to be shut down first, which the dialog explains instead of offering the button.
+ */
+@Composable
+private fun DestroyGuestDialog(
+    ref: GuestRef,
+    name: String,
+    running: Boolean,
+    busy: Boolean,
+    error: String?,
+    onConfirm: (purge: Boolean, destroyUnreferencedDisks: Boolean) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val c = AnProxTheme.colors
+    val isVm = ref.type == GuestType.QEMU
+    var purge by rememberSaveable { mutableStateOf(true) }
+    var disks by rememberSaveable { mutableStateOf(true) }
+    var typed by rememberSaveable { mutableStateOf("") }
+    val enabled = !running && !busy && typed.trim() == ref.vmid.toString()
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = c.surfaceSolid,
+        title = { Text(stringResource(if (isVm) R.string.destroy_vm_title else R.string.destroy_ct_title, ref.vmid, name)) },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                if (running) {
+                    Text(stringResource(R.string.destroy_running), style = MaterialTheme.typography.bodyMedium, color = c.textSecondary)
+                } else {
+                    Text(stringResource(R.string.destroy_message), style = MaterialTheme.typography.bodyMedium, color = c.textSecondary)
+                    CheckRow(stringResource(R.string.destroy_purge), purge, enabled = !busy) { purge = !purge }
+                    CheckRow(stringResource(R.string.destroy_unreferenced), disks, enabled = !busy) { disks = !disks }
+                    OutlinedTextField(
+                        value = typed,
+                        onValueChange = { typed = it },
+                        singleLine = true,
+                        enabled = !busy,
+                        label = { Text(stringResource(R.string.confirm_type_to_confirm, ref.vmid.toString())) },
+                    )
+                    if (busy) LinearProgressIndicator(Modifier.fillMaxWidth(), color = c.danger)
+                    error?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = c.danger) }
+                }
+            }
+        },
+        confirmButton = {
+            if (!running) {
+                TextButton(onClick = { onConfirm(purge, disks) }, enabled = enabled) {
+                    Text(stringResource(R.string.action_delete), color = if (enabled) c.danger else c.textTertiary)
+                }
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss, enabled = !busy) {
+                Text(stringResource(if (running) R.string.action_close else R.string.action_cancel))
+            }
+        },
+    )
 }
 
 @Composable

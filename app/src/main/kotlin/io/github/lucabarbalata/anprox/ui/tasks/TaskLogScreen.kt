@@ -12,6 +12,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.StopCircle
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -31,7 +35,9 @@ import io.github.lucabarbalata.anprox.core.designsystem.component.Tone
 import io.github.lucabarbalata.anprox.core.designsystem.theme.AnProxTheme
 import io.github.lucabarbalata.anprox.core.designsystem.theme.MonoStyle
 import io.github.lucabarbalata.anprox.model.format.TaskTypes
+import io.github.lucabarbalata.anprox.model.pve.DangerLevel
 import io.github.lucabarbalata.anprox.ui.common.AnProxScaffold
+import io.github.lucabarbalata.anprox.ui.common.ConfirmActionDialog
 import io.github.lucabarbalata.anprox.ui.common.asString
 import io.github.lucabarbalata.anprox.ui.common.contentPadding
 import io.github.lucabarbalata.anprox.ui.common.relativeTime
@@ -47,6 +53,7 @@ fun TaskLogScreen(
     viewModel: TaskLogViewModel = koinViewModel(key = "task-$serverId-$upid") { parametersOf(serverId, node, upid) },
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val stop by viewModel.stop.collectAsStateWithLifecycle()
     val c = AnProxTheme.colors
     val listState = rememberLazyListState()
     // Follow the log while it grows.
@@ -54,9 +61,21 @@ fun TaskLogScreen(
         if (state.lines.isNotEmpty()) listState.animateScrollToItem((listState.layoutInfo.totalItemsCount - 1).coerceAtLeast(0))
     }
     val type = state.upid?.type ?: state.status?.type.orEmpty()
-    AnProxScaffold(title = TaskTypes.label(type), subtitle = node, onBack = onBack) { inner ->
+    AnProxScaffold(
+        title = TaskTypes.label(type),
+        subtitle = node,
+        onBack = onBack,
+        actions = {
+            if (state.status?.isRunning == true) {
+                IconButton(onClick = viewModel::requestStop, enabled = !stop.stopping) {
+                    Icon(Icons.Outlined.StopCircle, contentDescription = stringResource(R.string.task_stop), tint = c.danger)
+                }
+            }
+        },
+    ) { inner ->
         LazyColumn(state = listState, contentPadding = contentPadding(inner), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             state.error?.let { e -> item { ErrorBanner(e.asString()) } }
+            stop.error?.let { e -> item { ErrorBanner(e.asString()) } }
             item {
                 GlassCard {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -97,5 +116,16 @@ fun TaskLogScreen(
                 }
             }
         }
+    }
+
+    if (stop.confirm) {
+        ConfirmActionDialog(
+            title = stringResource(R.string.task_stop_title, TaskTypes.label(type)),
+            message = stringResource(R.string.task_stop_message),
+            confirmLabel = stringResource(R.string.task_stop),
+            danger = DangerLevel.CONFIRM,
+            onConfirm = viewModel::stopTask,
+            onDismiss = viewModel::dismissStop,
+        )
     }
 }

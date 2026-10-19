@@ -45,6 +45,13 @@ data class GuestState(
     val result: TaskResult? = null,
     /** Pinned to the dashboard. */
     val favourite: Boolean = false,
+    /** The delete dialog is open. */
+    val showDestroy: Boolean = false,
+    val destroying: Boolean = false,
+    /** Why the last delete failed, shown in the dialog. */
+    val destroyError: UiText? = null,
+    /** The guest is gone: the screen closes. */
+    val destroyed: Boolean = false,
 ) {
     val title: String get() = status?.name?.takeIf { it.isNotBlank() } ?: ref.vmid.toString()
 
@@ -102,6 +109,31 @@ class GuestViewModel(
     fun dismissConfirm() = ui.update { it.copy(confirm = null) }
 
     fun consumeResult() = ui.update { it.copy(result = null) }
+
+    fun requestDestroy() = ui.update { it.copy(showDestroy = true, destroyError = null) }
+
+    fun dismissDestroy() = ui.update { if (it.destroying) it else it.copy(showDestroy = false, destroyError = null) }
+
+    /** Deletes the stopped guest (questionnaire Q12: the user typed its ID). */
+    fun destroy(purge: Boolean, destroyUnreferencedDisks: Boolean) {
+        if (ui.value.destroying) return
+        ui.update { it.copy(destroying = true, destroyError = null) }
+        viewModelScope.launch {
+            val error = try {
+                val upid = guests.destroy(ref, purge, destroyUnreferencedDisks)
+                val task = guests.awaitTask(ref.serverId, ref.node, upid)
+                if (task.succeeded) null else UiText.res(R.string.guest_task_failed, TaskTypes.label(Upid.parse(upid)?.type.orEmpty()), task.exitstatus.orEmpty())
+            } catch (e: ApiException) {
+                e.toUiText()
+            }
+            if (error == null) {
+                settings.setFavourite(favouriteKey, false)
+                ui.update { it.copy(destroying = false, showDestroy = false, destroyed = true) }
+            } else {
+                ui.update { it.copy(destroying = false, destroyError = error) }
+            }
+        }
+    }
 
     private fun run(action: PowerAction) {
         if (ui.value.running != null) return

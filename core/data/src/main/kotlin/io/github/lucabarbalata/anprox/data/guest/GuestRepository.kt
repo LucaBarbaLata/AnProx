@@ -260,6 +260,20 @@ class GuestRepository(private val hub: ServerHub, private val taskObserver: Task
     suspend fun taskLog(serverId: String, node: String, upid: String, start: Int = 0, limit: Int = 500): List<TaskLogLine> =
         hub.use(serverId) { if (it.product == ProxmoxProduct.PBS) it.pbs { taskLog(upid, start, limit) } else it.pve { taskLog(node, upid, start, limit) } }
 
+    /** Asks the server to stop a running task. Stopping one that already ended does nothing. */
+    suspend fun stopTask(serverId: String, node: String, upid: String) {
+        hub.use(serverId) { if (it.product == ProxmoxProduct.PBS) it.pbsNoData { stopTask(upid) } else it.pveNoData { stopTask(node, upid) } }
+    }
+
+    /**
+     * Destroys a stopped guest and returns the task UPID. [purge] also removes it from backup
+     * jobs, replication and high availability (Proxmox refuses an HA-managed guest without it).
+     */
+    suspend fun destroy(ref: GuestRef, purge: Boolean, destroyUnreferencedDisks: Boolean): String =
+        hub.use(ref.serverId) {
+            it.pve { destroyGuest(ref.node, ref.type.apiName, ref.vmid, if (purge) 1 else 0, if (destroyUnreferencedDisks) 1 else 0) }
+        }
+
     private fun <T> poll(intervalMillis: Long, fetch: suspend () -> T): Flow<Polled<T>> = flow {
         var last: T? = null
         while (true) {

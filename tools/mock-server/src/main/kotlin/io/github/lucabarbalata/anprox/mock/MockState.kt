@@ -449,8 +449,8 @@ class MockState(
         val id: String,
         val user: String,
         val startMillis: Long,
-        val endMillis: Long,
-        val exitStatus: String,
+        var endMillis: Long,
+        var exitStatus: String,
         val effect: (() -> Unit)?,
         var applied: Boolean = false,
         /** Extra lines for the task log, between "starting" and "TASK OK". */
@@ -528,6 +528,21 @@ class MockState(
         }
     }
 
+    /**
+     * `DELETE …/tasks/{upid}`: a running task ends at once as "interrupted by signal", without its
+     * effect. Null on success, or an error message.
+     */
+    fun stopTask(upid: String): String? = synchronized(lock) {
+        settleTasks()
+        val t = tasks.firstOrNull { it.upid == upid } ?: return "no such task"
+        if (!t.applied) {
+            t.endMillis = clockMillis()
+            t.exitStatus = "interrupted by signal"
+            t.applied = true
+        }
+        null
+    }
+
     fun recentTasks(limit: Int = 50): List<TaskSummary> = synchronized(lock) {
         settleTasks()
         tasks.sortedByDescending { it.startMillis }.take(limit).map { it.summary() }
@@ -563,6 +578,36 @@ class MockState(
         endtime = if (applied) endMillis / 1000 else null,
         status = if (applied) exitStatus else null,
     )
+
+    // ------------------------------------------------------------------ destroy
+
+    /**
+     * `DELETE …/{qemu|lxc}/{vmid}`: refused while running, protected, or HA-managed without
+     * [purge] (Proxmox's messages). The task removes the guest, its snapshots and pool
+     * membership, and with [purge] its HA resource.
+     */
+    fun destroyGuest(g: Guest, purge: Boolean, user: String): Result<String> = synchronized(lock) {
+        settleTasks()
+        val label = if (g.type == "qemu") "VM" else "CT"
+        fun fail(msg: String) = Result.failure<String>(IllegalStateException(msg))
+        when {
+            g.status == "running" -> return fail("$label ${g.vmid} is running - destroy failed")
+            g.protection -> return fail("can't remove $label ${g.vmid} - protection mode enabled")
+            haManager.state(g) != null && !purge ->
+                return fail("unable to remove $label ${g.vmid} - used in HA resources and purge parameter not set.")
+            node(g.node)?.online != true -> return fail("node '${g.node}' seems to be offline")
+        }
+        val type = if (g.type == "qemu") "qmdestroy" else "vzdestroy"
+        Result.success(
+            startTask(g.node, type, g.vmid.toString(), user, log = listOf("Removing image: 100% complete...done.", "purging $label ${g.vmid} from related configurations..").take(if (purge) 2 else 1)) {
+                guests.remove(g)
+                snaps.remove(g.vmid)
+                snapHead.remove(g.vmid)
+                poolsManager.removeGuest(g.vmid)
+                if (purge) haManager.remove(haManager.sid(g))
+            },
+        )
+    }
 
     // ------------------------------------------------------------------ power actions
 

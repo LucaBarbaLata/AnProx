@@ -40,6 +40,9 @@ interface PbsApi {
     @GET("nodes/localhost/tasks/{upid}/status")
     suspend fun taskStatus(@Path("upid") upid: String): ApiEnvelope<TaskStatus>
 
+    @DELETE("nodes/localhost/tasks/{upid}")
+    suspend fun stopTask(@Path("upid") upid: String): ApiEnvelope<JsonElement>
+
     @GET("nodes/localhost/tasks/{upid}/log")
     suspend fun taskLog(@Path("upid") upid: String, @Query("start") start: Int, @Query("limit") limit: Int): ApiEnvelope<List<TaskLogLine>>
 

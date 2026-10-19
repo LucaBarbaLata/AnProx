@@ -127,8 +127,8 @@ so no test code is compiled into the app. `scripts/e2e/run.sh` starts the mock s
 13. **Console** of `k8s-master` → noVNC (bundled) finishes the VNC handshake with the generated password → "Connected · k8s-master". (An emulator with an Android System WebView older than 80 shows the update message instead, in both console steps.)
 14. **Cloud-init** of `k8s-master` → the user `ubuntu` and net0's static address from the VM's config.
 15. Long-press `backup-client`, tap `nginx-proxy` → "2 selected" → **Start** → the confirmation lists only the stopped one → the selection clears when the tasks end → `backup-client` shows **Running**.
-16. **Clone** the Ubuntu template (linked by default) → **Open it** → **Migrate** the clone to `pve2` → the guest screen now says `pve2`.
-17. Tasks tab shows the newest task ("VM migrate").
+16. **Clone** the Ubuntu template (linked by default) → **Open it** → **Migrate** the clone to `pve2` → the guest screen now says `pve2` → **Delete VM** → type its ID → the guest screen closes.
+17. Tasks tab shows the newest tasks ("VM destroy", "VM migrate").
 18. Node `pve1` → **Create VM** with the suggested settings (next free ID, first storage, 32 GiB) → "Open it" → the new, stopped VM.
 19. `anprox://alerts` (the link notifications and shortcuts use) opens **Alerts** → switch on **Background alerts** → **Check now** → "Servers checked: 2" → a notification "Node pve3 is offline" is posted (read with `dumpsys notification`; on Android 13+ the tour grants the notification permission first).
 20. Dashboard → **Datacenter** → **Backup jobs** → the mock's nightly job ("Every day at 21:00") → **Add backup job** → Proxmox's preview of the next runs → **Weekdays at 21:00** → **Create job** → it is listed → **Run now** on the nightly job → "Backup job finished".

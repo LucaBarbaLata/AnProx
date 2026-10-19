@@ -420,6 +420,15 @@
     <!-- Migration (Q18) -->
     <string name="migrate_title">Migrate</string>
     <string name="migrate_open_body">Move to another node</string>
+    <string name="destroy_vm">Delete VM</string>
+    <string name="destroy_ct">Delete container</string>
+    <string name="destroy_open_body">Remove it with its disks and snapshots</string>
+    <string name="destroy_vm_title">Delete VM %1$d (%2$s)?</string>
+    <string name="destroy_ct_title">Delete container %1$d (%2$s)?</string>
+    <string name="destroy_message">Its disks and snapshots are deleted for good. Backups are kept.</string>
+    <string name="destroy_running">It is running. Shut it down first: Proxmox only deletes stopped guests.</string>
+    <string name="destroy_purge">Also remove it from backup jobs, replication and high availability</string>
+    <string name="destroy_unreferenced">Also delete disks with its ID that aren\'t in its configuration</string>
     <string name="migrate_no_nodes_title">No other node</string>
     <string name="migrate_no_nodes_body">This server isn\'t part of a cluster, so there is nowhere to move the guest.</string>
     <string name="migrate_target">Target node</string>
@@ -606,6 +615,9 @@
     <string name="task_user">Started by</string>
     <string name="task_exit">Result</string>
     <string name="task_log_empty">No output yet.</string>
+    <string name="task_stop">Stop task</string>
+    <string name="task_stop_title">Stop %1$s?</string>
+    <string name="task_stop_message">Proxmox interrupts the task where it is. Whatever it already did stays done: a half-finished backup is removed, a half-copied disk may be left behind.</string>
 
     <!-- More / settings / about -->
     <string name="more_title">More</string>
@@ -645,6 +657,7 @@
     <string name="lock_prompt_disable">Turn off app lock</string>
     <string name="lock_prompt_checks_off">Stop checking before dangerous actions</string>
     <string name="lock_reason_rollback">Roll back to %1$s</string>
+    <string name="lock_reason_destroy">Delete %1$s</string>
     <string name="lock_no_screen_lock">Set up a screen lock (PIN, pattern or password) in Android’s settings first.</string>
     <string name="lock_unavailable">This phone can’t verify your identity, so the app lock isn’t available.</string>
     <string name="about_title">About</string>

@@ -766,7 +766,7 @@ def bulk():
     wait_until(lambda: row_shows("backup-client", "Running"), "backup-client to show as running", timeout=30)
 
 
-@step("Clone the template, then migrate the clone to another node")
+@step("Clone the template, migrate the clone to another node, then delete it")
 def clone_migrate():
     tap_node(scroll_to("ubuntu-2404-template"))
     tap_node(scroll_to("Clone"))
@@ -783,7 +783,14 @@ def clone_migrate():
     tap("Start migration", pick="lowest")  # the confirmation dialog's button
     find("· pve2 ·", timeout=60)           # the guest screen again, now on pve2
     screenshot("11i-migrated")
-    back()                                 # to the clone screen
+    # Delete the clone again: type its ID, then the guest screen closes by itself.
+    tap_node(scroll_to("Delete VM"))
+    title = find("Delete VM ", timeout=10)  # "Delete VM 106 (ubuntu-2404-template-clone)?"
+    vmid = re.search(r"Delete VM (\d+)", " ".join(labels(title))).group(1)
+    fill(f"Type “{vmid}” to confirm", vmid, fallback_index=0)
+    tap("Delete", pick="lowest")           # the dialog's button
+    find("Open it", timeout=60)            # back on the clone screen
+    screenshot("11j-clone-deleted")
     back()                                 # to the template
     scroll_to("Create new guests from this template")
     back()
@@ -792,7 +799,8 @@ def clone_migrate():
 @step("Tasks tab")
 def tasks():
     tap("Tasks")
-    find("VM migrate", timeout=30)         # the newest task, from the previous step
+    find("VM destroy", timeout=30)         # the newest task, from the previous step
+    find("VM migrate", timeout=10)
     screenshot("12-tasks")
 
 

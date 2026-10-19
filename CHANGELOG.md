@@ -198,6 +198,13 @@ All notable changes to AnProx are documented here. The format follows
   **trim** them so thin storage gets the space back (with what each filesystem freed), and **set
   the password** of a user inside the VM.
 
+- **Delete a VM or container** (Guest → Tools → Delete VM / Delete container): type its ID to
+  confirm; optionally also remove it from backup jobs, replication and high availability (needed
+  for HA-managed guests) and delete disks with its ID that aren't in its configuration. Running
+  guests have to be shut down first. The app lock asks again when that option is on.
+
+- **Stop a running task** from its log (the ⏹ button), on Proxmox VE and the Backup Server.
+
 - **Snapshot descriptions** can be edited or removed (a snapshot's ⋮ menu → Edit description).
 
 - **Storage usage history**: a storage's screen ends with a chart of its used space over the

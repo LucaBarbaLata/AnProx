@@ -73,7 +73,7 @@ Code: `core/network/src/main/kotlin/.../network/api/` (`AccessApi`, `PveApi`, `P
 | `POST /nodes/{node}/status` | Reboot / shut down node | ✅ |
 | `GET /nodes/{node}/tasks/{upid}/status` | Task status | ✅ |
 | `GET /nodes/{node}/tasks/{upid}/log` | Task log | ✅ |
-| `DELETE /nodes/{node}/tasks/{upid}` | Stop a running task | 🗓 M1 |
+| `DELETE /nodes/{node}/tasks/{upid}` | Stop a running task (the task log's ⏹ button; Backup Server too) | ✅ |
 | `GET /nodes/{node}/tasks` | Node task history with filters | 🗓 M1 |
 | `GET /nodes/{node}/rrddata` | Performance history (charts) | ✅ |
 | `POST /nodes/{node}/vzdump` | Backup now | ✅ (one guest; storage, mode, notes) |
@@ -128,7 +128,7 @@ Code: `core/network/src/main/kotlin/.../network/api/` (`AccessApi`, `PveApi`, `P
 | `/qemu/{vmid}/cloudinit` (+ `/dump`) | Cloud-init | ✅ settings through `config` (`ciuser`, `cipassword`, `sshkeys` URL-encoded as Proxmox expects, `ipconfigN` per network device, `nameserver`, `searchdomain`, `ciupgrade`), add a cloud-init drive (`storage:cloudinit`), `PUT …/cloudinit` to regenerate; `/dump` not used |
 | `POST …/migrate` (+ `GET` precondition check) | Migration: live for VMs (with local disks), restart mode for containers, offline when stopped | ✅ |
 | `POST /nodes/{node}/{qemu,lxc}` | Create guest (wizard) | ✅ VM (OS type, ISO, disk, CPU, memory, bridge; Advanced: sockets, CPU type, bus, discard, ballooning, NIC model, VLAN, firewall, UEFI, agent, start at boot) and container (template, root password and/or SSH keys, disk, cores, memory, network with DHCP/static; Advanced: swap, IPv6, VLAN, firewall, unprivileged, nesting, start at boot) |
-| `DELETE …/{vmid}` | Destroy guest (type-to-confirm) | 🗓 M2 |
+| `DELETE …/{vmid}` | Delete a stopped guest (type its ID), optionally purging it from jobs, replication and HA and deleting unreferenced disks | ✅ |
 | `…/vncproxy`, `…/vncwebsocket`, `…/termproxy` | noVNC / terminal console | ✅ through the app's connection (`generate-password=1` for VMs), bundled noVNC and xterm.js ([ADR 0014](adr/0014-consoles-through-the-app.md)) |
 | `POST /qemu/{vmid}/spiceproxy` | SPICE `.vv` handoff | ✅ `proxy` = the address the app uses; the `.vv` file goes to a viewer app (aSPICE…) through a FileProvider |
 | `…/firewall/{rules,options}` | Guest firewall rules, policies, DHCP/NDP/RA and MAC/IP filters | ✅ |

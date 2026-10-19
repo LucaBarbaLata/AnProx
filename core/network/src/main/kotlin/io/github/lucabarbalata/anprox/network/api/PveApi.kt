@@ -833,6 +833,20 @@ interface PveApi {
     ): ApiEnvelope<JsonElement>
 
     /** Returns a UPID. */
+    /**
+     * Destroys a stopped guest and returns the task UPID. [purge] also removes it from backup
+     * jobs, replication and high availability; [destroyUnreferencedDisks] deletes disks on
+     * storages that carry its ID but aren't in its config.
+     */
+    @DELETE("nodes/{node}/{type}/{vmid}")
+    suspend fun destroyGuest(
+        @Path("node") node: String,
+        @Path("type") type: String,
+        @Path("vmid") vmid: Int,
+        @Query("purge") purge: Int,
+        @Query("destroy-unreferenced-disks") destroyUnreferencedDisks: Int,
+    ): ApiEnvelope<String>
+
     @DELETE("nodes/{node}/{type}/{vmid}/snapshot/{snapname}")
     suspend fun deleteSnapshot(
         @Path("node") node: String,
@@ -843,6 +857,10 @@ interface PveApi {
 
     @GET("nodes/{node}/tasks/{upid}/status")
     suspend fun taskStatus(@Path("node") node: String, @Path("upid") upid: String): ApiEnvelope<TaskStatus>
+
+    /** Stops a running task; its log then ends with "interrupted by signal". */
+    @DELETE("nodes/{node}/tasks/{upid}")
+    suspend fun stopTask(@Path("node") node: String, @Path("upid") upid: String): ApiEnvelope<JsonElement>
 
     @GET("nodes/{node}/tasks/{upid}/log")
     suspend fun taskLog(

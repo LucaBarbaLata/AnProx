@@ -115,8 +115,12 @@ and friends):
 - Start order: `startup` is a property string whose first part may be a bare number
   (`3,up=10` means order 3). An empty form deletes the key.
 - The guest screen's "Coming later: built-in SSH client (M2)" card was out of date and is gone.
-- 3 model tests and 5 integration tests; tour step 6 (agent) and additions to the snapshot and
-  storage steps.
+- Deleting guests (`DELETE …/{qemu|lxc}/{vmid}` with `purge` and `destroy-unreferenced-disks`)
+  was still missing. Proxmox refuses a running or protected guest, and an HA-managed one unless
+  `purge` is set; the mock does the same and drops the guest from its pool. Stopping a task is
+  `DELETE …/tasks/{upid}`; the task then ends as "interrupted by signal".
+- 3 model tests and 8 integration tests; tour step 6 (agent) and additions to the snapshot,
+  clone (delete the clone again), tasks and storage steps.
 
 ---
 

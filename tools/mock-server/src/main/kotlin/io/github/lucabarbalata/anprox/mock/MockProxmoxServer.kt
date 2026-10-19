@@ -1366,6 +1366,22 @@ class MockProxmoxServer(
             val log = state.taskLog(call.parameters["upid"]!!) ?: return@get call.fail(404, "no such task")
             call.ok(log)
         }
+        delete("nodes/{node}/tasks/{upid}") {
+            val s = call.authed() ?: return@delete
+            if (state.isReadOnly(s.user)) return@delete call.fail(403, "Permission check failed (/nodes/${call.parameters["node"]}, Sys.Modify)")
+            state.stopTask(call.parameters["upid"]!!)?.let { return@delete call.fail(500, it) }
+            call.ok(JsonNull)
+        }
+        delete("nodes/{node}/{type}/{vmid}") {
+            val s = call.authed() ?: return@delete
+            val g = call.guest() ?: return@delete
+            if (state.isReadOnly(s.user)) return@delete call.fail(403, "Permission check failed (/vms/${g.vmid}, VM.Allocate)")
+            val q = call.request.queryParameters
+            state.destroyGuest(g, purge = q["purge"] == "1", user = s.user).fold(
+                onSuccess = { call.ok(it) },
+                onFailure = { call.fail(500, it.message ?: "error") },
+            )
+        }
     }
 
     private fun Route.pbs() {
@@ -1388,6 +1404,11 @@ class MockProxmoxServer(
         get("nodes/localhost/tasks/{upid}/log") {
             call.authed() ?: return@get
             call.ok(state.taskLog(call.parameters["upid"]!!) ?: return@get call.fail(404, "no such task"))
+        }
+        delete("nodes/localhost/tasks/{upid}") {
+            call.authed() ?: return@delete
+            state.stopTask(call.parameters["upid"]!!)?.let { return@delete call.fail(500, it) }
+            call.ok(JsonNull)
         }
         pbsAdmin()
     }
