@@ -621,10 +621,12 @@ def options():
     tap_node(scroll_to("nginx-proxy"))
     tap_node(scroll_to("Options"))
     find("Hostname", timeout=30)           # containers call their name a hostname
-    find("No unsaved changes.", timeout=15)
+    # The hint sits under the Save button, below the start order fields: scroll to it.
+    scroll_to("No unsaved changes.")
     tap_node(scroll_to("Start at boot"))
+    save = scroll_to("Save", exact=True)   # brings the hint just below it into view
     wait_until(lambda: not visible("No unsaved changes."), "the switch to make the form dirty", timeout=15)
-    tap_node(scroll_to("Save"))
+    tap_node(save)
     # Saved and reloaded: the form is clean again (the "Options saved" snackbar is short).
     wait_until(lambda: visible("No unsaved changes."), "the options to be saved", timeout=30)
     screenshot("11e-options")
