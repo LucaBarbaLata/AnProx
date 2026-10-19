@@ -44,7 +44,8 @@ If the container can't reach `dl.google.com`, Android code is verified only by G
 - Version pins in `docs/adr/0002-toolchain-baseline.md` also decide Dependabot PRs (ignored ones
   are listed in `.github/dependabot.yml`).
 - e2e: check things near the top of a long screen before scrolling down to the charts, and keep
-  tour texts unique (two guests named `pihole` exist after the restore step).
+  tour texts unique (two guests named `pihole` exist after the restore step; "Guest agent" is
+  both a Tools entry and a Details row). Section headers render in upper case.
 - In `*.gradle.kts`, `java.util.X` fails ("Unresolved reference: util") because `java` is the Java
   extension there. Import the class instead.
 - Update docs (api-coverage, roadmap, CHANGELOG, devlog) in the same change as the code.

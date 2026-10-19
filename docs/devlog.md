@@ -106,6 +106,9 @@ and friends):
   connection's product check threw an `IllegalStateException` that nothing caught on the app's
   scope. The tracker now asks the right product, and a call for the wrong product is an
   `ApiException.Protocol` like any other API failure (+1 test).
+- CI, next run: the tour's new agent step tapped "Guest agent: Yes" in the guest's Details card
+  instead of the Tools entry, so it now looks for the entry's description. The storage step
+  looked for "Usage history", but section headers are drawn in upper case.
 
 **Leftovers from M1 and M2.**
 - Snapshot descriptions: `PUT …/snapshot/{name}/config` with `description` (empty removes it).

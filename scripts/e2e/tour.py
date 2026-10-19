@@ -531,7 +531,8 @@ def performance():
 @step("Guest agent: freeze and thaw the filesystems, then trim them")
 def agent():
     tap_node(scroll_to("k8s-master"))      # running, with the agent enabled
-    tap_node(scroll_to("Guest agent"))
+    # The Tools entry; "Guest agent" alone also matches the Details card's "Guest agent: Yes" row.
+    tap_node(scroll_to("Freeze or trim filesystems"))
     find("Writable", timeout=30)
     tap("Freeze filesystems")
     find("Every write inside the VM waits", timeout=10)
@@ -893,7 +894,7 @@ def storage():
                 raise
     find("tiny-test.iso", timeout=60)           # listed once the node's download task has finished
     screenshot("13d-storage")
-    scroll_to("Usage history")
+    scroll_to("USAGE HISTORY")                  # section headers are upper case
     scroll_to("Year")                           # the timeframe picker under the header
     wait_until(lambda: any(v.startswith("Used ") and not v.endswith("—")
                            for n in dump().iter("node") for v in labels(n)),
