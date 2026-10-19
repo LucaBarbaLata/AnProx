@@ -203,6 +203,14 @@ All notable changes to AnProx are documented here. The format follows
   for HA-managed guests) and delete disks with its ID that aren't in its configuration. Running
   guests have to be shut down first. The app lock asks again when that option is on.
 
+- **Start all, Shut down all, Migrate all** on a node (Node → Guests on this node): each runs as
+  one Proxmox task in the guests' start order. Start all can leave out guests that aren't set to
+  start at boot; Shut down all asks you to type the node's name; Migrate all picks the target
+  node and whether to include guests on local disks.
+
+- **Cluster log** (Datacenter → Cluster log): what every node logged, with errors and warnings
+  coloured and a filter.
+
 - **Stop a running task** from its log (the ⏹ button), on Proxmox VE and the Backup Server.
 
 - **Snapshot descriptions** can be edited or removed (a snapshot's ⋮ menu → Edit description).

@@ -9,6 +9,7 @@ import io.github.lucabarbalata.anprox.model.pve.AptRepositories
 import io.github.lucabarbalata.anprox.model.pve.AptUpdate
 import io.github.lucabarbalata.anprox.model.pve.CephStatus
 import io.github.lucabarbalata.anprox.model.pve.CifsShare
+import io.github.lucabarbalata.anprox.model.pve.ClusterLogEntry
 import io.github.lucabarbalata.anprox.model.pve.ClusterResource
 import io.github.lucabarbalata.anprox.model.pve.ClusterStatusEntry
 import io.github.lucabarbalata.anprox.model.pve.ConsoleProxy
@@ -424,10 +425,22 @@ interface PveApi {
     @GET("nodes/{node}/status")
     suspend fun nodeStatus(@Path("node") node: String): ApiEnvelope<NodeStatus>
 
+    /** The newest [max] entries of the cluster log, newest first. */
+    @GET("cluster/log")
+    suspend fun clusterLog(@Query("max") max: Int): ApiEnvelope<List<ClusterLogEntry>>
+
     /** Reboots or shuts down a node ([command]: `reboot`, `shutdown`). Answers `null`; use with `pveNoData`. */
     @FormUrlEncoded
     @POST("nodes/{node}/status")
     suspend fun nodePower(@Path("node") node: String, @Field("command") command: String): ApiEnvelope<JsonElement>
+
+    /**
+     * Node-wide guest actions, each one task: [action] `startall` (`force=1` also starts guests
+     * without start at boot), `stopall`, or `migrateall` (`target`, `with-local-disks`).
+     */
+    @FormUrlEncoded
+    @POST("nodes/{node}/{action}")
+    suspend fun nodeBulk(@Path("node") node: String, @Path("action") action: String, @FieldMap params: Map<String, String>): ApiEnvelope<String>
 
     /** [type] is `qemu` or `lxc`. */
     @GET("nodes/{node}/{type}/{vmid}/status/current")

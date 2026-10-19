@@ -35,7 +35,7 @@ Code: `core/network/src/main/kotlin/.../network/api/` (`AccessApi`, `PveApi`, `P
 | `GET /cluster/resources` | Every node, guest, storage, pool, SDN zone | ✅ |
 | `GET /cluster/status` | Quorum, nodes online | ✅ |
 | `GET /cluster/tasks` | Recent tasks of all nodes | ✅ |
-| `GET /cluster/log` | Cluster log | 🗓 M4 |
+| `GET /cluster/log` | Cluster log (Datacenter → Cluster log, with a filter) | ✅ |
 | `GET /cluster/nextid` | Free VMID for create/clone/restore | ✅ (create, restore, clone) |
 | `/cluster/options` | Datacenter options | 🗓 M4 |
 | `/cluster/backup` (list, create, edit, delete) | Backup jobs | ✅ (run now uses `POST /nodes/{node}/vzdump` per node, like the web UI) |
@@ -77,7 +77,7 @@ Code: `core/network/src/main/kotlin/.../network/api/` (`AccessApi`, `PveApi`, `P
 | `GET /nodes/{node}/tasks` | Node task history with filters | 🗓 M1 |
 | `GET /nodes/{node}/rrddata` | Performance history (charts) | ✅ |
 | `POST /nodes/{node}/vzdump` | Backup now | ✅ (one guest; storage, mode, notes) |
-| `/nodes/{node}/{startall,stopall,migrateall}` | Bulk actions | 🗓 M4 |
+| `/nodes/{node}/{startall,stopall,migrateall}` | Node → Start all (optionally only start-at-boot guests), Shut down all, Migrate all (target, local disks) | ✅ |
 | `/nodes/{node}/{termproxy,vncshell,vncwebsocket}` | Node shell | ✅ `termproxy` + `vncwebsocket` through the app's connection, bundled xterm.js ([ADR 0014](adr/0014-consoles-through-the-app.md)) |
 | `GET/POST /nodes/{node}/apt/update`, `GET …/apt/changelog`, `GET …/apt/versions` | Upgradable packages, refreshing the index (a task), changelogs, installed versions | ✅ |
 | `GET/POST/PUT /nodes/{node}/apt/repositories` | Repositories with Proxmox's warnings; switch on/off; add a standard repository | ✅ |
@@ -99,13 +99,12 @@ Code: `core/network/src/main/kotlin/.../network/api/` (`AccessApi`, `PveApi`, `P
 | `/nodes/{node}/firewall/log` | Node firewall log | 🗓 M4 |
 | `/nodes/{node}/ceph/*` | Status; OSDs (create on an unused disk, in/out, scrub, start/stop/restart, destroy); pools (create, edit, delete); monitors, managers and metadata servers (add, start/stop/restart, remove); CephFS (list, create); `cfg/raw`, `cfg/db`, `crush`, `log`, `rules` | ✅ M6 (`init`, installing Ceph and removing a CephFS stay in the web UI) |
 | `/nodes/{node}/sdn/*` | Per-node SDN status (zone and VNet health on each node) | 🗓 M9 |
-| `/nodes/{node}/replication/*` | Replication status / run now | 🗓 M4 |
+| `/nodes/{node}/replication/*` | Replication status, run now, log | ✅ M4 |
 | `/nodes/{node}/aplinfo` | Container template catalogue | 🗓 M4 |
 | `GET /nodes/{node}/scan/{nfs,cifs,pbs,lvm,lvmthin,zfs}` | Storage discovery for the storage editor | ✅ |
 | `GET /nodes/{node}/scan/iscsi` | iSCSI discovery | 🗓 (with iSCSI storages) |
 | `/nodes/{node}/hardware/{pci,usb}` | Passthrough device lists | 🗓 M9 |
 | `/nodes/{node}/capabilities/*` | CPU models, machine types | 🗓 M2 |
-| `/nodes/{node}/query-url-metadata` | Download-from-URL helper | 🗓 M4 |
 
 ### `/nodes/{node}/qemu/{vmid}` (VMs) and `/nodes/{node}/lxc/{vmid}` (containers)
 

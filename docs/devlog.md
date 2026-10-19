@@ -119,8 +119,12 @@ and friends):
   was still missing. Proxmox refuses a running or protected guest, and an HA-managed one unless
   `purge` is set; the mock does the same and drops the guest from its pool. Stopping a task is
   `DELETE …/tasks/{upid}`; the task then ends as "interrupted by signal".
-- 3 model tests and 8 integration tests; tour step 6 (agent) and additions to the snapshot,
-  clone (delete the clone again), tasks and storage steps.
+- Node-wide `startall`, `stopall` and `migrateall` are one task each. `startall` only starts
+  guests with start at boot unless `force=1`, which surprised me; the dialog offers both.
+- `GET /cluster/log` comes from pmxcfs with numeric `uid` and `pid`; newest first, so the
+  repository sorts it oldest first for a log-style screen.
+- 3 model tests and 11 integration tests; tour step 6 (agent) and additions to the snapshot,
+  clone (delete the clone again), tasks, storage, SDN (cluster log) and node (Start all) steps.
 
 ---
 

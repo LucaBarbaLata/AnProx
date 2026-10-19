@@ -68,6 +68,20 @@ class GuestRepository(private val hub: ServerHub, private val taskObserver: Task
         hub.use(serverId) { it.pveNoData { nodePower(node, action.apiName) } }
     }
 
+    /** Starts the node's stopped guests in their start order; without [force] only those set to start at boot. */
+    suspend fun startAll(serverId: String, node: String, force: Boolean): String =
+        hub.use(serverId) { it.pve { nodeBulk(node, "startall", if (force) mapOf("force" to "1") else emptyMap()) } }
+
+    /** Shuts down the node's running guests, in reverse start order. */
+    suspend fun stopAll(serverId: String, node: String): String =
+        hub.use(serverId) { it.pve { nodeBulk(node, "stopall", emptyMap()) } }
+
+    /** Migrates every guest on [node] to [target]; running ones live. */
+    suspend fun migrateAll(serverId: String, node: String, target: String, withLocalDisks: Boolean): String =
+        hub.use(serverId) {
+            it.pve { nodeBulk(node, "migrateall", buildMap { put("target", target); if (withLocalDisks) put("with-local-disks", "1") }) }
+        }
+
     fun observeNode(serverId: String, node: String, intervalMillis: Long = 3_000): Flow<Polled<NodeStatus>> =
         poll(intervalMillis) { hub.use(serverId) { it.pve { nodeStatus(node) } } }
 

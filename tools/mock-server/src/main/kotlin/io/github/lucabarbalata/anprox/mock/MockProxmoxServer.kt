@@ -571,6 +571,10 @@ class MockProxmoxServer(
             if (health == null) return@get call.fail(500, MockCeph.NOT_INSTALLED)
             call.ok(CephStatus(CephHealth(health)))
         }
+        get("cluster/log") {
+            call.authed() ?: return@get
+            call.ok(state.clusterLog(call.request.queryParameters["max"]?.toIntOrNull() ?: 50))
+        }
         get("nodes/{node}/status") {
             call.authed() ?: return@get
             val node = state.node(call.parameters["node"]!!) ?: return@get call.fail(404, "no such node")
@@ -588,6 +592,23 @@ class MockProxmoxServer(
             if (state.isReadOnly(s.user)) return@post call.fail(403, "Permission check failed (/nodes/${node.name}, Sys.PowerMgmt)")
             state.nodePowerRequests += node.name to command!!
             call.ok(JsonNull)
+        }
+        post("nodes/{node}/{bulk}") {
+            val s = call.authed() ?: return@post
+            val node = call.parameters["node"]!!
+            val bulk = call.parameters["bulk"]!!
+            if (bulk !in listOf("startall", "stopall", "migrateall")) return@post call.fail(501, "Method 'POST /nodes/$node/$bulk' not implemented")
+            val p = call.receiveParameters()
+            if (state.isReadOnly(s.user)) return@post call.fail(403, "Permission check failed (/, VM.PowerMgmt)")
+            val result = when (bulk) {
+                "startall" -> state.startAll(node, force = p["force"] == "1", user = s.user)
+                "stopall" -> state.stopAll(node, s.user)
+                else -> {
+                    val target = p["target"] ?: return@post call.fail(400, "Parameter verification failed.", mapOf("target" to "property is missing and it is not optional"))
+                    state.migrateAll(node, target, s.user)
+                }
+            }
+            result.fold(onSuccess = { call.ok(it) }, onFailure = { call.fail(500, it.message ?: "error") })
         }
         get("nodes/{node}/{type}/{vmid}/config") {
             call.authed() ?: return@get

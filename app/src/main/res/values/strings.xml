@@ -588,6 +588,22 @@
     <string name="node_offline">This node is offline. Showing what the cluster last knew.</string>
     <string name="node_system">System</string>
     <string name="node_guests">Guests on this node (%1$d)</string>
+    <string name="node_start_all">Start all</string>
+    <string name="node_start_all_body">Start the stopped guests in their start order</string>
+    <string name="node_start_all_title">Start the guests on %1$s?</string>
+    <string name="node_start_all_message">Stopped guests start one after another, in their start order. Templates are skipped.</string>
+    <string name="node_start_all_force">Also guests that aren\'t set to start at boot</string>
+    <string name="node_stop_all">Shut down all</string>
+    <string name="node_stop_all_body">Shut down every running guest, in reverse start order</string>
+    <string name="node_stop_all_title">Shut down every guest on %1$s?</string>
+    <string name="node_stop_all_message">Each guest is asked to shut down; those that don\'t within their timeout are stopped hard. Services on them are unavailable until you start them again.</string>
+    <string name="node_migrate_all">Migrate all</string>
+    <string name="node_migrate_all_body">Move every guest to another node, for example before maintenance</string>
+    <string name="node_migrate_all_title">Migrate every guest from %1$s?</string>
+    <string name="node_migrate_all_message">Running guests move live, stopped ones offline.</string>
+    <string name="node_migrate_all_target">To node</string>
+    <string name="node_migrate_all_local">Include guests with disks on local storage (copies the disks, which takes longer)</string>
+    <string name="node_migrate_all_no_target">There is no other online node to move the guests to.</string>
     <string name="node_cpu_model">CPU</string>
     <string name="node_cpu_topology">Topology</string>
     <string name="node_cpu_topology_value">%1$d socket(s) · %2$d cores · %3$d threads</string>
@@ -2016,6 +2032,10 @@
     <!-- Datacenter → SDN (M6) -->
     <string name="sdn_title">SDN</string>
     <string name="sdn_open_body">Software-defined networks: zones, VNets, subnets, IPAM</string>
+    <string name="clusterlog_title">Cluster log</string>
+    <string name="clusterlog_open_body">What the nodes logged: tasks, logins, cluster events</string>
+    <string name="clusterlog_empty">Nothing logged</string>
+    <string name="clusterlog_empty_body">No entries match. Clear the filter to see everything.</string>
     <string name="sdn_empty">No SDN yet</string>
     <string name="sdn_empty_body">Add a zone, then VNets in it: guests attach to a VNet like to a bridge.</string>
     <string name="sdn_none">None</string>

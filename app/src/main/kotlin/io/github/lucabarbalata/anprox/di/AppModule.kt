@@ -11,6 +11,7 @@ import io.github.lucabarbalata.anprox.data.console.ConsoleRepository
 import io.github.lucabarbalata.anprox.data.datacenter.AccessRepository
 import io.github.lucabarbalata.anprox.data.datacenter.BackupJobRepository
 import io.github.lucabarbalata.anprox.data.datacenter.CephRepository
+import io.github.lucabarbalata.anprox.data.datacenter.ClusterLogRepository
 import io.github.lucabarbalata.anprox.data.datacenter.FirewallRepository
 import io.github.lucabarbalata.anprox.data.datacenter.HaRepository
 import io.github.lucabarbalata.anprox.data.datacenter.PoolRepository
@@ -78,6 +79,7 @@ import io.github.lucabarbalata.anprox.ui.dashboard.DashboardViewModel
 import io.github.lucabarbalata.anprox.ui.datacenter.AliasesViewModel
 import io.github.lucabarbalata.anprox.ui.datacenter.BackupJobEditorViewModel
 import io.github.lucabarbalata.anprox.ui.datacenter.BackupJobsViewModel
+import io.github.lucabarbalata.anprox.ui.datacenter.ClusterLogViewModel
 import io.github.lucabarbalata.anprox.ui.datacenter.FirewallLogViewModel
 import io.github.lucabarbalata.anprox.ui.datacenter.FirewallViewModel
 import io.github.lucabarbalata.anprox.ui.datacenter.HaViewModel
@@ -174,6 +176,7 @@ val appModule = module {
     single { AccessRepository(get()) }
     single { CephRepository(get()) }
     single { SdnRepository(get()) }
+    single { ClusterLogRepository(get()) }
     single { PbsRepository(get()) }
     single { StorageSetupRepository(get()) }
     single { ProfileTransfer(get(), get()) }
@@ -244,6 +247,7 @@ val appModule = module {
     viewModel { (serverId: String, scope: FirewallScope) -> IpSetsViewModel(serverId, scope, get()) }
     viewModel { (serverId: String, scope: FirewallScope) -> FirewallLogViewModel(serverId, scope, get()) }
     viewModel { (serverId: String) -> HaViewModel(serverId, get()) }
+    viewModel { (serverId: String) -> ClusterLogViewModel(serverId, get()) }
     viewModel { (serverId: String) -> ReplicationViewModel(serverId, get()) }
     viewModel { (serverId: String) -> PoolsViewModel(serverId, get()) }
     viewModel { (serverId: String, poolId: String) -> PoolViewModel(serverId, poolId, get()) }

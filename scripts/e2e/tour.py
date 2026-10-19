@@ -1078,7 +1078,7 @@ def ceph():
     back()
 
 
-@step("Datacenter: SDN - a VNet waiting to be applied, a subnet for it, apply on the nodes")
+@step("Datacenter: SDN - a VNet waiting to be applied, a subnet for it, apply on the nodes; the cluster log")
 def sdn():
     tap("Overview")
     tap_node(scroll_to("Datacenter", exact=True))
@@ -1096,6 +1096,10 @@ def sdn():
     tap_node(scroll_to("Apply", exact=True))      # on the pending card
     tap("Apply", pick="lowest")                   # the confirmation
     find("SDN changes applied", timeout=60)
+    back()                                        # to Datacenter
+    tap_node(scroll_to("Cluster log", exact=True))
+    find(":reloadnetworkall:", timeout=30)        # newest at the bottom: the SDN apply task's end
+    screenshot("13l-cluster-log")
     back()                                        # to Datacenter
     back()
 
@@ -1129,7 +1133,7 @@ def backup_server():
     back()
 
 
-@step("Node administration: updates, repositories, a service, a pending network change, the system log")
+@step("Node administration: updates, repositories, a service, a pending network change, the system log, start all")
 def node_admin():
     tap("Resources")
     tap_node(scroll_to("pve1", exact=True))      # the node
@@ -1159,6 +1163,11 @@ def node_admin():
     tap_node(scroll_to("System log", exact=True))
     find("pvestatd", timeout=30)
     back()
+    tap_node(scroll_to("Start all", exact=True))  # the node's stopped guests, in start order
+    find("Start the guests on pve1?", timeout=10)
+    tap("Start all", pick="lowest")              # the dialog's button
+    find("Start all guests finished", timeout=60)
+    screenshot("15b-start-all")
     back()                                       # to Resources
 
 

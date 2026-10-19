@@ -7,6 +7,7 @@ import io.github.lucabarbalata.anprox.model.pbs.DatastoreUsage
 import io.github.lucabarbalata.anprox.model.pve.AgentInterface
 import io.github.lucabarbalata.anprox.model.pve.AgentIpAddress
 import io.github.lucabarbalata.anprox.model.pve.AgentOsInfo
+import io.github.lucabarbalata.anprox.model.pve.ClusterLogEntry
 import io.github.lucabarbalata.anprox.model.pve.BackupVerification
 import io.github.lucabarbalata.anprox.model.pve.ClusterResource
 import io.github.lucabarbalata.anprox.model.pve.ClusterStatusEntry
@@ -543,6 +544,30 @@ class MockState(
         null
     }
 
+    /**
+     * `GET /cluster/log`: task starts and ends as pvedaemon logs them, plus a few seeded events
+     * (a login, a node going offline, a failed login). Newest first, like Proxmox.
+     */
+    fun clusterLog(max: Int): List<ClusterLogEntry> = synchronized(lock) {
+        settleTasks()
+        val now = clockMillis() / 1000
+        var uid = 1L
+        val entries = buildList {
+            add(ClusterLogEntry(uid++, now - 6 * 3600, 3, "corosync", 1201, "pve1", "root@pam", "[KNET  ] link: host: 3 link: 0 is down"))
+            add(ClusterLogEntry(uid++, now - 6 * 3600 + 5, 4, "pmxcfs", 1188, "pve1", "root@pam", "[status] notice: node lost quorum member pve3"))
+            add(ClusterLogEntry(uid++, now - 3 * 3600, 3, "pvedaemon", 2290, "pve2", "root@pam", "authentication failure; rhost=::ffff:10.0.0.77 user=admin@pve msg=invalid credentials"))
+            add(ClusterLogEntry(uid++, now - 1800, 6, "pvedaemon", 2290, "pve1", "root@pam", "<root@pam> successful auth for user 'root@pam'"))
+            tasks.forEach { t ->
+                add(ClusterLogEntry(uid++, t.startMillis / 1000, 6, "pvedaemon", 2290, t.node, t.user, "<${t.user}> starting task ${t.upid}"))
+                if (t.applied) {
+                    val pri = if (t.exitStatus == "OK") 6 else 3
+                    add(ClusterLogEntry(uid++, t.endMillis / 1000, pri, "pvedaemon", 2290, t.node, t.user, "<${t.user}> end task ${t.upid} ${t.exitStatus}"))
+                }
+            }
+        }
+        entries.sortedByDescending { it.time }.take(max)
+    }
+
     fun recentTasks(limit: Int = 50): List<TaskSummary> = synchronized(lock) {
         settleTasks()
         tasks.sortedByDescending { it.startMillis }.take(limit).map { it.summary() }
@@ -605,6 +630,59 @@ class MockState(
                 snapHead.remove(g.vmid)
                 poolsManager.removeGuest(g.vmid)
                 if (purge) haManager.remove(haManager.sid(g))
+            },
+        )
+    }
+
+    // ------------------------------------------------------------------ node bulk actions
+
+    private fun startupOrder(g: Guest): Int = g.startup?.let { Regex("order=(\\d+)").find(it)?.groupValues?.get(1)?.toIntOrNull() } ?: Int.MAX_VALUE
+
+    private fun bulkLabel(g: Guest) = "${if (g.type == "qemu") "VM" else "CT"} ${g.vmid}"
+
+    /**
+     * `POST /nodes/{node}/startall`: one task that starts the node's stopped guests in their start
+     * order. Without [force] only those set to start at boot, like Proxmox.
+     */
+    fun startAll(node: String, force: Boolean, user: String): Result<String> = synchronized(lock) {
+        settleTasks()
+        if (node(node)?.online != true) return Result.failure(IllegalStateException("node '$node' seems to be offline"))
+        val chosen = guests.filter { it.node == node && it.status == "stopped" && !it.template && (force || it.onBoot) }.sortedBy(::startupOrder)
+        Result.success(
+            startTask(node, "startall", "", user, log = chosen.map { "Starting ${bulkLabel(it)}" }) {
+                chosen.forEach { g ->
+                    hardware.applyPending(g)
+                    g.status = "running"
+                    g.startedAtMillis = clockMillis()
+                }
+            },
+        )
+    }
+
+    /** `POST /nodes/{node}/stopall`: shuts the node's running guests down, in reverse start order. */
+    fun stopAll(node: String, user: String): Result<String> = synchronized(lock) {
+        settleTasks()
+        if (node(node)?.online != true) return Result.failure(IllegalStateException("node '$node' seems to be offline"))
+        val chosen = guests.filter { it.node == node && it.status == "running" }.sortedByDescending(::startupOrder)
+        Result.success(
+            startTask(node, "stopall", "", user, log = chosen.map { "Stopping ${bulkLabel(it)}" }) {
+                chosen.forEach { g -> g.status = "stopped"; g.paused = false }
+            },
+        )
+    }
+
+    /** `POST /nodes/{node}/migrateall`: moves every guest of [node] to [target]. */
+    fun migrateAll(node: String, target: String, user: String): Result<String> = synchronized(lock) {
+        settleTasks()
+        fun fail(msg: String) = Result.failure<String>(IllegalStateException(msg))
+        if (node(node)?.online != true) return fail("node '$node' seems to be offline")
+        val to = node(target) ?: return fail("no such cluster node '$target'")
+        if (to.name == node) return fail("target is local node.")
+        if (!to.online) return fail("node '$target' seems to be offline")
+        val chosen = guests.filter { it.node == node }
+        Result.success(
+            startTask(node, "migrateall", "", user, log = chosen.map { "Migrating ${bulkLabel(it)} to $target" }) {
+                chosen.forEach { it.node = target }
             },
         )
     }

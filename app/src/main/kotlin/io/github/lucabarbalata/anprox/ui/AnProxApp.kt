@@ -73,6 +73,7 @@ import io.github.lucabarbalata.anprox.ui.dashboard.DashboardScreen
 import io.github.lucabarbalata.anprox.ui.datacenter.AccessPage
 import io.github.lucabarbalata.anprox.ui.datacenter.BackupJobEditorScreen
 import io.github.lucabarbalata.anprox.ui.datacenter.BackupJobsScreen
+import io.github.lucabarbalata.anprox.ui.datacenter.ClusterLogScreen
 import io.github.lucabarbalata.anprox.ui.datacenter.DatacenterScreen
 import io.github.lucabarbalata.anprox.ui.datacenter.FirewallAliasesScreen
 import io.github.lucabarbalata.anprox.ui.datacenter.FirewallExtra
@@ -112,6 +113,7 @@ import io.github.lucabarbalata.anprox.ui.navigation.CephServicesRoute
 import io.github.lucabarbalata.anprox.ui.navigation.CephTextRoute
 import io.github.lucabarbalata.anprox.ui.navigation.CloneRoute
 import io.github.lucabarbalata.anprox.ui.navigation.CloudInitRoute
+import io.github.lucabarbalata.anprox.ui.navigation.ClusterLogRoute
 import io.github.lucabarbalata.anprox.ui.navigation.ConsoleRoute
 import io.github.lucabarbalata.anprox.ui.navigation.CreateGuestRoute
 import io.github.lucabarbalata.anprox.ui.navigation.DashboardRoute
@@ -319,6 +321,7 @@ fun AnProxApp() {
                     onPools = { nav.navigate(PoolsRoute(route.serverId)) },
                     onCeph = { nav.navigate(CephRoute(route.serverId)) },
                     onSdn = { nav.navigate(SdnRoute(route.serverId)) },
+                    onClusterLog = { nav.navigate(ClusterLogRoute(route.serverId)) },
                     onAccess = { page ->
                         when (page) {
                             AccessPage.USERS -> nav.navigate(UsersRoute(route.serverId))
@@ -367,6 +370,9 @@ fun AnProxApp() {
             }
             composable<PbsJobsRoute> { entry -> PbsJobsScreen(entry.toRoute<PbsJobsRoute>().serverId, onBack = back, onTask = openTask) }
             composable<PbsRemotesRoute> { entry -> PbsRemotesScreen(entry.toRoute<PbsRemotesRoute>().serverId, onBack = back) }
+            composable<ClusterLogRoute> { entry ->
+                ClusterLogScreen(entry.toRoute<ClusterLogRoute>().serverId, onBack = back)
+            }
             composable<SdnRoute> { entry ->
                 val route = entry.toRoute<SdnRoute>()
                 SdnScreen(
@@ -656,6 +662,7 @@ fun AnProxApp() {
                     onCreate = { type -> nav.navigate(CreateGuestRoute(r.serverId, r.node, type.apiName)) },
                     onFirewall = { nav.navigate(FirewallRoute(r.serverId, "node", r.node, r.node)) },
                     onAdmin = { page -> nav.navigate(NodeAdminRoute(r.serverId, r.node, page.name)) },
+                    onTask = openTask,
                 )
             }
             composable<NodeAdminRoute> { entry ->

@@ -19,6 +19,7 @@ import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertTrue
 
 /** Rebooting and shutting down nodes (questionnaire Q12: type-to-confirm in the app). */
 class NodePowerTest {
@@ -55,5 +56,27 @@ class NodePowerTest {
         assertFailsWith<ApiException.Forbidden> { repo("auditor", "pve").nodePower("pve", "pve1", NodePowerAction.REBOOT) }
         assertFailsWith<ApiException> { repo().nodePower("pve", "pve3", NodePowerAction.REBOOT) }
         assertEquals(emptyList(), pve.state.nodePowerRequests.toList())
+    }
+
+    @Test
+    fun `start all, stop all and migrate all run as one task each`() = runBlocking {
+        val guests = repo()
+        // pve2: win11 and backup-client are stopped, neither set to start at boot.
+        val onBootOnly = guests.startAll("pve", "pve2", force = false)
+        assertTrue(guests.awaitTask("pve", "pve2", onBootOnly).succeeded)
+        assertEquals("stopped", pve.state.guest(102)?.status)
+
+        assertTrue(guests.awaitTask("pve", "pve2", guests.startAll("pve", "pve2", force = true)).succeeded)
+        assertEquals(listOf("running"), pve.state.guests.filter { it.node == "pve2" }.map { it.status }.distinct())
+
+        val stop = guests.stopAll("pve", "pve2")
+        assertTrue(guests.awaitTask("pve", "pve2", stop).succeeded)
+        assertEquals(listOf("stopped"), pve.state.guests.filter { it.node == "pve2" }.map { it.status }.distinct())
+        assertTrue(guests.taskLog("pve", "pve2", stop).any { it.t == "Stopping VM 103" })
+
+        assertFailsWith<ApiException.Server> { guests.migrateAll("pve", "pve2", "pve3", withLocalDisks = false) }   // offline
+        assertTrue(guests.awaitTask("pve", "pve2", guests.migrateAll("pve", "pve2", "pve1", withLocalDisks = true)).succeeded)
+        assertTrue(pve.state.guests.none { it.node == "pve2" })
+        Unit
     }
 }

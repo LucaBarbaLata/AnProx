@@ -1,10 +1,12 @@
 package io.github.lucabarbalata.anprox.ui.node
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -12,17 +14,26 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Computer
 import androidx.compose.material.icons.outlined.Inventory2
 import androidx.compose.material.icons.outlined.Key
+import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.PowerSettingsNew
 import androidx.compose.material.icons.outlined.RestartAlt
 import androidx.compose.material.icons.outlined.Shield
+import androidx.compose.material.icons.outlined.StopCircle
+import androidx.compose.material.icons.outlined.SwapHoriz
 import androidx.compose.material.icons.outlined.Terminal
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -48,8 +59,12 @@ import io.github.lucabarbalata.anprox.model.pve.NodePowerAction
 import io.github.lucabarbalata.anprox.model.pve.NodeStatus
 import io.github.lucabarbalata.anprox.security.LocalDangerousActionGuard
 import io.github.lucabarbalata.anprox.ui.common.AnProxScaffold
+import io.github.lucabarbalata.anprox.ui.common.CheckRow
+import io.github.lucabarbalata.anprox.ui.common.ChoiceChips
 import io.github.lucabarbalata.anprox.ui.common.ConfirmActionDialog
+import io.github.lucabarbalata.anprox.ui.common.FormLabel
 import io.github.lucabarbalata.anprox.ui.common.MenuRow
+import io.github.lucabarbalata.anprox.ui.common.TaskResultSnackbar
 import io.github.lucabarbalata.anprox.ui.common.asString
 import io.github.lucabarbalata.anprox.ui.common.contentPadding
 import io.github.lucabarbalata.anprox.ui.common.formatDuration
@@ -69,6 +84,7 @@ fun NodeScreen(
     onCreate: (GuestType) -> Unit,
     onFirewall: () -> Unit,
     onAdmin: (NodeAdminPage) -> Unit,
+    onTask: (serverId: String, node: String, upid: String) -> Unit,
     viewModel: NodeViewModel = koinViewModel(key = "node-$serverId-$node") { parametersOf(serverId, node) },
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -80,6 +96,7 @@ fun NodeScreen(
             snackbar.showSnackbar(message)
         }
     }
+    TaskResultSnackbar(state.result, snackbar, serverId, node, onTask, viewModel::consumeResult)
     AnProxScaffold(title = node, subtitle = stringResource(R.string.node_subtitle), onBack = onBack, snackbarHostState = snackbar) { inner ->
         LazyColumn(contentPadding = contentPadding(inner), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             if (!state.online) item { ErrorBanner(stringResource(R.string.node_offline)) }
@@ -113,6 +130,7 @@ fun NodeScreen(
             }
             if (state.guests.isNotEmpty()) {
                 item { SectionHeader(stringResource(R.string.node_guests, state.guests.size)) }
+                if (state.online) item { BulkCard(state.bulkBusy, viewModel::requestBulk) }
                 items(state.guests, key = { it.id }) { g ->
                     val type = GuestType.fromApi(g.type)
                     val appearance = statusAppearance(g.status)
@@ -170,6 +188,8 @@ fun NodeScreen(
         }
     }
 
+    state.bulk?.let { bulk -> BulkDialog(bulk, node, state.otherNodes, viewModel) }
+
     state.confirm?.let { action ->
         val guard = LocalDangerousActionGuard.current
         val reboot = action == NodePowerAction.REBOOT
@@ -183,6 +203,96 @@ fun NodeScreen(
             onConfirm = { guard.confirm(title, viewModel::power) },
             onDismiss = viewModel::dismissPower,
         )
+    }
+}
+
+/** Start, shut down or migrate every guest on the node, each as one Proxmox task. */
+@Composable
+private fun BulkCard(busy: NodeBulk?, onRequest: (NodeBulk) -> Unit) {
+    GlassCard(contentPadding = PaddingValues(vertical = 6.dp)) {
+        if (busy != null) {
+            LinearProgressIndicator(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp), color = AnProxTheme.colors.accent)
+        }
+        val idle = busy == null
+        MenuRow(Icons.Outlined.PlayArrow, stringResource(R.string.node_start_all), stringResource(R.string.node_start_all_body)) {
+            if (idle) onRequest(NodeBulk.START_ALL)
+        }
+        MenuRow(Icons.Outlined.StopCircle, stringResource(R.string.node_stop_all), stringResource(R.string.node_stop_all_body)) {
+            if (idle) onRequest(NodeBulk.STOP_ALL)
+        }
+        MenuRow(Icons.Outlined.SwapHoriz, stringResource(R.string.node_migrate_all), stringResource(R.string.node_migrate_all_body)) {
+            if (idle) onRequest(NodeBulk.MIGRATE_ALL)
+        }
+    }
+}
+
+@Composable
+private fun BulkDialog(bulk: NodeBulk, node: String, otherNodes: List<String>, viewModel: NodeViewModel) {
+    val c = AnProxTheme.colors
+    when (bulk) {
+        NodeBulk.STOP_ALL -> {
+            val guard = LocalDangerousActionGuard.current
+            val title = stringResource(R.string.node_stop_all_title, node)
+            ConfirmActionDialog(
+                title = title,
+                message = stringResource(R.string.node_stop_all_message),
+                confirmLabel = stringResource(R.string.node_stop_all),
+                danger = bulk.danger,
+                confirmText = node,
+                onConfirm = { guard.confirm(title, viewModel::stopAll) },
+                onDismiss = viewModel::dismissBulk,
+            )
+        }
+        NodeBulk.START_ALL -> {
+            var force by rememberSaveable { mutableStateOf(true) }
+            AlertDialog(
+                onDismissRequest = viewModel::dismissBulk,
+                containerColor = c.surfaceSolid,
+                title = { Text(stringResource(R.string.node_start_all_title, node)) },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Text(stringResource(R.string.node_start_all_message), style = MaterialTheme.typography.bodyMedium, color = c.textSecondary)
+                        CheckRow(stringResource(R.string.node_start_all_force), force) { force = !force }
+                    }
+                },
+                confirmButton = { TextButton(onClick = { viewModel.startAll(force) }) { Text(stringResource(R.string.node_start_all)) } },
+                dismissButton = { TextButton(onClick = viewModel::dismissBulk) { Text(stringResource(R.string.action_cancel)) } },
+            )
+        }
+        NodeBulk.MIGRATE_ALL -> {
+            var target by rememberSaveable { mutableStateOf(otherNodes.firstOrNull()) }
+            var localDisks by rememberSaveable { mutableStateOf(false) }
+            val chosen = target?.takeIf { it in otherNodes }
+            AlertDialog(
+                onDismissRequest = viewModel::dismissBulk,
+                containerColor = c.surfaceSolid,
+                title = { Text(stringResource(R.string.node_migrate_all_title, node)) },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        if (otherNodes.isEmpty()) {
+                            Text(stringResource(R.string.node_migrate_all_no_target), style = MaterialTheme.typography.bodyMedium, color = c.textSecondary)
+                        } else {
+                            Text(stringResource(R.string.node_migrate_all_message), style = MaterialTheme.typography.bodyMedium, color = c.textSecondary)
+                            FormLabel(stringResource(R.string.node_migrate_all_target))
+                            ChoiceChips(otherNodes, chosen ?: otherNodes.first(), { it }) { target = it }
+                            CheckRow(stringResource(R.string.node_migrate_all_local), localDisks) { localDisks = !localDisks }
+                        }
+                    }
+                },
+                confirmButton = {
+                    if (otherNodes.isNotEmpty()) {
+                        TextButton(onClick = { viewModel.migrateAll(chosen ?: otherNodes.first(), localDisks) }) {
+                            Text(stringResource(R.string.node_migrate_all))
+                        }
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = viewModel::dismissBulk) {
+                        Text(stringResource(if (otherNodes.isEmpty()) R.string.action_close else R.string.action_cancel))
+                    }
+                },
+            )
+        }
     }
 }
 
