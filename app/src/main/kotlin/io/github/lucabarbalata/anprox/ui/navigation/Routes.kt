@@ -56,6 +56,7 @@ import kotlinx.serialization.Serializable
 @Serializable data class BackupJobEditorRoute(val serverId: String, val jobId: String = "")
 @Serializable data class StorageListRoute(val serverId: String)
 @Serializable data class StorageContentRoute(val serverId: String, val node: String, val storage: String)
+@Serializable data class TemplateCatalogRoute(val serverId: String, val node: String, val storage: String)
 // storageId "" adds a new storage.
 @Serializable data class StorageEditorRoute(val serverId: String, val storageId: String = "")
 @Serializable data class HaRoute(val serverId: String)

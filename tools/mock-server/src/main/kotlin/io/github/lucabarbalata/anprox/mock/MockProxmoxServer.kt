@@ -571,6 +571,21 @@ class MockProxmoxServer(
             if (health == null) return@get call.fail(500, MockCeph.NOT_INSTALLED)
             call.ok(CephStatus(CephHealth(health)))
         }
+        get("nodes/{node}/aplinfo") {
+            call.authed() ?: return@get
+            state.node(call.parameters["node"]!!)?.takeIf { it.online } ?: return@get call.fail(595, "Connection refused")
+            call.ok(state.appliances)
+        }
+        post("nodes/{node}/aplinfo") {
+            val s = call.authed() ?: return@post
+            val node = state.node(call.parameters["node"]!!)?.takeIf { it.online } ?: return@post call.fail(595, "Connection refused")
+            val p = call.receiveParameters()
+            if (state.isReadOnly(s.user)) return@post call.fail(403, "Permission check failed (/storage/${p["storage"]}, Datastore.AllocateTemplate)")
+            state.downloadAppliance(node.name, p["storage"].orEmpty(), p["template"].orEmpty(), s.user).fold(
+                onSuccess = { call.ok(it) },
+                onFailure = { call.fail(500, it.message ?: "error") },
+            )
+        }
         get("cluster/log") {
             call.authed() ?: return@get
             call.ok(state.clusterLog(call.request.queryParameters["max"]?.toIntOrNull() ?: 50))

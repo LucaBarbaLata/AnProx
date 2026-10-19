@@ -100,7 +100,7 @@ Code: `core/network/src/main/kotlin/.../network/api/` (`AccessApi`, `PveApi`, `P
 | `/nodes/{node}/ceph/*` | Status; OSDs (create on an unused disk, in/out, scrub, start/stop/restart, destroy); pools (create, edit, delete); monitors, managers and metadata servers (add, start/stop/restart, remove); CephFS (list, create); `cfg/raw`, `cfg/db`, `crush`, `log`, `rules` | ✅ M6 (`init`, installing Ceph and removing a CephFS stay in the web UI) |
 | `/nodes/{node}/sdn/*` | Per-node SDN status (zone and VNet health on each node) | 🗓 M9 |
 | `/nodes/{node}/replication/*` | Replication status, run now, log | ✅ M4 |
-| `/nodes/{node}/aplinfo` | Container template catalogue | 🗓 M4 |
+| `/nodes/{node}/aplinfo` | Container template catalogue: browse and download to a storage (Storage → CT templates → Template catalogue) | ✅ |
 | `GET /nodes/{node}/scan/{nfs,cifs,pbs,lvm,lvmthin,zfs}` | Storage discovery for the storage editor | ✅ |
 | `GET /nodes/{node}/scan/iscsi` | iSCSI discovery | 🗓 (with iSCSI storages) |
 | `/nodes/{node}/hardware/{pci,usb}` | Passthrough device lists | 🗓 M9 |

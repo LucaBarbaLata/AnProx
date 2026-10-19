@@ -1122,6 +1122,14 @@
     <!-- Storage (M4) -->
     <string name="storage_title">Storage</string>
     <string name="storage_usage_history">Usage history</string>
+    <string name="catalog_open">Template catalogue</string>
+    <string name="catalog_title">Template catalogue</string>
+    <string name="catalog_search">Search templates</string>
+    <string name="catalog_section_system">Distribution</string>
+    <string name="catalog_section_turnkey">TurnKey appliance</string>
+    <string name="catalog_stored">On this storage</string>
+    <string name="catalog_download">Download to this storage</string>
+    <string name="catalog_downloaded">%1$s downloaded</string>
     <string name="storage_shared">shared</string>
     <string name="storage_disabled">Disabled</string>
     <string name="storage_all_nodes">All nodes</string>

@@ -1,5 +1,6 @@
 package io.github.lucabarbalata.anprox.model.pve
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /** What a storage holds, by Proxmox's content type names. */
@@ -94,5 +95,36 @@ data class DownloadUrlForm(
         /** The last path segment of [url], without a query, as a suggested file name. */
         fun suggestedName(url: String): String =
             url.trim().substringBefore('?').substringBefore('#').trimEnd('/').substringAfterLast('/')
+    }
+}
+
+/**
+ * One container template from Proxmox's appliance index (`GET /nodes/{node}/aplinfo`), which
+ * the node can download to a storage. [template] is the file name it is stored under.
+ */
+@Serializable
+data class ApplianceTemplate(
+    val template: String,
+    @SerialName("package") val packageName: String = "",
+    val os: String? = null,
+    val version: String? = null,
+    /** `system` (plain distributions), `turnkeylinux` or `mail`. */
+    val section: String? = null,
+    val headline: String? = null,
+    val description: String? = null,
+    val type: String? = null,
+    val architecture: String? = null,
+    val infopage: String? = null,
+) {
+    fun matches(filter: String): Boolean {
+        val f = filter.trim()
+        return f.isEmpty() || listOf(template, packageName, os.orEmpty(), headline.orEmpty()).any { it.contains(f, ignoreCase = true) }
+    }
+
+    companion object {
+        /** Plain distributions first, then the TurnKey appliances, each by name. */
+        fun sorted(list: List<ApplianceTemplate>): List<ApplianceTemplate> =
+            list.filter { it.type == null || it.type == "lxc" }
+                .sortedWith(compareBy<ApplianceTemplate> { if (it.section == "system") 0 else 1 }.thenBy { it.packageName }.thenByDescending { it.version })
     }
 }

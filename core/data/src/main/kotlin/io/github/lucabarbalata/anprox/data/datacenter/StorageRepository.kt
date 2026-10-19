@@ -1,6 +1,7 @@
 package io.github.lucabarbalata.anprox.data.datacenter
 
 import io.github.lucabarbalata.anprox.data.hub.ServerHub
+import io.github.lucabarbalata.anprox.model.pve.ApplianceTemplate
 import io.github.lucabarbalata.anprox.model.pve.ContentType
 import io.github.lucabarbalata.anprox.model.pve.DownloadUrlForm
 import io.github.lucabarbalata.anprox.model.pve.StorageConfig
@@ -47,6 +48,14 @@ class StorageRepository(private val hub: ServerHub) {
     suspend fun content(serverId: String, node: String, storage: String, type: ContentType? = null): List<StorageContentItem> =
         hub.use(serverId) { it.pve { storageContent(node, storage, type?.apiName, null) } }
             .sortedWith(compareBy({ it.content }, { it.fileName.lowercase() }))
+
+    /** Container templates the node can download, distributions first. */
+    suspend fun appliances(serverId: String, node: String): List<ApplianceTemplate> =
+        ApplianceTemplate.sorted(hub.use(serverId) { it.pve { appliances(node) } })
+
+    /** Starts downloading [template] to [storage]; returns the task UPID. */
+    suspend fun downloadAppliance(serverId: String, node: String, storage: String, template: String): String =
+        hub.use(serverId) { it.pve { downloadAppliance(node, storage, template) } }
 
     suspend fun urlMetadata(serverId: String, node: String, url: String, verifyCertificates: Boolean): UrlMetadata =
         hub.use(serverId) { it.pve { queryUrlMetadata(node, url.trim(), if (verifyCertificates) 1 else 0) } }

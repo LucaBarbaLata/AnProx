@@ -30,6 +30,7 @@ import androidx.compose.material.icons.outlined.CloudDownload
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.FolderOpen
+import androidx.compose.material.icons.outlined.Inventory2
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Storage
 import androidx.compose.material.icons.outlined.Upload
@@ -216,6 +217,7 @@ fun StorageContentScreen(
     storage: String,
     onBack: () -> Unit,
     onBackups: () -> Unit,
+    onCatalog: () -> Unit,
     onTask: (serverId: String, node: String, upid: String) -> Unit,
 ) {
     val viewModel: StorageContentViewModel = koinViewModel(key = "storage-$serverId-$node-$storage") { parametersOf(serverId, node, storage) }
@@ -244,6 +246,17 @@ fun StorageContentScreen(
                 item { ChoiceChips(state.types, state.selected ?: state.types.first(), { typeLabels.getValue(it) }, viewModel::select) }
             }
             val selected = state.selected
+            if (selected == ContentType.TEMPLATE) {
+                item {
+                    AnProxButton(
+                        stringResource(R.string.catalog_open),
+                        onClick = onCatalog,
+                        icon = Icons.Outlined.Inventory2,
+                        enabled = !state.busy,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            }
             if (selected != null && selected in state.fileTypes) {
                 item {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {

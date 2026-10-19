@@ -121,6 +121,9 @@ and friends):
   `DELETE …/tasks/{upid}`; the task then ends as "interrupted by signal".
 - Node-wide `startall`, `stopall` and `migrateall` are one task each. `startall` only starts
   guests with start at boot unless `force=1`, which surprised me; the dialog offers both.
+- The template catalogue is `GET /nodes/{node}/aplinfo` (the field `package` needs
+  `@SerialName`, it's a Kotlin keyword) and `POST` with `storage` and `template` for a download
+  task.
 - `GET /cluster/log` comes from pmxcfs with numeric `uid` and `pid`; newest first, so the
   repository sorts it oldest first for a log-style screen.
 - 3 model tests and 11 integration tests; tour step 6 (agent) and additions to the snapshot,

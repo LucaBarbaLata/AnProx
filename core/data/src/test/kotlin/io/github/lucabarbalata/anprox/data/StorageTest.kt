@@ -76,6 +76,26 @@ class StorageTest {
     }
 
     @Test
+    fun `container templates come from the appliance index`() = runBlocking {
+        val r = repos()
+        val catalogue = r.storage.appliances("pve", "pve1")
+        // Distributions first, then the rest.
+        assertEquals("alpine-3.20-default", catalogue.first().packageName)
+        assertEquals(listOf("system", "system", "system"), catalogue.take(3).map { it.section })
+        assertTrue(catalogue.first { it.packageName == "turnkey-wordpress" }.matches("WORDPRESS"))
+
+        val wordpress = catalogue.first { it.packageName == "turnkey-wordpress" }
+        r.done(r.storage.downloadAppliance("pve", "pve1", "local", wordpress.template))
+        val templates = r.storage.content("pve", "pve1", "local", ContentType.TEMPLATE)
+        assertTrue(templates.any { it.fileName == wordpress.template }, templates.toString())
+        // Twice is refused (the mock has the distributions already); and a storage without templates can't take one.
+        assertFailsWith<ApiException.Server> { r.storage.downloadAppliance("pve", "pve1", "local", wordpress.template) }
+        assertFailsWith<ApiException.Server> { r.storage.downloadAppliance("pve", "pve1", "local", "debian-12-standard_12.7-1_amd64.tar.zst") }
+        assertFailsWith<ApiException.Server> { r.storage.downloadAppliance("pve", "pve1", "local-zfs", wordpress.template) }
+        Unit
+    }
+
+    @Test
     fun `download from a URL`() = runBlocking {
         val r = repos()
         val url = "https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-13.1.0-amd64-netinst.iso"

@@ -5,6 +5,7 @@ import io.github.lucabarbalata.anprox.model.pve.AgentInterface
 import io.github.lucabarbalata.anprox.model.pve.AgentOsInfo
 import io.github.lucabarbalata.anprox.model.pve.AgentResult
 import io.github.lucabarbalata.anprox.model.pve.AgentTrimResult
+import io.github.lucabarbalata.anprox.model.pve.ApplianceTemplate
 import io.github.lucabarbalata.anprox.model.pve.AptRepositories
 import io.github.lucabarbalata.anprox.model.pve.AptUpdate
 import io.github.lucabarbalata.anprox.model.pve.CephStatus
@@ -186,6 +187,15 @@ interface PveApi {
     suspend fun deletePoolLegacy(@Path("poolid") id: String): ApiEnvelope<JsonElement>
 
     /** What a download URL points to (name, size), fetched by the node. */
+    /** Proxmox's index of container templates the node can download. */
+    @GET("nodes/{node}/aplinfo")
+    suspend fun appliances(@Path("node") node: String): ApiEnvelope<List<ApplianceTemplate>>
+
+    /** Downloads [template] from the index to [storage]; returns the task UPID. */
+    @FormUrlEncoded
+    @POST("nodes/{node}/aplinfo")
+    suspend fun downloadAppliance(@Path("node") node: String, @Field("storage") storage: String, @Field("template") template: String): ApiEnvelope<String>
+
     @GET("nodes/{node}/query-url-metadata")
     suspend fun queryUrlMetadata(
         @Path("node") node: String,

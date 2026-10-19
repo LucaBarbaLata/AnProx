@@ -863,7 +863,7 @@ def backup_jobs():
     back()
 
 
-@step("Datacenter: storage, the node downloads an ISO image from a URL")
+@step("Datacenter: storage, the node downloads an ISO image from a URL and a template from the catalogue")
 def storage():
     tap("Overview")
     tap_node(scroll_to("Datacenter", exact=True))
@@ -899,6 +899,13 @@ def storage():
                            for n in dump().iter("node") for v in labels(n)),
                "the storage usage chart to show values", timeout=30)
     screenshot("13e-storage-usage")
+    tap_node(scroll_to("CT templates", exact=True))   # the content type chip
+    tap_node(scroll_to("Template catalogue", exact=True))
+    find("On this storage", timeout=30)         # the distributions the mock already has
+    tap_node(scroll_to("Download to this storage"))   # the first one left: Proxmox Mail Gateway
+    find("Proxmox Mail Gateway 8.1 downloaded", timeout=60)
+    screenshot("13f-template-catalogue")
+    back()                                      # to the storage
     back()
     back()
     back()

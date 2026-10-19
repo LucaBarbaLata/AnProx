@@ -88,6 +88,7 @@ import io.github.lucabarbalata.anprox.ui.datacenter.SecurityGroupsScreen
 import io.github.lucabarbalata.anprox.ui.datacenter.StorageContentScreen
 import io.github.lucabarbalata.anprox.ui.datacenter.StorageEditorScreen
 import io.github.lucabarbalata.anprox.ui.datacenter.StorageListScreen
+import io.github.lucabarbalata.anprox.ui.datacenter.TemplateCatalogScreen
 import io.github.lucabarbalata.anprox.ui.guest.AgentScreen
 import io.github.lucabarbalata.anprox.ui.guest.CloneScreen
 import io.github.lucabarbalata.anprox.ui.guest.GuestScreen
@@ -156,6 +157,7 @@ import io.github.lucabarbalata.anprox.ui.navigation.StorageListRoute
 import io.github.lucabarbalata.anprox.ui.navigation.StorageRoute
 import io.github.lucabarbalata.anprox.ui.navigation.TaskLogRoute
 import io.github.lucabarbalata.anprox.ui.navigation.TasksRoute
+import io.github.lucabarbalata.anprox.ui.navigation.TemplateCatalogRoute
 import io.github.lucabarbalata.anprox.ui.navigation.UserEditorRoute
 import io.github.lucabarbalata.anprox.ui.navigation.UserRoute
 import io.github.lucabarbalata.anprox.ui.navigation.UsersRoute
@@ -510,6 +512,10 @@ fun AnProxApp() {
                 val route = entry.toRoute<StorageEditorRoute>()
                 StorageEditorScreen(route.serverId, route.storageId.ifEmpty { null }, onDone = back)
             }
+            composable<TemplateCatalogRoute> { entry ->
+                val r = entry.toRoute<TemplateCatalogRoute>()
+                TemplateCatalogScreen(r.serverId, r.node, r.storage, onBack = back, onTask = openTask)
+            }
             composable<StorageContentRoute> { entry ->
                 val r = entry.toRoute<StorageContentRoute>()
                 StorageContentScreen(
@@ -518,6 +524,7 @@ fun AnProxApp() {
                     storage = r.storage,
                     onBack = back,
                     onBackups = { nav.navigate(StorageRoute(r.serverId, r.node, r.storage)) },
+                    onCatalog = { nav.navigate(TemplateCatalogRoute(r.serverId, r.node, r.storage)) },
                     onTask = openTask,
                 )
             }

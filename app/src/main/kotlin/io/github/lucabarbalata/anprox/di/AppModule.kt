@@ -91,6 +91,7 @@ import io.github.lucabarbalata.anprox.ui.datacenter.SecurityGroupsViewModel
 import io.github.lucabarbalata.anprox.ui.datacenter.StorageContentViewModel
 import io.github.lucabarbalata.anprox.ui.datacenter.StorageEditorViewModel
 import io.github.lucabarbalata.anprox.ui.datacenter.StorageListViewModel
+import io.github.lucabarbalata.anprox.ui.datacenter.TemplateCatalogViewModel
 import io.github.lucabarbalata.anprox.ui.guest.AgentViewModel
 import io.github.lucabarbalata.anprox.ui.guest.CloneViewModel
 import io.github.lucabarbalata.anprox.ui.guest.GuestViewModel
@@ -254,6 +255,7 @@ val appModule = module {
     // storageId "" adds a new storage.
     viewModel { (serverId: String, storageId: String) -> StorageEditorViewModel(serverId, storageId.ifEmpty { null }, get()) }
     viewModel { (serverId: String, node: String, storage: String) -> StorageContentViewModel(serverId, node, storage, get(), get()) }
+    viewModel { (serverId: String, node: String, storage: String) -> TemplateCatalogViewModel(serverId, node, storage, get(), get()) }
     viewModel { (serverId: String) -> CephViewModel(serverId, get(), get()) }
     viewModel { (serverId: String) -> CephOsdsViewModel(serverId, get(), get()) }
     viewModel { (serverId: String) -> CephPoolsViewModel(serverId, get(), get()) }

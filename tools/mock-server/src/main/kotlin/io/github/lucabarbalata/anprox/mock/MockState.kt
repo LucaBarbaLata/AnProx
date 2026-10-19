@@ -7,6 +7,7 @@ import io.github.lucabarbalata.anprox.model.pbs.DatastoreUsage
 import io.github.lucabarbalata.anprox.model.pve.AgentInterface
 import io.github.lucabarbalata.anprox.model.pve.AgentIpAddress
 import io.github.lucabarbalata.anprox.model.pve.AgentOsInfo
+import io.github.lucabarbalata.anprox.model.pve.ApplianceTemplate
 import io.github.lucabarbalata.anprox.model.pve.ClusterLogEntry
 import io.github.lucabarbalata.anprox.model.pve.BackupVerification
 import io.github.lucabarbalata.anprox.model.pve.ClusterResource
@@ -1167,6 +1168,30 @@ class MockState(
         urlMetadata(url).exceptionOrNull()?.let { return fail(it.message ?: "download failed") }
         if (stored(storage, content).any { it.file == name }) return fail("refusing to override existing file '$name'")
         Result.success(startTask(nodeName, "download", "$storage:$content/$name", user) { addFile(MockHardware.StoredFile(storage, content, name, 123 * MIB)) })
+    }
+
+    /** A few entries of Proxmox's appliance index. */
+    val appliances = listOf(
+        ApplianceTemplate("debian-12-standard_12.7-1_amd64.tar.zst", "debian-12-standard", "debian-12", "12.7-1", "system", "Debian 12 Bookworm (standard)", "A small Debian Bookworm system including all standard packages.", "lxc", "amd64"),
+        ApplianceTemplate("ubuntu-24.04-standard_24.04-2_amd64.tar.zst", "ubuntu-24.04-standard", "ubuntu-24.04", "24.04-2", "system", "Ubuntu 24.04 Noble (standard)", "A small Ubuntu 24.04 Noble Numbat system including all standard packages.", "lxc", "amd64"),
+        ApplianceTemplate("alpine-3.20-default_20240908_amd64.tar.xz", "alpine-3.20-default", "alpine-3.20", "20240908", "system", "Alpine Linux 3.20", "A small Alpine Linux 3.20 system.", "lxc", "amd64"),
+        ApplianceTemplate("debian-11-turnkey-wordpress_18.0-1_amd64.tar.gz", "turnkey-wordpress", "debian-11", "18.0-1", "turnkeylinux", "TurnKey WordPress", "Blog publishing platform with WordPress.", "lxc", "amd64"),
+        ApplianceTemplate("proxmox-mailgateway-8.1-standard_8.1-1_amd64.tar.zst", "proxmox-mailgateway-8.1-standard", "debian-12", "8.1-1", "mail", "Proxmox Mail Gateway 8.1", "Proxmox Mail Gateway as a container.", "lxc", "amd64"),
+    )
+
+    /** `POST aplinfo`: a `download` task that stores the template on [storage]. */
+    fun downloadAppliance(nodeName: String, storage: String, template: String, user: String): Result<String> = synchronized(lock) {
+        settleTasks()
+        fun fail(msg: String) = Result.failure<String>(IllegalStateException(msg))
+        val s = storages.firstOrNull { it.node == nodeName && it.id == storage } ?: return fail("storage '$storage' does not exist")
+        if ("vztmpl" !in s.content.split(',')) return fail("storage '$storage' does not support templates")
+        appliances.firstOrNull { it.template == template } ?: return fail("no such template '$template'")
+        if (stored(storage, "vztmpl").any { it.file == template }) return fail("refusing to override existing file '$template'")
+        Result.success(
+            startTask(nodeName, "download", template, user, log = listOf("downloading http://download.proxmox.com/images/system/$template", "download of '$template' finished")) {
+                addFile(MockHardware.StoredFile(storage, "vztmpl", template, 120 * MIB))
+            },
+        )
     }
 
     /** `upload`: a task that moves the uploaded file into the storage. */

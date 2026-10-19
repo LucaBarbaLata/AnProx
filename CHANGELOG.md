@@ -208,6 +208,10 @@ All notable changes to AnProx are documented here. The format follows
   start at boot; Shut down all asks you to type the node's name; Migrate all picks the target
   node and whether to include guests on local disks.
 
+- **Template catalogue** (Storage → CT templates → Template catalogue): Proxmox's container
+  templates (Debian, Ubuntu, Alpine and the other distributions, TurnKey appliances), searchable,
+  downloaded by the node to the storage; templates already there are marked.
+
 - **Cluster log** (Datacenter → Cluster log): what every node logged, with errors and warnings
   coloured and a filter.
 
