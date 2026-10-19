@@ -1056,6 +1056,35 @@ def sdn():
     back()
 
 
+@step("Backup Server: a datastore's backups, a container backup's files, a prune preview, run a sync job")
+def backup_server():
+    tap("Overview")
+    tap_node(scroll_to("Manage Backup Server"))
+    tap_node(scroll_to("Primary ZFS mirror"))     # store1
+    tap_node(scroll_to("ct/200"))                 # pihole's backups
+    find("Verified", timeout=30)
+    tap_node(scroll_to("pihole"))                 # the newest snapshot (its notes)
+    tap("Browse files")
+    tap_node(scroll_to("root.pxar.didx"))
+    tap_node(scroll_to("etc"))
+    find("hosts", timeout=30)
+    screenshot("13l-file-restore")
+    back()                                        # up to root.pxar.didx
+    back()                                        # up to the top
+    back()                                        # to the snapshots
+    tap("Prune")
+    find("Keeps 2, removes 0", timeout=30)        # keep the last 3 of 2
+    tap("Cancel")
+    back()                                        # to the datastore
+    back()                                        # to the server
+    tap_node(scroll_to("Sync, verify and prune jobs"))
+    tap_node(scroll_to("s-offsite"))              # failed last time in the mock
+    tap("Run now")
+    find("s-offsite finished", timeout=60)
+    back()
+    back()
+
+
 @step("Node administration: updates, repositories, a service, a pending network change, the system log")
 def node_admin():
     tap("Resources")
@@ -1198,7 +1227,7 @@ def main():
     try:
         for s in (launch, add_pve, add_pbs, resources, performance, guest_start, snapshots, backups,
                   options, hardware, console, vm_console, cloud_init, bulk, clone_migrate, tasks, create_vm, alerts,
-                  backup_jobs, storage, storage_setup, firewall, high_availability, replication, pools, permissions, ceph, sdn, node_admin, ssh,
+                  backup_jobs, storage, storage_setup, firewall, high_availability, replication, pools, permissions, ceph, sdn, backup_server, node_admin, ssh,
                   light_theme):
             s()
         ok = True

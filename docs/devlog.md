@@ -80,6 +80,28 @@ had left its last "1" (the tap put the cursor before it and MOVE_END didn't land
 now deletes backwards from the end and forwards from the start, and starts over until the field
 reads exactly the new value.
 
+**M8: the Backup Server.** Written from `proxmox-backup`'s API code (`src/api2/admin/datastore.rs`
+and friends):
+- The node-administration API (updates, repositories, subscription, services, journal) is the
+  same on a Backup Server, at `nodes/localhost/…`, so `NodeAdminRepository` picks `PbsApi` or
+  `PveApi` by the server's product and the M5 screens serve both. Only **Upgrade** is left out,
+  since the app's node shell is Proxmox VE's.
+- Task status and logs now come from the right API for each product (`GuestRepository`,
+  `ProxmoxConnection.awaitTask`), so every task the app follows, and the Tasks tab, work for
+  Backup Server tasks.
+- File restore uses the snapshot's catalog, which only container and host backups have (and not
+  when the catalog is encrypted); a VM backup is disk images. Paths go back and forth as base64.
+  `pxar-file-download` answers with the raw bytes (a zip for a folder), so the connection got a
+  `pbsRaw` call without the `{"data": …}` envelope; the app streams it into a file the user picks
+  with the system's save dialog.
+- A datastore's status counts snapshots across all namespaces.
+- PBS subscription keys look like `pbsc-…`; the key check now accepts both products.
+- Mock (`MockPbs`): two datastores with namespaces, backups of VMs, a container (with a browsable
+  catalog and file contents) and a host, verify states, protection, garbage collection, a prune
+  that keeps per hour/day/week/month/year like PBS, maintenance modes, jobs and a remote. The
+  Backup Server mock answers the node-administration calls for `localhost`.
+- 4 model tests and 5 integration tests; tour step 29.
+
 ---
 
 ## 2026-10-15 — Session 4: consoles rebuilt

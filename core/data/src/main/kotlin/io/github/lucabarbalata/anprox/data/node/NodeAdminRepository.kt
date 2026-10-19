@@ -1,6 +1,8 @@
 package io.github.lucabarbalata.anprox.data.node
 
 import io.github.lucabarbalata.anprox.data.hub.ServerHub
+import io.github.lucabarbalata.anprox.model.ApiEnvelope
+import io.github.lucabarbalata.anprox.model.ProxmoxProduct
 import io.github.lucabarbalata.anprox.model.pve.AptRepositories
 import io.github.lucabarbalata.anprox.model.pve.AptUpdate
 import io.github.lucabarbalata.anprox.model.pve.DiskStorageForm
@@ -19,55 +21,71 @@ import io.github.lucabarbalata.anprox.model.pve.PackageVersion
 import io.github.lucabarbalata.anprox.model.pve.ServiceAction
 import io.github.lucabarbalata.anprox.model.pve.SmartData
 import io.github.lucabarbalata.anprox.network.ApiException
+import io.github.lucabarbalata.anprox.network.api.PbsApi
+import io.github.lucabarbalata.anprox.network.api.PveApi
 
 /**
- * Node administration (questionnaire Q22, milestone M5): updates and APT repositories, the
- * subscription, services and the system journal.
+ * Node administration (questionnaire Q22, milestones M5 and M8): updates and APT repositories, the
+ * subscription, services and the system journal, of a Proxmox VE node or a Backup Server.
  */
 class NodeAdminRepository(private val hub: ServerHub) {
 
+    /**
+     * Updates, repositories, the subscription, services and the journal have the same API on a
+     * Backup Server (node `localhost`), so the same screens serve both products.
+     */
+    private suspend fun <T> either(serverId: String, pve: suspend PveApi.() -> ApiEnvelope<T>, pbs: suspend PbsApi.() -> ApiEnvelope<T>): T =
+        hub.use(serverId) { if (it.product == ProxmoxProduct.PBS) it.pbs(pbs) else it.pve(pve) }
+
+    private suspend fun eitherNoData(serverId: String, pve: suspend PveApi.() -> ApiEnvelope<*>, pbs: suspend PbsApi.() -> ApiEnvelope<*>) {
+        hub.use(serverId) { if (it.product == ProxmoxProduct.PBS) it.pbsNoData(pbs) else it.pveNoData(pve) }
+    }
+
     suspend fun updates(serverId: String, node: String): List<AptUpdate> =
-        hub.use(serverId) { it.pve { aptUpdates(node) } }.sortedBy { it.name }
+        either(serverId, { aptUpdates(node) }, { aptUpdates(node) }).sortedBy { it.name }
 
     /** Starts `apt-get update`; returns the task's UPID. */
-    suspend fun refresh(serverId: String, node: String): String = hub.use(serverId) { it.pve { refreshAptIndex(node) } }
+    suspend fun refresh(serverId: String, node: String): String = either(serverId, { refreshAptIndex(node) }, { refreshAptIndex(node) })
 
     suspend fun changelog(serverId: String, node: String, update: AptUpdate): String =
-        hub.use(serverId) { it.pve { aptChangelog(node, update.name, update.version) } }
+        either(serverId, { aptChangelog(node, update.name, update.version) }, { aptChangelog(node, update.name, update.version) })
 
-    suspend fun versions(serverId: String, node: String): List<PackageVersion> = hub.use(serverId) { it.pve { packageVersions(node) } }
+    suspend fun versions(serverId: String, node: String): List<PackageVersion> = either(serverId, { packageVersions(node) }, { packageVersions(node) })
 
     /** Null when the user may not read it (it needs Sys.Audit). */
     suspend fun subscription(serverId: String, node: String): NodeSubscription? = try {
-        hub.use(serverId) { it.pve { subscription(node) } }
+        either(serverId, { subscription(node) }, { subscription(node) })
     } catch (_: ApiException.Forbidden) {
         null
     }
 
     suspend fun setSubscriptionKey(serverId: String, node: String, key: String) {
-        hub.use(serverId) { it.pveNoData { setSubscriptionKey(node, key.trim()) } }
+        eitherNoData(serverId, { setSubscriptionKey(node, key.trim()) }, { setSubscriptionKey(node, key.trim()) })
     }
 
     suspend fun removeSubscriptionKey(serverId: String, node: String) {
-        hub.use(serverId) { it.pveNoData { removeSubscriptionKey(node) } }
+        eitherNoData(serverId, { removeSubscriptionKey(node) }, { removeSubscriptionKey(node) })
     }
 
-    suspend fun repositories(serverId: String, node: String): AptRepositories = hub.use(serverId) { it.pve { aptRepositories(node) } }
+    suspend fun repositories(serverId: String, node: String): AptRepositories = either(serverId, { aptRepositories(node) }, { aptRepositories(node) })
 
     suspend fun setRepositoryEnabled(serverId: String, node: String, repos: AptRepositories, path: String, index: Int, enabled: Boolean) {
-        hub.use(serverId) { it.pveNoData { setAptRepositoryEnabled(node, path, index, if (enabled) 1 else 0, repos.digest.ifEmpty { null }) } }
+        val on = if (enabled) 1 else 0
+        val digest = repos.digest.ifEmpty { null }
+        eitherNoData(serverId, { setAptRepositoryEnabled(node, path, index, on, digest) }, { setAptRepositoryEnabled(node, path, index, on, digest) })
     }
 
     suspend fun addStandardRepository(serverId: String, node: String, repos: AptRepositories, handle: String) {
-        hub.use(serverId) { it.pveNoData { addStandardAptRepository(node, handle, repos.digest.ifEmpty { null }) } }
+        val digest = repos.digest.ifEmpty { null }
+        eitherNoData(serverId, { addStandardAptRepository(node, handle, digest) }, { addStandardAptRepository(node, handle, digest) })
     }
 
     suspend fun services(serverId: String, node: String): List<NodeService> =
-        hub.use(serverId) { it.pve { services(node) } }.sortedBy { it.id }
+        either(serverId, { services(node) }, { services(node) }).sortedBy { it.id }
 
     /** Returns the task's UPID. */
     suspend fun serviceAction(serverId: String, node: String, service: NodeService, action: ServiceAction): String =
-        hub.use(serverId) { it.pve { serviceAction(node, service.id, action.apiName) } }
+        either(serverId, { serviceAction(node, service.id, action.apiName) }, { serviceAction(node, service.id, action.apiName) })
 
     /** Interfaces as they will be after applying, and the pending diff. */
     suspend fun network(serverId: String, node: String): NetworkConfig {
@@ -136,5 +154,5 @@ class NodeAdminRepository(private val hub: ServerHub) {
 
     /** The newest [lines] lines of the node's journal, oldest first. */
     suspend fun journal(serverId: String, node: String, lines: Int = 500): List<String> =
-        Journal.lines(hub.use(serverId) { it.pve { journal(node, lines) } })
+        Journal.lines(either(serverId, { journal(node, lines) }, { journal(node, lines) }))
 }

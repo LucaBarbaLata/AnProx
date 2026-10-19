@@ -229,6 +229,32 @@ class ProxmoxConnection(
         return execute { pbsApi.call() }
     }
 
+    /** Like [pbs] for calls that answer `{"data": null}` on success. */
+    suspend fun pbsNoData(call: suspend PbsApi.() -> ApiEnvelope<*>) {
+        check(product == ProxmoxProduct.PBS) { "${profile.name} is not a Proxmox Backup Server" }
+        envelope { pbsApi.call() }
+    }
+
+    /**
+     * A PBS call whose answer isn't a `{"data": …}` envelope, such as a file download. The caller
+     * must close what it gets (a [okhttp3.ResponseBody]).
+     */
+    suspend fun <T> pbsRaw(call: suspend PbsApi.() -> T): T {
+        check(product == ProxmoxProduct.PBS) { "${profile.name} is not a Proxmox Backup Server" }
+        val s = session
+        if (s != null && s.needsRenewal(clock()) && !s.isExpired(clock())) renewSession()
+        return translateErrors { pbsApi.call() }
+    }
+
+    /** Polls a task until it stops, on either product (a Backup Server is always `localhost`). */
+    suspend fun awaitTask(node: String, upid: String, pollMillis: Long = 1_000): TaskStatus {
+        while (true) {
+            val status = if (product == ProxmoxProduct.PBS) pbs { taskStatus(upid) } else pve { taskStatus(node, upid) }
+            if (!status.isRunning) return status
+            delay(pollMillis)
+        }
+    }
+
     /** Polls a PVE task until it stops. */
     suspend fun awaitPveTask(node: String, upid: String, pollMillis: Long = 1_000): TaskStatus {
         while (true) {

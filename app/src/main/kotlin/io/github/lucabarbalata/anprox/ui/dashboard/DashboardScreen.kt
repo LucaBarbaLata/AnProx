@@ -82,6 +82,7 @@ fun DashboardScreen(
     onResources: () -> Unit,
     onGuest: (GuestRef) -> Unit,
     onDatacenter: (serverId: String, title: String) -> Unit,
+    onBackupServer: (serverId: String, title: String) -> Unit,
     viewModel: DashboardViewModel = koinViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -124,6 +125,7 @@ fun DashboardScreen(
                         onLogin = { onLogin(s.server.id) },
                         onNode = { node -> onNode(s.server.id, node) },
                         onDatacenter = { title -> onDatacenter(s.server.id, title) },
+                        onBackupServer = { onBackupServer(s.server.id, s.server.profile.name) },
                     )
                 }
             }
@@ -241,7 +243,7 @@ private fun alertText(alert: DashboardAlert): Pair<Tone, String> = when (alert) 
 }
 
 @Composable
-private fun ServerCard(s: SnapshotState, onLogin: () -> Unit, onNode: (String) -> Unit, onDatacenter: (title: String) -> Unit) {
+private fun ServerCard(s: SnapshotState, onLogin: () -> Unit, onNode: (String) -> Unit, onDatacenter: (title: String) -> Unit, onBackupServer: () -> Unit) {
     val c = AnProxTheme.colors
     val snapshot = s.snapshot
     GlassCard(Modifier.fillMaxWidth()) {
@@ -291,7 +293,7 @@ private fun ServerCard(s: SnapshotState, onLogin: () -> Unit, onNode: (String) -
                 Text(stringResource(R.string.dashboard_connecting), color = c.textSecondary, style = MaterialTheme.typography.bodyMedium)
             }
             snapshot is PveSnapshot -> PveBody(snapshot, onNode) { onDatacenter(snapshot.clusterName ?: s.server.profile.name) }
-            snapshot is PbsSnapshot -> PbsBody(snapshot)
+            snapshot is PbsSnapshot -> PbsBody(snapshot, onBackupServer)
         }
 
         if (s.isStale) {
@@ -359,7 +361,7 @@ private fun PveBody(snap: PveSnapshot, onNode: (String) -> Unit, onDatacenter: (
 }
 
 @Composable
-private fun PbsBody(snap: PbsSnapshot) {
+private fun PbsBody(snap: PbsSnapshot, onManage: () -> Unit) {
     val c = AnProxTheme.colors
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         snap.datastores.forEach { ds ->
@@ -392,5 +394,12 @@ private fun PbsBody(snap: PbsSnapshot) {
                 Text(stringResource(R.string.dashboard_failed_tasks, failed), style = MaterialTheme.typography.labelMedium, color = c.danger)
             }
         }
+        AnProxButton(
+            stringResource(R.string.dashboard_backup_server),
+            onClick = onManage,
+            style = ButtonStyle.SECONDARY,
+            icon = Icons.Outlined.Tune,
+            modifier = Modifier.fillMaxWidth(),
+        )
     }
 }

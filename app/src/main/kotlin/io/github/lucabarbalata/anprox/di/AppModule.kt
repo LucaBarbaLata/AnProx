@@ -6,6 +6,7 @@ import io.github.lucabarbalata.anprox.alerts.AlertScheduler
 import io.github.lucabarbalata.anprox.alerts.TaskTracker
 import io.github.lucabarbalata.anprox.data.alerts.AlertRepository
 import io.github.lucabarbalata.anprox.data.backup.BackupRepository
+import io.github.lucabarbalata.anprox.data.backupserver.PbsRepository
 import io.github.lucabarbalata.anprox.data.console.ConsoleRepository
 import io.github.lucabarbalata.anprox.data.datacenter.AccessRepository
 import io.github.lucabarbalata.anprox.data.datacenter.BackupJobRepository
@@ -33,6 +34,8 @@ import io.github.lucabarbalata.anprox.data.store.ProfileStore
 import io.github.lucabarbalata.anprox.data.store.SecretStore
 import io.github.lucabarbalata.anprox.data.transfer.ProfileTransfer
 import io.github.lucabarbalata.anprox.diagnostics.CrashReporter
+import io.github.lucabarbalata.anprox.model.pbs.BackupGroup
+import io.github.lucabarbalata.anprox.model.pbs.BackupSnapshot
 import io.github.lucabarbalata.anprox.model.pve.ConsoleTarget
 import io.github.lucabarbalata.anprox.model.pve.FirewallScope
 import io.github.lucabarbalata.anprox.model.pve.GuestType
@@ -55,6 +58,12 @@ import io.github.lucabarbalata.anprox.ui.access.UsersViewModel
 import io.github.lucabarbalata.anprox.ui.alerts.AlertsViewModel
 import io.github.lucabarbalata.anprox.ui.backups.BackupScope
 import io.github.lucabarbalata.anprox.ui.backups.BackupsViewModel
+import io.github.lucabarbalata.anprox.ui.backupserver.BackupGroupViewModel
+import io.github.lucabarbalata.anprox.ui.backupserver.BackupServerViewModel
+import io.github.lucabarbalata.anprox.ui.backupserver.DatastoreViewModel
+import io.github.lucabarbalata.anprox.ui.backupserver.FileRestoreViewModel
+import io.github.lucabarbalata.anprox.ui.backupserver.PbsJobsViewModel
+import io.github.lucabarbalata.anprox.ui.backupserver.PbsRemotesViewModel
 import io.github.lucabarbalata.anprox.ui.ceph.CephOsdsViewModel
 import io.github.lucabarbalata.anprox.ui.ceph.CephPoolsViewModel
 import io.github.lucabarbalata.anprox.ui.ceph.CephServicesViewModel
@@ -164,6 +173,7 @@ val appModule = module {
     single { AccessRepository(get()) }
     single { CephRepository(get()) }
     single { SdnRepository(get()) }
+    single { PbsRepository(get()) }
     single { StorageSetupRepository(get()) }
     single { ProfileTransfer(get(), get()) }
     single { NodeAdminRepository(get()) }
@@ -246,6 +256,12 @@ val appModule = module {
     viewModel { (serverId: String) -> SdnViewModel(serverId, get(), get()) }
     viewModel { (serverId: String, vnet: String) -> SdnVnetViewModel(serverId, vnet, get()) }
     viewModel { (serverId: String, ipam: String) -> SdnIpamViewModel(serverId, ipam, get()) }
+    viewModel { (serverId: String) -> BackupServerViewModel(serverId, get()) }
+    viewModel { (serverId: String, store: String) -> DatastoreViewModel(serverId, store, get(), get()) }
+    viewModel { (serverId: String, store: String, ns: String, group: BackupGroup) -> BackupGroupViewModel(serverId, store, ns, group, get(), get()) }
+    viewModel { (serverId: String, store: String, ns: String, snapshot: BackupSnapshot) -> FileRestoreViewModel(serverId, store, ns, snapshot, get()) }
+    viewModel { (serverId: String) -> PbsJobsViewModel(serverId, get(), get()) }
+    viewModel { (serverId: String) -> PbsRemotesViewModel(serverId, get()) }
     viewModel { (serverId: String) -> UsersViewModel(serverId, get()) }
     viewModel { (serverId: String, userId: String) -> UserViewModel(serverId, userId, get()) }
     // userId "" adds a new user.

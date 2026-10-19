@@ -34,6 +34,7 @@ import androidx.navigation.toRoute
 import io.github.lucabarbalata.anprox.R
 import io.github.lucabarbalata.anprox.core.designsystem.component.AdaptiveNavScaffold
 import io.github.lucabarbalata.anprox.core.designsystem.component.NavItem
+import io.github.lucabarbalata.anprox.data.backupserver.PbsRepository
 import io.github.lucabarbalata.anprox.data.guest.GuestRef
 import io.github.lucabarbalata.anprox.diagnostics.CrashReportDialog
 import io.github.lucabarbalata.anprox.model.link.AppLink
@@ -52,6 +53,12 @@ import io.github.lucabarbalata.anprox.ui.access.UsersScreen
 import io.github.lucabarbalata.anprox.ui.alerts.AlertsScreen
 import io.github.lucabarbalata.anprox.ui.backups.BackupScope
 import io.github.lucabarbalata.anprox.ui.backups.BackupsScreen
+import io.github.lucabarbalata.anprox.ui.backupserver.BackupGroupScreen
+import io.github.lucabarbalata.anprox.ui.backupserver.BackupServerScreen
+import io.github.lucabarbalata.anprox.ui.backupserver.DatastoreScreen
+import io.github.lucabarbalata.anprox.ui.backupserver.FileRestoreScreen
+import io.github.lucabarbalata.anprox.ui.backupserver.PbsJobsScreen
+import io.github.lucabarbalata.anprox.ui.backupserver.PbsRemotesScreen
 import io.github.lucabarbalata.anprox.ui.ceph.CephOsdsScreen
 import io.github.lucabarbalata.anprox.ui.ceph.CephPage
 import io.github.lucabarbalata.anprox.ui.ceph.CephPoolsScreen
@@ -91,8 +98,10 @@ import io.github.lucabarbalata.anprox.ui.navigation.AboutRoute
 import io.github.lucabarbalata.anprox.ui.navigation.AclRoute
 import io.github.lucabarbalata.anprox.ui.navigation.AlertsRoute
 import io.github.lucabarbalata.anprox.ui.navigation.AppLinks
+import io.github.lucabarbalata.anprox.ui.navigation.BackupGroupRoute
 import io.github.lucabarbalata.anprox.ui.navigation.BackupJobEditorRoute
 import io.github.lucabarbalata.anprox.ui.navigation.BackupJobsRoute
+import io.github.lucabarbalata.anprox.ui.navigation.BackupServerRoute
 import io.github.lucabarbalata.anprox.ui.navigation.BackupsRoute
 import io.github.lucabarbalata.anprox.ui.navigation.CephOsdsRoute
 import io.github.lucabarbalata.anprox.ui.navigation.CephPoolsRoute
@@ -105,6 +114,8 @@ import io.github.lucabarbalata.anprox.ui.navigation.ConsoleRoute
 import io.github.lucabarbalata.anprox.ui.navigation.CreateGuestRoute
 import io.github.lucabarbalata.anprox.ui.navigation.DashboardRoute
 import io.github.lucabarbalata.anprox.ui.navigation.DatacenterRoute
+import io.github.lucabarbalata.anprox.ui.navigation.DatastoreRoute
+import io.github.lucabarbalata.anprox.ui.navigation.FileRestoreRoute
 import io.github.lucabarbalata.anprox.ui.navigation.FirewallExtraRoute
 import io.github.lucabarbalata.anprox.ui.navigation.FirewallRoute
 import io.github.lucabarbalata.anprox.ui.navigation.GroupsRoute
@@ -117,6 +128,8 @@ import io.github.lucabarbalata.anprox.ui.navigation.MoreRoute
 import io.github.lucabarbalata.anprox.ui.navigation.NodeAdminRoute
 import io.github.lucabarbalata.anprox.ui.navigation.NodeRoute
 import io.github.lucabarbalata.anprox.ui.navigation.OptionsRoute
+import io.github.lucabarbalata.anprox.ui.navigation.PbsJobsRoute
+import io.github.lucabarbalata.anprox.ui.navigation.PbsRemotesRoute
 import io.github.lucabarbalata.anprox.ui.navigation.PoolRoute
 import io.github.lucabarbalata.anprox.ui.navigation.PoolsRoute
 import io.github.lucabarbalata.anprox.ui.navigation.RealmEditorRoute
@@ -287,6 +300,7 @@ fun AnProxApp() {
                     onResources = { nav.selectTab(Tab.RESOURCES) },
                     onGuest = openGuest,
                     onDatacenter = { serverId, title -> nav.navigate(DatacenterRoute(serverId, title)) },
+                    onBackupServer = { serverId, title -> nav.navigate(BackupServerRoute(serverId, title)) },
                 )
             }
             composable<DatacenterRoute> { entry ->
@@ -313,6 +327,43 @@ fun AnProxApp() {
                     },
                 )
             }
+            composable<BackupServerRoute> { entry ->
+                val route = entry.toRoute<BackupServerRoute>()
+                BackupServerScreen(
+                    route.serverId,
+                    route.title,
+                    onBack = back,
+                    onDatastore = { store -> nav.navigate(DatastoreRoute(route.serverId, store)) },
+                    onJobs = { nav.navigate(PbsJobsRoute(route.serverId)) },
+                    onRemotes = { nav.navigate(PbsRemotesRoute(route.serverId)) },
+                    onAdmin = { page -> nav.navigate(NodeAdminRoute(route.serverId, PbsRepository.NODE, page.name, backupServer = true)) },
+                )
+            }
+            composable<DatastoreRoute> { entry ->
+                val route = entry.toRoute<DatastoreRoute>()
+                DatastoreScreen(
+                    route.serverId,
+                    route.store,
+                    onBack = back,
+                    onGroup = { ns, type, id -> nav.navigate(BackupGroupRoute(route.serverId, route.store, ns, type, id)) },
+                    onTask = openTask,
+                )
+            }
+            composable<BackupGroupRoute> { entry ->
+                val r = entry.toRoute<BackupGroupRoute>()
+                BackupGroupScreen(
+                    r.serverId, r.store, r.ns, r.type, r.id,
+                    onBack = back,
+                    onFiles = { time -> nav.navigate(FileRestoreRoute(r.serverId, r.store, r.ns, r.type, r.id, time)) },
+                    onTask = openTask,
+                )
+            }
+            composable<FileRestoreRoute> { entry ->
+                val r = entry.toRoute<FileRestoreRoute>()
+                FileRestoreScreen(r.serverId, r.store, r.ns, r.type, r.id, r.time, onBack = back)
+            }
+            composable<PbsJobsRoute> { entry -> PbsJobsScreen(entry.toRoute<PbsJobsRoute>().serverId, onBack = back, onTask = openTask) }
+            composable<PbsRemotesRoute> { entry -> PbsRemotesScreen(entry.toRoute<PbsRemotesRoute>().serverId, onBack = back) }
             composable<SdnRoute> { entry ->
                 val route = entry.toRoute<SdnRoute>()
                 SdnScreen(
@@ -607,8 +658,8 @@ fun AnProxApp() {
                         r.serverId,
                         r.node,
                         onBack = back,
-                        onRepositories = { nav.navigate(NodeAdminRoute(r.serverId, r.node, NodeAdminPage.REPOSITORIES.name)) },
-                        onUpgrade = { nav.navigate(ConsoleRoute(r.serverId, r.node, ConsoleKind.NODE.name, 0, r.node, command = "upgrade")) },
+                        onRepositories = { nav.navigate(NodeAdminRoute(r.serverId, r.node, NodeAdminPage.REPOSITORIES.name, r.backupServer)) },
+                        onUpgrade = if (r.backupServer) null else ({ nav.navigate(ConsoleRoute(r.serverId, r.node, ConsoleKind.NODE.name, 0, r.node, command = "upgrade")) }),
                         onTask = openTask,
                     )
                     NodeAdminPage.REPOSITORIES -> RepositoriesScreen(r.serverId, r.node, onBack = back, onTask = openTask)

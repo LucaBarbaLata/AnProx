@@ -16,7 +16,7 @@ Status legend: ✅ done · 🚧 in progress · 🗓 planned
 | [M5](#m5--node-administration) | Node administration | ✅ (beta.3 candidate) |
 | [M6](#m6--ceph--sdn) | Ceph and SDN | ✅ (beta.3 candidate) |
 | [M7](#m7--access-control) | Users, groups, roles, ACLs, realms, tokens, TFA | ✅ (beta.3 candidate) |
-| [M8](#m8--backup-server-complete) | Proxmox Backup Server complete | 🗓 |
+| [M8](#m8--backup-server-complete) | Proxmox Backup Server complete | ✅ (beta.3 candidate) |
 | [M9](#m9--parity--10) | Parity sweep, polish, translations → 1.0 | 🗓 |
 
 Exit criteria for every milestone:
@@ -64,7 +64,7 @@ Everything marked ✅ in M1 and M2 below. Gates:
 ### Beta 0.1.0-beta.3: 🚧 candidate, owner testing
 Everything marked ✅ in M2–M5 (guest configuration, SSH, alerts and Android integration,
 datacenter, node administration). Gates:
-- [ ] CI green: tests, lint, debug and release builds, and the emulator tour on Android 8.0 and 14 (31 steps)
+- [ ] CI green: tests, lint, debug and release builds, and the emulator tour on Android 8.0 and 14 (32 steps)
 - [x] `CHANGELOG.md` entries, store changelog (`fastlane/…/changelogs/10023.txt`), README
 - [x] [Test guide](beta2-test-guide.md) sections D1–D15 for the owner
 - [ ] Owner: run the test guide on real hardware (Proxmox VE 8; 9 later)
@@ -211,12 +211,21 @@ datacenter, node administration). Gates:
 - Later (M9): WebAuthn registration (needs a browser flow), scheduled realm sync jobs, hiding
   controls the signed-in user may not use.
 
-## M8 — Backup Server complete
+## M8 — Backup Server complete ✅
 - **Datastores** (Q20): create, configure, maintenance mode, usage history.
 - **Content**: snapshots per namespace, notes, protection, verify state; **file-level restore** (browse
   and download single files) (Q20).
 - **Jobs**: garbage collection, prune, verify, sync (push/pull), tape (basic); namespaces; remotes.
 - PBS node administration (shares the M5 components).
+- ✅ Done: Dashboard → **Manage Backup Server**: the server's CPU, memory, disk and kernel; each
+  datastore's usage, snapshot counts, garbage collection (with deduplication) and maintenance
+  mode; namespaces; backup groups and their snapshots (notes, protection, verify, forget, prune
+  with a preview, delete a group); file restore from container and host backups (browse, save a
+  file or a folder as a zip); sync, verify and prune jobs (run now, last log, switch prune jobs
+  off); remotes; and updates, repositories, services and the journal through the M5 screens.
+  Backup Server tasks open in the Tasks tab.
+- Later (M9): creating datastores and jobs, tape, VM file restore (through Proxmox VE), Backup
+  Server access control, disks and network.
 
 ## M9 — Parity & 1.0
 - Remaining endpoints from [api-coverage.md](api-coverage.md): ACME/certificates, metric servers,

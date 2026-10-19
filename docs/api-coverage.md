@@ -165,16 +165,16 @@ Code: `core/network/src/main/kotlin/.../network/api/` (`AccessApi`, `PveApi`, `P
 | `GET /status/datastore-usage` | Datastore usage + "full in" estimate | ✅ |
 | `GET /admin/datastore` | Datastore list | ✅ |
 | `GET /nodes/localhost/tasks` | Task history | ✅ |
-| `GET /nodes/localhost/tasks/{upid}/{status,log}` | Task detail & log | 🗓 M1 |
-| `/admin/datastore/{store}/{groups,snapshots,namespace}` | Browse backups | 🗓 M8 |
-| `/admin/datastore/{store}/{gc,prune,prune-datastore,verify}` | Maintenance | 🗓 M8 |
-| `/admin/datastore/{store}/{catalog,pxar-file-download,download-decoded}` | File-level restore | 🗓 M8 |
-| `/admin/datastore/{store}/{notes,protected}` | Snapshot notes & protection | 🗓 M8 |
-| `/config/{datastore,remote,sync,verify,prune,traffic-control}` | Configuration & jobs | 🗓 M8 |
-| `/admin/{sync,verify,prune}` | Run jobs | 🗓 M8 |
+| `GET /nodes/localhost/tasks/{upid}/{status,log}` | Task detail & log (Tasks tab, after every change) | ✅ M8 |
+| `/admin/datastore/{store}/{status,groups,snapshots,namespace}` | Usage and counts; namespaces (create, delete); backup groups and snapshots; forget a snapshot or a whole group | ✅ M8 |
+| `/admin/datastore/{store}/{gc,prune,verify}` | Garbage collection (status, start), prune a group (with a dry run), verify a snapshot, group or namespace | ✅ M8 (`prune-datastore` 🗓 M9) |
+| `/admin/datastore/{store}/{catalog,pxar-file-download}` | File restore from container and host backups: browse the catalog, save a file or a folder (zip) | ✅ M8 (VM images: through Proxmox VE's file restore 🗓 M9) |
+| `/admin/datastore/{store}/{notes,protected}` | Snapshot notes & protection | ✅ M8 |
+| `/config/{datastore,remote,prune}` | Maintenance mode (read-only, offline) of a datastore; remotes (add, delete); switch a prune job on or off | ✅ M8 (creating datastores and jobs, traffic control 🗓 M9) |
+| `/admin/{sync,verify,prune}` (+ `/{id}/run`) | Jobs with their last and next run; run one now | ✅ M8 |
 | `/tape/*` | Tape backup | 🗓 M8 (basic) / M9 |
-| `/nodes/localhost/{status,disks,network,apt,services,syslog,journal}` | Node admin | 🗓 M8 (reuses M5 UI) |
-| `/access/{users,acl,roles,domains,tfa}` | Access control | 🗓 M7 |
+| `/nodes/localhost/{status,apt,subscription,services,journal}` | The server's status; updates, repositories, subscription, services and the journal through the M5 screens | ✅ M8 (`disks`, `network` 🗓 M9) |
+| `/access/{users,acl,roles,domains,tfa}` | Access control on a Backup Server | 🗓 M9 (Proxmox VE's is done in M7) |
 | `/config/{acme,notifications,metrics}` | Certificates, notifications, metrics | 🗓 M9 |
 
 ---

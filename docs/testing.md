@@ -12,7 +12,7 @@ testing debug builds on **real hardware**.
 | Integration: multi-server hub, sessions, dashboard snapshots, guest actions, guest snapshots, performance history, app lock rules, backup and restore, guest network info, guest options, clone/template/migrate, console sessions (terminal and VNC handshake), node power, hardware (disks, drives, network, pending changes, container volumes), creating VMs and containers, cloud-init, SPICE, alerts, task notifications, backup jobs, storage, firewall, high availability, replication, pools, storage setup, encrypted server export, firewall groups, aliases, IP sets and log, node updates, repositories, services, journal, DNS, hosts, time, network and disks | `core/data/src/test` | JVM | 104 |
 | Android lint | `:app:lintDebug` | CI | — |
 | Build: debug and R8-minified release | `:app:assemble*` | CI | — |
-| **End-to-end tour** of the minified release APK on emulators against the mock server | `scripts/e2e/tour.py` | CI (Android 8.0 + 14), Release workflow | 31 steps |
+| **End-to-end tour** of the minified release APK on emulators against the mock server | `scripts/e2e/tour.py` | CI (Android 8.0 + 14), Release workflow | 32 steps |
 | UI / screenshot tests | planned (M1) | — | — |
 | Manual on real hardware | [checklist below](#manual-test-checklist-real-hardware) | owner | — |
 
@@ -140,9 +140,10 @@ so no test code is compiled into the app. `scripts/e2e/run.sh` starts the mock s
 26. Datacenter → **Users** → **Add user** `dave` (pve realm, two passwords, group `ops`) → **Create user** → `dave@pve` → **Add API token** `ci` → "API token created" with `dave@pve!ci` and the secret, once → **Permissions** → **Add permission** `/storage`, group `auditors`, role `Operator` → it is listed → **Realms** → **Sync** `corp` as a preview → **View log** lists `adding user 'bob@corp'`.
 27. Datacenter → **Ceph** → "2 osds down" (pve3 is offline in the mock) → the **noout** switch → "noout set" → **OSDs** → `osd.5` (down and out) offers **Mark in** → **Pools** → **Create pool** `fast` → "Pool fast created".
 28. Datacenter → **SDN** → "1 change not applied yet" (the mock's new VNet `iot`) → `iot` → **Add subnet** `10.40.0.0/24`, gateway `10.40.0.1` → it is listed → **Apply** → "SDN changes applied".
-29. Resources → `pve1` → **Updates** (pve-manager is upgradable) → **Repositories** shows the enterprise warning → add **No-Subscription** → **Services** → start `ksmtuned` → **Network** → a new bridge is pending → **Revert** → **System log** shows the journal.
-30. Settings → **SSH keys** → **New key** "Tour phone" → Resources → `pve1` → **SSH** → host `10.0.2.2`, port `2222`, password → **Trust this server?** → **Trust** → "Connected" → **Add key** → "Tour phone" → **Change connection** → **Connect** with the key, without a host key question.
-31. Settings → Light theme; turning on the app lock explains that the emulator has no screen lock → dashboard in light mode, with the starred VM under Favourites.
+29. Dashboard → **Manage Backup Server** → `store1` → `ct/200` (Verified) → the newest snapshot → **Browse files** → `root.pxar.didx` → `etc` lists `hosts` → **Prune** previews "Keeps 2, removes 0" → **Jobs** → `s-offsite` (failed in the mock) → **Run now** → "s-offsite finished".
+30. Resources → `pve1` → **Updates** (pve-manager is upgradable) → **Repositories** shows the enterprise warning → add **No-Subscription** → **Services** → start `ksmtuned` → **Network** → a new bridge is pending → **Revert** → **System log** shows the journal.
+31. Settings → **SSH keys** → **New key** "Tour phone" → Resources → `pve1` → **SSH** → host `10.0.2.2`, port `2222`, password → **Trust this server?** → **Trust** → "Connected" → **Add key** → "Tour phone" → **Change connection** → **Connect** with the key, without a host key question.
+32. Settings → Light theme; turning on the app lock explains that the emulator has no screen lock → dashboard in light mode, with the starred VM under Favourites.
 
 After every step the script checks that the app process is alive and that logcat has no
 `FATAL EXCEPTION` for the app. Screenshots of each step, plus UI dumps and logcat on failure,
@@ -311,3 +312,15 @@ Run this before closing a milestone. Note the PVE/PBS versions you tested agains
 - [ ] Attach a test container's NIC to `testnet` (web UI) → it gets an address from the range; the IPAM `pve` lists it.
 - [ ] Change the VNet's alias → marked Changed → **Discard** (Proxmox VE 8.4+) → back as it was.
 - [ ] Delete the subnet, the VNet and the zone → marked to remove → **Apply** → gone.
+
+**Backup Server** (Dashboard → Manage Backup Server)
+- [ ] CPU, memory, disk and datastores match the Backup Server's dashboard.
+- [ ] A datastore: usage, counts, last garbage collection and deduplication factor match its Summary; **Garbage collect** runs as a task.
+- [ ] Namespaces and backup groups match its Content tab; create and delete a test namespace.
+- [ ] A snapshot: edit its notes, protect it (Forget is then refused), verify it → Verified.
+- [ ] **Browse files** of a container backup; save a file (open it on the phone) and a folder (a zip).
+- [ ] **Prune** a test group: the preview matches the web UI's prune simulator for the same numbers.
+- [ ] Jobs: last results match the web UI; **Run now** a verify job; its log opens.
+- [ ] Remotes: add one with a wrong fingerprint (refused when a sync job uses it), delete it.
+- [ ] Updates, Repositories, Services and System log show the Backup Server's own (proxmox-backup-server, proxmox-backup-proxy).
+- [ ] Tasks tab: a Backup Server task opens its log.

@@ -106,7 +106,8 @@ fun UpdatesScreen(
     node: String,
     onBack: () -> Unit,
     onRepositories: () -> Unit,
-    onUpgrade: () -> Unit,
+    /** Null where the app has no shell to run the upgrade in (a Backup Server). */
+    onUpgrade: (() -> Unit)?,
     onTask: (serverId: String, node: String, upid: String) -> Unit,
 ) {
     val viewModel: UpdatesViewModel = koinViewModel(key = "updates-$serverId-$node") { parametersOf(serverId, node) }
@@ -161,13 +162,15 @@ fun UpdatesScreen(
                         loading = state.refreshing,
                         modifier = Modifier.weight(1f),
                     )
-                    AnProxButton(
-                        stringResource(R.string.updates_upgrade),
-                        onClick = onUpgrade,
-                        icon = Icons.Outlined.Terminal,
-                        enabled = state.updates.isNotEmpty() && !state.refreshing,
-                        modifier = Modifier.weight(1f),
-                    )
+                    if (onUpgrade != null) {
+                        AnProxButton(
+                            stringResource(R.string.updates_upgrade),
+                            onClick = onUpgrade,
+                            icon = Icons.Outlined.Terminal,
+                            enabled = state.updates.isNotEmpty() && !state.refreshing,
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
                 }
             }
             item {

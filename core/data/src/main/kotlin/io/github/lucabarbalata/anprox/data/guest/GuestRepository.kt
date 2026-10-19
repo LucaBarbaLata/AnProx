@@ -1,6 +1,7 @@
 package io.github.lucabarbalata.anprox.data.guest
 
 import io.github.lucabarbalata.anprox.data.hub.ServerHub
+import io.github.lucabarbalata.anprox.model.ProxmoxProduct
 import io.github.lucabarbalata.anprox.model.pve.CloneRequest
 import io.github.lucabarbalata.anprox.model.pve.GuestNic
 import io.github.lucabarbalata.anprox.model.pve.GuestOptions
@@ -211,16 +212,18 @@ class GuestRepository(private val hub: ServerHub, private val taskObserver: Task
 
     // ------------------------------------------------------------------ tasks
 
+    // These work for Backup Server tasks too (its node is always `localhost`).
+
     suspend fun awaitTask(serverId: String, node: String, upid: String): TaskStatus {
         taskObserver?.started(serverId, node, upid)
-        return hub.use(serverId) { it.awaitPveTask(node, upid) }
+        return hub.use(serverId) { it.awaitTask(node, upid) }
     }
 
     suspend fun taskStatus(serverId: String, node: String, upid: String): TaskStatus =
-        hub.use(serverId) { it.pve { taskStatus(node, upid) } }
+        hub.use(serverId) { if (it.product == ProxmoxProduct.PBS) it.pbs { taskStatus(upid) } else it.pve { taskStatus(node, upid) } }
 
     suspend fun taskLog(serverId: String, node: String, upid: String, start: Int = 0, limit: Int = 500): List<TaskLogLine> =
-        hub.use(serverId) { it.pve { taskLog(node, upid, start, limit) } }
+        hub.use(serverId) { if (it.product == ProxmoxProduct.PBS) it.pbs { taskLog(upid, start, limit) } else it.pve { taskLog(node, upid, start, limit) } }
 
     private fun <T> poll(intervalMillis: Long, fetch: suspend () -> T): Flow<Polled<T>> = flow {
         var last: T? = null

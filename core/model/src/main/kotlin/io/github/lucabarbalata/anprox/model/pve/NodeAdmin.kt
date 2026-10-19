@@ -103,8 +103,8 @@ data class NodeSubscription(
     val active: Boolean get() = status.equals("active", ignoreCase = true)
 
     companion object {
-        /** `pve4c-1a2b3c4d5e` (c: community, b: basic, s: standard, p: premium; the digit: sockets). */
-        private val KEY = Regex("^pve([1248])([cbsp])-[0-9a-f]{10}$")
+        /** `pve4c-1a2b3c4d5e` (c: community, b: basic, s: standard, p: premium; the digit: sockets), or `pbsc-…` for a Backup Server. */
+        private val KEY = Regex("^(pve[1248][cbsp]|pbs[cbsp])-[0-9a-f]{10}$")
 
         fun isValidKey(key: String): Boolean = KEY.matches(key.trim())
     }

@@ -231,7 +231,11 @@ class MockState(
     private val firewall = MockFirewall()
     private val haManager = MockHa(guests)
     private val replication = MockReplication(clockMillis)
-    private val nodeAdmin = MockNodeAdmin(nodes.map { it.name })
+    /** A Backup Server is one node, `localhost`. */
+    private val nodeAdmin = MockNodeAdmin(if (product == ProxmoxProduct.PBS) listOf("localhost") else nodes.map { it.name })
+
+    /** Backup Server content, jobs and remotes. */
+    internal val pbs = MockPbs { clockMillis() / 1000 }
 
     internal val sdn = MockSdn()
 

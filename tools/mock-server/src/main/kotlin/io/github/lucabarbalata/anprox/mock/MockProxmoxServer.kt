@@ -34,6 +34,7 @@ import io.ktor.server.netty.Netty
 import io.ktor.server.netty.NettyApplicationEngine
 import io.ktor.server.request.httpMethod
 import io.ktor.server.request.receiveParameters
+import io.ktor.server.response.respondBytes
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.delete
@@ -1338,6 +1339,214 @@ class MockProxmoxServer(
         get("nodes/localhost/tasks") {
             call.authed() ?: return@get
             call.ok(state.recentTasks(call.request.queryParameters["limit"]?.toIntOrNull() ?: 50))
+        }
+        get("nodes/localhost/tasks/{upid}/status") {
+            call.authed() ?: return@get
+            call.ok(state.taskStatus(call.parameters["upid"]!!) ?: return@get call.fail(404, "no such task"))
+        }
+        get("nodes/localhost/tasks/{upid}/log") {
+            call.authed() ?: return@get
+            call.ok(state.taskLog(call.parameters["upid"]!!) ?: return@get call.fail(404, "no such task"))
+        }
+        pbsAdmin()
+    }
+
+    private fun Route.pbsAdmin() {
+        val pbs = state.pbs
+        val node = "localhost"
+        suspend fun ApplicationCall.params(): Map<String, String> = receiveParameters().let { p -> p.names().associateWith { p[it].orEmpty() } }
+        fun ApplicationCall.query(): Map<String, String> = request.queryParameters.let { q -> q.names().associateWith { q[it].orEmpty() } }
+        suspend fun ApplicationCall.writer(): MockState.Session? {
+            val s = authed() ?: return null
+            if (state.isReadOnly(s.user)) {
+                fail(403, "permission check failed")
+                return null
+            }
+            return s
+        }
+        suspend fun ApplicationCall.done(error: String?) = if (error != null) fail(400, error) else ok(JsonNull)
+        suspend fun ApplicationCall.task(type: String, id: String, s: MockState.Session, change: Pair<String?, (() -> Unit)?>) {
+            val (error, effect) = change
+            if (error != null) fail(400, error) else ok(state.startTask("pbs", type, id, s.user, effect = effect))
+        }
+
+        get("admin/datastore/{store}/status") {
+            call.authed() ?: return@get
+            call.ok(pbs.status(call.parameters["store"]!!) ?: return@get call.fail(404, "datastore does not exist"))
+        }
+        get("admin/datastore/{store}/gc") {
+            call.authed() ?: return@get
+            call.ok(pbs.gc(call.parameters["store"]!!) ?: return@get call.fail(404, "datastore does not exist"))
+        }
+        post("admin/datastore/{store}/gc") {
+            val s = call.writer() ?: return@post
+            val store = call.parameters["store"]!!
+            call.task("garbage_collection", store, s, pbs.startGc(store))
+        }
+        get("config/datastore/{store}") {
+            call.authed() ?: return@get
+            call.ok(pbs.config(call.parameters["store"]!!) ?: return@get call.fail(404, "datastore does not exist"))
+        }
+        put("config/datastore/{store}") {
+            call.writer() ?: return@put
+            call.done(pbs.updateConfig(call.parameters["store"]!!, call.params()))
+        }
+        get("admin/datastore/{store}/namespace") {
+            call.authed() ?: return@get
+            call.ok(pbs.namespaces(call.parameters["store"]!!) ?: return@get call.fail(404, "datastore does not exist"))
+        }
+        post("admin/datastore/{store}/namespace") {
+            call.writer() ?: return@post
+            val p = call.params()
+            call.done(pbs.createNamespace(call.parameters["store"]!!, p["name"].orEmpty(), p["parent"]))
+        }
+        delete("admin/datastore/{store}/namespace") {
+            call.writer() ?: return@delete
+            val q = call.query()
+            call.done(pbs.deleteNamespace(call.parameters["store"]!!, q["ns"].orEmpty(), q["delete-groups"] == "1"))
+        }
+        get("admin/datastore/{store}/groups") {
+            call.authed() ?: return@get
+            call.ok(pbs.groups(call.parameters["store"]!!, call.query()["ns"].orEmpty()) ?: return@get call.fail(404, "datastore or namespace does not exist"))
+        }
+        delete("admin/datastore/{store}/groups") {
+            call.writer() ?: return@delete
+            val q = call.query()
+            call.done(pbs.deleteGroup(call.parameters["store"]!!, q["ns"].orEmpty(), q["backup-type"].orEmpty(), q["backup-id"].orEmpty()))
+        }
+        get("admin/datastore/{store}/snapshots") {
+            call.authed() ?: return@get
+            val q = call.query()
+            call.ok(pbs.snapshots(call.parameters["store"]!!, q["ns"].orEmpty(), q["backup-type"], q["backup-id"]) ?: return@get call.fail(404, "datastore or namespace does not exist"))
+        }
+        delete("admin/datastore/{store}/snapshots") {
+            call.writer() ?: return@delete
+            val q = call.query()
+            call.done(pbs.deleteSnapshot(call.parameters["store"]!!, q["ns"].orEmpty(), q))
+        }
+        put("admin/datastore/{store}/notes") {
+            call.writer() ?: return@put
+            val p = call.params()
+            call.done(pbs.setNotes(call.parameters["store"]!!, p["ns"].orEmpty(), p))
+        }
+        put("admin/datastore/{store}/protected") {
+            call.writer() ?: return@put
+            val p = call.params()
+            call.done(pbs.setProtected(call.parameters["store"]!!, p["ns"].orEmpty(), p))
+        }
+        post("admin/datastore/{store}/verify") {
+            val s = call.writer() ?: return@post
+            val p = call.params()
+            val store = call.parameters["store"]!!
+            call.task("verify", store, s, pbs.verify(store, p["ns"].orEmpty(), p))
+        }
+        post("admin/datastore/{store}/prune") {
+            call.writer() ?: return@post
+            val p = call.params()
+            val (error, result) = pbs.prune(call.parameters["store"]!!, p["ns"].orEmpty(), p)
+            if (error != null) call.fail(400, error) else call.ok(result!!)
+        }
+        get("admin/datastore/{store}/catalog") {
+            call.authed() ?: return@get
+            val q = call.query()
+            val (error, result) = pbs.catalog(call.parameters["store"]!!, q["ns"].orEmpty(), q)
+            if (error != null) call.fail(400, error) else call.ok(result!!)
+        }
+        get("admin/datastore/{store}/pxar-file-download") {
+            call.authed() ?: return@get
+            val q = call.query()
+            val (error, bytes) = pbs.download(call.parameters["store"]!!, q["ns"].orEmpty(), q)
+            if (error != null) call.fail(400, error) else call.respondBytes(bytes!!, ContentType.Application.OctetStream)
+        }
+        for (kind in listOf("sync", "verify", "prune")) {
+            get("admin/$kind") {
+                call.authed() ?: return@get
+                call.ok(pbs.jobs(kind))
+            }
+            post("admin/$kind/{id}/run") {
+                val s = call.writer() ?: return@post
+                val id = call.parameters["id"]!!
+                call.task("${kind}job", id, s, pbs.runJob(kind, id))
+            }
+        }
+        put("config/prune/{id}") {
+            call.writer() ?: return@put
+            call.done(pbs.setPruneDisabled(call.parameters["id"]!!, call.params()))
+        }
+        get("config/remote") {
+            call.authed() ?: return@get
+            call.ok(pbs.remotes())
+        }
+        post("config/remote") {
+            call.writer() ?: return@post
+            call.done(pbs.createRemote(call.params()))
+        }
+        delete("config/remote/{name}") {
+            call.writer() ?: return@delete
+            call.done(pbs.deleteRemote(call.parameters["name"]!!))
+        }
+
+        // The node: the same answers as a Proxmox VE node's.
+        get("nodes/$node/status") {
+            call.authed() ?: return@get
+            call.ok(pbs.nodeStatus())
+        }
+        get("nodes/$node/apt/update") {
+            call.authed() ?: return@get
+            call.ok(state.aptUpdates(node).orEmpty())
+        }
+        post("nodes/$node/apt/update") {
+            val s = call.writer() ?: return@post
+            call.ok(state.refreshAptIndex(node, s.user))
+        }
+        get("nodes/$node/apt/changelog") {
+            call.authed() ?: return@get
+            val name = call.request.queryParameters["name"].orEmpty()
+            call.ok(state.aptChangelog(node, name) ?: return@get call.fail(500, "changelog for '$name' not available"))
+        }
+        get("nodes/$node/apt/versions") {
+            call.authed() ?: return@get
+            call.ok(state.packageVersions(node).orEmpty())
+        }
+        get("nodes/$node/apt/repositories") {
+            call.authed() ?: return@get
+            call.ok(state.aptRepositories(node) ?: return@get call.fail(500, "no repositories"))
+        }
+        post("nodes/$node/apt/repositories") {
+            call.writer() ?: return@post
+            val p = call.params()
+            call.done(state.setAptRepositoryEnabled(node, p["path"].orEmpty(), p["index"]?.toIntOrNull() ?: -1, p["enabled"] == "1", p["digest"]))
+        }
+        put("nodes/$node/apt/repositories") {
+            call.writer() ?: return@put
+            val p = call.params()
+            call.done(state.addStandardAptRepository(node, p["handle"].orEmpty(), p["digest"]))
+        }
+        get("nodes/$node/subscription") {
+            call.authed() ?: return@get
+            call.ok(state.subscription())
+        }
+        put("nodes/$node/subscription") {
+            call.writer() ?: return@put
+            call.done(state.setSubscriptionKey(call.params()["key"].orEmpty()))
+        }
+        delete("nodes/$node/subscription") {
+            call.writer() ?: return@delete
+            state.setSubscriptionKey(null)
+            call.ok(JsonNull)
+        }
+        get("nodes/$node/services") {
+            call.authed() ?: return@get
+            call.ok(state.services(node).orEmpty())
+        }
+        post("nodes/$node/services/{service}/{action}") {
+            val s = call.writer() ?: return@post
+            state.serviceAction(node, call.parameters["service"]!!, call.parameters["action"]!!, s.user)
+                .fold({ call.ok(it) }, { call.fail(400, it.message ?: "error") })
+        }
+        get("nodes/$node/journal") {
+            call.authed() ?: return@get
+            call.ok(state.journal(node, call.request.queryParameters["lastentries"]?.toIntOrNull() ?: 500))
         }
     }
 

@@ -177,6 +177,22 @@ All notable changes to AnProx are documented here. The format follows
   Changes are marked New, Changed or To remove until you **Apply** them on the nodes (a task) or
   **Discard** them.
 
+- **Backup Server** (Dashboard → **Manage Backup Server**): the server's CPU, memory, disk and
+  kernel, and its datastores.
+  - A **datastore**: usage and how many groups and snapshots of each kind it holds, the last
+    garbage collection (what it freed, the deduplication factor) and **Garbage collect** now,
+    **Verify** everything (or only what wasn't verified), **Maintenance mode** (read-only or
+    offline, with a message), and **namespaces** (create, delete with or without their backups).
+  - A **backup group** (a guest or host): its snapshots with size, verification, protection,
+    encryption and notes. Edit the notes, protect a snapshot, verify it, forget it; verify or
+    **prune** the group with a preview of what goes; delete the whole group (type its ID).
+  - **File restore** from container and host backups: browse the backup's files and save one, or
+    a folder as a zip, where you choose.
+  - **Jobs**: sync, verify and prune jobs with their last and next run; **Run now**, open the last
+    run's log, switch a prune job off. **Remotes**: add and delete.
+  - **Updates**, **Repositories**, **Services** and the **System log** of the Backup Server, in
+    the same screens as a Proxmox VE node's. Backup Server tasks now open in the Tasks tab.
+
 - **Instant alerts guide** ([docs/push-notifications.md](docs/push-notifications.md)): Proxmox's own
   notifications to the phone through ntfy or Gotify, without Google services, alongside the
   app's background checks.

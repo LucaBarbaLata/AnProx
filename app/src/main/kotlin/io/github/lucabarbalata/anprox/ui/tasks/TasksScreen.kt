@@ -83,7 +83,8 @@ fun TasksScreen(
             }
             items(state.items, key = { it.serverId + it.task.upid }) { item ->
                 TaskRow(item, state.showServerNames) {
-                    if (item.product == ProxmoxProduct.PVE) onTask(item.serverId, item.task.node, item.task.upid)
+                    // A Backup Server's API addresses its only node as localhost, whatever the UPID says.
+                    onTask(item.serverId, if (item.product == ProxmoxProduct.PBS) "localhost" else item.task.node, item.task.upid)
                 }
             }
         }
@@ -101,7 +102,7 @@ private fun TaskRow(item: TaskItem, showServer: Boolean, onClick: () -> Unit) {
         TaskState.FAILED -> Tone.DANGER to Icons.Outlined.ErrorOutline
     }
     GlassCard(
-        onClick = if (item.product == ProxmoxProduct.PVE) onClick else null,
+        onClick = onClick,
         contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {

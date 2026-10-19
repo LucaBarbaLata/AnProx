@@ -36,7 +36,8 @@ import kotlinx.serialization.Serializable
 @Serializable data class SshRoute(val serverId: String, val node: String, val vmid: Int, val type: String, val name: String)
 @Serializable data object SshKeysRoute
 // page: a NodeAdminPage name.
-@Serializable data class NodeAdminRoute(val serverId: String, val node: String, val page: String)
+// backupServer: the node of a Proxmox Backup Server (`localhost`), which has no shell for upgrades.
+@Serializable data class NodeAdminRoute(val serverId: String, val node: String, val page: String, val backupServer: Boolean = false)
 @Serializable data class CloneRoute(val serverId: String, val node: String, val type: String, val vmid: Int, val name: String)
 @Serializable data class MigrateRoute(val serverId: String, val node: String, val type: String, val vmid: Int, val name: String)
 @Serializable data class BackupsRoute(val serverId: String, val node: String, val type: String, val vmid: Int, val name: String)
@@ -71,6 +72,13 @@ import kotlinx.serialization.Serializable
 @Serializable data class SdnRoute(val serverId: String)
 @Serializable data class SdnVnetRoute(val serverId: String, val vnet: String)
 @Serializable data class SdnIpamRoute(val serverId: String, val ipam: String)
+// Backup Server (M8). ns "" is the root namespace.
+@Serializable data class BackupServerRoute(val serverId: String, val title: String)
+@Serializable data class DatastoreRoute(val serverId: String, val store: String)
+@Serializable data class BackupGroupRoute(val serverId: String, val store: String, val ns: String, val type: String, val id: String)
+@Serializable data class FileRestoreRoute(val serverId: String, val store: String, val ns: String, val type: String, val id: String, val time: Long)
+@Serializable data class PbsJobsRoute(val serverId: String)
+@Serializable data class PbsRemotesRoute(val serverId: String)
 // Permissions (M7)
 @Serializable data class UsersRoute(val serverId: String)
 @Serializable data class UserRoute(val serverId: String, val userId: String)

@@ -6,7 +6,6 @@ import io.github.lucabarbalata.anprox.model.json.int
 import io.github.lucabarbalata.anprox.model.json.long
 import io.github.lucabarbalata.anprox.model.json.obj
 import io.github.lucabarbalata.anprox.model.json.str
-import io.github.lucabarbalata.anprox.model.json.strings
 import kotlinx.serialization.json.JsonObject
 import java.util.Base64
 
@@ -369,11 +368,38 @@ data class DatastoreMaintenance(val type: String? = null, val message: String? =
     }
 }
 
-/** Groups by namespace path for display: `a/b` → depth 2. */
-fun List<PbsNamespace>.sortedTree(): List<PbsNamespace> = sortedBy { it.ns.split('/').joinToString("\u0000") }
-
-/** Strings PBS returns for files in a group's listing. */
-fun BackupGroup.isVm(): Boolean = type == BackupType.VM.apiName
-
-/** The `files` of a group, as some PBS versions list them. */
-fun JsonObject.groupFiles(): List<String> = strings("files")
+/** `GET /nodes/localhost/status` of a Backup Server. */
+data class PbsNodeStatus(
+    /** 0–1. */
+    val cpu: Double? = null,
+    val memoryUsed: Long? = null,
+    val memoryTotal: Long? = null,
+    val rootUsed: Long? = null,
+    val rootTotal: Long? = null,
+    val uptime: Long? = null,
+    val loadAverage: List<String> = emptyList(),
+    val kernel: String? = null,
+    val cpuModel: String? = null,
+    val cpus: Int? = null,
+    /** The server certificate's fingerprint, to compare with what the app trusts. */
+    val fingerprint: String? = null,
+) {
+    companion object {
+        fun fromJson(o: JsonObject): PbsNodeStatus {
+            val kernel = o.obj("current-kernel")?.let { k -> listOfNotNull(k.str("sysname"), k.str("release")).joinToString(" ") } ?: o.str("kversion")
+            return PbsNodeStatus(
+                cpu = o.str("cpu")?.toDoubleOrNull(),
+                memoryUsed = o.obj("memory")?.long("used"),
+                memoryTotal = o.obj("memory")?.long("total"),
+                rootUsed = o.obj("root")?.long("used"),
+                rootTotal = o.obj("root")?.long("total"),
+                uptime = o.long("uptime"),
+                loadAverage = (o["loadavg"] as? kotlinx.serialization.json.JsonArray)?.map { it.toString().trim('"') }.orEmpty(),
+                kernel = kernel,
+                cpuModel = o.obj("cpuinfo")?.str("model"),
+                cpus = o.obj("cpuinfo")?.int("cpus"),
+                fingerprint = o.obj("info")?.str("fingerprint"),
+            )
+        }
+    }
+}
