@@ -235,6 +235,7 @@ class MockState(
     private val poolsManager = MockPools()
     private val jobs = MockJobs(storages, clockMillis, poolsManager)
     private val firewall = MockFirewall()
+    internal val clusterOptions = MockClusterOptions()
     private val haManager = MockHa(guests)
     private val replication = MockReplication(clockMillis)
     /** A Backup Server is one node, `localhost`. */

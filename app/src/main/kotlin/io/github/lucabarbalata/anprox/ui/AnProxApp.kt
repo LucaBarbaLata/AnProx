@@ -74,6 +74,7 @@ import io.github.lucabarbalata.anprox.ui.datacenter.AccessPage
 import io.github.lucabarbalata.anprox.ui.datacenter.BackupJobEditorScreen
 import io.github.lucabarbalata.anprox.ui.datacenter.BackupJobsScreen
 import io.github.lucabarbalata.anprox.ui.datacenter.ClusterLogScreen
+import io.github.lucabarbalata.anprox.ui.datacenter.DatacenterOptionsScreen
 import io.github.lucabarbalata.anprox.ui.datacenter.DatacenterScreen
 import io.github.lucabarbalata.anprox.ui.datacenter.FirewallAliasesScreen
 import io.github.lucabarbalata.anprox.ui.datacenter.FirewallExtra
@@ -118,6 +119,7 @@ import io.github.lucabarbalata.anprox.ui.navigation.ClusterLogRoute
 import io.github.lucabarbalata.anprox.ui.navigation.ConsoleRoute
 import io.github.lucabarbalata.anprox.ui.navigation.CreateGuestRoute
 import io.github.lucabarbalata.anprox.ui.navigation.DashboardRoute
+import io.github.lucabarbalata.anprox.ui.navigation.DatacenterOptionsRoute
 import io.github.lucabarbalata.anprox.ui.navigation.DatacenterRoute
 import io.github.lucabarbalata.anprox.ui.navigation.DatastoreRoute
 import io.github.lucabarbalata.anprox.ui.navigation.FileRestoreRoute
@@ -324,6 +326,7 @@ fun AnProxApp() {
                     onCeph = { nav.navigate(CephRoute(route.serverId)) },
                     onSdn = { nav.navigate(SdnRoute(route.serverId)) },
                     onClusterLog = { nav.navigate(ClusterLogRoute(route.serverId)) },
+                    onOptions = { nav.navigate(DatacenterOptionsRoute(route.serverId)) },
                     onAccess = { page ->
                         when (page) {
                             AccessPage.USERS -> nav.navigate(UsersRoute(route.serverId))
@@ -372,6 +375,9 @@ fun AnProxApp() {
             }
             composable<PbsJobsRoute> { entry -> PbsJobsScreen(entry.toRoute<PbsJobsRoute>().serverId, onBack = back, onTask = openTask) }
             composable<PbsRemotesRoute> { entry -> PbsRemotesScreen(entry.toRoute<PbsRemotesRoute>().serverId, onBack = back) }
+            composable<DatacenterOptionsRoute> { entry ->
+                DatacenterOptionsScreen(entry.toRoute<DatacenterOptionsRoute>().serverId, onBack = back)
+            }
             composable<ClusterLogRoute> { entry ->
                 ClusterLogScreen(entry.toRoute<ClusterLogRoute>().serverId, onBack = back)
             }

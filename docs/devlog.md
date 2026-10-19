@@ -129,10 +129,14 @@ and friends):
 - The template catalogue is `GET /nodes/{node}/aplinfo` (the field `package` needs
   `@SerialName`, it's a Kotlin keyword) and `POST` with `storage` and `template` for a download
   task.
+- `GET /cluster/options` answers `migration`, `ha` and `next-id` as objects (Proxmox parses
+  `datacenter.cfg`), while `PUT` takes property strings, and `migration` may start with a bare
+  type (`secure,network=…`). `DatacenterOptions` reads both shapes and writes property strings.
 - `GET /cluster/log` comes from pmxcfs with numeric `uid` and `pid`; newest first, so the
   repository sorts it oldest first for a log-style screen.
-- 3 model tests and 11 integration tests; tour step 6 (agent) and additions to the snapshot,
-  clone (delete the clone again), tasks, storage, SDN (cluster log) and node (Start all) steps.
+- 6 model tests and 13 integration tests; tour step 6 (agent) and additions to the snapshot,
+  clone (delete the clone again), tasks, storage (usage chart, template catalogue), SDN (cluster log,
+  datacenter options) and node (Start all) steps.
 
 ---
 

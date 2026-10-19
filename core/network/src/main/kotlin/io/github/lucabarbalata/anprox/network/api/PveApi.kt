@@ -435,6 +435,15 @@ interface PveApi {
     @GET("nodes/{node}/status")
     suspend fun nodeStatus(@Path("node") node: String): ApiEnvelope<NodeStatus>
 
+    /** Datacenter options (`datacenter.cfg`), with a `digest`. */
+    @GET("cluster/options")
+    suspend fun clusterOptions(): ApiEnvelope<JsonObject>
+
+    /** Changes datacenter options; `delete` lists keys to reset. Answers `null`. */
+    @FormUrlEncoded
+    @PUT("cluster/options")
+    suspend fun updateClusterOptions(@FieldMap params: Map<String, String>): ApiEnvelope<JsonElement>
+
     /** The newest [max] entries of the cluster log, newest first. */
     @GET("cluster/log")
     suspend fun clusterLog(@Query("max") max: Int): ApiEnvelope<List<ClusterLogEntry>>

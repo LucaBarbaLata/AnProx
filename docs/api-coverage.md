@@ -37,7 +37,7 @@ Code: `core/network/src/main/kotlin/.../network/api/` (`AccessApi`, `PveApi`, `P
 | `GET /cluster/tasks` | Recent tasks of all nodes | ✅ |
 | `GET /cluster/log` | Cluster log (Datacenter → Cluster log, with a filter) | ✅ |
 | `GET /cluster/nextid` | Free VMID for create/clone/restore | ✅ (create, restore, clone) |
-| `/cluster/options` | Datacenter options | 🗓 M4 |
+| `/cluster/options` | Datacenter options: console viewer, keyboard, HTTP proxy, sender address, MAC prefix, migration type and network, parallel jobs, HA shutdown policy, next-ID range, notes (with the digest) | ✅ (U2F/WebAuthn, tag style, bandwidth limits, CRS and notification settings 🗓 M9) |
 | `/cluster/backup` (list, create, edit, delete) | Backup jobs | ✅ (run now uses `POST /nodes/{node}/vzdump` per node, like the web UI) |
 | `GET /cluster/backup-info/not-backed-up` | Guests no enabled job covers | ✅ |
 | `/cluster/replication` (list, create, edit, delete with `keep`) | Storage replication jobs | ✅ |
@@ -96,7 +96,7 @@ Code: `core/network/src/main/kotlin/.../network/api/` (`AccessApi`, `PveApi`, `P
 | `PUT/DELETE /nodes/{node}/subscription` | Entering or removing a key | ✅ |
 | `/nodes/{node}/certificates/*` | Certificates, ACME orders | 🗓 M9 |
 | `/nodes/{node}/firewall/{rules,options}` | Node firewall | ✅ |
-| `/nodes/{node}/firewall/log` | Node firewall log | 🗓 M4 |
+| `/nodes/{node}/firewall/log` | Node firewall log | ✅ M4 |
 | `/nodes/{node}/ceph/*` | Status; OSDs (create on an unused disk, in/out, scrub, start/stop/restart, destroy); pools (create, edit, delete); monitors, managers and metadata servers (add, start/stop/restart, remove); CephFS (list, create); `cfg/raw`, `cfg/db`, `crush`, `log`, `rules` | ✅ M6 (`init`, installing Ceph and removing a CephFS stay in the web UI) |
 | `/nodes/{node}/sdn/*` | Per-node SDN status (zone and VNet health on each node) | 🗓 M9 |
 | `/nodes/{node}/replication/*` | Replication status, run now, log | ✅ M4 |
@@ -131,7 +131,7 @@ Code: `core/network/src/main/kotlin/.../network/api/` (`AccessApi`, `PveApi`, `P
 | `…/vncproxy`, `…/vncwebsocket`, `…/termproxy` | noVNC / terminal console | ✅ through the app's connection (`generate-password=1` for VMs), bundled noVNC and xterm.js ([ADR 0014](adr/0014-consoles-through-the-app.md)) |
 | `POST /qemu/{vmid}/spiceproxy` | SPICE `.vv` handoff | ✅ `proxy` = the address the app uses; the `.vv` file goes to a viewer app (aSPICE…) through a FileProvider |
 | `…/firewall/{rules,options}` | Guest firewall rules, policies, DHCP/NDP/RA and MAC/IP filters | ✅ |
-| `…/firewall/{aliases,ipset,log,refs}` | Guest aliases, IP sets, log | 🗓 M4 |
+| `…/firewall/{aliases,ipset,log,refs}` | Guest aliases, IP sets, log | ✅ M4 (`refs` 🗓 later) |
 | `POST /nodes/{node}/qemu` (`archive=`) / `lxc` (`restore=1`) | Restore from backup | ✅ (as new with `unique=1`, or replace with `force=1`; target storage choice 🗓) |
 
 ### `/storage`, `/pools`, `/nodes/{node}/storage`

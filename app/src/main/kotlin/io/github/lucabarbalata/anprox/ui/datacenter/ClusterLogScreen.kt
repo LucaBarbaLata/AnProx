@@ -37,7 +37,7 @@ import io.github.lucabarbalata.anprox.core.designsystem.component.ErrorBanner
 import io.github.lucabarbalata.anprox.core.designsystem.component.GlassCard
 import io.github.lucabarbalata.anprox.core.designsystem.component.GlassTextField
 import io.github.lucabarbalata.anprox.core.designsystem.theme.AnProxTheme
-import io.github.lucabarbalata.anprox.data.datacenter.ClusterLogRepository
+import io.github.lucabarbalata.anprox.data.datacenter.ClusterRepository
 import io.github.lucabarbalata.anprox.model.pve.ClusterLogEntry
 import io.github.lucabarbalata.anprox.network.ApiException
 import io.github.lucabarbalata.anprox.ui.common.AnProxScaffold
@@ -63,7 +63,7 @@ data class ClusterLogState(
 }
 
 /** Datacenter → Cluster log: what every node logged, newest at the bottom. */
-class ClusterLogViewModel(private val serverId: String, private val repo: ClusterLogRepository) : ViewModel() {
+class ClusterLogViewModel(private val serverId: String, private val repo: ClusterRepository) : ViewModel() {
     private val ui = MutableStateFlow(ClusterLogState())
     val state: StateFlow<ClusterLogState> = ui.asStateFlow()
 

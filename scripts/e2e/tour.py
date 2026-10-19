@@ -1085,7 +1085,7 @@ def ceph():
     back()
 
 
-@step("Datacenter: SDN - a VNet waiting to be applied, a subnet for it, apply on the nodes; the cluster log")
+@step("Datacenter: SDN - a VNet waiting to be applied, a subnet for it, apply on the nodes; the cluster log, datacenter options")
 def sdn():
     tap("Overview")
     tap_node(scroll_to("Datacenter", exact=True))
@@ -1107,6 +1107,15 @@ def sdn():
     tap_node(scroll_to("Cluster log", exact=True))
     find(":reloadnetworkall:", timeout=30)        # newest at the bottom: the SDN apply task's end
     screenshot("13l-cluster-log")
+    back()                                        # to Datacenter
+    tap_node(scroll_to("Datacenter options", exact=True))
+    find("Console viewer", timeout=30)
+    tap_node(scroll_to("xterm.js", exact=True))   # the mock's datacenter uses noVNC
+    wait_until(lambda: not visible("No unsaved changes."), "the form to become dirty", timeout=15)
+    tap_node(scroll_to("Save", exact=True))
+    # Saved and reloaded: clean again (the snackbar is short).
+    wait_until(lambda: visible("No unsaved changes."), "the options to be saved", timeout=30)
+    screenshot("13m-datacenter-options")
     back()                                        # to Datacenter
     back()
 

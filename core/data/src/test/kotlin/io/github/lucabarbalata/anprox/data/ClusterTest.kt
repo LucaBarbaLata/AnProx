@@ -1,6 +1,6 @@
 package io.github.lucabarbalata.anprox.data
 
-import io.github.lucabarbalata.anprox.data.datacenter.ClusterLogRepository
+import io.github.lucabarbalata.anprox.data.datacenter.ClusterRepository
 import io.github.lucabarbalata.anprox.data.hub.ServerHub
 import io.github.lucabarbalata.anprox.data.store.InMemoryProfileStore
 import io.github.lucabarbalata.anprox.data.store.InMemorySecretStore
@@ -10,6 +10,7 @@ import io.github.lucabarbalata.anprox.model.json.ProxmoxJson
 import io.github.lucabarbalata.anprox.model.profile.Endpoint
 import io.github.lucabarbalata.anprox.model.profile.ServerProfile
 import io.github.lucabarbalata.anprox.model.pve.ClusterLogEntry
+import io.github.lucabarbalata.anprox.network.ApiException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -18,11 +19,12 @@ import kotlinx.coroutines.runBlocking
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-/** Datacenter → Cluster log against the mock. */
-class ClusterLogTest {
+/** Datacenter options and the cluster log against the mock. */
+class ClusterTest {
     private val pve = MockProxmoxServer(ProxmoxProduct.PVE).start()
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
@@ -32,8 +34,7 @@ class ClusterLogTest {
         pve.stop()
     }
 
-    @Test
-    fun `the log comes oldest first with tasks, errors and warnings`() = runBlocking {
+    private suspend fun repo(): ClusterRepository {
         val profile = ServerProfile(
             id = "pve", name = "Homelab", product = ProxmoxProduct.PVE,
             endpoints = listOf(Endpoint(pve.baseUrl)), username = "root", realm = "pam", allowInsecureTls = true,
@@ -41,13 +42,42 @@ class ClusterLogTest {
         val hub = ServerHub(InMemoryProfileStore(listOf(profile)), InMemorySecretStore(), scope)
         hub.awaitLoaded()
         hub.login("pve", "anprox", remember = false)
+        return ClusterRepository(hub)
+    }
 
-        val log = ClusterLogRepository(hub).log("pve", max = 500)
+    @Test
+    fun `datacenter options are read, changed, reset and protected by the digest`() = runBlocking {
+        val repo = repo()
+        val old = repo.options("pve")
+        assertEquals("html5", old.console)
+        assertEquals("secure", old.migrationType)          // answered as an object
+        assertEquals("10.0.0.0/24", old.migrationNetwork)
+        assertEquals("conditional", old.haShutdownPolicy)
+
+        val changed = old.copy(console = "xtermjs", migrationType = "insecure", migrationNetwork = "", macPrefix = "02:aa", nextIdLower = "1000", emailFrom = "")
+        repo.saveOptions("pve", old, changed)
+        val saved = repo.options("pve")
+        assertEquals("xtermjs", saved.console)
+        assertEquals("insecure", saved.migrationType)
+        assertEquals("", saved.migrationNetwork)
+        assertEquals("02:aa", saved.macPrefix)
+        assertEquals("1000", saved.nextIdLower)
+        assertEquals("", saved.emailFrom)
+
+        // The first load's digest is stale now.
+        assertFailsWith<ApiException.Server> { repo.saveOptions("pve", old, old.copy(keyboard = "de")) }
+        assertFailsWith<ApiException.Validation> { repo.saveOptions("pve", saved, saved.copy(console = "teletype")) }
+        Unit
+    }
+
+    @Test
+    fun `the log comes oldest first with tasks, errors and warnings`() = runBlocking {
+        val log = repo().log("pve", max = 500)
         assertTrue(log.zipWithNext().all { (a, b) -> a.time <= b.time })
         assertTrue(log.any { it.isError && it.tag == "corosync" })
         assertTrue(log.any { it.isWarning })
         assertTrue(log.any { "end task" in it.msg && it.msg.endsWith("migration aborted: target node pve3 is offline") && it.isError })
-        assertEquals(3, ClusterLogRepository(hub).log("pve", max = 3).size)
+        assertEquals(3, repo().log("pve", max = 3).size)
 
         val failed = log.first { "authentication failure" in it.msg }
         assertTrue(failed.matches("AUTHENTICATION"))

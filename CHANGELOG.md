@@ -212,6 +212,10 @@ All notable changes to AnProx are documented here. The format follows
   templates (Debian, Ubuntu, Alpine and the other distributions, TurnKey appliances), searchable,
   downloaded by the node to the storage; templates already there are marked.
 
+- **Datacenter options** (Datacenter → Datacenter options): console viewer, keyboard layout, HTTP
+  proxy, sender address, MAC address prefix, migration traffic and network, parallel jobs, what
+  HA does with its guests when a node shuts down, the range for new guest IDs, and notes.
+
 - **Cluster log** (Datacenter → Cluster log): what every node logged, with errors and warnings
   coloured and a filter.
 

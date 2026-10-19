@@ -586,6 +586,19 @@ class MockProxmoxServer(
                 onFailure = { call.fail(500, it.message ?: "error") },
             )
         }
+        get("cluster/options") {
+            call.authed() ?: return@get
+            call.ok(state.clusterOptions.get())
+        }
+        put("cluster/options") {
+            val s = call.authed() ?: return@put
+            if (state.isReadOnly(s.user)) return@put call.fail(403, "Permission check failed (/, Sys.Modify)")
+            val p = call.receiveParameters().entries().associate { it.key to it.value.first() }
+            state.clusterOptions.update(p)?.let { error ->
+                return@put if (error.startsWith("detected modified")) call.fail(500, error) else call.fail(400, "Parameter verification failed.", mapOf("options" to error))
+            }
+            call.ok(JsonNull)
+        }
         get("cluster/log") {
             call.authed() ?: return@get
             call.ok(state.clusterLog(call.request.queryParameters["max"]?.toIntOrNull() ?: 50))
