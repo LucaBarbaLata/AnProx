@@ -14,6 +14,7 @@ import androidx.lifecycle.ProcessLifecycleOwner
 import io.github.lucabarbalata.anprox.R
 import io.github.lucabarbalata.anprox.data.guest.TaskObserver
 import io.github.lucabarbalata.anprox.data.hub.ServerHub
+import io.github.lucabarbalata.anprox.model.ProxmoxProduct
 import io.github.lucabarbalata.anprox.model.format.TaskTypes
 import io.github.lucabarbalata.anprox.model.link.AppLink
 import io.github.lucabarbalata.anprox.model.pve.TaskStatus
@@ -80,7 +81,9 @@ class TaskTracker(
         var failures = 0
         while (true) {
             val status: TaskStatus? = try {
-                hub.use(serverId) { it.pve { taskStatus(node, upid) } }.also { failures = 0 }
+                // Backup Server tasks live under nodes/localhost and have their own API.
+                hub.use(serverId) { if (it.product == ProxmoxProduct.PBS) it.pbs { taskStatus(upid) } else it.pve { taskStatus(node, upid) } }
+                    .also { failures = 0 }
             } catch (_: ApiException) {
                 failures++
                 null

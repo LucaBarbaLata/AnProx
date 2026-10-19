@@ -185,27 +185,38 @@ class ProxmoxConnection(
 
     suspend fun version(): VersionInfo = execute { accessApi.version() }
 
+    /**
+     * A call for the other product is a bug in the app, but it must not crash it: screens and
+     * background work already handle [ApiException].
+     */
+    private fun requireProduct(expected: ProxmoxProduct) {
+        if (product != expected) {
+            val name = if (expected == ProxmoxProduct.PVE) "Proxmox VE" else "Proxmox Backup Server"
+            throw ApiException.Protocol("${profile.name} is not a $name server")
+        }
+    }
+
     /** Run a call against the PVE API. Throws [ApiException] on any failure. */
     suspend fun <T> pve(call: suspend PveApi.() -> ApiEnvelope<T>): T {
-        check(product == ProxmoxProduct.PVE) { "${profile.name} is not a Proxmox VE server" }
+        requireProduct(ProxmoxProduct.PVE)
         return execute { pveApi.call() }
     }
 
     /** Like [pve] for calls that answer `{"data": null}` on success, such as `PUT …/config`. */
     suspend fun pveNoData(call: suspend PveApi.() -> ApiEnvelope<*>) {
-        check(product == ProxmoxProduct.PVE) { "${profile.name} is not a Proxmox VE server" }
+        requireProduct(ProxmoxProduct.PVE)
         envelope { pveApi.call() }
     }
 
     /** Like [pve], with the whole envelope (for `total` of a paged log). */
     suspend fun <T> pveEnvelope(call: suspend PveApi.() -> ApiEnvelope<T>): ApiEnvelope<T> {
-        check(product == ProxmoxProduct.PVE) { "${profile.name} is not a Proxmox VE server" }
+        requireProduct(ProxmoxProduct.PVE)
         return envelope { pveApi.call() }
     }
 
     /** Like [pve] for calls whose `data` may be `null`, such as converting a container to a template. */
     suspend fun <T> pveOrNull(call: suspend PveApi.() -> ApiEnvelope<T>): T? {
-        check(product == ProxmoxProduct.PVE) { "${profile.name} is not a Proxmox VE server" }
+        requireProduct(ProxmoxProduct.PVE)
         return envelope { pveApi.call() }.data
     }
 
@@ -225,13 +236,13 @@ class ProxmoxConnection(
 
     /** Run a call against the PBS API. Throws [ApiException] on any failure. */
     suspend fun <T> pbs(call: suspend PbsApi.() -> ApiEnvelope<T>): T {
-        check(product == ProxmoxProduct.PBS) { "${profile.name} is not a Proxmox Backup Server" }
+        requireProduct(ProxmoxProduct.PBS)
         return execute { pbsApi.call() }
     }
 
     /** Like [pbs] for calls that answer `{"data": null}` on success. */
     suspend fun pbsNoData(call: suspend PbsApi.() -> ApiEnvelope<*>) {
-        check(product == ProxmoxProduct.PBS) { "${profile.name} is not a Proxmox Backup Server" }
+        requireProduct(ProxmoxProduct.PBS)
         envelope { pbsApi.call() }
     }
 
@@ -240,7 +251,7 @@ class ProxmoxConnection(
      * must close what it gets (a [okhttp3.ResponseBody]).
      */
     suspend fun <T> pbsRaw(call: suspend PbsApi.() -> T): T {
-        check(product == ProxmoxProduct.PBS) { "${profile.name} is not a Proxmox Backup Server" }
+        requireProduct(ProxmoxProduct.PBS)
         val s = session
         if (s != null && s.needsRenewal(clock()) && !s.isExpired(clock())) renewSession()
         return translateErrors { pbsApi.call() }

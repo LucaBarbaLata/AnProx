@@ -101,6 +101,11 @@ and friends):
   that keeps per hour/day/week/month/year like PBS, maintenance modes, jobs and a remote. The
   Backup Server mock answers the node-administration calls for `localhost`.
 - 4 model tests and 5 integration tests; tour step 29.
+- CI: the tour crashed the app right after **Run now** on a Backup Server job. The live task
+  notifications (`TaskTracker`) still polled the task with the Proxmox VE call, and the
+  connection's product check threw an `IllegalStateException` that nothing caught on the app's
+  scope. The tracker now asks the right product, and a call for the wrong product is an
+  `ApiException.Protocol` like any other API failure (+1 test).
 
 **Leftovers from M1 and M2.**
 - Snapshot descriptions: `PUT …/snapshot/{name}/config` with `description` (empty removes it).

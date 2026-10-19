@@ -192,4 +192,14 @@ class PbsAdminTest {
         assertTrue(GuestRepository(hub).awaitTask("pbs", PbsRepository.NODE, admin.refresh("pbs", PbsRepository.NODE)).succeeded)
         Unit
     }
+
+    @Test
+    fun `a Proxmox VE call on a Backup Server is an API error, not a crash`() = runBlocking {
+        repo()
+        val guests = GuestRepository(hub)
+        // The live task notifications once polled a Backup Server task this way and crashed the app.
+        val e = assertFailsWith<ApiException.Protocol> { guests.startAll("pbs", "localhost", force = false) }
+        assertTrue("is not a Proxmox VE server" in e.message.orEmpty())
+        Unit
+    }
 }
