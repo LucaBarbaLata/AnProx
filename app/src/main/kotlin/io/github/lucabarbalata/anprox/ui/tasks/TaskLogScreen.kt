@@ -36,6 +36,7 @@ import io.github.lucabarbalata.anprox.core.designsystem.theme.AnProxTheme
 import io.github.lucabarbalata.anprox.core.designsystem.theme.MonoStyle
 import io.github.lucabarbalata.anprox.model.format.TaskTypes
 import io.github.lucabarbalata.anprox.model.pve.DangerLevel
+import io.github.lucabarbalata.anprox.model.pve.TaskStatus
 import io.github.lucabarbalata.anprox.ui.common.AnProxScaffold
 import io.github.lucabarbalata.anprox.ui.common.ConfirmActionDialog
 import io.github.lucabarbalata.anprox.ui.common.asString
@@ -96,6 +97,10 @@ fun TaskLogScreen(
                         InfoRow(stringResource(R.string.task_user), u.user)
                     }
                     state.status?.exitstatus?.takeIf { it != "OK" }?.let { InfoRow(stringResource(R.string.task_exit), it) }
+                    if (TaskStatus.isLockTimeout(state.status?.exitstatus)) {
+                        Text(stringResource(R.string.task_lock_hint), style = MaterialTheme.typography.bodySmall, color = c.textSecondary)
+                        Spacer(Modifier.height(8.dp))
+                    }
                     SelectionContainer {
                         Text(upid, style = MonoStyle.copy(color = c.textTertiary), modifier = Modifier.fillMaxWidth())
                     }

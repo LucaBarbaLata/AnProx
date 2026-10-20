@@ -19,6 +19,7 @@ import io.github.lucabarbalata.anprox.storage.SettingsRepository
 import io.github.lucabarbalata.anprox.storage.favouriteKey
 import io.github.lucabarbalata.anprox.ui.common.TaskResult
 import io.github.lucabarbalata.anprox.ui.common.UiText
+import io.github.lucabarbalata.anprox.ui.common.taskFailedText
 import io.github.lucabarbalata.anprox.ui.common.toUiText
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -122,7 +123,7 @@ class GuestViewModel(
             val error = try {
                 val upid = guests.destroy(ref, purge, destroyUnreferencedDisks)
                 val task = guests.awaitTask(ref.serverId, ref.node, upid)
-                if (task.succeeded) null else UiText.res(R.string.guest_task_failed, TaskTypes.label(Upid.parse(upid)?.type.orEmpty()), task.exitstatus.orEmpty())
+                if (task.succeeded) null else taskFailedText(TaskTypes.label(Upid.parse(upid)?.type.orEmpty()), task.exitstatus)
             } catch (e: ApiException) {
                 e.toUiText()
             }
@@ -146,7 +147,7 @@ class GuestViewModel(
                 if (task.succeeded) {
                     TaskResult(UiText.res(R.string.guest_task_ok, label), upid, ok = true)
                 } else {
-                    TaskResult(UiText.res(R.string.guest_task_failed, label, task.exitstatus.orEmpty()), upid, ok = false)
+                    TaskResult(taskFailedText(label, task.exitstatus), upid, ok = false)
                 }
             } catch (e: ApiException) {
                 TaskResult(e.toUiText(), null, ok = false)

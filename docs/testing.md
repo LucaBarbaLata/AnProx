@@ -206,8 +206,9 @@ repositories:
 - **Consoles**, through the app's own connection, with the test playing the part of the bundled
   pages: the VM's screen over VNC (handshake with the generated VNC password, a full frame
   saved to `core/data/build/real-server/vm-screen.png`, a key press); the container's console
-  (logs in as root, resizes, runs a command); the node shell (resizes, then `stty size` must
-  say 120x40, and `pveversion` runs). The VM boots from its empty disk alone, so its screen
+  (logs in as root, resizes, then `stty size` must say 100x30); the node shell (resizes, then
+  `stty size` must say 120x40, and `pveversion` runs). When a guest's lock is still held
+  ("can't lock file"), the test asks the node shell which process holds it and tries again. The VM boots from its empty disk alone, so its screen
   only shows firmware text; the workflow prints it base64-encoded, and the shell's own output
   never goes to the log.
 

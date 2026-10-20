@@ -57,8 +57,11 @@ internal class TerminalReader(private val session: ConsoleSession) {
         await(text, millis = millis)?.second ?: error("the terminal didn't show \"$text\" within ${millis / 1000} s")
 
     companion object {
-        /** `stty size` prints "rows cols" on a line of its own. */
-        private val STTY_SIZE = Regex("""(?:^|[\r\n])(\d+) (\d+)\r?\n""")
+        /**
+         * `stty size` prints "rows cols" on a line of its own. A container's console ends lines with
+         * `\r\r\n`: the container's terminal and lxc-console's each add a carriage return.
+         */
+        private val STTY_SIZE = Regex("""(?:^|[\r\n])(\d+) (\d+)\r*\n""")
 
         fun sttySize(output: String): Pair<Int, Int>? =
             STTY_SIZE.find(output)?.destructured?.let { (rows, cols) -> cols.toInt() to rows.toInt() }

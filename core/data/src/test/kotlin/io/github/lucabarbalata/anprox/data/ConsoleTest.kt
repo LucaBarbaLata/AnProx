@@ -92,6 +92,14 @@ class ConsoleTest {
     }
 
     @Test
+    fun `stty size is read from a node shell and from a container's console`() {
+        assertEquals(120 to 40, TerminalReader.sttySize("stty size\r\n\u001b[?2004l\r40 120\r\nanprox-42"))
+        // What the test host's Alpine container sent: two carriage returns before each line feed.
+        val container = "\u001b[6n\ranprox-test-ct:~# \u001b[Jstty size; echo anprox-\$((6*7))\r\r\n30 100\r\r\nanprox-42"
+        assertEquals(100 to 30, TerminalReader.sttySize(container))
+    }
+
+    @Test
     fun `node shell`() = runBlocking {
         val session = consoles().open("pve", ConsoleTarget(ConsoleKind.NODE, "pve1"))
         session.awaitConnected()

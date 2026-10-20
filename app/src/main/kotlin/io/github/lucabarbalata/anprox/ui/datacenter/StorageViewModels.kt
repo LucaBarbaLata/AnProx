@@ -16,6 +16,7 @@ import io.github.lucabarbalata.anprox.network.ApiException
 import io.github.lucabarbalata.anprox.network.http.UploadSource
 import io.github.lucabarbalata.anprox.ui.common.TaskResult
 import io.github.lucabarbalata.anprox.ui.common.UiText
+import io.github.lucabarbalata.anprox.ui.common.taskFailedText
 import io.github.lucabarbalata.anprox.ui.common.toUiText
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -278,7 +279,7 @@ class StorageContentViewModel(
             TaskResult(done, upid, ok = true)
         } else {
             val label = TaskTypes.label(Upid.parse(upid)?.type.orEmpty())
-            TaskResult(UiText.res(R.string.guest_task_failed, label, status.exitstatus.orEmpty()), upid, ok = false)
+            TaskResult(taskFailedText(label, status.exitstatus), upid, ok = false)
         }
     }
 }

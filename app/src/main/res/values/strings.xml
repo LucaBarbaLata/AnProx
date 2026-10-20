@@ -212,6 +212,8 @@
     <string name="guest_confirm_title">%1$s %2$s?</string>
     <string name="guest_task_ok">%1$s finished</string>
     <string name="guest_task_failed">%1$s failed: %2$s</string>
+    <string name="task_failed_locked">%1$s failed: %2$s\nAnother operation still holds this guest\'s lock; after a stop or a rollback with RAM, Proxmox keeps it for up to half a minute. Try again shortly.</string>
+    <string name="task_lock_hint">Another operation still held this guest\'s lock. After a stop or a rollback with RAM, Proxmox keeps it for up to half a minute; trying again shortly usually works.</string>
     <string name="power_start">Start</string>
     <string name="power_shutdown">Shut down</string>
     <string name="power_reboot">Reboot</string>

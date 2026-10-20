@@ -254,6 +254,9 @@ All notable changes to AnProx are documented here. The format follows
 - After creating or cloning a guest, the form scrolls to the result and its **Open it** button.
 - The guest screen no longer lists the SSH client under "Coming later": it has been there since
   M2 (Tools → SSH).
+- A task that fails with "can't lock file … got timeout" now explains it: another operation
+  still holds the guest's lock. Right after a stop or a rollback with RAM, Proxmox's own cleanup
+  keeps it for up to half a minute (seen on a real server), so trying again shortly works.
 
 ### Fixed
 - **Console output is visible.** The node and container terminals showed no output (typing

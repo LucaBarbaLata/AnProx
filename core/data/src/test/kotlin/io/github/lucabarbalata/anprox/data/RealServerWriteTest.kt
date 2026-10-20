@@ -53,6 +53,7 @@ import io.github.lucabarbalata.anprox.model.pve.SdnZoneType
 import io.github.lucabarbalata.anprox.model.pve.StartupOrder
 import io.github.lucabarbalata.anprox.model.pve.StorageKind
 import io.github.lucabarbalata.anprox.model.pve.StorageSetupForm
+import io.github.lucabarbalata.anprox.model.pve.TaskStatus
 import io.github.lucabarbalata.anprox.model.pve.TokenForm
 import io.github.lucabarbalata.anprox.model.pve.UserForm
 import io.github.lucabarbalata.anprox.model.pve.VmDisk
@@ -186,8 +187,8 @@ class RealServerWriteTest {
         }
 
         /**
-         * Which processes hold the guest's config lock, asked in a node shell (the app's console):
-         * after a rollback with RAM, Proxmox keeps it held for a while without any task running.
+         * Which processes hold the guest's config lock, asked in a node shell (the app's console).
+         * On the test host it was `qm cleanup` for some 15–25 s after a rollback with RAM.
          */
         suspend fun lockHolders(ref: GuestRef): String = try {
             val session = consoles.open(id, ConsoleTarget(ConsoleKind.NODE, ref.node))
@@ -218,7 +219,7 @@ class RealServerWriteTest {
                 val upid = start()
                 val task = guests.awaitTask(id, ref.node, upid)
                 if (task.succeeded) return
-                if ("can't lock file" !in task.exitstatus.orEmpty() || attempt == 5) return done(ref.node, upid, what)
+                if (!TaskStatus.isLockTimeout(task.exitstatus) || attempt == 5) return done(ref.node, upid, what)
                 println("    ($what: the lock is held by: ${lockHolders(ref)}; again in 10 s)")
                 delay(10_000)
             }
@@ -513,10 +514,12 @@ class RealServerWriteTest {
                                 session.resize(100, 30)
                                 session.sendInput("stty size; echo anprox-$((6*7))\r")
                                 val output = term.expect("anprox-42")
-                                // lxc-console passes the size on to the container's terminal; report what arrived.
-                                val size = TerminalReader.sttySize(output)?.let { "${it.first}x${it.second}" }
-                                // Our own test container's output, with control characters made visible.
-                                println("    (stty size in the container: ${size ?: "not recognised in ${TerminalReader.visible(output.takeLast(160))}"})")
+                                // lxc-console passes the size on to the container's terminal. On a mismatch the
+                                // test container's own output is shown, control characters spelled out.
+                                expect(
+                                    TerminalReader.sttySize(output) == (100 to 30),
+                                    "the container's terminal to be 100x30 after the resize, got ${TerminalReader.visible(output.takeLast(160))}",
+                                )
                             } finally {
                                 session.close()
                             }

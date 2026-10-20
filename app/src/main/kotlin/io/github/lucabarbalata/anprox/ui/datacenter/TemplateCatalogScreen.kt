@@ -53,6 +53,7 @@ import io.github.lucabarbalata.anprox.ui.common.TaskResultSnackbar
 import io.github.lucabarbalata.anprox.ui.common.UiText
 import io.github.lucabarbalata.anprox.ui.common.asString
 import io.github.lucabarbalata.anprox.ui.common.contentPadding
+import io.github.lucabarbalata.anprox.ui.common.taskFailedText
 import io.github.lucabarbalata.anprox.ui.common.toUiText
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -125,7 +126,7 @@ class TemplateCatalogViewModel(
                 if (task.succeeded) {
                     TaskResult(UiText.res(R.string.catalog_downloaded, template.headline ?: template.packageName), upid, ok = true)
                 } else {
-                    TaskResult(UiText.res(R.string.guest_task_failed, label, task.exitstatus.orEmpty()), upid, ok = false)
+                    TaskResult(taskFailedText(label, task.exitstatus), upid, ok = false)
                 }
             } catch (e: ApiException) {
                 TaskResult(e.toUiText(), null, ok = false)

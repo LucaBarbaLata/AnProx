@@ -152,6 +152,16 @@ followed on the same VM failed with "job errors". The test now reports a failed 
 end of its log, keeps the first error of a step, waits out a held lock when stopping (naming the
 tasks that hold it), and runs start/stop around a block with `whileRunning`.
 
+**Run 6: all green on the test host.** Every read and every write step passes on the real
+server, consoles included. The lock after a rollback with RAM is held by
+`/usr/bin/perl /usr/sbin/qm cleanup 100 1 0` (qmeventd's cleanup for the QEMU process the rollback
+replaced); it ran 14 s when the node shell looked and let go within the test's retry. That is
+Proxmox's behaviour, so the app now recognises the failure (`TaskStatus.isLockTimeout`) and says
+to try again shortly, in the snackbar and on the task log screen. The container's `stty size`
+did answer `30 100`: its lines end in `\r\r\n` (the container's terminal and lxc-console's each
+add a carriage return), which the test's pattern now accepts, so the container resize is checked
+too.
+
 **Runs 4 and 5 on the test host.** All three consoles work on the real server through the
 app's own connection: the VM's screen over VNC (QEMU's desktop "QEMU (anprox-test-vm)", 640x480,
 showing the Proxmox firmware logo), root login in an Alpine container's console, and the node

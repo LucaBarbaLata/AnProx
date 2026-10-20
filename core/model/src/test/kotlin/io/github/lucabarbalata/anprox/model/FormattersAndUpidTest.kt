@@ -1,14 +1,26 @@
 package io.github.lucabarbalata.anprox.model
 
 import io.github.lucabarbalata.anprox.model.format.Formatters
+import io.github.lucabarbalata.anprox.model.pve.TaskStatus
 import io.github.lucabarbalata.anprox.model.pve.Upid
 import java.util.Locale
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class FormattersAndUpidTest {
     private val en = Locale.US
+
+    @Test
+    fun `a task that timed out on the guest's lock is told apart`() {
+        // As the test host answered right after a rollback with RAM, while `qm cleanup` held the lock.
+        assertTrue(TaskStatus.isLockTimeout("can't lock file '/var/lock/qemu-server/lock-100.conf' - got timeout"))
+        assertFalse(TaskStatus.isLockTimeout("VM is locked (backup)"))
+        assertFalse(TaskStatus.isLockTimeout("OK"))
+        assertFalse(TaskStatus.isLockTimeout(null))
+    }
 
     @Test
     fun bytes() {

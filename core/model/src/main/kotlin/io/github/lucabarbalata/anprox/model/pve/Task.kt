@@ -48,6 +48,16 @@ data class TaskStatus(
 ) {
     val isRunning: Boolean get() = status == "running"
     val succeeded: Boolean get() = !isRunning && (exitstatus == "OK" || exitstatus?.startsWith("WARNINGS") == true)
+
+    companion object {
+        /**
+         * Proxmox gave up waiting for the guest's config lock: another operation still holds it.
+         * After a stop or a rollback with RAM, `qm cleanup` keeps it for some 15–25 seconds on its
+         * own, so the same action usually works when tried again a little later.
+         */
+        fun isLockTimeout(exitstatus: String?): Boolean =
+            exitstatus != null && "can't lock file" in exitstatus && "timeout" in exitstatus
+    }
 }
 
 /** One line of `GET /nodes/{node}/tasks/{upid}/log`. */

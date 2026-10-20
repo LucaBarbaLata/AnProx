@@ -2,7 +2,6 @@ package io.github.lucabarbalata.anprox.ui.guest
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import io.github.lucabarbalata.anprox.R
 import io.github.lucabarbalata.anprox.data.guest.GuestRef
 import io.github.lucabarbalata.anprox.data.guest.GuestRepository
 import io.github.lucabarbalata.anprox.model.format.TaskTypes
@@ -13,6 +12,7 @@ import io.github.lucabarbalata.anprox.model.pve.Upid
 import io.github.lucabarbalata.anprox.network.ApiException
 import io.github.lucabarbalata.anprox.ui.common.TaskResult
 import io.github.lucabarbalata.anprox.ui.common.UiText
+import io.github.lucabarbalata.anprox.ui.common.taskFailedText
 import io.github.lucabarbalata.anprox.ui.common.toUiText
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -111,7 +111,7 @@ class MigrateViewModel(
                     ui.update { it.copy(busy = false, moved = ref.copy(node = target)) }
                 } else {
                     val label = TaskTypes.label(Upid.parse(upid)?.type.orEmpty())
-                    val result = TaskResult(UiText.res(R.string.guest_task_failed, label, task.exitstatus.orEmpty()), upid, ok = false)
+                    val result = TaskResult(taskFailedText(label, task.exitstatus), upid, ok = false)
                     ui.update { it.copy(busy = false, result = result) }
                 }
             } catch (e: ApiException) {

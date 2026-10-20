@@ -16,6 +16,7 @@ import io.github.lucabarbalata.anprox.model.pve.Upid
 import io.github.lucabarbalata.anprox.network.ApiException
 import io.github.lucabarbalata.anprox.ui.common.TaskResult
 import io.github.lucabarbalata.anprox.ui.common.UiText
+import io.github.lucabarbalata.anprox.ui.common.taskFailedText
 import io.github.lucabarbalata.anprox.ui.common.toUiText
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -159,7 +160,7 @@ class SnapshotsViewModel(
                 if (task.succeeded) {
                     TaskResult(UiText.res(R.string.guest_task_ok, label), upid, ok = true)
                 } else {
-                    TaskResult(UiText.res(R.string.guest_task_failed, label, task.exitstatus.orEmpty()), upid, ok = false)
+                    TaskResult(taskFailedText(label, task.exitstatus), upid, ok = false)
                 }
             } catch (e: ApiException) {
                 TaskResult(e.toUiText(), null, ok = false)

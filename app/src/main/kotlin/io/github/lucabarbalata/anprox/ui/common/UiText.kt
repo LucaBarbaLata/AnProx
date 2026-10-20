@@ -7,6 +7,7 @@ import androidx.compose.ui.res.stringResource
 import io.github.lucabarbalata.anprox.R
 import io.github.lucabarbalata.anprox.data.ssh.SshException
 import io.github.lucabarbalata.anprox.data.ssh.SshKeyException
+import io.github.lucabarbalata.anprox.model.pve.TaskStatus
 import io.github.lucabarbalata.anprox.network.ApiException
 
 /**
@@ -34,6 +35,14 @@ fun UiText.resolve(context: Context): String = when (this) {
     is UiText.Res -> context.getString(id, *args.toTypedArray())
     is UiText.Raw -> value
 }
+
+/** "<label> failed: <status>", with a hint when Proxmox timed out waiting for the guest's lock. */
+fun taskFailedText(label: String, exitstatus: String?): UiText =
+    UiText.res(
+        if (TaskStatus.isLockTimeout(exitstatus)) R.string.task_failed_locked else R.string.guest_task_failed,
+        label,
+        exitstatus.orEmpty(),
+    )
 
 /** A precise, actionable message for every [ApiException] and SSH failure. */
 fun Throwable.toUiText(): UiText = when (this) {
