@@ -132,6 +132,17 @@ rules instead). The node had no container template, so the write test now downlo
 from the catalogue when needed (and deletes it afterwards); the workflow prints one
 PASSED/SKIPPED/FAILED line per test.
 
+**Write test, extended.** The write test now covers almost every write the app makes:
+templates and linked clones, disks (add, grow, detach, delete), a snapshot with RAM, a backup job
+with run now, HA, upload and download from a URL, a directory storage, datacenter/node firewall
+rules, security groups, aliases and IP sets, an SDN zone and VNet (never applied), a pending
+bridge that is reverted, apt refresh, datacenter options, roles, ACLs, API tokens and a password
+change. The mock caught one mistake in the test itself: aliases and IP sets share `cluster.fw`,
+so an alias read before creating an IP set carries a stale digest and Proxmox refuses the delete;
+the test reads it again first (the app's screens reload after every change, so they don't hit
+this). The HA resource stays "ignored" so a standalone test node never arms its watchdog, and
+the backup job keeps all backups so it can't prune the one the cleanup deletes.
+
 **Leftovers from M1 and M2.**
 - Snapshot descriptions: `PUT …/snapshot/{name}/config` with `description` (empty removes it).
   A plain config write, not a task, so the screen reports it with a snackbar without a log.

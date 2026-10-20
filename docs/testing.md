@@ -184,11 +184,29 @@ working order. Each check prints ✓, – (not on this server) or ✗.
 
 ### Write test (test servers only)
 
-`RealServerWriteTest` does what the app's buttons do: it creates a VM (options, hardware, a
-snapshot with a description and a rollback, a firewall rule, start and stop, a backup restored
-as a new VM, a full clone, a pool), a container from a template already on the node, and a user
-and group, checking each through the app's repositories. It only touches objects named
-`anprox-test…`, removes leftovers of an earlier run first and deletes everything at the end.
+`RealServerWriteTest` does what the app's buttons do, checking each step through the app's
+repositories:
+- **VM:** create; options (notes, tag, start order); hardware; a snapshot with a description, a
+  rollback and a delete; a firewall rule; start and stop; a backup restored as a new VM; a full
+  clone turned into a template with a linked clone; a pool; a disk added, grown, detached and
+  deleted; a snapshot with RAM of the running VM; a backup job created, run now and deleted; an
+  HA resource (kept "ignored") added, changed and removed.
+- **Container:** created from a template on the node, or from Alpine downloaded from the
+  catalogue (deleted again afterwards); start and stop.
+- **Storage:** a 64 KiB upload and a download from a URL, both deleted; a directory storage
+  added and removed.
+- **Firewall:** disabled rules at datacenter and node level, a security group with a rule, an
+  alias and an IP set.
+- **SDN:** a simple zone with a VNet, removed before anything is applied.
+- **Node:** a new bridge left pending and then reverted (skipped when the node already has
+  pending network changes); an apt package index refresh; the datacenter's sender address
+  changed and restored.
+- **Access:** a group and user, a role with a permission for the group, an API token, a
+  password change.
+
+It only touches objects named `anprox-test…` (SDN: `apxtest`/`apxtvnet`, bridges `vmbr90`–`vmbr99`),
+removes leftovers of an earlier run first and deletes everything at the end. Steps the server
+can't do (no KVM, no snapshot-capable storage, HA without a cluster) print – instead of failing.
 It needs a user allowed to do all that (root@pam on a test server) and `ANPROX_PVE_WRITE=1` on
 top of the variables above; without them the same steps run against the mock.
 
@@ -200,7 +218,8 @@ ANPROX_PVE_URL=… ANPROX_PVE_USER=root@pam ANPROX_PVE_PASSWORD=… ANPROX_PVE_W
 **From GitHub Actions:** the manual workflow **Real server tests** (`.github/workflows/real-server.yml`)
 runs both (by hand, or by pushing a change to `.github/real-server-run`; a line `write` there turns the write test on) with the repository secrets `ANPROX_PVE_URL`, `ANPROX_PVE_USER` and
 `ANPROX_PVE_PASSWORD` (`@pam` is added to a user without a realm). Tick **write** to run the write
-test too. GitHub's runners reach port 8006 directly. It never runs on push or pull requests.
+test too. GitHub's runners reach port 8006 directly. It never runs on pull requests, so the
+secrets are not handed to code from forks.
 
 > From a Claude Code cloud session the server must answer on **port 443**: the environment's
 > outbound traffic only gets through on 443, so `:8006` times out even when it is open. On the

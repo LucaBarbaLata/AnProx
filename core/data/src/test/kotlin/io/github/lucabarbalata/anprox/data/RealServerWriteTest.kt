@@ -2,13 +2,19 @@ package io.github.lucabarbalata.anprox.data
 
 import io.github.lucabarbalata.anprox.data.backup.BackupRepository
 import io.github.lucabarbalata.anprox.data.datacenter.AccessRepository
+import io.github.lucabarbalata.anprox.data.datacenter.BackupJobRepository
+import io.github.lucabarbalata.anprox.data.datacenter.ClusterRepository
 import io.github.lucabarbalata.anprox.data.datacenter.FirewallRepository
+import io.github.lucabarbalata.anprox.data.datacenter.HaRepository
 import io.github.lucabarbalata.anprox.data.datacenter.PoolRepository
+import io.github.lucabarbalata.anprox.data.datacenter.SdnRepository
 import io.github.lucabarbalata.anprox.data.datacenter.StorageRepository
+import io.github.lucabarbalata.anprox.data.datacenter.StorageSetupRepository
 import io.github.lucabarbalata.anprox.data.guest.GuestRef
 import io.github.lucabarbalata.anprox.data.guest.GuestRepository
 import io.github.lucabarbalata.anprox.data.hardware.HardwareRepository
 import io.github.lucabarbalata.anprox.data.hub.ServerHub
+import io.github.lucabarbalata.anprox.data.node.NodeAdminRepository
 import io.github.lucabarbalata.anprox.data.snapshot.PveSnapshot
 import io.github.lucabarbalata.anprox.data.snapshot.SnapshotRepository
 import io.github.lucabarbalata.anprox.data.store.InMemoryProfileStore
@@ -17,21 +23,40 @@ import io.github.lucabarbalata.anprox.mock.MockProxmoxServer
 import io.github.lucabarbalata.anprox.model.ProxmoxProduct
 import io.github.lucabarbalata.anprox.model.profile.Endpoint
 import io.github.lucabarbalata.anprox.model.profile.ServerProfile
+import io.github.lucabarbalata.anprox.model.pve.AclForm
+import io.github.lucabarbalata.anprox.model.pve.AclSubject
+import io.github.lucabarbalata.anprox.model.pve.BackupJobForm
 import io.github.lucabarbalata.anprox.model.pve.BackupMode
+import io.github.lucabarbalata.anprox.model.pve.BackupSelection
 import io.github.lucabarbalata.anprox.model.pve.CloneRequest
 import io.github.lucabarbalata.anprox.model.pve.ContentType
 import io.github.lucabarbalata.anprox.model.pve.CtNetSettings
+import io.github.lucabarbalata.anprox.model.pve.DownloadUrlForm
+import io.github.lucabarbalata.anprox.model.pve.FirewallAliasForm
 import io.github.lucabarbalata.anprox.model.pve.FirewallRuleForm
 import io.github.lucabarbalata.anprox.model.pve.FirewallScope
 import io.github.lucabarbalata.anprox.model.pve.GuestType
+import io.github.lucabarbalata.anprox.model.pve.HaResourceForm
+import io.github.lucabarbalata.anprox.model.pve.HaState
+import io.github.lucabarbalata.anprox.model.pve.NetworkInterfaceForm
 import io.github.lucabarbalata.anprox.model.pve.NewContainer
 import io.github.lucabarbalata.anprox.model.pve.NewVm
 import io.github.lucabarbalata.anprox.model.pve.PoolChange
 import io.github.lucabarbalata.anprox.model.pve.PowerAction
+import io.github.lucabarbalata.anprox.model.pve.Retention
+import io.github.lucabarbalata.anprox.model.pve.SdnVnetForm
+import io.github.lucabarbalata.anprox.model.pve.SdnZoneForm
+import io.github.lucabarbalata.anprox.model.pve.SdnZoneType
 import io.github.lucabarbalata.anprox.model.pve.StartupOrder
+import io.github.lucabarbalata.anprox.model.pve.StorageKind
+import io.github.lucabarbalata.anprox.model.pve.StorageSetupForm
+import io.github.lucabarbalata.anprox.model.pve.TokenForm
 import io.github.lucabarbalata.anprox.model.pve.UserForm
+import io.github.lucabarbalata.anprox.model.pve.VmDisk
+import io.github.lucabarbalata.anprox.model.pve.fileName
 import io.github.lucabarbalata.anprox.network.ApiException
 import io.github.lucabarbalata.anprox.network.auth.LoginResult
+import io.github.lucabarbalata.anprox.network.http.UploadSource
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -39,6 +64,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assumptions.assumeTrue
+import java.io.ByteArrayInputStream
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertIs
@@ -132,8 +158,14 @@ class RealServerWriteTest {
         val pools = PoolRepository(hub)
         val access = AccessRepository(hub)
         val snapshots = SnapshotRepository(hub)
+        val jobs = BackupJobRepository(hub)
+        val setup = StorageSetupRepository(hub)
+        val sdn = SdnRepository(hub)
+        val nodeAdmin = NodeAdminRepository(hub)
+        val cluster = ClusterRepository(hub)
+        val ha = HaRepository(hub)
 
-        suspend fun cluster() = snapshots.fetch(hub.server(id)!!) as PveSnapshot
+        suspend fun clusterState() = snapshots.fetch(hub.server(id)!!) as PveSnapshot
         suspend fun done(node: String, upid: String?, what: String) {
             if (upid == null) return
             val task = guests.awaitTask(id, node, upid)
@@ -147,11 +179,11 @@ class RealServerWriteTest {
             done(ref.node, guests.destroy(ref, purge = true, destroyUnreferencedDisks = true), "destroy ${ref.vmid}")
         }
 
-        val node = cluster().nodes.firstOrNull { it.status == "online" }?.node ?: error("no online node")
+        val node = clusterState().nodes.firstOrNull { it.status == "online" }?.node ?: error("no online node")
         println("Working on node $node")
 
         println("Leftovers of an earlier run")
-        cluster().guests.filter { it.name.orEmpty().startsWith(PREFIX) && it.node != null && it.vmid != null }.forEach { g ->
+        clusterState().guests.filter { it.name.orEmpty().startsWith(PREFIX) && it.node != null && it.vmid != null }.forEach { g ->
             val ref = GuestRef(id, g.node!!, GuestType.fromApi(g.type) ?: return@forEach, g.vmid!!)
             step("remove ${g.type} ${g.vmid} (${g.name})") { remove(ref) }
         }
@@ -164,6 +196,33 @@ class RealServerWriteTest {
         }
         if (access.users(id).any { it.id == "$PREFIX@pve" }) step("remove user $PREFIX@pve") { access.deleteUser(id, "$PREFIX@pve") }
         if (access.groups(id).any { it.id == PREFIX }) step("remove group $PREFIX") { access.deleteGroup(id, PREFIX) }
+        if (access.roles(id).any { it.id == PREFIX }) step("remove role $PREFIX") { access.deleteRole(id, PREFIX) }
+        jobs.jobs(id).filter { it.comment == PREFIX }.forEach { job -> step("remove backup job ${job.id}") { jobs.delete(id, job.id) } }
+        if (storage.storages(id).any { it.config.storage == PREFIX }) step("remove storage $PREFIX") { setup.remove(id, PREFIX) }
+        listOf(FirewallScope.Datacenter, FirewallScope.Node(node)).forEach { scope ->
+            // One at a time, re-reading the list: positions shift, and the digest guards each delete.
+            repeat(10) {
+                val rule = firewall.rules(id, scope).firstOrNull { it.comment == PREFIX } ?: return@repeat
+                step("remove a ${scope.path} rule") { firewall.delete(id, scope, rule) }
+            }
+        }
+        if (firewall.securityGroups(id).any { it.group == PREFIX }) {
+            step("remove security group $PREFIX") {
+                val group = FirewallScope.Group(PREFIX)
+                firewall.rules(id, group).sortedByDescending { it.pos }.forEach { firewall.delete(id, group, it) }
+                firewall.deleteGroup(id, PREFIX)
+            }
+        }
+        if (firewall.ipSets(id, FirewallScope.Datacenter).any { (set, _) -> set.name == PREFIX }) step("remove IP set $PREFIX") { firewall.deleteIpSet(id, FirewallScope.Datacenter, PREFIX) }
+        firewall.aliases(id, FirewallScope.Datacenter).firstOrNull { it.name.equals(PREFIX, ignoreCase = true) }?.let { alias ->
+            step("remove alias $PREFIX") { firewall.deleteAlias(id, FirewallScope.Datacenter, alias) }
+        }
+        try {
+            if (sdn.vnets(id).any { it.id == SDN_VNET }) step("remove VNet $SDN_VNET") { sdn.deleteVnet(id, SDN_VNET) }
+            if (sdn.zones(id).any { it.id == SDN_ZONE }) step("remove zone $SDN_ZONE") { sdn.deleteZone(id, SDN_ZONE) }
+        } catch (_: ApiException) {
+            // No SDN on this server.
+        }
 
         val bridge = hardware.bridges(id, node).firstOrNull()?.iface ?: "vmbr0"
         val vmStorage = guests.diskStorages(id, node, GuestType.QEMU).firstOrNull()?.storage ?: error("no storage for VM disks on $node")
@@ -230,10 +289,19 @@ class RealServerWriteTest {
                         guests.saveOptions(restored, guests.options(restored), guests.options(restored).copy(name = "$PREFIX-restored"))
                     }
                 }
-                step("clone (full)") {
+                val clone = step("clone (full)") {
                     val cloneId = guests.nextVmid(id)
                     done(node, guests.clone(vm, CloneRequest(cloneId, "$PREFIX-clone", full = true)), "clone")
-                    created += GuestRef(id, node, GuestType.QEMU, cloneId)
+                    GuestRef(id, node, GuestType.QEMU, cloneId).also { created += it }
+                }
+                if (clone != null) {
+                    step("template, then a linked clone of it") {
+                        done(node, guests.convertToTemplate(clone), "convert to template")
+                        expect(guests.status(clone).template, "a template")
+                        val linkedId = guests.nextVmid(id)
+                        done(node, guests.clone(clone, CloneRequest(linkedId, "$PREFIX-linked", full = false)), "linked clone")
+                        created += GuestRef(id, node, GuestType.QEMU, linkedId)
+                    }
                 }
                 step("pool: create, add the VM, remove it, delete") {
                     pools.create(id, PREFIX, "AnProx write test")
@@ -241,6 +309,58 @@ class RealServerWriteTest {
                     expect(pools.pool(id, PREFIX).members.any { it.vmid == vmid }, "the VM in the pool")
                     pools.change(id, PREFIX, PoolChange(vmids = setOf(vmid), remove = true))
                     pools.delete(id, PREFIX)
+                }
+                step("disks: add, grow, detach, delete") {
+                    done(node, hardware.apply(vm, mapOf("scsi1" to "$vmStorage:1"), asTask = true), "add disk")
+                    expect(hardware.vm(vm).disks.any { it.key == "scsi1" }, "the new disk scsi1")
+                    done(node, hardware.resize(vm, mapOf("disk" to "scsi1", "size" to "+1G")), "grow disk")
+                    val size = hardware.vm(vm).disks.first { it.key == "scsi1" }.props["size"]
+                    expect(size == "2G", "scsi1 to be 2G, got $size")
+                    hardware.apply(vm, mapOf("delete" to "scsi1"))
+                    val unused = hardware.vm(vm).disks.firstOrNull { it.kind == VmDisk.Kind.UNUSED } ?: error("no unused disk after detaching scsi1")
+                    hardware.apply(vm, mapOf("delete" to unused.key))
+                    expect(hardware.vm(vm).disks.none { it.kind == VmDisk.Kind.UNUSED }, "the unused disk to be deleted")
+                }
+                step("snapshot with RAM of the running VM, roll back, delete", optional = { "KVM" in it.message.orEmpty() }) {
+                    done(node, guests.power(vm, PowerAction.START), "start")
+                    try {
+                        done(node, guests.createSnapshot(vm, "anproxram", "with RAM", includeRam = true), "snapshot with RAM")
+                        expect(guests.snapshots(vm).any { it.name == "anproxram" && it.vmstate }, "a snapshot with RAM")
+                        done(node, guests.rollbackSnapshot(vm, "anproxram"), "rollback")
+                        expect(guests.status(vm).isRunning, "the VM running again after the rollback")
+                        done(node, guests.deleteSnapshot(vm, "anproxram"), "delete snapshot")
+                    } finally {
+                        if (guests.status(vm).isRunning) done(node, guests.power(vm, PowerAction.STOP), "stop")
+                    }
+                }
+                if (backupStorage != null) {
+                    step("backup job: create, run now, delete") {
+                        jobs.create(
+                            id,
+                            BackupJobForm(
+                                enabled = false, schedule = "sun 03:00", storage = backupStorage.storage, node = node,
+                                selection = BackupSelection.INCLUDE, vmids = setOf(vmid), mode = BackupMode.STOP, comment = PREFIX,
+                                // Never prunes the earlier backup, whatever the storage's retention says.
+                                retention = Retention(keepAll = true),
+                            ),
+                        )
+                        val job = jobs.jobs(id).firstOrNull { it.comment == PREFIX } ?: error("the new job is not listed")
+                        val before = backups.backups(vm).backups.map { it.volid }.toSet()
+                        jobs.runNow(id, job).forEach { done(it.node, it.upid, "backup job run") }
+                        backups.backups(vm).backups.filter { it.volid !in before }.forEach { backupVolumes += backupStorage.storage to it.volid }
+                        jobs.delete(id, job.id)
+                        expect(jobs.jobs(id).none { it.comment == PREFIX }, "the job to be gone")
+                    }
+                }
+                // A single node without a cluster can't run HA; that's the server, not the app. The resource stays
+                // "ignored", so the HA manager never takes the VM over or arms the node's watchdog.
+                step("high availability: add, change, remove", optional = { e -> listOf("quorum", "cluster", "corosync").any { it in e.message.orEmpty() } }) {
+                    ha.add(id, "vm:$vmid", HaResourceForm(state = HaState.IGNORED, comment = PREFIX))
+                    val resource = ha.resources(id).firstOrNull { it.sid == "vm:$vmid" } ?: error("the HA resource is not listed")
+                    ha.update(id, resource, HaResourceForm(state = HaState.IGNORED, maxRestart = 3, comment = PREFIX))
+                    expect(ha.resources(id).any { it.sid == "vm:$vmid" && it.maxRestart == 3 }, "max_restart changed to 3")
+                    ha.remove(id, ha.resources(id).first { it.sid == "vm:$vmid" })
+                    expect(ha.resources(id).none { it.sid == "vm:$vmid" }, "the HA resource to be gone")
                 }
             }
 
@@ -286,13 +406,140 @@ class RealServerWriteTest {
                 }
             }
 
+            println("Storage")
+            val isoStorage = storage.storages(id)
+                .firstOrNull { s -> ContentType.ISO in ContentType.parse(s.config.content) && s.nodes.any { it.node == node && it.available } }
+                ?.config?.storage
+            if (isoStorage == null) {
+                println("  – no storage for ISO images on $node")
+            } else {
+                step("upload a small image to $isoStorage, then delete it") {
+                    val bytes = ByteArray(64 * 1024) { (it % 251).toByte() }
+                    val source = object : UploadSource {
+                        override val name = "$PREFIX-upload.iso"
+                        override val size = bytes.size.toLong()
+                        override fun open() = ByteArrayInputStream(bytes)
+                    }
+                    done(node, storage.upload(id, node, isoStorage, ContentType.ISO, source) {}, "upload")
+                    val item = storage.content(id, node, isoStorage, ContentType.ISO).firstOrNull { it.fileName == source.name } ?: error("the uploaded image is not listed")
+                    done(node, storage.delete(id, node, isoStorage, item.volid), "delete image")
+                }
+                step("download a file from a URL to $isoStorage, then delete it") {
+                    val name = "$PREFIX-download.iso"
+                    done(node, storage.download(id, node, isoStorage, DownloadUrlForm(url = DOWNLOAD_URL, filename = name)), "download")
+                    val item = storage.content(id, node, isoStorage, ContentType.ISO).firstOrNull { it.fileName == name } ?: error("the downloaded file is not listed")
+                    done(node, storage.delete(id, node, isoStorage, item.volid), "delete download")
+                }
+            }
+            step("directory storage: add, then remove") {
+                setup.create(id, StorageSetupForm(kind = StorageKind.DIR, id = PREFIX, path = "/tmp/$PREFIX", content = setOf("iso"), nodes = setOf(node)))
+                expect(storage.storages(id).any { it.config.storage == PREFIX }, "the new storage")
+                setup.remove(id, PREFIX)
+                expect(storage.storages(id).none { it.config.storage == PREFIX }, "the storage to be gone")
+            }
+
+            println("Firewall")
+            // Rules are added switched off, so they never filter anything.
+            listOf(FirewallScope.Datacenter, FirewallScope.Node(node)).forEach { scope ->
+                step("${scope.path}: add and remove a rule") {
+                    firewall.create(id, scope, FirewallRuleForm(type = "in", action = "DROP", proto = "tcp", dport = "65001", comment = PREFIX, enabled = false))
+                    val rule = firewall.rules(id, scope).firstOrNull { it.comment == PREFIX } ?: error("the new rule is not listed")
+                    firewall.delete(id, scope, rule)
+                    expect(firewall.rules(id, scope).none { it.comment == PREFIX }, "the rule to be gone")
+                }
+            }
+            step("security group with a rule, then delete it") {
+                firewall.createGroup(id, PREFIX, "AnProx write test")
+                val group = FirewallScope.Group(PREFIX)
+                firewall.create(id, group, FirewallRuleForm(type = "in", action = "ACCEPT", proto = "tcp", dport = "65002", comment = PREFIX, enabled = false))
+                val rule = firewall.rules(id, group).firstOrNull { it.comment == PREFIX } ?: error("the group's rule is not listed")
+                firewall.delete(id, group, rule)
+                firewall.deleteGroup(id, PREFIX)
+                expect(firewall.securityGroups(id).none { it.group == PREFIX }, "the group to be gone")
+            }
+            step("alias and IP set, then delete them") {
+                val dc = FirewallScope.Datacenter
+                suspend fun alias() = firewall.aliases(id, dc).firstOrNull { it.name.equals(PREFIX, ignoreCase = true) }
+                firewall.createAlias(id, dc, FirewallAliasForm(name = PREFIX, cidr = "192.0.2.10", comment = "AnProx write test"))
+                expect(alias() != null, "the new alias")
+                firewall.createIpSet(id, dc, PREFIX, "AnProx write test")
+                firewall.addIpSetEntry(id, dc, PREFIX, "192.0.2.0/24", "test", nomatch = false)
+                expect(firewall.ipSets(id, dc).any { (set, entries) -> set.name == PREFIX && entries.any { it.cidr == "192.0.2.0/24" } }, "the IP set with its entry")
+                firewall.deleteIpSet(id, dc, PREFIX)
+                // Aliases and IP sets share one file, so the alias is read again for a current digest.
+                firewall.deleteAlias(id, dc, alias() ?: error("the alias is not listed"))
+                expect(firewall.aliases(id, dc).none { it.name.equals(PREFIX, ignoreCase = true) }, "the alias to be gone")
+            }
+
+            println("SDN")
+            // Only the pending configuration: nothing is applied to the node's network.
+            step("zone and VNet: create, then remove before applying") {
+                sdn.createZone(id, SdnZoneForm(type = SdnZoneType.SIMPLE, id = SDN_ZONE))
+                sdn.createVnet(id, SdnVnetForm(id = SDN_VNET, zone = SDN_ZONE))
+                expect(sdn.zones(id).any { it.id == SDN_ZONE } && sdn.vnets(id).any { it.id == SDN_VNET }, "the new zone and VNet")
+                sdn.deleteVnet(id, SDN_VNET)
+                sdn.deleteZone(id, SDN_ZONE)
+                expect(sdn.zones(id).none { it.id == SDN_ZONE } && sdn.vnets(id).none { it.id == SDN_VNET }, "the zone and VNet to be gone")
+            }
+
+            println("Node")
+            if (nodeAdmin.network(id, node).pending) {
+                println("  – network: $node already has pending changes, so the test leaves its network alone")
+            } else {
+                step("network: a new bridge waits as a pending change, then is reverted") {
+                    val existing = nodeAdmin.network(id, node).interfaces.map { it.iface }.toSet()
+                    val name = (99 downTo 90).map { "vmbr$it" }.first { it !in existing }
+                    nodeAdmin.createInterface(id, node, NetworkInterfaceForm(type = "bridge", name = name, comment = PREFIX))
+                    expect(nodeAdmin.network(id, node).pending, "the bridge as a pending change")
+                    nodeAdmin.revertNetwork(id, node)
+                    expect(!nodeAdmin.network(id, node).pending, "nothing pending after the revert")
+                }
+            }
+            step("updates: refresh the package index") {
+                val task = guests.awaitTask(id, node, nodeAdmin.refresh(id, node))
+                // A repository the server can't reach (enterprise without a subscription) fails the task: the server's setup.
+                if (!task.succeeded) println("    (apt update ended with: ${task.exitstatus})")
+            }
+            step("datacenter options: change the sender address, then restore it") {
+                val original = cluster.options(id)
+                cluster.saveOptions(id, original, original.copy(emailFrom = "anprox-test@example.com"))
+                val changed = cluster.options(id)
+                try {
+                    expect(changed.emailFrom == "anprox-test@example.com", "the new sender address, got ${changed.emailFrom}")
+                } finally {
+                    cluster.saveOptions(id, changed, changed.copy(emailFrom = original.emailFrom))
+                }
+                expect(cluster.options(id).emailFrom == original.emailFrom, "the original sender address back")
+            }
+
             println("Users and groups")
-            step("group and user: create, then delete") {
+            val userMade = step("group and user: create") {
                 access.createGroup(id, PREFIX, "AnProx write test")
                 access.createUser(id, UserForm(name = PREFIX, realm = "pve", password = TEST_PASSWORD, confirmPassword = TEST_PASSWORD, groups = setOf(PREFIX)))
                 expect(access.users(id).any { it.id == "$PREFIX@pve" }, "the new user")
-                access.deleteUser(id, "$PREFIX@pve")
-                access.deleteGroup(id, PREFIX)
+            }
+            if (userMade != null) {
+                step("role and permission for the group, then remove them") {
+                    access.createRole(id, PREFIX, setOf("VM.Audit", "Datastore.Audit"))
+                    access.addAcl(id, AclForm(path = "/vms", subject = AclSubject.GROUP, ugid = PREFIX, role = PREFIX))
+                    val entry = access.acl(id).firstOrNull { it.ugid == PREFIX && it.path == "/vms" } ?: error("the new permission is not listed")
+                    access.removeAcl(id, entry)
+                    access.deleteRole(id, PREFIX)
+                    expect(access.roles(id).none { it.id == PREFIX }, "the role to be gone")
+                }
+                step("API token: create, then delete") {
+                    access.createToken(id, "$PREFIX@pve", TokenForm(id = "ci", comment = PREFIX))
+                    expect(access.tokens(id, "$PREFIX@pve").any { it.id == "ci" || it.id.endsWith("!ci") }, "the new token")
+                    access.deleteToken(id, "$PREFIX@pve", "ci")
+                }
+                step("change the test user's password") {
+                    access.changePassword(id, "$PREFIX@pve", "AnProx-test-2027!", yourPassword = password)
+                }
+                step("delete the user and the group") {
+                    access.deleteUser(id, "$PREFIX@pve")
+                    access.deleteGroup(id, PREFIX)
+                    expect(access.users(id).none { it.id == "$PREFIX@pve" }, "the user to be gone")
+                }
             }
         } finally {
             println("Cleaning up")
@@ -300,7 +547,7 @@ class RealServerWriteTest {
             backupVolumes.forEach { (store, volid) -> step("delete backup $volid") { done(node, storage.delete(id, node, store, volid), "delete backup") } }
             downloadedTemplates.forEach { (store, volid) -> step("delete template $volid") { done(node, storage.delete(id, node, store, volid), "delete template") } }
             if (created.isNotEmpty()) {
-                step("nothing of ours is left") { expect(cluster().guests.none { it.name.orEmpty().startsWith(PREFIX) }, "no $PREFIX guests") }
+                step("nothing of ours is left") { expect(clusterState().guests.none { it.name.orEmpty().startsWith(PREFIX) }, "no $PREFIX guests") }
             }
         }
 
@@ -311,5 +558,12 @@ class RealServerWriteTest {
     private companion object {
         const val PREFIX = "anprox-test"
         const val TEST_PASSWORD = "AnProx-test-2026!"
+
+        /** SDN IDs are at most 8 lowercase letters and digits. */
+        const val SDN_ZONE = "apxtest"
+        const val SDN_VNET = "apxtvnet"
+
+        /** A small file on Proxmox's own download server; stored under an `.iso` name, which is all Proxmox checks. */
+        const val DOWNLOAD_URL = "https://download.proxmox.com/debian/pve/dists/bookworm/Release"
     }
 }
