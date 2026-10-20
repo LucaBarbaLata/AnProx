@@ -203,6 +203,13 @@ repositories:
   changed and restored.
 - **Access:** a group and user, a role with a permission for the group, an API token, a
   password change.
+- **Consoles**, through the app's own connection, with the test playing the part of the bundled
+  pages: the VM's screen over VNC (handshake with the generated VNC password, a full frame
+  saved to `core/data/build/real-server/vm-screen.png`, a key press); the container's console
+  (logs in as root, resizes, runs a command); the node shell (resizes, then `stty size` must
+  say 120x40, and `pveversion` runs). The VM boots from its empty disk alone, so its screen
+  only shows firmware text; the workflow prints it base64-encoded, and the shell's own output
+  never goes to the log.
 
 It only touches objects named `anprox-test…` (SDN: `apxtest`/`apxtvnet`, bridges `vmbr90`–`vmbr99`),
 removes leftovers of an earlier run first and deletes everything at the end. Steps the server

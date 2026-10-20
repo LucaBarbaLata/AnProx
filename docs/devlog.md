@@ -143,6 +143,15 @@ the test reads it again first (the app's screens reload after every change, so t
 this). The HA resource stays "ignored" so a standalone test node never arms its watchdog, and
 the backup job keeps all backups so it can't prune the one the cleanup deletes.
 
+**Consoles on the real server.** The write test now opens all three consoles through
+`ConsoleRepository`, as the app does, and plays the part of the bundled pages
+(`ConsoleProbe.kt`): noVNC's RFB handshake with the generated VNC password, a full frame in raw
+encoding (with DesktopSize, since a VM that has nothing to boot resets every second under
+Proxmox's `reboot-timeout=1000`) saved as a PNG, and a key press; the container's login, a resize
+and a command; the node shell's resize checked with `stty size`. The mock terminal now answers
+`stty size`, `echo $((a*b))` and `pveversion`, and the mock VM screen has two light bars, so a
+blank frame no longer looks like a working one.
+
 **Leftovers from M1 and M2.**
 - Snapshot descriptions: `PUT …/snapshot/{name}/config` with `description` (empty removes it).
   A plain config write, not a task, so the screen reports it with a snackbar without a log.

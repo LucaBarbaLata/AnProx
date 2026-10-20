@@ -61,7 +61,14 @@ jobs:
           status=0
           ./gradlew --stacktrace -Panprox.jvmOnly=true :core:data:test --tests '*RealServer*' -i > real-server.log 2>&1 || status=$?
           # The checks' own lines, then the result of each test.
-          grep -E '^ +(✓|✗|–) |^ +(Working on|Dashboard|Node|Storage|Guests|Datacenter|VM|Container|Firewall|SDN|Users and groups|Leftovers|Cleaning up|All |Failed)|RealServer.* (PASSED|FAILED|SKIPPED)|^ +[a-zA-Z].*: (ApiException|IllegalState|Serialization)' real-server.log || true
+          grep -E '^ +(✓|✗|–) |^ +\(|^ +(Working on|Dashboard|Node|Storage|Guests|Datacenter|VM|Container|Firewall|SDN|Users and groups|Leftovers|Cleaning up|All |Failed)|RealServer.* (PASSED|FAILED|SKIPPED)|^ +[a-zA-Z].*: (ApiException|IllegalState|Serialization)' real-server.log || true
+          # The VM's screen as the app's VNC console saw it (only firmware text: the test VM boots from
+          # its empty disk alone). Decode with: base64 -d > vm-screen.png
+          if [ -f core/data/build/real-server/vm-screen.png ]; then
+            echo "VM screen (PNG, base64):"
+            base64 -w 100 core/data/build/real-server/vm-screen.png
+            echo "End of VM screen"
+          fi
           # One line per test, so a skipped real-server test can't pass unnoticed.
           python3 - <<'PY' | tee -a "$GITHUB_STEP_SUMMARY"
           import glob, xml.etree.ElementTree as ET
@@ -85,6 +92,7 @@ jobs:
           name: real-server-tests
           path: |
             real-server.log
+            core/data/build/real-server/
             core/data/build/reports/tests/
             core/data/build/test-results/
           if-no-files-found: ignore

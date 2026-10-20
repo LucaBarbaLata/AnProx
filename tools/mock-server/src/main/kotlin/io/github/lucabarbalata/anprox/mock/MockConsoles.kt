@@ -27,7 +27,8 @@ data class MockConsoleTicket(
 
 /**
  * A terminal like Proxmox's termproxy: `user:ticket\n` first, then `OK` and the output.
- * Input (`0:len:data`) is echoed; Enter starts a new prompt, Esc and Ctrl+C show as `^[`/`^C`.
+ * Input (`0:len:data`) is echoed; Enter runs the line ([mockShellCommand]) and starts a new
+ * prompt, Esc and Ctrl+C show as `^[`/`^C`. Resizes (`1:cols:rows:`) set what `stty size` says.
  */
 internal suspend fun DefaultWebSocketSession.mockTerminal(console: MockConsoleTicket) {
     val prompt = "root@${console.name}:~# "
@@ -39,21 +40,36 @@ internal suspend fun DefaultWebSocketSession.mockTerminal(console: MockConsoleTi
             return
         }
         send(Frame.Binary(true, "OK".toByteArray() + "Welcome to the AnProx mock shell on ${console.name}\r\n$prompt".toByteArray()))
+        var size = 80 to 24
+        val line = StringBuilder()
         for (frame in incoming) {
             val message = frame.text()
             when {
                 message == "2" -> Unit // keep-alive
-                message.startsWith("1:") -> Unit // resize
+                message.startsWith("1:") -> message.split(':').let { p ->
+                    val cols = p.getOrNull(1)?.toIntOrNull()
+                    val rows = p.getOrNull(2)?.toIntOrNull()
+                    if (cols != null && rows != null) size = cols to rows
+                }
                 message.startsWith("0:") -> {
                     val data = message.substringAfter(':').substringAfter(':')
                     val echo = buildString {
                         data.forEach { c ->
                             when (c) {
-                                '\r' -> append("\r\n$prompt")
+                                '\r' -> {
+                                    append("\r\n")
+                                    line.split(';').forEach { append(mockShellCommand(it.trim(), size.first, size.second)) }
+                                    line.clear()
+                                    append(prompt)
+                                }
                                 '\u001b' -> append("^[")
-                                '\u0003' -> append("^C\r\n$prompt")
+                                '\u0003' -> append("^C\r\n$prompt").also { line.clear() }
                                 '\u0004' -> append("logout\r\n")
-                                else -> append(c)
+                                '\u007f' -> if (line.isNotEmpty()) {
+                                    line.setLength(line.length - 1)
+                                    append("\b \b")
+                                }
+                                else -> append(c).also { line.append(c) }
                             }
                         }
                     }
@@ -64,6 +80,23 @@ internal suspend fun DefaultWebSocketSession.mockTerminal(console: MockConsoleTi
     } catch (_: ClosedReceiveChannelException) {
         // client went away
     }
+}
+
+/**
+ * The few commands the mock shell answers, with their output lines: `stty size`, `echo` (with
+ * `$((a*b))` and `$((a+b))` worked out) and `pveversion`. Anything else prints nothing.
+ */
+internal fun mockShellCommand(command: String, cols: Int, rows: Int): String = when {
+    command == "stty size" -> "$rows $cols\r\n"
+    command == "pveversion" -> "pve-manager/9.2.21/0123456789abcdef (running kernel: 6.14.11-4-pve)\r\n"
+    command == "echo" || command.startsWith("echo ") -> {
+        val text = command.removePrefix("echo").trim().replace(Regex("""\$\(\((\d+)\s*([*+])\s*(\d+)\)\)""")) { m ->
+            val (a, op, b) = m.destructured
+            (if (op == "*") a.toLong() * b.toLong() else a.toLong() + b.toLong()).toString()
+        }
+        "$text\r\n"
+    }
+    else -> ""
 }
 
 /**
@@ -137,7 +170,10 @@ fun vncAuthResponse(password: String, challenge: ByteArray): ByteArray {
     return cipher.doFinal(challenge)
 }
 
-/** A FramebufferUpdate with one rectangle filling the screen in the AnProx dark blue. */
+/**
+ * A FramebufferUpdate with one rectangle filling the screen in the AnProx dark blue, with two
+ * light grey bars in the top left where a firmware would print its first lines.
+ */
 private fun rawFrame(width: Int, height: Int, bytesPerPixel: Int): ByteArray {
     val header = ByteBuffer.allocate(16)
         .put(0).put(0).putShort(1)
@@ -145,9 +181,15 @@ private fun rawFrame(width: Int, height: Int, bytesPerPixel: Int): ByteArray {
         .putInt(0) // raw encoding
         .array()
     // noVNC asks for little-endian pixels with red at bit 0: bytes R, G, B, padding.
-    val pixel = byteArrayOf(0x1e, 0x29, 0x3b, 0).copyOf(bytesPerPixel)
+    val background = byteArrayOf(0x1e, 0x29, 0x3b, 0).copyOf(bytesPerPixel)
+    val text = byteArrayOf(0xaa.toByte(), 0xaa.toByte(), 0xaa.toByte(), 0).copyOf(bytesPerPixel)
     val pixels = ByteArray(width * height * bytesPerPixel)
-    for (i in pixels.indices step bytesPerPixel) pixel.copyInto(pixels, i)
+    for (y in 0 until height) {
+        for (x in 0 until width) {
+            val bar = (y in 4 until 12 && x in 4 until width / 2) || (y in 20 until 28 && x in 4 until width / 3)
+            (if (bar) text else background).copyInto(pixels, (y * width + x) * bytesPerPixel)
+        }
+    }
     return header + pixels
 }
 

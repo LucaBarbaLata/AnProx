@@ -4,3 +4,4 @@ write
 # Run 1: 2026-10-20, first run against the owner's test host.
 # Run 2: 2026-10-20, container with a downloaded template, per-test summary.
 # Run 3: the extended write test (templates, disks, RAM snapshot, backup job, HA, storage, firewall, SDN, network, access).
+# Run 4: consoles (VM screen over VNC, container console, node shell).

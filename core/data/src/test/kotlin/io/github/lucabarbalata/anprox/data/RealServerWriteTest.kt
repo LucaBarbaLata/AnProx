@@ -1,6 +1,7 @@
 package io.github.lucabarbalata.anprox.data
 
 import io.github.lucabarbalata.anprox.data.backup.BackupRepository
+import io.github.lucabarbalata.anprox.data.console.ConsoleRepository
 import io.github.lucabarbalata.anprox.data.datacenter.AccessRepository
 import io.github.lucabarbalata.anprox.data.datacenter.BackupJobRepository
 import io.github.lucabarbalata.anprox.data.datacenter.ClusterRepository
@@ -29,6 +30,8 @@ import io.github.lucabarbalata.anprox.model.pve.BackupJobForm
 import io.github.lucabarbalata.anprox.model.pve.BackupMode
 import io.github.lucabarbalata.anprox.model.pve.BackupSelection
 import io.github.lucabarbalata.anprox.model.pve.CloneRequest
+import io.github.lucabarbalata.anprox.model.pve.ConsoleKind
+import io.github.lucabarbalata.anprox.model.pve.ConsoleTarget
 import io.github.lucabarbalata.anprox.model.pve.ContentType
 import io.github.lucabarbalata.anprox.model.pve.CtNetSettings
 import io.github.lucabarbalata.anprox.model.pve.DownloadUrlForm
@@ -62,19 +65,23 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assumptions.assumeTrue
 import java.io.ByteArrayInputStream
+import java.io.File
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
 /**
- * Creates, changes and deletes things on a **test** Proxmox VE the way the app does: a VM (options,
- * hardware, snapshot, firewall rule, start/stop, backup and restore, clone), a container (downloading
- * a small template from the catalogue when the node has none), a pool, a user and a group. It only touches what it creates, all named `anprox-test…`, removes
- * leftovers of an earlier run first and deletes everything at the end.
+ * Creates, changes and deletes things on a **test** Proxmox VE the way the app does: VMs, a
+ * container (downloading a small template from the catalogue when the node has none), storage,
+ * firewall, SDN, network, access control and the three consoles (the VM's screen over VNC, the
+ * container's and the node's terminals); docs/testing.md lists every step. It only touches what
+ * it creates, all named `anprox-test…`, removes leftovers of an earlier run first and deletes
+ * everything at the end.
  *
  * Needs a user allowed to do all that (root@pam on a test server), and `ANPROX_PVE_WRITE=1` on top
  * of the variables [RealServerSmokeTest] uses, so it never runs against a server by accident:
@@ -102,14 +109,14 @@ class RealServerWriteTest {
             url.isNotBlank() && user.contains('@') && password.isNotEmpty() && System.getenv("ANPROX_PVE_WRITE") == "1",
             "ANPROX_PVE_URL/USER/PASSWORD and ANPROX_PVE_WRITE=1 not set",
         )
-        writeEverything(url, user, password, insecure = System.getenv("ANPROX_PVE_INSECURE") != "0")
+        writeEverything(url, user, password, insecure = System.getenv("ANPROX_PVE_INSECURE") != "0", screenshot = "vm-screen.png")
     }
 
     @Test
     fun `the same steps pass against the mock`() = runBlocking {
         val mock = MockProxmoxServer(ProxmoxProduct.PVE).start()
         try {
-            writeEverything(mock.baseUrl, "root@pam", "anprox", insecure = true)
+            writeEverything(mock.baseUrl, "root@pam", "anprox", insecure = true, screenshot = "vm-screen-mock.png")
         } finally {
             mock.stop()
         }
@@ -138,7 +145,8 @@ class RealServerWriteTest {
         if (!condition) throw IllegalStateException("expected $what")
     }
 
-    private suspend fun writeEverything(url: String, user: String, password: String, insecure: Boolean) {
+    /** [screenshot]: the file under `build/real-server/` the VM's screen is saved to. */
+    private suspend fun writeEverything(url: String, user: String, password: String, insecure: Boolean, screenshot: String) {
         val profile = ServerProfile(
             id = "real", name = "Test server", product = ProxmoxProduct.PVE,
             endpoints = listOf(Endpoint(url)),
@@ -164,6 +172,7 @@ class RealServerWriteTest {
         val nodeAdmin = NodeAdminRepository(hub)
         val cluster = ClusterRepository(hub)
         val ha = HaRepository(hub)
+        val consoles = ConsoleRepository(hub)
 
         suspend fun clusterState() = snapshots.fetch(hub.server(id)!!) as PveSnapshot
         suspend fun done(node: String, upid: String?, what: String) {
@@ -272,6 +281,28 @@ class RealServerWriteTest {
                     expect(guests.status(vm).isRunning, "the VM to run")
                     done(node, guests.power(vm, PowerAction.STOP), "stop")
                     expect(!guests.status(vm).isRunning, "the VM to stop")
+                }
+                step("VM screen over VNC: sign in, read the screen, press a key", optional = { "KVM" in it.message.orEmpty() }) {
+                    // Only the empty disk boots, so the screen shows the firmware's lines and nothing about the network.
+                    val disk = hardware.vm(vm).disks.first { it.kind == VmDisk.Kind.DISK }.key
+                    hardware.apply(vm, mapOf("boot" to "order=$disk"))
+                    done(node, guests.power(vm, PowerAction.START), "start")
+                    try {
+                        delay(3_000) // the firmware finds nothing to boot and says so
+                        val session = consoles.open(id, ConsoleTarget(ConsoleKind.VM, node, vmid, "$PREFIX-vm"))
+                        val screen = try {
+                            readVncScreen(session)
+                        } finally {
+                            session.close()
+                        }
+                        val file = File("build/real-server/$screenshot").apply { parentFile.mkdirs() }
+                        file.writeBytes(screen.png())
+                        println("    (VNC desktop \"${screen.name}\", ${screen.width}x${screen.height}, ${screen.colours} colours, saved to ${file.path})")
+                        expect(screen.width > 0 && screen.height > 0, "a screen size")
+                        expect(screen.colours > 1, "something drawn on the screen, not one flat colour")
+                    } finally {
+                        if (guests.status(vm).isRunning) done(node, guests.power(vm, PowerAction.STOP), "stop")
+                    }
                 }
                 val backupStorage = backups.backupStorages(id, node).firstOrNull { !it.isPbs } ?: backups.backupStorages(id, node).firstOrNull()
                 if (backupStorage == null) {
@@ -398,10 +429,43 @@ class RealServerWriteTest {
                     expect(guests.status(ct).status == "stopped", "the new container")
                 }
                 if (ctMade != null) {
-                    step("container: start and stop") {
+                    val started = step("container: start") {
                         done(node, guests.power(ct, PowerAction.START), "start container")
                         expect(guests.status(ct).isRunning, "the container to run")
-                        done(node, guests.power(ct, PowerAction.STOP), "stop container")
+                    }
+                    if (started != null) {
+                        step("container console: log in, resize, run a command") {
+                            val session = consoles.open(id, ConsoleTarget(ConsoleKind.CONTAINER, node, ctid, "$PREFIX-ct"))
+                            try {
+                                session.awaitConnected()
+                                val term = TerminalReader(session)
+                                // Enter brings back the login prompt (or the shell's, when one is open already).
+                                var prompt: String? = null
+                                for (attempt in 1..6) {
+                                    session.sendInput("\r")
+                                    prompt = term.await("login: ", "# ", millis = 5_000)?.first
+                                    if (prompt != null) break
+                                }
+                                expect(prompt != null, "a login or shell prompt on the container's console")
+                                if (prompt == "login: ") {
+                                    session.sendInput("root\r")
+                                    term.expect("Password: ")
+                                    session.sendInput("$TEST_PASSWORD\r")
+                                    term.expect("# ")
+                                }
+                                session.resize(100, 30)
+                                session.sendInput("stty size; echo anprox-$((6*7))\r")
+                                val output = term.expect("anprox-42")
+                                // lxc-console passes the size on to the container's terminal; report what arrived.
+                                println("    (stty size in the container: ${TerminalReader.sttySize(output)?.let { "${it.first}x${it.second}" } ?: "not shown"})")
+                            } finally {
+                                session.close()
+                            }
+                        }
+                        step("container: stop") {
+                            done(node, guests.power(ct, PowerAction.STOP), "stop container")
+                            expect(!guests.status(ct).isRunning, "the container to stop")
+                        }
                     }
                 }
             }
@@ -483,6 +547,24 @@ class RealServerWriteTest {
             }
 
             println("Node")
+            step("node shell: sign in, resize, run commands") {
+                val session = consoles.open(id, ConsoleTarget(ConsoleKind.NODE, node))
+                try {
+                    session.awaitConnected()
+                    val term = TerminalReader(session)
+                    expect(term.await("# ", "$ ", millis = 20_000) != null, "a shell prompt")
+                    session.resize(120, 40)
+                    session.sendInput("stty size; echo anprox-$((6*7)); pveversion\r")
+                    val output = term.expect("anprox-42")
+                    val version = term.await("running kernel", millis = 10_000)?.second?.let { Regex("""pve-manager/\S+""").find(it)?.value }
+                    // Only these values are printed: the shell's own output (last login and so on) stays out of the log.
+                    println("    (shell: ${version ?: "no pveversion output"}, stty size ${TerminalReader.sttySize(output)?.let { "${it.first}x${it.second}" }})")
+                    expect(TerminalReader.sttySize(output) == (120 to 40), "the shell to be 120x40 after the resize")
+                    expect(version != null, "pveversion's output")
+                } finally {
+                    session.close()
+                }
+            }
             if (nodeAdmin.network(id, node).pending) {
                 println("  – network: $node already has pending changes, so the test leaves its network alone")
             } else {
