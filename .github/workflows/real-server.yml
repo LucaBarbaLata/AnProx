@@ -1,0 +1,71 @@
+# Real-server tests against the owner's test Proxmox VE. Manual only (never on push or pull
+# requests), so the secrets are not handed to other code.
+#  RealServerSmokeTest: every read the app makes, read-only.
+#  RealServerWriteTest (with "write" ticked): creates, changes and deletes its own anprox-test…
+#                      objects, for test servers only.
+# Repository secrets: ANPROX_PVE_URL (https://host:8006), ANPROX_PVE_USER (user@realm; @pam is
+# added when the realm is missing) and ANPROX_PVE_PASSWORD. See docs/testing.md.
+name: Real server tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      write:
+        description: Also create, change and delete test objects (test servers only)
+        type: boolean
+        default: false
+
+concurrency:
+  group: real-server
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: gradle/actions/setup-gradle@v6
+
+      - name: Real-server tests
+        env:
+          ANPROX_PVE_URL: ${{ secrets.ANPROX_PVE_URL }}
+          PVE_USER: ${{ secrets.ANPROX_PVE_USER }}
+          ANPROX_PVE_PASSWORD: ${{ secrets.ANPROX_PVE_PASSWORD }}
+          ANPROX_PVE_WRITE: ${{ inputs.write && '1' || '0' }}
+        run: |
+          set -o pipefail
+          for v in ANPROX_PVE_URL PVE_USER ANPROX_PVE_PASSWORD; do
+            if [ -z "${!v}" ]; then echo "::error::The repository secret for $v is not set"; exit 1; fi
+          done
+          case "$PVE_USER" in *@*) export ANPROX_PVE_USER="$PVE_USER" ;; *) export ANPROX_PVE_USER="$PVE_USER@pam" ;; esac
+          echo "Signing in as $ANPROX_PVE_USER, write steps: $ANPROX_PVE_WRITE"
+          status=0
+          ./gradlew --stacktrace -Panprox.jvmOnly=true :core:data:test --tests '*RealServer*' -i > real-server.log 2>&1 || status=$?
+          # The checks' own lines, then the result of each test.
+          grep -E '^ +(✓|✗|–) |^ +(Working on|Dashboard|Node |Storage|Guests|Datacenter|VM|Container|Users and groups|Leftovers|Cleaning up|All |Failed)|RealServer.* (PASSED|FAILED|SKIPPED)|^ +[a-zA-Z].*: (ApiException|IllegalState|Serialization)' real-server.log || true
+          if [ "$status" -ne 0 ]; then
+            echo "::error::Real-server tests failed (exit $status); the full log is in the artifact"
+            grep -E 'FAILED|Exception|expected' real-server.log | head -60 || true
+          fi
+          exit $status
+
+      - name: Upload the full log and test reports
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: real-server-tests
+          path: |
+            real-server.log
+            core/data/build/reports/tests/
+            core/data/build/test-results/
+          if-no-files-found: ignore

@@ -197,6 +197,11 @@ ANPROX_PVE_URL=… ANPROX_PVE_USER=root@pam ANPROX_PVE_PASSWORD=… ANPROX_PVE_W
   ./gradlew -Panprox.jvmOnly=true :core:data:test --tests '*RealServerWriteTest*' -i
 ```
 
+**From GitHub Actions:** the manual workflow **Real server tests** (`.github/workflows/real-server.yml`)
+runs both with the repository secrets `ANPROX_PVE_URL`, `ANPROX_PVE_USER` and
+`ANPROX_PVE_PASSWORD` (`@pam` is added to a user without a realm). Tick **write** to run the write
+test too. GitHub's runners reach port 8006 directly. It never runs on push or pull requests.
+
 > From a Claude Code cloud session the server must answer on **port 443**: the environment's
 > outbound traffic only gets through on 443, so `:8006` times out even when it is open. On the
 > server, `iptables -t nat -I PREROUTING -p tcp --dport 443 -j REDIRECT --to-ports 8006` (or a
