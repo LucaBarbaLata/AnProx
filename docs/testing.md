@@ -198,7 +198,7 @@ ANPROX_PVE_URL=… ANPROX_PVE_USER=root@pam ANPROX_PVE_PASSWORD=… ANPROX_PVE_W
 ```
 
 **From GitHub Actions:** the manual workflow **Real server tests** (`.github/workflows/real-server.yml`)
-runs both with the repository secrets `ANPROX_PVE_URL`, `ANPROX_PVE_USER` and
+runs both (by hand, or by pushing a change to `.github/real-server-run`; a line `write` there turns the write test on) with the repository secrets `ANPROX_PVE_URL`, `ANPROX_PVE_USER` and
 `ANPROX_PVE_PASSWORD` (`@pam` is added to a user without a realm). Tick **write** to run the write
 test too. GitHub's runners reach port 8006 directly. It never runs on push or pull requests.
 

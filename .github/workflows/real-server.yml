@@ -1,5 +1,6 @@
-# Real-server tests against the owner's test Proxmox VE. Manual only (never on push or pull
-# requests), so the secrets are not handed to other code.
+# Real-server tests against the owner's test Proxmox VE. Started by hand (Actions → Real server
+# tests → Run workflow), or by a push that changes .github/real-server-run (a line "write" in it
+# turns the write test on). Never on pull requests, so the secrets are not handed to other code.
 #  RealServerSmokeTest: every read the app makes, read-only.
 #  RealServerWriteTest (with "write" ticked): creates, changes and deletes its own anprox-test…
 #                      objects, for test servers only.
@@ -8,6 +9,8 @@
 name: Real server tests
 
 on:
+  push:
+    paths: ['.github/real-server-run']
   workflow_dispatch:
     inputs:
       write:
@@ -41,9 +44,15 @@ jobs:
           ANPROX_PVE_URL: ${{ secrets.ANPROX_PVE_URL }}
           PVE_USER: ${{ secrets.ANPROX_PVE_USER }}
           ANPROX_PVE_PASSWORD: ${{ secrets.ANPROX_PVE_PASSWORD }}
-          ANPROX_PVE_WRITE: ${{ inputs.write && '1' || '0' }}
+          WRITE_INPUT: ${{ inputs.write && '1' || '0' }}
+          EVENT: ${{ github.event_name }}
         run: |
           set -o pipefail
+          if [ "$EVENT" = "push" ]; then
+            if grep -qx 'write' .github/real-server-run; then export ANPROX_PVE_WRITE=1; else export ANPROX_PVE_WRITE=0; fi
+          else
+            export ANPROX_PVE_WRITE="$WRITE_INPUT"
+          fi
           for v in ANPROX_PVE_URL PVE_USER ANPROX_PVE_PASSWORD; do
             if [ -z "${!v}" ]; then echo "::error::The repository secret for $v is not set"; exit 1; fi
           done
