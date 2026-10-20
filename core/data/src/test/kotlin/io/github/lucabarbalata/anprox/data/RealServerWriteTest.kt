@@ -488,7 +488,9 @@ class RealServerWriteTest {
                                 session.sendInput("stty size; echo anprox-$((6*7))\r")
                                 val output = term.expect("anprox-42")
                                 // lxc-console passes the size on to the container's terminal; report what arrived.
-                                println("    (stty size in the container: ${TerminalReader.sttySize(output)?.let { "${it.first}x${it.second}" } ?: "not shown"})")
+                                val size = TerminalReader.sttySize(output)?.let { "${it.first}x${it.second}" }
+                                // Our own test container's output, with control characters made visible.
+                                println("    (stty size in the container: ${size ?: "not recognised in ${TerminalReader.visible(output.takeLast(160))}"})")
                             } finally {
                                 session.close()
                             }

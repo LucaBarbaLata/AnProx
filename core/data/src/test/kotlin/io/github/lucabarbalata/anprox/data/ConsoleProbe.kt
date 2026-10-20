@@ -62,6 +62,19 @@ internal class TerminalReader(private val session: ConsoleSession) {
 
         fun sttySize(output: String): Pair<Int, Int>? =
             STTY_SIZE.find(output)?.destructured?.let { (rows, cols) -> cols.toInt() to rows.toInt() }
+
+        /** Terminal output with control characters spelled out (`\r`, `\n`, `\e`, `\xNN`), for a log line. */
+        fun visible(output: String): String = buildString {
+            output.forEach { c ->
+                when {
+                    c == '\r' -> append("\\r")
+                    c == '\n' -> append("\\n")
+                    c == '\u001b' -> append("\\e")
+                    c < ' ' || c == '\u007f' -> append("\\x%02x".format(c.code))
+                    else -> append(c)
+                }
+            }
+        }
     }
 }
 
