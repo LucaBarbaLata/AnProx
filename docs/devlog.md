@@ -152,6 +152,16 @@ followed on the same VM failed with "job errors". The test now reports a failed 
 end of its log, keeps the first error of a step, waits out a held lock when stopping (naming the
 tasks that hold it), and runs start/stop around a block with `whileRunning`.
 
+**Runs 4 and 5 on the test host.** All three consoles work on the real server through the
+app's own connection: the VM's screen over VNC (QEMU's desktop "QEMU (anprox-test-vm)", 640x480,
+showing the Proxmox firmware logo), root login in an Alpine container's console, and the node
+shell, where `stty size` confirms the 120x40 resize and `pveversion` runs. With HTTP the
+download works, and with the earlier failure out of the way the backup job's "run now" passes
+too. What remains: right after rolling back a snapshot with RAM, deleting it (or stopping the
+VM) gets "can't lock file … lock-100.conf - got timeout" while no task is running, and works
+some 20–35 s later. The test now asks the node shell which process holds the lock (`lslocks`,
+`ps`) and tries again, so the next run names it.
+
 **Consoles on the real server.** The write test now opens all three consoles through
 `ConsoleRepository`, as the app does, and plays the part of the bundled pages
 (`ConsoleProbe.kt`): noVNC's RFB handshake with the generated VNC password, a full frame in raw
