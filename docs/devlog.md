@@ -121,6 +121,17 @@ answered from a phone on mobile data: the cloud environment's egress proxy accep
 but only port 443 gets through. `github.com:22` times out the same way after 7 s, while hosts not
 on the allow list get a 403 at once. The fix is to serve Proxmox on 443 (a NAT redirect to 8006).
 
+**First run against the owner's test host** (Proxmox VE 9.2.21, one node, run by the Real server
+tests workflow with the repository secrets): every read passed, and the write test created a VM
+on local-lvm, changed its options and hardware, took, described, rolled back and deleted a
+snapshot, added and removed a firewall rule, started and stopped it (KVM available), backed it up
+to `local` and restored it as a new VM, cloned it, used a pool, created a user and group, and
+cleaned everything up. Differences from the mock that the app already handled: PVE 9 returns
+more RRD samples (60 per hour, 1440 per day for storages), and HA groups are gone (null, HA
+rules instead). The node had no container template, so the write test now downloads Alpine
+from the catalogue when needed (and deletes it afterwards); the workflow prints one
+PASSED/SKIPPED/FAILED line per test.
+
 **Leftovers from M1 and M2.**
 - Snapshot descriptions: `PUT …/snapshot/{name}/config` with `description` (empty removes it).
   A plain config write, not a task, so the screen reports it with a snackbar without a log.

@@ -62,6 +62,16 @@ jobs:
           ./gradlew --stacktrace -Panprox.jvmOnly=true :core:data:test --tests '*RealServer*' -i > real-server.log 2>&1 || status=$?
           # The checks' own lines, then the result of each test.
           grep -E '^ +(✓|✗|–) |^ +(Working on|Dashboard|Node |Storage|Guests|Datacenter|VM|Container|Users and groups|Leftovers|Cleaning up|All |Failed)|RealServer.* (PASSED|FAILED|SKIPPED)|^ +[a-zA-Z].*: (ApiException|IllegalState|Serialization)' real-server.log || true
+          # One line per test, so a skipped real-server test can't pass unnoticed.
+          python3 - <<'PY' | tee -a "$GITHUB_STEP_SUMMARY"
+          import glob, xml.etree.ElementTree as ET
+          print("| Test | Result |\n|---|---|")
+          for f in sorted(glob.glob("core/data/build/test-results/test/TEST-*RealServer*.xml")):
+              root = ET.parse(f).getroot()
+              for case in root.iter("testcase"):
+                  state = "FAILED" if case.find("failure") is not None else "SKIPPED" if case.find("skipped") is not None else "PASSED"
+                  print(f"| {root.get('name').rsplit('.', 1)[-1]} > {case.get('name')} | {state} |")
+          PY
           if [ "$status" -ne 0 ]; then
             echo "::error::Real-server tests failed (exit $status); the full log is in the artifact"
             grep -E 'FAILED|Exception|expected' real-server.log | head -60 || true

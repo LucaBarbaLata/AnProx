@@ -2,3 +2,4 @@ write
 # Changing this file and pushing runs .github/workflows/real-server.yml against the test server.
 # The first line "write" also runs RealServerWriteTest (creates and deletes anprox-test… objects).
 # Run 1: 2026-10-20, first run against the owner's test host.
+# Run 2: 2026-10-20, container with a downloaded template, per-test summary.

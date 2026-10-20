@@ -46,8 +46,8 @@ import kotlin.test.assertTrue
 
 /**
  * Creates, changes and deletes things on a **test** Proxmox VE the way the app does: a VM (options,
- * hardware, snapshot, firewall rule, start/stop, backup and restore, clone), a container, a pool,
- * a user and a group. It only touches what it creates, all named `anprox-test…`, removes
+ * hardware, snapshot, firewall rule, start/stop, backup and restore, clone), a container (downloading
+ * a small template from the catalogue when the node has none), a pool, a user and a group. It only touches what it creates, all named `anprox-test…`, removes
  * leftovers of an earlier run first and deletes everything at the end.
  *
  * Needs a user allowed to do all that (root@pam on a test server), and `ANPROX_PVE_WRITE=1` on top
@@ -169,6 +169,7 @@ class RealServerWriteTest {
         val vmStorage = guests.diskStorages(id, node, GuestType.QEMU).firstOrNull()?.storage ?: error("no storage for VM disks on $node")
         val created = mutableListOf<GuestRef>()
         val backupVolumes = mutableListOf<Pair<String, String>>()
+        val downloadedTemplates = mutableListOf<Pair<String, String>>()
         try {
             println("VM")
             val vmid = guests.nextVmid(id)
@@ -244,21 +245,44 @@ class RealServerWriteTest {
             }
 
             println("Container")
-            val template = hardware.containerTemplates(id, node).firstOrNull()
+            var template = hardware.containerTemplates(id, node).firstOrNull()
+            if (template == null) {
+                // None on the node: fetch the smallest distribution from the catalogue (Alpine, a few MB), like the app does.
+                val templateStorage = storage.storages(id)
+                    .firstOrNull { s -> ContentType.TEMPLATE in ContentType.parse(s.config.content) && s.nodes.any { it.node == node && it.available } }
+                    ?.config?.storage
+                val pick = storage.appliances(id, node).filter { it.section == "system" }
+                    .sortedBy { if (it.packageName.startsWith("alpine")) 0 else 1 }.firstOrNull()
+                if (templateStorage != null && pick != null) {
+                    step("download template ${pick.template} to $templateStorage") {
+                        done(node, storage.downloadAppliance(id, node, templateStorage, pick.template), "template download")
+                        template = hardware.containerTemplates(id, node).firstOrNull { it.volid.endsWith(pick.template) }
+                        template?.let { downloadedTemplates += templateStorage to it.volid }
+                    }
+                }
+            }
             val ctStorage = guests.diskStorages(id, node, GuestType.LXC).firstOrNull()?.storage
-            if (template == null || ctStorage == null) {
-                println("  – no container template or storage on $node (download one in Storage → CT templates → Template catalogue)")
+            val ctTemplate = template
+            if (ctTemplate == null || ctStorage == null) {
+                println("  – no container template or storage on $node")
             } else {
                 val ctid = guests.nextVmid(id)
                 val ct = GuestRef(id, node, GuestType.LXC, ctid)
-                step("create container $ctid from ${template.volid}") {
+                val ctMade = step("create container $ctid from ${ctTemplate.volid}") {
                     val form = NewContainer(
-                        ctid, hostname = "$PREFIX-ct", template = template.volid, password = TEST_PASSWORD,
+                        ctid, hostname = "$PREFIX-ct", template = ctTemplate.volid, password = TEST_PASSWORD,
                         storage = ctStorage, diskGiB = 1, memoryMiB = 256, network = CtNetSettings(bridge = bridge),
                     )
                     done(node, guests.createContainer(id, node, form), "create container")
                     created += ct
                     expect(guests.status(ct).status == "stopped", "the new container")
+                }
+                if (ctMade != null) {
+                    step("container: start and stop") {
+                        done(node, guests.power(ct, PowerAction.START), "start container")
+                        expect(guests.status(ct).isRunning, "the container to run")
+                        done(node, guests.power(ct, PowerAction.STOP), "stop container")
+                    }
                 }
             }
 
@@ -274,6 +298,7 @@ class RealServerWriteTest {
             println("Cleaning up")
             created.reversed().forEach { ref -> step("delete ${ref.type.apiName} ${ref.vmid}") { remove(ref) } }
             backupVolumes.forEach { (store, volid) -> step("delete backup $volid") { done(node, storage.delete(id, node, store, volid), "delete backup") } }
+            downloadedTemplates.forEach { (store, volid) -> step("delete template $volid") { done(node, storage.delete(id, node, store, volid), "delete template") } }
             if (created.isNotEmpty()) {
                 step("nothing of ours is left") { expect(cluster().guests.none { it.name.orEmpty().startsWith(PREFIX) }, "no $PREFIX guests") }
             }
