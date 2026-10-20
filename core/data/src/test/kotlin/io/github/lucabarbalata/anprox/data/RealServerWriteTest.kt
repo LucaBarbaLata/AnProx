@@ -53,7 +53,6 @@ import io.github.lucabarbalata.anprox.model.pve.SdnZoneType
 import io.github.lucabarbalata.anprox.model.pve.StartupOrder
 import io.github.lucabarbalata.anprox.model.pve.StorageKind
 import io.github.lucabarbalata.anprox.model.pve.StorageSetupForm
-import io.github.lucabarbalata.anprox.model.pve.TaskState
 import io.github.lucabarbalata.anprox.model.pve.TokenForm
 import io.github.lucabarbalata.anprox.model.pve.UserForm
 import io.github.lucabarbalata.anprox.model.pve.VmDisk
@@ -187,21 +186,48 @@ class RealServerWriteTest {
         }
 
         /**
-         * Stops a guest. Proxmox answers "can't lock file" while another task still holds the guest's
-         * lock; then the stop is tried again after a pause, naming the tasks that were running.
+         * Which processes hold the guest's config lock, asked in a node shell (the app's console):
+         * after a rollback with RAM, Proxmox keeps it held for a while without any task running.
          */
-        suspend fun stop(ref: GuestRef) {
-            for (attempt in 1..4) {
-                val status = guests.status(ref)
-                if (!status.isRunning && !status.isPaused) return
-                val upid = guests.power(ref, PowerAction.STOP)
+        suspend fun lockHolders(ref: GuestRef): String = try {
+            val session = consoles.open(id, ConsoleTarget(ConsoleKind.NODE, ref.node))
+            try {
+                session.awaitConnected()
+                val term = TerminalReader(session)
+                term.await("# ", "$ ", millis = 20_000)
+                session.resize(250, 50)
+                val lock = "lock-${ref.vmid}\\.conf"
+                session.sendInput("for p in $(lslocks -n -o PID,PATH | awk '/$lock/ {print $1}' | sort -u); do ps -o pid=,etime=,args= -p \$p; done; echo anprox-done-$((6*7))\r")
+                val output = term.expect("anprox-done-42", millis = 20_000)
+                output.substringBeforeLast("anprox-done-42").replace(Regex("\u001b\\[[0-9;?]*[A-Za-z]"), "").lines()
+                    .map { it.trim() }.filter { it.isNotEmpty() && "lslocks" !in it }
+                    .joinToString(" / ") { it.take(160) }.ifEmpty { "no process" }
+            } finally {
+                session.close()
+            }
+        } catch (e: Exception) {
+            "unknown (${e.message})"
+        }
+
+        /**
+         * Runs a task on a guest. While something else holds the guest's lock ("can't lock file"),
+         * says what holds it and tries again after a pause.
+         */
+        suspend fun lockedTask(ref: GuestRef, what: String, start: suspend () -> String) {
+            for (attempt in 1..5) {
+                val upid = start()
                 val task = guests.awaitTask(id, ref.node, upid)
                 if (task.succeeded) return
-                if ("can't lock file" !in task.exitstatus.orEmpty() || attempt == 4) done(ref.node, upid, "stop ${ref.vmid}")
-                val running = hub.use(id) { c -> c.pve { clusterTasks() } }.filter { it.state == TaskState.RUNNING }
-                println("    (stop ${ref.vmid}: ${task.exitstatus}; running: ${running.joinToString { "${it.type} ${it.id.orEmpty()}" }.ifEmpty { "nothing" }}; again in 15 s)")
-                delay(15_000)
+                if ("can't lock file" !in task.exitstatus.orEmpty() || attempt == 5) return done(ref.node, upid, what)
+                println("    ($what: the lock is held by: ${lockHolders(ref)}; again in 10 s)")
+                delay(10_000)
             }
+        }
+
+        /** Stops a guest if it runs, waiting out a held lock. */
+        suspend fun stop(ref: GuestRef) {
+            val status = guests.status(ref)
+            if (status.isRunning || status.isPaused) lockedTask(ref, "stop ${ref.vmid}") { guests.power(ref, PowerAction.STOP) }
         }
 
         /** Starts [ref], runs [block] and stops it again. A failing [block] is what gets reported, not a stop that fails after it. */
@@ -392,7 +418,7 @@ class RealServerWriteTest {
                         done(node, guests.rollbackSnapshot(vm, "anproxram"), "rollback")
                         val status = guests.status(vm)
                         expect(status.isRunning, "the VM running again after the rollback, got ${status.status}/${status.qmpstatus}")
-                        done(node, guests.deleteSnapshot(vm, "anproxram"), "delete snapshot")
+                        lockedTask(vm, "delete snapshot") { guests.deleteSnapshot(vm, "anproxram") }
                     }
                 }
                 if (backupStorage != null) {

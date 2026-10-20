@@ -6,3 +6,4 @@ write
 # Run 3: the extended write test (templates, disks, RAM snapshot, backup job, HA, storage, firewall, SDN, network, access).
 # Run 4: consoles (VM screen over VNC, container console, node shell).
 # Run 5: task logs for failed steps, lock-aware stop, HTTP download.
+# Run 6: name the process that holds a guest's lock after a rollback with RAM.
