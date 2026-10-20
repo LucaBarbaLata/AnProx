@@ -53,6 +53,7 @@ import io.github.lucabarbalata.anprox.model.pve.SdnZoneType
 import io.github.lucabarbalata.anprox.model.pve.StartupOrder
 import io.github.lucabarbalata.anprox.model.pve.StorageKind
 import io.github.lucabarbalata.anprox.model.pve.StorageSetupForm
+import io.github.lucabarbalata.anprox.model.pve.TaskState
 import io.github.lucabarbalata.anprox.model.pve.TokenForm
 import io.github.lucabarbalata.anprox.model.pve.UserForm
 import io.github.lucabarbalata.anprox.model.pve.VmDisk
@@ -175,16 +176,50 @@ class RealServerWriteTest {
         val consoles = ConsoleRepository(hub)
 
         suspend fun clusterState() = snapshots.fetch(hub.server(id)!!) as PveSnapshot
+        /** Waits for a task; a failed one is reported with the end of its log, which says why. */
         suspend fun done(node: String, upid: String?, what: String) {
             if (upid == null) return
             val task = guests.awaitTask(id, node, upid)
-            expect(task.succeeded, "$what to succeed, got ${task.exitstatus}")
+            if (!task.succeeded) {
+                val log = guests.taskLog(id, node, upid).map { it.t }.filter { it.isNotBlank() && it != "TASK OK" }.takeLast(4)
+                expect(false, "$what to succeed, got ${task.exitstatus}${log.joinToString("") { "\n      | $it" }}")
+            }
+        }
+
+        /**
+         * Stops a guest. Proxmox answers "can't lock file" while another task still holds the guest's
+         * lock; then the stop is tried again after a pause, naming the tasks that were running.
+         */
+        suspend fun stop(ref: GuestRef) {
+            for (attempt in 1..4) {
+                val status = guests.status(ref)
+                if (!status.isRunning && !status.isPaused) return
+                val upid = guests.power(ref, PowerAction.STOP)
+                val task = guests.awaitTask(id, ref.node, upid)
+                if (task.succeeded) return
+                if ("can't lock file" !in task.exitstatus.orEmpty() || attempt == 4) done(ref.node, upid, "stop ${ref.vmid}")
+                val running = hub.use(id) { c -> c.pve { clusterTasks() } }.filter { it.state == TaskState.RUNNING }
+                println("    (stop ${ref.vmid}: ${task.exitstatus}; running: ${running.joinToString { "${it.type} ${it.id.orEmpty()}" }.ifEmpty { "nothing" }}; again in 15 s)")
+                delay(15_000)
+            }
+        }
+
+        /** Starts [ref], runs [block] and stops it again. A failing [block] is what gets reported, not a stop that fails after it. */
+        suspend fun <T> whileRunning(ref: GuestRef, block: suspend () -> T): T {
+            done(ref.node, guests.power(ref, PowerAction.START), "start")
+            val result = try {
+                block()
+            } catch (e: Exception) {
+                runCatching { stop(ref) }.exceptionOrNull()?.let { println("    (stopping ${ref.vmid} afterwards failed too: ${it.message})") }
+                throw e
+            }
+            stop(ref)
+            return result
         }
 
         /** Stops (if needed) and destroys a guest of ours. */
         suspend fun remove(ref: GuestRef) {
-            val status = guests.status(ref)
-            if (status.isRunning || status.isPaused) done(ref.node, guests.power(ref, PowerAction.STOP), "stop ${ref.vmid}")
+            stop(ref)
             done(ref.node, guests.destroy(ref, purge = true, destroyUnreferencedDisks = true), "destroy ${ref.vmid}")
         }
 
@@ -286,8 +321,7 @@ class RealServerWriteTest {
                     // Only the empty disk boots, so the screen shows the firmware's lines and nothing about the network.
                     val disk = hardware.vm(vm).disks.first { it.kind == VmDisk.Kind.DISK }.key
                     hardware.apply(vm, mapOf("boot" to "order=$disk"))
-                    done(node, guests.power(vm, PowerAction.START), "start")
-                    try {
+                    whileRunning(vm) {
                         delay(3_000) // the firmware finds nothing to boot and says so
                         val session = consoles.open(id, ConsoleTarget(ConsoleKind.VM, node, vmid, "$PREFIX-vm"))
                         val screen = try {
@@ -300,8 +334,6 @@ class RealServerWriteTest {
                         println("    (VNC desktop \"${screen.name}\", ${screen.width}x${screen.height}, ${screen.colours} colours, saved to ${file.path})")
                         expect(screen.width > 0 && screen.height > 0, "a screen size")
                         expect(screen.colours > 1, "something drawn on the screen, not one flat colour")
-                    } finally {
-                        if (guests.status(vm).isRunning) done(node, guests.power(vm, PowerAction.STOP), "stop")
                     }
                 }
                 val backupStorage = backups.backupStorages(id, node).firstOrNull { !it.isPbs } ?: backups.backupStorages(id, node).firstOrNull()
@@ -353,15 +385,14 @@ class RealServerWriteTest {
                     expect(hardware.vm(vm).disks.none { it.kind == VmDisk.Kind.UNUSED }, "the unused disk to be deleted")
                 }
                 step("snapshot with RAM of the running VM, roll back, delete", optional = { "KVM" in it.message.orEmpty() }) {
-                    done(node, guests.power(vm, PowerAction.START), "start")
-                    try {
+                    whileRunning(vm) {
                         done(node, guests.createSnapshot(vm, "anproxram", "with RAM", includeRam = true), "snapshot with RAM")
-                        expect(guests.snapshots(vm).any { it.name == "anproxram" && it.vmstate }, "a snapshot with RAM")
+                        val saved = guests.snapshots(vm).firstOrNull { it.name == "anproxram" }
+                        expect(saved?.vmstate == true, "a snapshot with RAM, got $saved")
                         done(node, guests.rollbackSnapshot(vm, "anproxram"), "rollback")
-                        expect(guests.status(vm).isRunning, "the VM running again after the rollback")
+                        val status = guests.status(vm)
+                        expect(status.isRunning, "the VM running again after the rollback, got ${status.status}/${status.qmpstatus}")
                         done(node, guests.deleteSnapshot(vm, "anproxram"), "delete snapshot")
-                    } finally {
-                        if (guests.status(vm).isRunning) done(node, guests.power(vm, PowerAction.STOP), "stop")
                     }
                 }
                 if (backupStorage != null) {
@@ -645,7 +676,11 @@ class RealServerWriteTest {
         const val SDN_ZONE = "apxtest"
         const val SDN_VNET = "apxtvnet"
 
-        /** A small file on Proxmox's own download server; stored under an `.iso` name, which is all Proxmox checks. */
-        const val DOWNLOAD_URL = "https://download.proxmox.com/debian/pve/dists/bookworm/Release"
+        /**
+         * A small file on Proxmox's own download server, stored under an `.iso` name (all Proxmox checks).
+         * Plain HTTP, as Proxmox's own apt and template sources use it: the test host got a certificate
+         * for another name over HTTPS.
+         */
+        const val DOWNLOAD_URL = "http://download.proxmox.com/debian/pve/dists/bookworm/Release"
     }
 }

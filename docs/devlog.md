@@ -143,6 +143,15 @@ the test reads it again first (the app's screens reload after every change, so t
 this). The HA resource stays "ignored" so a standalone test node never arms its watchdog, and
 the backup job keeps all backups so it can't prune the one the cleanup deletes.
 
+**Extended write test, first real run.** On the test host (PVE 9.2.21) everything new passed
+except three steps. The HTTPS download from `download.proxmox.com` got a certificate for another
+name, so the test now uses plain HTTP like Proxmox's own apt and template sources (the server
+fetches the URL, not the app). Stopping the VM after the snapshot with RAM timed out on the
+guest's lock; the error from the `finally` hid whatever failed first, and the backup job that
+followed on the same VM failed with "job errors". The test now reports a failed task with the
+end of its log, keeps the first error of a step, waits out a held lock when stopping (naming the
+tasks that hold it), and runs start/stop around a block with `whileRunning`.
+
 **Consoles on the real server.** The write test now opens all three consoles through
 `ConsoleRepository`, as the app does, and plays the part of the bundled pages
 (`ConsoleProbe.kt`): noVNC's RFB handshake with the generated VNC password, a full frame in raw
