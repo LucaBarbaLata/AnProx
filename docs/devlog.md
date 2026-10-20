@@ -114,6 +114,13 @@ and friends):
 every read the app makes against a real Proxmox VE when `ANPROX_PVE_URL`, `ANPROX_PVE_USER` and
 `ANPROX_PVE_PASSWORD` are set (read-only; see testing.md), and against the mock otherwise.
 
+**Write test and the port-443 finding.** The owner allowed create/delete tests on the test host
+with root@pam, so `RealServerWriteTest` creates, changes and deletes its own `anprox-test…`
+objects (gated by `ANPROX_PVE_WRITE=1`, mock otherwise). Reaching the host failed although it
+answered from a phone on mobile data: the cloud environment's egress proxy accepts the CONNECT,
+but only port 443 gets through. `github.com:22` times out the same way after 7 s, while hosts not
+on the allow list get a 403 at once. The fix is to serve Proxmox on 443 (a NAT redirect to 8006).
+
 **Leftovers from M1 and M2.**
 - Snapshot descriptions: `PUT …/snapshot/{name}/config` with `description` (empty removes it).
   A plain config write, not a task, so the screen reports it with a snackbar without a log.

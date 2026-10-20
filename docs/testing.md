@@ -182,6 +182,27 @@ Use a dedicated user with the **PVEAuditor** role on `/` and without a second fa
 real-server test is skipped, and the same checks run against the mock instead, so they stay in
 working order. Each check prints ✓, – (not on this server) or ✗.
 
+### Write test (test servers only)
+
+`RealServerWriteTest` does what the app's buttons do: it creates a VM (options, hardware, a
+snapshot with a description and a rollback, a firewall rule, start and stop, a backup restored
+as a new VM, a full clone, a pool), a container from a template already on the node, and a user
+and group, checking each through the app's repositories. It only touches objects named
+`anprox-test…`, removes leftovers of an earlier run first and deletes everything at the end.
+It needs a user allowed to do all that (root@pam on a test server) and `ANPROX_PVE_WRITE=1` on
+top of the variables above; without them the same steps run against the mock.
+
+```bash
+ANPROX_PVE_URL=… ANPROX_PVE_USER=root@pam ANPROX_PVE_PASSWORD=… ANPROX_PVE_WRITE=1 \
+  ./gradlew -Panprox.jvmOnly=true :core:data:test --tests '*RealServerWriteTest*' -i
+```
+
+> From a Claude Code cloud session the server must answer on **port 443**: the environment's
+> outbound traffic only gets through on 443, so `:8006` times out even when it is open. On the
+> server, `iptables -t nat -I PREROUTING -p tcp --dport 443 -j REDIRECT --to-ports 8006` (or a
+> reverse proxy) does it; then use `ANPROX_PVE_URL=https://<address>` without a port. The host
+> also has to be under the environment's allowed domains.
+
 ## Continuous integration
 
 `.github/workflows/ci.yml` runs on every push and pull request:
