@@ -16,7 +16,7 @@ junit = "5.10.1"
 slf4j = "2.0.20"
 # SSH client (questionnaire Q15). JSch takes Ed25519, Curve25519 and ChaCha20 from Bouncy Castle,
 # since Android's own providers lack them before API 33.
-jsch = "2.28.4"
+jsch = "2.28.8"
 bouncycastle = "1.85"
 # SSH server for the mock (JVM only); eddsa gives it Ed25519 keys.
 sshd = "2.19.0"
