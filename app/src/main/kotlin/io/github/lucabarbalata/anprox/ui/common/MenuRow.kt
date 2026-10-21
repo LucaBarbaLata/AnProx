@@ -29,7 +29,11 @@ import io.github.lucabarbalata.anprox.core.designsystem.theme.AnProxTheme
  * in one GlassCard. The icon is neutral; [danger] marks a destructive entry in red.
  */
 @Composable
-fun MenuRow(icon: ImageVector, title: String, body: String?, onClick: () -> Unit, danger: Boolean = false) {
+fun MenuRow(icon: ImageVector, title: String, body: String?, onClick: () -> Unit) = MenuRow(icon, title, body, danger = false, onClick = onClick)
+
+/** [MenuRow] that can be drawn in red ([danger]) for a destructive entry. */
+@Composable
+fun MenuRow(icon: ImageVector, title: String, body: String?, danger: Boolean, onClick: () -> Unit) {
     val c = AnProxTheme.colors
     Row(
         Modifier
