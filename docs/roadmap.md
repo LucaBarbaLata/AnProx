@@ -71,8 +71,7 @@ Gates:
 - [x] Real-server tests against the owner's Proxmox VE 9.2.21: every read the app makes, and every write step including the three consoles (2026-10-20, run 7; see [testing.md](testing.md))
 - [x] `CHANGELOG.md` entries, store changelog (`fastlane/…/changelogs/10023.txt`, updated for M6–M8)
 - [x] README: the "Coming in 0.1.0-beta.3" list covers M2–M8 and the smaller additions
-- [x] [Test guide](beta2-test-guide.md) sections D–D15 for the owner (M2–M5)
-- [ ] Test guide sections for M6–M8 and the leftovers (permissions, SDN, Ceph, Backup Server, guest agent tools, deleting guests, node bulk actions)
+- [x] [Test guide](beta2-test-guide.md) for the owner: D–D15 (M2–M5), D16–D22 (M6–M8 and the smaller additions), N (Backup Server)
 - [ ] Owner: run the test guide on real hardware (Proxmox VE 9)
 - [ ] Head the CHANGELOG section `## [0.1.0-beta.3] — <date>`, then run the Release workflow
 

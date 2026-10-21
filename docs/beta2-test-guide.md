@@ -1,9 +1,15 @@
-# Testing 0.1.0-beta.2 and beta.3 (Proxmox VE)
+# Testing 0.1.0-beta.2 and beta.3
 
 This is the checklist for the owner's test runs before a beta is published. It started with
-everything new since beta.1 (sections A–I); the **D** sections marked "new after beta.2" are
-what 0.1.0-beta.3 adds. It is written for **Proxmox VE** (no Backup Server needed). Each step
-says what to do and what you should see. Note anything that differs, with a screenshot if you can.
+everything new since beta.1 (sections A–M); the **D** sections marked "new after beta.2" are
+what 0.1.0-beta.3 adds (D2–D15 for milestones M2–M5, D16–D22 for M6–M8 and the smaller
+additions), and section **N** covers the Backup Server. Everything except N works with
+**Proxmox VE** alone. Each step says what to do and what you should see. Note anything that
+differs, with a screenshot if you can.
+
+Automated tests already run every read and write the app makes against a real Proxmox VE 9
+server (see [testing.md](testing.md)). What they can't see is the app itself: screens, buttons,
+texts and how it feels on a phone. That's what this guide is for.
 
 The general [manual checklist](testing.md#manual-test-checklist-real-hardware) and the
 [beta testing guide](beta-testing.md) still apply. This page is the short, ordered version.
@@ -28,6 +34,9 @@ CI on Android 8.0 and 14 emulators against the mock server.
 - If you have **two or more nodes**, a storage both can use (NFS, Ceph…) makes clone/migrate tests
   easier. With one node, migration correctly says there is nowhere to move to.
 - A storage that accepts **backups** (e.g. `local`).
+- For section **N**, a **Proxmox Backup Server**. A small VM on the test server installed from
+  the PBS ISO is enough. Without one, skip N.
+- For **D18** (Ceph), a cluster with Ceph. Without Ceph, only step 1 of D18 applies.
 
 ## 3. What to test
 
@@ -303,6 +312,118 @@ Needs two nodes and a guest whose disks are on local ZFS storage that exists on 
 7. **Guest → SSH** on a running VM with the guest agent (or a container): its address is filled
    in. With PVE 9, say whether anything differs.
 
+### D16. Permissions (Datacenter → Permissions), new after beta.2
+Use root@pam (other admins are also asked for **Your password** in the password and second-factor
+dialogs, which is worth one try too).
+1. **Users**, **Groups**, **Roles**, **Permissions** and **Realms** match the web UI's
+   Datacenter → Permissions (Users, Groups, Roles, Permissions, Realms). Built-in roles
+   open read-only.
+2. **Groups → Add group** `anprox-test` → **Create**. **Roles → Add role** `AnproxTest` with
+   VM.Audit and Datastore.Audit → **Create**; it appears under "Your roles".
+3. **Permissions → Add permission**: path `/vms`, **Given to** Group → `anprox-test`, role
+   `AnproxTest`, **Propagate** on → **Add**. The web UI lists the same entry.
+4. **Users → Add user**: user name `anprox-test`, realm **pve**, a password twice, group
+   `anprox-test` ticked → **Create user**. Open it: **What anprox-test may do** shows `/vms` with
+   the role's privileges.
+5. **Change password** → new password twice → **Save** → "Password changed". Sign in as
+   `anprox-test@pve` in the web UI with it: only the VMs are visible, read-only.
+6. **Add API token** `ci` → **Create** → "API token created" shows the token ID and the secret
+   once (copy them) → **I've saved it**. The web UI's API Tokens lists it. Delete it: "Delete
+   token …?" → **Delete**.
+7. **Second factors → Authenticator app**: **Open in authenticator app** (or copy the secret),
+   type the 6-digit code → **Add** → "Authenticator app added". Signing in as the user in the
+   web UI now asks for the code. **Recovery keys** → **Create** lists 10 keys. Switch a factor off
+   and on (each asks first), then remove it.
+8. Remove the permission (⊖ → **Remove**), then **Delete user**: type `anprox-test@pve`. Delete
+   the group and the role (tap them → delete). All gone in the web UI.
+9. **Realms**: pam and pve are marked "Built in". With an LDAP or AD realm: **Sync** → **Preview
+   only** on → **Preview** → **View log** shows what a sync would change, without changing it.
+
+### D17. SDN (Datacenter → SDN), new after beta.2
+Applying reloads the network configuration of every node: do it on the test server.
+1. Zones, VNets, subnets, controllers and IPAM match the web UI's Datacenter → SDN. With nothing
+   set up: "No SDN yet".
+2. **Add zone**: type Simple, ID `apxtest` → **Create** → "Saved; apply to use it". The card
+   "1 change not applied yet" appears and the zone is marked **New**; the web UI shows it as
+   pending too.
+3. **Add VNet** `apxvnet` in `apxtest` → open it → **Add subnet** `10.250.0.0/24`, gateway
+   `10.250.0.1`, SNAT on → saved.
+4. **Apply** → "Apply the SDN changes?" → **Apply** → "SDN changes applied" with **View log**. On
+   the node (Node → Shell) `ip link show apxvnet` lists it, and the web UI offers `apxvnet` as a
+   bridge for a guest's network device.
+5. Clean up: **Delete VNet** is disabled while it has a subnet ("Delete its subnets first."), so
+   delete the subnet, then the VNet, then the zone → **Apply** again → `ip link show apxvnet`
+   says it doesn't exist.
+6. On Proxmox VE 8.4 or later: add a zone again and press **Discard** instead of Apply → it is
+   gone and nothing is pending.
+
+### D18. Ceph (Datacenter → Ceph), new after beta.2
+1. Without Ceph: "Ceph isn't set up", with how to install it in the web UI. That's all for a
+   server without Ceph.
+2. With Ceph: **Health**, **Capacity** and the OSD, monitor, manager and placement group counts
+   match the web UI's Ceph → Status. Tap a health check to read it.
+3. **OSD flags**: switch **noout** on → "noout set"; the web UI shows the flag; switch it off.
+   **pause** asks first (cancel it).
+4. **OSDs**: the list matches the web UI's OSD view; tap one → **Scrub** → the Ceph log shows the
+   scrub. (**Destroy** only on an OSD you can spare: it must be stopped and marked out first, then
+   you type its name, e.g. `osd.3`.)
+5. **Pools → Create pool** `anprox-test` (3 copies, 2 needed to write, no **Add as storage**) →
+   it is listed in the web UI; edit it; **Delete pool** needs its name typed.
+6. **Monitors and managers**, **Configuration**, **CRUSH map** and **Cluster log** match the web
+   UI; the log's **Filter** narrows it.
+
+### D19. Guest agent tools (VM → Tools → Guest agent), new after beta.2
+Needs the test VM running with the agent installed and enabled (see Prepare).
+1. **Guest agent** is listed under Tools only while the VM runs with the agent enabled. The
+   **Filesystems** state says Writable.
+2. **Freeze filesystems** → "Freeze the filesystems of …?" → confirm → "Filesystems frozen: N";
+   the state says Frozen. In the VM's console, `touch /root/x` now hangs. **Thaw filesystems** →
+   "Filesystems thawed: N", and the `touch` finishes.
+3. **Trim filesystems** lists each filesystem with the space freed (or "Done").
+4. **Users → Set user password**: user `root` (or a test user), a new password twice → **Save** →
+   "Password of root changed". Sign in on the VM's console with the new password.
+
+### D20. Guests: start order, snapshot notes, restore storage, delete, new after beta.2
+1. **Tools → Options → Start and shutdown order**: Order `1`, Wait after start `10`, Shutdown
+   timeout `60` → **Save** → "Options saved". The web UI's Options → Start/Shutdown order shows
+   `order=1,up=10,down=60`.
+2. **Tools → Snapshots**: a snapshot's ⋮ → **Edit description** → change it → **Save** →
+   "Description of … saved"; the web UI shows the new text. An empty description removes it.
+3. **Tools → Backups → Restore** on a backup: **As a new VM**, **Disks go to** another storage (if
+   you have two that hold disks) → **Start restore** → the new VM's disks are on that storage
+   (web UI → Hardware). Delete that VM afterwards (next step).
+4. **Tools → Delete VM** on a running VM only says to shut it down first. On a stopped one: the
+   dialog asks you to type its **ID** (not the name), with both options ticked → **Delete** (and
+   the fingerprint if App lock checks again) → the screen closes; the VM is gone in the web UI;
+   its backups are still there.
+
+### D21. Nodes and tasks: all guests at once, history, catalogue, stop a task, new after beta.2
+1. Node → **Guests on this node** → **Shut down all** → type the node's name (and the
+   fingerprint) → every guest on it shuts down.
+2. **Start all** with "Also guests that aren't set to start at boot" ticked → they start one
+   after another; the guest with Order 1 (D20) starts first. **Migrate all** with one node says
+   there is no other node to move to (with two nodes: pick one; the guests move).
+3. Node → **Administration → Task history** matches the web UI's Node → Task History. **Failed**
+   shows only failed tasks; **Load older tasks** adds older pages; a task opens its log.
+4. Datacenter → **Storage** → tap the `local` row of your node → **CT templates** → **Template
+   catalogue** → search `alpine` → **Download to this storage** → "… downloaded"; the entry now
+   says **On this storage**. Delete the template from the storage's list again.
+5. **Stop a task**: **Back up now** on the test VM → **View log** → the red stop icon at the top
+   → **Stop task** → the task ends with an error and the half-finished backup is not listed.
+6. **Locked guest**: in Node → **Shell** run `flock /var/lock/qemu-server/lock-<ID>.conf sleep 60`
+   with the test VM's ID, then start or stop that VM in the app. After about 10 seconds it fails,
+   and the message says another operation still holds the guest's lock and to try again
+   shortly; the task log shows the same hint. After the minute it works. (Proxmox's own cleanup
+   holds the lock like this for up to half a minute after a rollback with RAM.)
+
+### D22. Datacenter: options, cluster log, storage history, new after beta.2
+1. **Datacenter options** match the web UI's Datacenter → Options. Change **Sender address** →
+   **Save** → "Datacenter options saved"; the web UI shows it. Change it back.
+2. **Cluster log** matches the web UI's cluster log (bottom panel); **Filter** narrows it; errors
+   are red, warnings orange.
+3. Datacenter → **Storage** → a storage's node row → **Usage history** at the bottom: Hour, Day,
+   Week, Month and Year roughly match the storage's Summary graph in the web UI.
+
 ### E. Snapshots (Tools → Snapshots)
 1. **Take snapshot** on the running test VM with **Include RAM** → "VM snapshot finished"; it
    appears in the tree with a RAM badge.
@@ -363,12 +484,40 @@ Needs two nodes and a guest whose disks are on local ZFS storage that exists on 
 Sign-in (and two-factor if you use it), the Overview numbers, Resources search and filters,
 guest power actions, the Tasks tab with live logs, themes. Quick look only.
 
+### N. Proxmox Backup Server, new after beta.2
+Needs a Proxmox Backup Server (see Prepare). Back up the test container and the test VM to it
+first (in the Proxmox VE web UI: Datacenter → Storage → Add → Proxmox Backup Server, then
+Backup now on each guest).
+1. Overview → **+** → **Proxmox Backup Server**, its address (port 8007), `root@pam`, **Allow
+   insecure certificate** if it has its own certificate → **Save and sign in**. The Overview card
+   shows each datastore's usage → **Manage Backup Server**.
+2. **This server** (CPU, memory, system disk, uptime, kernel) and the datastores match the PBS
+   web UI's Dashboard.
+3. Open the datastore: groups and snapshots match the PBS web UI's Content. **Garbage collect** →
+   "Garbage collection finished". **Verify** → **Verify** → the task runs.
+4. **Namespaces** → **New namespace** `anprox-test` → **Create** → it is listed in the PBS web
+   UI → **Delete namespace** (type `anprox-test`).
+5. Open the container's backup group → a snapshot → **Edit notes** → **Save** → "Notes saved"
+   (the PBS web UI shows them). Switch **Protected** on: **Forget** is disabled. Switch it off.
+6. **Browse files** on the container's snapshot → open `etc` → tap `hostname` → save it → "…
+   saved". The download icon on a folder saves a zip. On the VM's snapshot, Browse files is not
+   offered (disk images, not files) and says why.
+7. **Prune** on a group: Last `1` → **Show what it would remove** lists which snapshots are kept
+   and removed. Press **Remove** only if you mean it.
+8. **Jobs**: create a verify job in the PBS web UI first → it is listed with its last and next
+   run → **Run now** → **Last run's log**.
+9. **Remotes → Add remote**: a second PBS (or this one's own address), `root@pam`, its password
+   and fingerprint (PBS web UI → Dashboard → Show Fingerprint) → **Create** → listed; delete it.
+10. Datastore → **Maintenance mode** → Read-only → **Save** → the PBS web UI shows it; set it back
+    to Off.
+11. **Updates**, **Services**, **System log** and **Task history** work as for a Proxmox VE node.
+
 ## 4. Reporting back
 
 For each section: OK, or what went wrong. Include your Proxmox VE version (8.x / 9.x), your phone
 and Android version, and screenshots where useful. In the app, **More → About → Report a bug**
 opens a pre-filled GitHub form; a short message in chat is fine too.
 
-When everything is OK, the release is: set the date of the `[0.1.0-beta.2]` section in
-`CHANGELOG.md`, then run **Actions → Release** with version `0.1.0-beta.2` (dry run first, then
-publish), as described in [releasing.md](releasing.md).
+When everything is OK, the release is: rename the `[Unreleased]` section in `CHANGELOG.md` to
+`[0.1.0-beta.3] — <date>`, then run **Actions → Release** with version `0.1.0-beta.3` (dry run
+first, then publish), as described in [releasing.md](releasing.md).
