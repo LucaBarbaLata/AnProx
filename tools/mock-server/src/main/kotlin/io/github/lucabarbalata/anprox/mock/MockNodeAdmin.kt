@@ -123,7 +123,7 @@ internal class MockNodeAdmin(nodes: List<String>) {
     }
 
     private fun standard(d: NodeData): List<StandardRepository> {
-        fun status(component: String) = d.files.values.flatten().firstOrNull { component in it.components }?.let { if (it.enabled) 1 else 0 }
+        fun status(component: String) = d.files.values.flatten().firstOrNull { component in it.components }?.enabled
         return listOf(
             StandardRepository("enterprise", "Enterprise", status("pve-enterprise"), "The stable, tested repository for production use; needs a subscription."),
             StandardRepository("no-subscription", "No-Subscription", status("pve-no-subscription"), "Updates for testing and non-production use, without a subscription."),

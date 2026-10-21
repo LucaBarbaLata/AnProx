@@ -86,7 +86,7 @@ class NodeAdminTest {
         repos = repo.repositories("pve", "pve1")
         assertTrue(repos.warnings.isEmpty())
         assertTrue(repos.files.flatMap { it.repositories }.any { it.enabled && "pve-no-subscription" in it.components })
-        assertEquals(1, repos.standard.single { it.handle == "no-subscription" }.status)
+        assertEquals(true, repos.standard.single { it.handle == "no-subscription" }.status)
         Unit
     }
 

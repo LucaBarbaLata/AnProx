@@ -271,6 +271,9 @@ All notable changes to AnProx are documented here. The format follows
   **keyboard** button shows the phone keyboard, and the key row works on the VM screen too (Esc,
   Tab, arrows, Enter, Ctrl+Alt+Del). An outdated Android System WebView is explained instead of
   failing silently.
+- **Backup Server → Updates → Repositories** opens on Proxmox Backup Server 4.2. It showed an
+  error ("Unexpected response"): the Backup Server reports a standard repository's state as
+  true/false where Proxmox VE uses 1/0. Found by the real-server tests.
 
 ## [0.1.0-beta.2] — 2026-10-15 (milestone M1 "Daily driver", plus consoles and guest management from M2)
 

@@ -28,6 +28,10 @@ import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assumptions.assumeTrue
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
+import java.nio.file.Files
+import java.util.zip.CRC32
+import java.util.zip.ZipException
+import java.util.zip.ZipFile
 import java.util.zip.ZipInputStream
 import kotlin.test.AfterTest
 import kotlin.test.Test
@@ -360,9 +364,10 @@ internal suspend fun checkPbsSnapshot(
         val bytes = ByteArrayOutputStream().also { pbs.download(id, store, ns, snapshot, file, it) }.toByteArray()
         expect(bytes.isNotEmpty() && (file.size == null || bytes.size.toLong() == file.size), "${file.path}: ${file.size} bytes, got ${bytes.size}")
         val zip = ByteArrayOutputStream().also { pbs.download(id, store, ns, snapshot, etc, it) }.toByteArray()
-        val names = ZipInputStream(ByteArrayInputStream(zip)).use { z -> generateSequence { z.nextEntry?.name }.toList() }
-        expect(names.isNotEmpty(), "${etc.path} as a zip with files in it")
-        println("    (${file.path}: ${bytes.size} bytes; ${etc.path} as a zip: ${names.size} entries)")
+        val check = checkZip(zip)
+        expect(check.entries > 0, "${etc.path} as a zip with files in it")
+        expect(check.damaged.isEmpty(), "every file in the zip intact, but these aren't: ${check.damaged}")
+        println("    (${file.path}: ${bytes.size} bytes; ${etc.path} as a zip: ${check.entries} entries, ${check.empty} empty, the rest intact${check.streamingNote})")
     }
     step("$label: prune preview (keep the last 1)") {
         val before = pbs.snapshots(id, store, ns, group).size
@@ -371,3 +376,55 @@ internal suspend fun checkPbsSnapshot(
         expect(pbs.snapshots(id, store, ns, group).size == before, "nothing removed by a preview")
     }
 }
+
+/** What [checkZip] found: the entries, how many are empty files, and the ones whose content is damaged. */
+internal class ZipCheck(val entries: Int, val empty: Int, val damaged: List<String>, val streamingError: String?) {
+    val streamingNote: String get() = streamingError?.let { "; a streaming reader stops: $it" }.orEmpty()
+}
+
+/**
+ * Checks a zip the way an unzip tool reads it: by its central directory, every non-empty entry's
+ * length and CRC. Separately notes where a streaming reader (`ZipInputStream`) gives up, which is
+ * what run 9 hit on the test Backup Server's folder download.
+ */
+internal fun checkZip(zip: ByteArray): ZipCheck {
+    val file = Files.createTempFile("anprox-", ".zip").toFile()
+    try {
+        file.writeBytes(zip)
+        var entries = 0
+        var empty = 0
+        val damaged = mutableListOf<String>()
+        ZipFile(file).use { z ->
+            for (entry in z.entries().asSequence()) {
+                entries++
+                if (entry.isDirectory) continue
+                if (entry.size == 0L) {
+                    empty++
+                    continue
+                }
+                val crc = CRC32()
+                val read = runCatching { z.getInputStream(entry).use { input -> input.readBytes().also { crc.update(it) }.size.toLong() } }
+                if (read.getOrNull() != entry.size || crc.value != entry.crc) {
+                    damaged += "${entry.name} (${read.exceptionOrNull()?.message ?: "${read.getOrNull()} of ${entry.size} bytes, CRC ${crc.value} vs ${entry.crc}"})"
+                }
+            }
+        }
+        var current = "the start"
+        val streaming = try {
+            ZipInputStream(ByteArrayInputStream(zip)).use { z ->
+                while (true) {
+                    val entry = z.nextEntry ?: break
+                    current = "${entry.name} (method ${entry.method}, ${entry.size} bytes)"
+                    z.readBytes()
+                }
+            }
+            null
+        } catch (e: ZipException) {
+            "at $current: ${e.message}"
+        }
+        return ZipCheck(entries, empty, damaged, streaming)
+    } finally {
+        file.delete()
+    }
+}
+

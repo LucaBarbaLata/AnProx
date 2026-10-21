@@ -10,3 +10,4 @@ write
 # Run 7: container resize asserted; confirm all green.
 # Run 8: first run against the test Backup Server (reads, writes, the container backup checked on it).
 # Run 9: the Backup Server reachable from the internet.
+# Run 10: PBS repositories fix, zip checked by its central directory.

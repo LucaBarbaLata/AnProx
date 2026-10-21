@@ -165,6 +165,16 @@ was deleted again), but GitHub's runners timed out on `ANPROX_PBS_URL`, so the s
 reachable from the internet yet. The PBS sign-in in the Proxmox VE write test sat outside a
 step, so the timeout ended that whole test after the container section; it is a step of its own
 now, and `signIn` reports a failed sign-in as an exception, not an assertion a step can't catch.
+Run 9, with the Backup Server reachable (PBS 4.2, one datastore): every Proxmox VE step passed,
+the Backup Server write steps passed, and on the container backup made through Proxmox VE the
+notes, protection, verify and prune preview passed. Two findings. A real bug: PBS 4.2 sends
+`standard-repos[].status` as `true`/`false` where Proxmox VE sends `1`/`0`, so the Backup
+Server's Repositories screen couldn't read the answer; the field is a lenient `Boolean?` now.
+And the folder download (`etc` as a zip) arrived, but `ZipInputStream` stopped with "invalid
+stored block lengths". The app only writes those bytes to the file the user picks, so the test
+now reads the zip like an unzip tool does (central directory, every non-empty file's length and
+CRC) and reports separately where a streaming reader stops, to tell a damaged download from a
+quirk of the Backup Server's zip writer.
 
 **Run 6: all green on the test host.** Every read and every write step passes on the real
 server, consoles included. The lock after a rollback with RAM is held by

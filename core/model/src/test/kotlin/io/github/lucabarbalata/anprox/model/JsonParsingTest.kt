@@ -2,6 +2,7 @@ package io.github.lucabarbalata.anprox.model
 
 import io.github.lucabarbalata.anprox.model.auth.TicketResponse
 import io.github.lucabarbalata.anprox.model.json.ProxmoxJson
+import io.github.lucabarbalata.anprox.model.pve.AptRepositories
 import io.github.lucabarbalata.anprox.model.pve.ClusterResource
 import io.github.lucabarbalata.anprox.model.pve.ClusterStatusEntry
 import io.github.lucabarbalata.anprox.model.pve.ResourceType
@@ -40,6 +41,21 @@ class JsonParsingTest {
         assertEquals(ResourceType.NODE, rows[1].resourceType)
         assertTrue(rows[2].shared)
         assertEquals("local", rows[2].displayName)
+    }
+
+    @Test
+    fun `standard repositories - numbers from Proxmox VE, booleans from a Backup Server`() {
+        // PBS 4.2 sends true/false where Proxmox VE sends 1/0; the app couldn't read it before.
+        fun parse(enterprise: String, noSubscription: String): AptRepositories = ProxmoxJson.decodeFromString(
+            """{"digest":"d","files":[],"errors":[],"infos":[],"standard-repos":[
+                {"handle":"enterprise","name":"Enterprise",$enterprise},
+                {"handle":"no-subscription","name":"No-Subscription",$noSubscription},
+                {"handle":"test","name":"Test"}]}""",
+        )
+        for (repos in listOf(parse("\"status\":1", "\"status\":0"), parse("\"status\":true", "\"status\":false"))) {
+            assertEquals(listOf(true, false, null), repos.standard.map { it.status })
+            assertEquals(listOf("test"), repos.addable.map { it.handle })
+        }
     }
 
     @Test

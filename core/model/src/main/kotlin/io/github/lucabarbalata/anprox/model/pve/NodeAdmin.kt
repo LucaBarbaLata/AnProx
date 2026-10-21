@@ -67,8 +67,12 @@ data class AptRepositoryInfo(
 data class StandardRepository(
     val handle: String,
     val name: String,
-    /** 1 enabled, 0 configured but disabled, null not configured. */
-    val status: Int? = null,
+    /**
+     * Enabled, configured but disabled, or null when not configured. Proxmox VE sends `1`/`0`, a
+     * Backup Server `true`/`false` (seen on PBS 4.2).
+     */
+    @Serializable(with = PveBooleanSerializer::class)
+    val status: Boolean? = null,
     val description: String? = null,
 )
 
