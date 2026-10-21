@@ -44,9 +44,9 @@ fun SectionHeader(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            title.uppercase(),
-            style = MaterialTheme.typography.labelMedium,
-            color = AnProxTheme.colors.textTertiary,
+            title,
+            style = MaterialTheme.typography.titleSmall,
+            color = AnProxTheme.colors.textSecondary,
             modifier = Modifier
                 .weight(1f)
                 .semantics { heading() },

@@ -209,7 +209,7 @@ private fun LineChartCanvas(
                 }
                 fill.lineTo(x(run.last()), bottom)
                 fill.close()
-                drawPath(fill, Brush.verticalGradient(listOf(line.color.copy(alpha = 0.26f), Color.Transparent), startY = top, endY = bottom))
+                drawPath(fill, Brush.verticalGradient(listOf(line.color.copy(alpha = 0.14f), Color.Transparent), startY = top, endY = bottom))
                 drawPath(stroke, line.color, style = Stroke(2.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round))
             }
         }

@@ -1,6 +1,7 @@
 package io.github.lucabarbalata.anprox.core.designsystem.component
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -46,24 +47,16 @@ fun toneForUsage(fraction: Double?): Tone = when {
     else -> Tone.ACCENT
 }
 
-/** A small glowing dot. */
+/** A small status dot; a stopped guest (NEUTRAL) gets a ring instead of a filled dot. */
 @Composable
 fun StatusDot(tone: Tone, modifier: Modifier = Modifier, size: Dp = 8.dp) {
     val color = tone.color()
     Box(
         modifier
-            .size(size + 6.dp)
+            .size(size)
             .clip(CircleShape)
-            .background(color.copy(alpha = 0.18f)),
-        contentAlignment = Alignment.Center,
-    ) {
-        Box(
-            Modifier
-                .size(size)
-                .clip(CircleShape)
-                .background(color),
-        )
-    }
+            .then(if (tone == Tone.NEUTRAL) Modifier.border(1.5.dp, color, CircleShape) else Modifier.background(color)),
+    )
 }
 
 /** Dot + label in a tinted capsule, e.g. "● Running". */

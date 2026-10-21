@@ -4,7 +4,8 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
 
 /**
- * Midnight Glass colour tokens (docs/design-system.md → "Colour").
+ * Midnight colour tokens (docs/design-system.md → "Colour"): a flat navy page, solid cards, one
+ * accent. (The token names still say "glass": the look was translucent before 0.1.0-beta.4.)
  *
  * The app does not use Material You dynamic colour: the bespoke palette is the identity
  * (questionnaire Q29/Q37). Material components still get a matching [androidx.compose.material3.ColorScheme]
@@ -13,21 +14,21 @@ import androidx.compose.ui.graphics.Color
 @Immutable
 data class AnProxColors(
     val isDark: Boolean,
-    /** Page background gradient, top → bottom. */
+    /** Page background, top → bottom (the same colour: the page is flat). */
     val backgroundTop: Color,
     val backgroundBottom: Color,
-    /** Soft radial glows painted behind content. */
+    /** Radial glows behind content; transparent since the page went flat. */
     val glowPrimary: Color,
     val glowSecondary: Color,
-    /** Translucent fill of glass cards. */
+    /** Fill of cards and the navigation bar. */
     val glass: Color,
-    /** Denser glass for floating bars and sheets. */
+    /** A raised surface on a card: secondary buttons, selected rows, icon tiles. */
     val glassStrong: Color,
-    /** Opaque fallback for dialogs and menus. */
+    /** Dialogs and menus. */
     val surfaceSolid: Color,
-    /** 1dp border of glass surfaces. */
+    /** Dividers between rows and the track of bars and gauges. */
     val hairline: Color,
-    /** Light catching the top edge of a glass card. */
+    /** Light on a card's top edge; transparent since cards went flat. */
     val highlight: Color,
     val textPrimary: Color,
     val textSecondary: Color,
@@ -47,16 +48,17 @@ data class AnProxColors(
 internal object Palette {
     val Ink950 = Color(0xFF070A12)
     val Ink900 = Color(0xFF0B0F1A)
+    val Ink875 = Color(0xFF0D1220)
     val Ink850 = Color(0xFF111827)
+    val Ink825 = Color(0xFF171E30)
     val Ink800 = Color(0xFF161D2E)
-    val Mist50 = Color(0xFFF6F8FC)
+    val Ink775 = Color(0xFF1F2840)
+    val Ink750 = Color(0xFF252E45)
     val Mist100 = Color(0xFFEDF1F8)
-    val Mist200 = Color(0xFFE2E8F3)
     val Indigo300 = Color(0xFF7C9CFF)
     val Indigo600 = Color(0xFF4458E0)
     val Violet300 = Color(0xFFA78BFA)
     val Violet600 = Color(0xFF7C4DDB)
-    val Teal300 = Color(0xFF2DD4BF)
     val Emerald300 = Color(0xFF34D399)
     val Emerald700 = Color(0xFF047857)
     val Amber300 = Color(0xFFFBBF24)
@@ -69,18 +71,19 @@ internal object Palette {
 
 val DarkColors = AnProxColors(
     isDark = true,
-    backgroundTop = Palette.Ink900,
-    backgroundBottom = Palette.Ink850,
-    glowPrimary = Palette.Indigo300.copy(alpha = 0.16f),
-    glowSecondary = Palette.Teal300.copy(alpha = 0.08f),
-    glass = Color.White.copy(alpha = 0.06f),
-    glassStrong = Color(0xE6161D2E),
-    surfaceSolid = Palette.Ink800,
-    hairline = Color.White.copy(alpha = 0.10f),
-    highlight = Color.White.copy(alpha = 0.05f),
+    backgroundTop = Palette.Ink875,
+    backgroundBottom = Palette.Ink875,
+    glowPrimary = Color.Transparent,
+    glowSecondary = Color.Transparent,
+    glass = Palette.Ink825,
+    glassStrong = Palette.Ink775,
+    surfaceSolid = Palette.Ink825,
+    hairline = Palette.Ink750,
+    highlight = Color.Transparent,
     textPrimary = Color(0xFFE6EAF2),
     textSecondary = Color(0xFF9AA4B8),
-    textTertiary = Color(0xFF6B7488),
+    // 4.6:1 on cards (the old #6B7488 was 3.5:1).
+    textTertiary = Color(0xFF7E879B),
     accent = Palette.Indigo300,
     accentAlt = Palette.Violet300,
     onAccent = Palette.Ink950,
@@ -92,31 +95,31 @@ val DarkColors = AnProxColors(
     neutral = Color(0xFF6B7488),
 )
 
-/** Pure black background for OLED screens (questionnaire Q30). Glows are dimmed. */
+/** Pure black background for OLED screens (questionnaire Q30). */
 val AmoledColors = DarkColors.copy(
     backgroundTop = Color.Black,
     backgroundBottom = Color.Black,
-    glowPrimary = Palette.Indigo300.copy(alpha = 0.08f),
-    glowSecondary = Color.Transparent,
-    glass = Color.White.copy(alpha = 0.05f),
-    glassStrong = Color(0xF00A0D14),
-    surfaceSolid = Color(0xFF0D1117),
+    glass = Color(0xFF0E1118),
+    glassStrong = Color(0xFF181D29),
+    surfaceSolid = Color(0xFF0E1118),
+    hairline = Color(0xFF1C2230),
 )
 
 val LightColors = AnProxColors(
     isDark = false,
-    backgroundTop = Palette.Mist50,
-    backgroundBottom = Palette.Mist200,
-    glowPrimary = Palette.Indigo300.copy(alpha = 0.22f),
-    glowSecondary = Palette.Teal300.copy(alpha = 0.14f),
-    glass = Color.White.copy(alpha = 0.66f),
-    glassStrong = Color(0xF2FFFFFF),
+    backgroundTop = Palette.Mist100,
+    backgroundBottom = Palette.Mist100,
+    glowPrimary = Color.Transparent,
+    glowSecondary = Color.Transparent,
+    glass = Color.White,
+    glassStrong = Color(0xFFE8EDF6),
     surfaceSolid = Color.White,
-    hairline = Palette.Ink900.copy(alpha = 0.08f),
-    highlight = Color.White.copy(alpha = 0.55f),
+    hairline = Color(0xFFE2E8F0),
+    highlight = Color.Transparent,
     textPrimary = Color(0xFF0F1729),
     textSecondary = Color(0xFF4A5568),
-    textTertiary = Color(0xFF718096),
+    // 4.8:1 on white (the old #718096 was 4.0:1).
+    textTertiary = Color(0xFF64748B),
     accent = Palette.Indigo600,
     accentAlt = Palette.Violet600,
     onAccent = Color.White,

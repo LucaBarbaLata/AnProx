@@ -2,7 +2,6 @@ package io.github.lucabarbalata.anprox.core.designsystem.component
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -108,8 +107,7 @@ private fun GlassBottomBar(items: List<NavItem>, selectedKey: String?, onSelect:
             .fillMaxWidth()
             .height(BAR_HEIGHT)
             .clip(shape)
-            .background(c.glassStrong)
-            .border(1.dp, c.hairline, shape)
+            .background(c.glass)
             .padding(horizontal = 6.dp)
             .selectableGroup(),
         horizontalArrangement = Arrangement.SpaceEvenly,
@@ -131,8 +129,7 @@ private fun GlassRail(items: List<NavItem>, selectedKey: String?, onSelect: (Nav
             .padding(12.dp)
             .width(80.dp)
             .clip(RoundedCornerShape(28.dp))
-            .background(c.glassStrong)
-            .border(1.dp, c.hairline, RoundedCornerShape(28.dp))
+            .background(c.glass)
             .padding(vertical = 16.dp)
             .selectableGroup(),
         verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically),
@@ -146,7 +143,7 @@ private fun GlassRail(items: List<NavItem>, selectedKey: String?, onSelect: (Nav
 private fun NavButton(item: NavItem, selected: Boolean, onSelect: (NavItem) -> Unit, modifier: Modifier) {
     val c = AnProxTheme.colors
     val tint by animateColorAsState(if (selected) c.accent else c.textSecondary, label = "navTint")
-    val pill by animateColorAsState(if (selected) c.accent.copy(alpha = 0.16f) else Color.Transparent, label = "navPill")
+    val pill by animateColorAsState(if (selected) c.glassStrong else Color.Transparent, label = "navPill")
     Column(
         modifier
             .clip(RoundedCornerShape(20.dp))

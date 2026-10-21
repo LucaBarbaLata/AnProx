@@ -108,7 +108,7 @@ private fun chartSpecs(source: MetricsSource, points: List<RrdPoint>): List<Char
     val netOut = points.map { it.netout }
     val network = ChartSpec(
         stringResource(R.string.chart_network),
-        listOf(ChartLine(stringResource(R.string.chart_in), netIn, c.info), ChartLine(stringResource(R.string.chart_out), netOut, c.accentAlt)),
+        listOf(ChartLine(stringResource(R.string.chart_in), netIn, c.accent), ChartLine(stringResource(R.string.chart_out), netOut, c.textSecondary)),
         autoTop(netIn + netOut, binary = true),
         rate,
     )
@@ -122,14 +122,14 @@ private fun chartSpecs(source: MetricsSource, points: List<RrdPoint>): List<Char
                 ChartSpec(cpuTitle, listOf(ChartLine(usage, points.map { it.cpu }, c.accent)), 1.0, percent),
                 ChartSpec(
                     memoryTitle,
-                    listOf(ChartLine(used, mem, c.accentAlt)),
+                    listOf(ChartLine(used, mem, c.accent)),
                     points.mapNotNull { it.maxmem }.maxOrNull() ?: autoTop(mem, binary = true),
                     bytes,
                 ),
                 network,
                 ChartSpec(
                     stringResource(R.string.chart_disk_io),
-                    listOf(ChartLine(stringResource(R.string.chart_read), read, c.success), ChartLine(stringResource(R.string.chart_write), write, c.warning)),
+                    listOf(ChartLine(stringResource(R.string.chart_read), read, c.accent), ChartLine(stringResource(R.string.chart_write), write, c.textSecondary)),
                     autoTop(read + write, binary = true),
                     rate,
                 ),
@@ -145,10 +145,10 @@ private fun chartSpecs(source: MetricsSource, points: List<RrdPoint>): List<Char
                     1.0,
                     percent,
                 ),
-                ChartSpec(stringResource(R.string.chart_load), listOf(ChartLine(stringResource(R.string.chart_load_line), load, c.info)), autoTop(load, binary = false), decimal),
+                ChartSpec(stringResource(R.string.chart_load), listOf(ChartLine(stringResource(R.string.chart_load_line), load, c.accent)), autoTop(load, binary = false), decimal),
                 ChartSpec(
                     memoryTitle,
-                    listOf(ChartLine(used, mem, c.accentAlt)),
+                    listOf(ChartLine(used, mem, c.accent)),
                     points.mapNotNull { it.memtotal }.maxOrNull() ?: autoTop(mem, binary = true),
                     bytes,
                 ),

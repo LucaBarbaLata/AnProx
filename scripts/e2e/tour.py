@@ -896,7 +896,7 @@ def storage():
                 raise
     find("tiny-test.iso", timeout=60)           # listed once the node's download task has finished
     screenshot("13d-storage")
-    scroll_to("USAGE HISTORY")                  # section headers are upper case
+    scroll_to("Usage history")                  # the section header (sentence case since beta.4)
     scroll_to("Year")                           # the timeframe picker under the header
     wait_until(lambda: any(v.startswith("Used ") and not v.endswith("—")
                            for n in dump().iter("node") for v in labels(n)),

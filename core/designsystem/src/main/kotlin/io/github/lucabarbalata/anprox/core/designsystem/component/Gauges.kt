@@ -21,7 +21,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
@@ -35,7 +34,7 @@ import io.github.lucabarbalata.anprox.core.designsystem.theme.AnProxTheme
 private val gaugeSpring = spring<Float>(dampingRatio = 0.85f, stiffness = Spring.StiffnessLow)
 
 /**
- * Circular usage gauge with a soft glow under the arc. Animates between values with a spring.
+ * Circular usage gauge. Animates between values with a spring.
  *
  * @param fraction 0..1, or null when unknown (draws only the track).
  * @param label text in the middle, e.g. "42%".
@@ -65,12 +64,11 @@ fun UsageRing(
             }
             .drawBehind {
                 val w = stroke.toPx()
-                val inset = w / 2 + w // room for the glow
+                val inset = w / 2
                 val arcSize = Size(size.width - inset * 2, size.height - inset * 2)
                 val topLeft = Offset(inset, inset)
                 drawArc(c.hairline, 0f, 360f, false, topLeft, arcSize, style = Stroke(w))
                 if (fraction != null && animated > 0f) {
-                    drawArc(color.copy(alpha = 0.22f), -90f, 360f * animated, false, topLeft, arcSize, style = Stroke(w * 2.4f, cap = StrokeCap.Round))
                     drawArc(color, -90f, 360f * animated, false, topLeft, arcSize, style = Stroke(w, cap = StrokeCap.Round))
                 }
             },
@@ -83,7 +81,7 @@ fun UsageRing(
     }
 }
 
-/** Thin horizontal usage bar with a gradient fill. */
+/** Thin horizontal usage bar. */
 @Composable
 fun UsageBar(
     fraction: Double?,
@@ -107,7 +105,7 @@ fun UsageBar(
                     .fillMaxHeight()
                     .fillMaxWidth(animated)
                     .clip(RoundedCornerShape(50))
-                    .background(Brush.horizontalGradient(listOf(color.copy(alpha = 0.7f), color))),
+                    .background(color),
             )
         }
     }
