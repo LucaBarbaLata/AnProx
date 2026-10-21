@@ -152,6 +152,15 @@ followed on the same VM failed with "job errors". The test now reports a failed 
 end of its log, keeps the first error of a step, waits out a held lock when stopping (naming the
 tasks that hold it), and runs start/stop around a block with `whileRunning`.
 
+**Backup Server real-server tests.** The owner set up a Proxmox Backup Server VM on the test
+host, reachable from GitHub Actions, with a dedicated admin user and the server as a `pbs`
+storage in Proxmox VE. `RealServerPbsTest` runs every read the app makes against it and, with
+write steps on, a namespace, garbage collection, maintenance mode, a remote, a verify job and an
+apt refresh. The backup checks (`checkPbsSnapshot`: notes, protection, verify, file restore, a
+prune preview) are shared: the Proxmox VE write test backs up its own test container to the
+`pbs` storage and runs them on exactly that backup, so they don't depend on what the datastore
+already holds, and the cleanup deletes it. The PBS secrets are optional in the workflow.
+
 **Run 6: all green on the test host.** Every read and every write step passes on the real
 server, consoles included. The lock after a rollback with RAM is held by
 `/usr/bin/perl /usr/sbin/qm cleanup 100 1 0` (qmeventd's cleanup for the QEMU process the rollback

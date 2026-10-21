@@ -1,6 +1,7 @@
 package io.github.lucabarbalata.anprox.data
 
 import io.github.lucabarbalata.anprox.data.backup.BackupRepository
+import io.github.lucabarbalata.anprox.data.backupserver.PbsRepository
 import io.github.lucabarbalata.anprox.data.console.ConsoleRepository
 import io.github.lucabarbalata.anprox.data.datacenter.AccessRepository
 import io.github.lucabarbalata.anprox.data.datacenter.BackupJobRepository
@@ -44,6 +45,7 @@ import io.github.lucabarbalata.anprox.model.pve.HaState
 import io.github.lucabarbalata.anprox.model.pve.NetworkInterfaceForm
 import io.github.lucabarbalata.anprox.model.pve.NewContainer
 import io.github.lucabarbalata.anprox.model.pve.NewVm
+import io.github.lucabarbalata.anprox.model.pve.NodeStorage
 import io.github.lucabarbalata.anprox.model.pve.PoolChange
 import io.github.lucabarbalata.anprox.model.pve.PowerAction
 import io.github.lucabarbalata.anprox.model.pve.Retention
@@ -110,7 +112,7 @@ class RealServerWriteTest {
             url.isNotBlank() && user.contains('@') && password.isNotEmpty() && System.getenv("ANPROX_PVE_WRITE") == "1",
             "ANPROX_PVE_URL/USER/PASSWORD and ANPROX_PVE_WRITE=1 not set",
         )
-        writeEverything(url, user, password, insecure = System.getenv("ANPROX_PVE_INSECURE") != "0", screenshot = "vm-screen.png")
+        writeEverything(url, user, password, insecure = System.getenv("ANPROX_PVE_INSECURE") != "0", screenshot = "vm-screen.png", pbsLogin = PbsLogin.fromEnv())
     }
 
     @Test
@@ -146,8 +148,12 @@ class RealServerWriteTest {
         if (!condition) throw IllegalStateException("expected $what")
     }
 
-    /** [screenshot]: the file under `build/real-server/` the VM's screen is saved to. */
-    private suspend fun writeEverything(url: String, user: String, password: String, insecure: Boolean, screenshot: String) {
+    /**
+     * [screenshot]: the file under `build/real-server/` the VM's screen is saved to. [pbsLogin]: the
+     * test Backup Server; with it, the container is also backed up to the Proxmox VE storage that
+     * points to it, and that backup is checked on the Backup Server itself.
+     */
+    private suspend fun writeEverything(url: String, user: String, password: String, insecure: Boolean, screenshot: String, pbsLogin: PbsLogin? = null) {
         val profile = ServerProfile(
             id = "real", name = "Test server", product = ProxmoxProduct.PVE,
             endpoints = listOf(Endpoint(url)),
@@ -244,6 +250,34 @@ class RealServerWriteTest {
             return result
         }
 
+        val backupVolumes = mutableListOf<Pair<String, String>>()
+
+        /**
+         * Backs [ct] up to [pbsStorage] like the app's "Back up now", finds that backup on the Backup
+         * Server (the storage's datastore and namespace) and runs [checkPbsSnapshot] on it. The
+         * cleanup deletes the backup through Proxmox VE, like the others.
+         */
+        suspend fun backUpToBackupServer(ct: GuestRef, pbsStorage: NodeStorage, pbsLogin: PbsLogin) {
+            val made = step("back up the container to ${pbsStorage.storage} (the Backup Server)") {
+                done(ct.node, backups.backupNow(ct, pbsStorage, BackupMode.STOP, "$PREFIX {{guestname}}"), "the backup")
+                val item = backups.backups(ct).backups.firstOrNull { it.volid.startsWith("${pbsStorage.storage}:") }
+                    ?: error("the backup is not listed on ${pbsStorage.storage}")
+                backupVolumes += pbsStorage.storage to item.volid
+            }
+            if (made == null) return
+            val pbsHub = pbsLogin.signIn(scope)
+            val pbs = PbsRepository(pbsHub)
+            val found = step("find the backup on the Backup Server") {
+                val form = setup.load(id, pbsStorage.storage).form ?: error("can't read the settings of ${pbsStorage.storage}")
+                val group = pbs.groups(RealServerPbsTest.ID, form.datastore, form.namespace).firstOrNull { it.key == "ct/${ct.vmid}" }
+                    ?: error("${form.datastore} has no ct/${ct.vmid}: does ${pbsStorage.storage} point to the Backup Server in ANPROX_PBS_URL?")
+                Triple(form.datastore, form.namespace, group)
+            } ?: return
+            val (store, ns, group) = found
+            val snapshot = pbs.snapshots(RealServerPbsTest.ID, store, ns, group).first()
+            checkPbsSnapshot({ name, block -> step(name) { block() } }, pbs, GuestRepository(pbsHub), RealServerPbsTest.ID, store, ns, group, snapshot)
+        }
+
         /** Stops (if needed) and destroys a guest of ours. */
         suspend fun remove(ref: GuestRef) {
             stop(ref)
@@ -298,7 +332,6 @@ class RealServerWriteTest {
         val bridge = hardware.bridges(id, node).firstOrNull()?.iface ?: "vmbr0"
         val vmStorage = guests.diskStorages(id, node, GuestType.QEMU).firstOrNull()?.storage ?: error("no storage for VM disks on $node")
         val created = mutableListOf<GuestRef>()
-        val backupVolumes = mutableListOf<Pair<String, String>>()
         val downloadedTemplates = mutableListOf<Pair<String, String>>()
         try {
             println("VM")
@@ -485,6 +518,14 @@ class RealServerWriteTest {
                     done(node, guests.createContainer(id, node, form), "create container")
                     created += ct
                     expect(guests.status(ct).status == "stopped", "the new container")
+                }
+                if (ctMade != null && pbsLogin != null) {
+                    val pbsStorage = backups.backupStorages(id, node).firstOrNull { it.isPbs }
+                    if (pbsStorage == null) {
+                        println("  – Backup Server: no Backup Server storage on $node")
+                    } else {
+                        backUpToBackupServer(ct, pbsStorage, pbsLogin)
+                    }
                 }
                 if (ctMade != null) {
                     val started = step("container: start") {

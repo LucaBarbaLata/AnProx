@@ -223,10 +223,28 @@ ANPROX_PVE_URL=… ANPROX_PVE_USER=root@pam ANPROX_PVE_PASSWORD=… ANPROX_PVE_W
   ./gradlew -Panprox.jvmOnly=true :core:data:test --tests '*RealServerWriteTest*' -i
 ```
 
+### Backup Server (test servers only for the write steps)
+
+`RealServerPbsTest` does the same for a Proxmox Backup Server with `ANPROX_PBS_URL`
+(`https://host:8007`), `ANPROX_PBS_USER` and `ANPROX_PBS_PASSWORD`: every read the app makes
+(dashboard, the server's status, each datastore's status, garbage collection, maintenance,
+namespaces, groups, snapshots and a file catalog, jobs, remotes, updates, repositories,
+services, log, task history), and with `ANPROX_PBS_WRITE=1` a namespace created, verified and
+deleted, garbage collection, read-only maintenance switched on and off, a remote added and
+deleted (only its configuration), a verify job run if there is one, and an apt index refresh.
+The backup checks (notes and protection changed and put back, verify, file restore of a file and
+a folder, a prune preview) run on the newest container or host backup the datastore has.
+
+When both servers are configured, the Proxmox VE write test also backs up its test container to
+the Proxmox VE storage of type `pbs`, finds that backup on the Backup Server (the storage's
+datastore and namespace) and runs the same backup checks on it; the cleanup deletes it. A user
+with the Admin role on `/` (for example `anprox-ci@pbs`) is enough; it needn't be root.
+
 **From GitHub Actions:** the manual workflow **Real server tests** (`.github/workflows/real-server.yml`)
-runs both (by hand, or by pushing a change to `.github/real-server-run`; a line `write` there turns the write test on) with the repository secrets `ANPROX_PVE_URL`, `ANPROX_PVE_USER` and
-`ANPROX_PVE_PASSWORD` (`@pam` is added to a user without a realm). Tick **write** to run the write
-test too. GitHub's runners reach port 8006 directly. It never runs on pull requests, so the
+runs them all (by hand, or by pushing a change to `.github/real-server-run`; a line `write` there turns the write tests on) with the repository secrets `ANPROX_PVE_URL`, `ANPROX_PVE_USER` and
+`ANPROX_PVE_PASSWORD`, and `ANPROX_PBS_URL`, `ANPROX_PBS_USER` and `ANPROX_PBS_PASSWORD` when a
+Backup Server is set up (`@pam` is added to a user without a realm). Tick **write** to run the
+write tests too. GitHub's runners reach port 8006 directly. It never runs on pull requests, so the
 secrets are not handed to code from forks.
 
 > From a Claude Code cloud session the server must answer on **port 443**: the environment's
