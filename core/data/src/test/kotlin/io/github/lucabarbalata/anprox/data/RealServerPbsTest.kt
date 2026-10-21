@@ -31,7 +31,6 @@ import java.io.ByteArrayOutputStream
 import java.util.zip.ZipInputStream
 import kotlin.test.AfterTest
 import kotlin.test.Test
-import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
 /**
@@ -298,7 +297,9 @@ internal suspend fun signIn(scope: CoroutineScope, product: ProxmoxProduct, url:
     )
     val hub = ServerHub(InMemoryProfileStore(listOf(profile)), InMemorySecretStore(), scope)
     hub.awaitLoaded()
-    assertIs<LoginResult.Success>(hub.login(id, password, remember = false), "sign-in to $url (a user with a second factor can't be used here)")
+    // An exception rather than an assertion, so a step that signs in reports it like any other failure.
+    val result = hub.login(id, password, remember = false)
+    check(result is LoginResult.Success) { "sign-in failed: $result (a user with a second factor can't be used here)" }
     return hub
 }
 

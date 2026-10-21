@@ -265,7 +265,8 @@ class RealServerWriteTest {
                 backupVolumes += pbsStorage.storage to item.volid
             }
             if (made == null) return
-            val pbsHub = pbsLogin.signIn(scope)
+            // Inside a step: a Backup Server that can't be reached fails this check, not the whole test.
+            val pbsHub = step("sign in to the Backup Server") { pbsLogin.signIn(scope) } ?: return
             val pbs = PbsRepository(pbsHub)
             val found = step("find the backup on the Backup Server") {
                 val form = setup.load(id, pbsStorage.storage).form ?: error("can't read the settings of ${pbsStorage.storage}")

@@ -160,6 +160,11 @@ apt refresh. The backup checks (`checkPbsSnapshot`: notes, protection, verify, f
 prune preview) are shared: the Proxmox VE write test backs up its own test container to the
 `pbs` storage and runs them on exactly that backup, so they don't depend on what the datastore
 already holds, and the cleanup deletes it. The PBS secrets are optional in the workflow.
+Run 8: Proxmox VE reached the Backup Server over the LAN (the container backup to `pbs` worked and
+was deleted again), but GitHub's runners timed out on `ANPROX_PBS_URL`, so the server isn't
+reachable from the internet yet. The PBS sign-in in the Proxmox VE write test sat outside a
+step, so the timeout ended that whole test after the container section; it is a step of its own
+now, and `signIn` reports a failed sign-in as an exception, not an assertion a step can't catch.
 
 **Run 6: all green on the test host.** Every read and every write step passes on the real
 server, consoles included. The lock after a rollback with RAM is held by
