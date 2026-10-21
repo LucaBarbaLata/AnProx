@@ -70,7 +70,7 @@ Gates:
 - [x] CI green: tests, lint, debug and release builds, and the emulator tour on Android 8.0 and 14 (33 steps; last on 2026-10-20, commit `ed6a844`)
 - [x] Real-server tests against the owner's Proxmox VE 9.2.21: every read the app makes, and every write step including the three consoles (2026-10-20, run 7; see [testing.md](testing.md))
 - [x] `CHANGELOG.md` entries, store changelog (`fastlane/…/changelogs/10023.txt`, updated for M6–M8)
-- [ ] README: its "Coming in 0.1.0-beta.3" list stops at M5 and still says Ceph, SDN, permissions and the full Backup Server "come next"
+- [x] README: the "Coming in 0.1.0-beta.3" list covers M2–M8 and the smaller additions
 - [x] [Test guide](beta2-test-guide.md) sections D–D15 for the owner (M2–M5)
 - [ ] Test guide sections for M6–M8 and the leftovers (permissions, SDN, Ceph, Backup Server, guest agent tools, deleting guests, node bulk actions)
 - [ ] Owner: run the test guide on real hardware (Proxmox VE 9)

@@ -53,21 +53,40 @@ The goal is every function of the web UI in a fast, beautiful, native app.
 Coming in **0.1.0-beta.3** (in the CI test builds now):
 
 - **Guest configuration.** Hardware (CPU, memory, disks, CD/DVD, network, boot order; container
-  resources and mount points), cloud-init, and a wizard to create VMs and containers.
+  resources and mount points), cloud-init, start and shutdown order, and a wizard to create VMs
+  and containers. Delete a VM or container (you type its ID).
+- **Guest agent tools.** Freeze and thaw filesystems, trim them, and set a user's password
+  inside the guest.
+- **Consoles that work on real servers.** Rebuilt to run through the app's own connection: the
+  VM screen, container consoles and the node shell.
 - **SSH client.** Sign in to nodes and guests with a password or a key made on the phone, with
   host key checks; SPICE hand-off to a viewer app.
 - **Alerts and Android integration.** Background checks with notifications (node or guest down,
   failed backups and tasks, thresholds, Ceph), live task notifications, two home-screen widgets
   (status, and favourite guests with power buttons), a Quick Settings tile and app shortcuts.
 - **Datacenter.** Backup jobs, storage (browse, upload, download from URL, add and edit
-  storages), firewall (rules, security groups, aliases, IP sets, log), high availability,
-  replication, resource pools, and moving your servers to another phone.
+  storages, usage history), firewall (rules, security groups, aliases, IP sets, log), high
+  availability, replication, resource pools, datacenter options, the cluster log, and moving
+  your servers to another phone.
+- **Permissions.** Users, groups, roles, permissions (ACLs), realms with sync, API tokens,
+  second factors and passwords.
+- **Ceph and SDN.** Ceph health, OSDs, pools, monitors, managers, CephFS, flags and
+  configuration; SDN zones, VNets, subnets, controllers and IPAM, with pending changes and apply.
 - **Node administration.** Updates and repositories, services, the system log, network
   (bridges, bonds, VLANs with apply/revert), disks with SMART and storage creation, DNS, hosts,
-  time zone and subscription.
+  time zone and subscription, task history, the template catalogue, and start, shut down or
+  migrate all guests at once.
+- **Proxmox Backup Server, complete.** Datastores and their contents, namespaces, verify, prune,
+  garbage collection and sync jobs (run them now), remotes, notes and protection, and restoring
+  single files from container and host backups.
+- **Backups and tasks.** Restore to another storage, edit snapshot descriptions, stop a running
+  task; a task that meets a locked guest says to try again shortly.
 
-Ceph, SDN, permissions and the full Backup Server come next. See the
-[roadmap](docs/roadmap.md) and the [API coverage tracker](docs/api-coverage.md).
+Before each beta, automated tests run every read and write the app makes against a real
+Proxmox VE 9 test server (see [testing.md](docs/testing.md)). Next is the road to 1.0: the
+remaining API areas (certificates, notifications, hardware mappings, cluster setup), an
+accessibility pass and community translations. See the [roadmap](docs/roadmap.md) and the
+[API coverage tracker](docs/api-coverage.md).
 
 ## Try it
 
