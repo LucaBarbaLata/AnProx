@@ -62,13 +62,23 @@ Everything marked ✅ in M1 and M2 below. Gates:
 - [x] Owner: ran the Release workflow: [released 2026-10-15](https://github.com/LucaBarbaLata/AnProx/releases/tag/v0.1.0-beta.2) (tests, signed build and emulator tour passed)
 
 ### Beta 0.1.0-beta.3: 🚧 candidate, owner testing
-Everything marked ✅ in M2–M5 (guest configuration, SSH, alerts and Android integration,
-datacenter, node administration). Gates:
-- [x] CI green: tests, lint, debug and release builds, and the emulator tour on Android 8.0 and 14 (33 steps, 2026-10-19)
-- [x] `CHANGELOG.md` entries, store changelog (`fastlane/…/changelogs/10023.txt`), README
-- [x] [Test guide](beta2-test-guide.md) sections D1–D15 for the owner
-- [ ] Owner: run the test guide on real hardware (Proxmox VE 8; 9 later)
+Everything marked ✅ in M2–M8: guest configuration and consoles, the SSH client, alerts and
+Android integration, datacenter, node administration, Ceph and SDN, access control and the
+complete Backup Server, plus the M1 leftovers done since beta.2 (guest agent tools, deleting
+guests, node bulk actions, template catalogue, datacenter options, task history, cluster log).
+Gates:
+- [x] CI green: tests, lint, debug and release builds, and the emulator tour on Android 8.0 and 14 (33 steps; last on 2026-10-20, commit `ed6a844`)
+- [x] Real-server tests against the owner's Proxmox VE 9.2.21: every read the app makes, and every write step including the three consoles (2026-10-20, run 7; see [testing.md](testing.md))
+- [x] `CHANGELOG.md` entries, store changelog (`fastlane/…/changelogs/10023.txt`, updated for M6–M8)
+- [ ] README: its "Coming in 0.1.0-beta.3" list stops at M5 and still says Ceph, SDN, permissions and the full Backup Server "come next"
+- [x] [Test guide](beta2-test-guide.md) sections D–D15 for the owner (M2–M5)
+- [ ] Test guide sections for M6–M8 and the leftovers (permissions, SDN, Ceph, Backup Server, guest agent tools, deleting guests, node bulk actions)
+- [ ] Owner: run the test guide on real hardware (Proxmox VE 9)
 - [ ] Head the CHANGELOG section `## [0.1.0-beta.3] — <date>`, then run the Release workflow
+
+Not tried on real hardware yet, only against the mock server: Proxmox Backup Server (M8), Ceph,
+and what needs several nodes (migration between nodes, replication, HA acting on a failure). The
+owner's test server is a single Proxmox VE node without Ceph.
 
 ## M1 — Daily driver
 *Status: 🚧 in progress. Done items are marked ✅ and ship in 0.1.0-beta.2.*
