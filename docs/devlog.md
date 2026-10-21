@@ -175,6 +175,12 @@ stored block lengths". The app only writes those bytes to the file the user pick
 now reads the zip like an unzip tool does (central directory, every non-empty file's length and
 CRC) and reports separately where a streaming reader stops, to tell a damaged download from a
 quirk of the Backup Server's zip writer.
+Run 10: all green on both servers, CI too. The repositories fix holds on PBS 4.2. The `etc`
+zip has 191 entries and every non-empty file's length and CRC are right, so the download is
+intact; a streaming reader stops at the very first entry, `etc/`, a folder the Backup Server
+writes as deflated with a data descriptor but no compressed data. Tools that read the central
+directory (most unzip programs) open it; ones that read front to back may not. That's the
+Backup Server's zip writer, the same file its web interface offers, not the app.
 
 **Run 6: all green on the test host.** Every read and every write step passes on the real
 server, consoles included. The lock after a rollback with RAM is held by

@@ -69,15 +69,16 @@ guests, node bulk actions, template catalogue, datacenter options, task history,
 Gates:
 - [x] CI green: tests, lint, debug and release builds, and the emulator tour on Android 8.0 and 14 (33 steps; last on 2026-10-20, commit `ed6a844`)
 - [x] Real-server tests against the owner's Proxmox VE 9.2.21: every read the app makes, and every write step including the three consoles (2026-10-20, run 7; see [testing.md](testing.md))
+- [x] Real-server tests against the owner's Proxmox Backup Server 4.2: every read, the write steps, and a container backup made through Proxmox VE checked on it (notes, protection, verify, file restore, prune preview) (2026-10-21, run 10; it found the repositories bug fixed in this beta)
 - [x] `CHANGELOG.md` entries, store changelog (`fastlane/…/changelogs/10023.txt`, updated for M6–M8)
 - [x] README: the "Coming in 0.1.0-beta.3" list covers M2–M8 and the smaller additions
 - [x] [Test guide](beta2-test-guide.md) for the owner: D–D15 (M2–M5), D16–D22 (M6–M8 and the smaller additions), N (Backup Server)
 - [ ] Owner: run the test guide on real hardware (Proxmox VE 9)
 - [ ] Head the CHANGELOG section `## [0.1.0-beta.3] — <date>`, then run the Release workflow
 
-Not tried on real hardware yet, only against the mock server: Proxmox Backup Server (M8), Ceph,
-and what needs several nodes (migration between nodes, replication, HA acting on a failure). The
-owner's test server is a single Proxmox VE node without Ceph.
+Not tried on real hardware yet, only against the mock server: Ceph, and what needs several nodes
+(migration between nodes, replication, HA acting on a failure). The owner's test servers are a
+single Proxmox VE node without Ceph and a Backup Server in a VM on it.
 
 ## M1 — Daily driver
 *Status: 🚧 in progress. Done items are marked ✅ and ship in 0.1.0-beta.2.*

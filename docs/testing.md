@@ -233,7 +233,10 @@ services, log, task history), and with `ANPROX_PBS_WRITE=1` a namespace created,
 deleted, garbage collection, read-only maintenance switched on and off, a remote added and
 deleted (only its configuration), a verify job run if there is one, and an apt index refresh.
 The backup checks (notes and protection changed and put back, verify, file restore of a file and
-a folder, a prune preview) run on the newest container or host backup the datastore has.
+a folder, a prune preview) run on the newest container or host backup the datastore has. The
+folder's zip is checked like an unzip tool reads it, by its central directory with every file's
+length and CRC: the Backup Server writes folder entries in a way streaming readers
+(`ZipInputStream`) can't follow, though the file is intact.
 
 When both servers are configured, the Proxmox VE write test also backs up its test container to
 the Proxmox VE storage of type `pbs`, finds that backup on the Backup Server (the storage's

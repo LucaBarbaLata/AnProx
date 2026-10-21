@@ -8,7 +8,7 @@ additions), and section **N** covers the Backup Server. Everything except N work
 differs, with a screenshot if you can.
 
 Automated tests already run every read and write the app makes against a real Proxmox VE 9
-server (see [testing.md](testing.md)). What they can't see is the app itself: screens, buttons,
+server and a Proxmox Backup Server 4 (see [testing.md](testing.md)). What they can't see is the app itself: screens, buttons,
 texts and how it feels on a phone. That's what this guide is for.
 
 The general [manual checklist](testing.md#manual-test-checklist-real-hardware) and the

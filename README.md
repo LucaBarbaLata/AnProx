@@ -83,7 +83,7 @@ Coming in **0.1.0-beta.3** (in the CI test builds now):
   task; a task that meets a locked guest says to try again shortly.
 
 Before each beta, automated tests run every read and write the app makes against a real
-Proxmox VE 9 test server (see [testing.md](docs/testing.md)). Next is the road to 1.0: the
+Proxmox VE 9 and Proxmox Backup Server 4 (see [testing.md](docs/testing.md)). Next is the road to 1.0: the
 remaining API areas (certificates, notifications, hardware mappings, cluster setup), an
 accessibility pass and community translations. See the [roadmap](docs/roadmap.md) and the
 [API coverage tracker](docs/api-coverage.md).
