@@ -269,6 +269,8 @@ All notable changes to AnProx are documented here. The format follows
   - **Resources:** rows share one card: a dot, the name, "VM 100 · node", and the CPU (or how
     full a storage is) on the right. No type icons, tags or bars per row; filters are plain words.
   - **Datacenter** and **More** list titles only, in small groups.
+- Dependencies: Gradle 8.14.6, Bouncy Castle 1.86, JSch 2.28.8, Apache MINA SSHD 2.20.0 (the
+  mock server's SSH) and JUnit 5.14.4 (the five open Dependabot updates, applied together).
 - Consoles have a **Console details** button (the ⓘ in the top bar): what the connection
   received and sent, the Android System WebView version, the page's size and any error the page
   reported. Page errors also show above the console. This is for reporting console problems.

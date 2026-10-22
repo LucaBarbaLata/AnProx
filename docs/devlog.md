@@ -49,6 +49,10 @@ the provider sends the browser back to the server's origin with `code` and `stat
 - WebAuthn stays out: Android lets an app use it only for a site whose Digital Asset Links file
   names the app ([security.md](security.md#why-not-webauthn-security-keys-passkeys)).
 
+**Dependencies.** The five Dependabot pull requests (Gradle 8.14.6, Bouncy Castle 1.86, JSch
+2.28.8, MINA SSHD 2.20.0, JUnit 5.14.4) had passed CI on their own; none touches an ADR 0002 pin.
+They went in as one commit on the branch, which closes them.
+
 ---
 
 ## 2026-10-18 — Session 5: the rest of the app (M7, M6, M8 and leftovers), while the owner prepares a real host
