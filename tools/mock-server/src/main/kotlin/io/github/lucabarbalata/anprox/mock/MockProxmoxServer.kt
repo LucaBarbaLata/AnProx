@@ -9,6 +9,7 @@ import io.github.lucabarbalata.anprox.model.pve.CephHealth
 import io.github.lucabarbalata.anprox.model.pve.CephStatus
 import io.github.lucabarbalata.anprox.model.pve.GuestOptions
 import io.github.lucabarbalata.anprox.model.pve.SnapshotName
+import io.github.lucabarbalata.anprox.model.pve.TaskLogLine
 import io.github.lucabarbalata.anprox.model.pve.VersionInfo
 import io.ktor.http.ContentType
 import io.ktor.http.content.PartData
@@ -1636,7 +1637,7 @@ class MockProxmoxServer(
         get("nodes/{node}/tasks/{upid}/log") {
             call.authed() ?: return@get
             val log = state.taskLog(call.parameters["upid"]!!) ?: return@get call.fail(404, "no such task")
-            call.ok(log)
+            call.ok(log.page(call.request.queryParameters["start"], call.request.queryParameters["limit"]))
         }
         delete("nodes/{node}/tasks/{upid}") {
             val s = call.authed() ?: return@delete
@@ -1752,7 +1753,8 @@ class MockProxmoxServer(
         }
         get("nodes/localhost/tasks/{upid}/log") {
             call.authed() ?: return@get
-            call.ok(state.taskLog(call.parameters["upid"]!!) ?: return@get call.fail(404, "no such task"))
+            val log = state.taskLog(call.parameters["upid"]!!) ?: return@get call.fail(404, "no such task")
+            call.ok(log.page(call.request.queryParameters["start"], call.request.queryParameters["limit"]))
         }
         delete("nodes/localhost/tasks/{upid}") {
             call.authed() ?: return@delete
@@ -2170,4 +2172,11 @@ class MockProxmoxServer(
         private const val KEY_ALIAS = "anprox-mock"
         private const val KEY_PASSWORD = "anprox-mock"
     }
+}
+
+/** A page of a task log as Proxmox reads one (`dump_logfile`): from line [start] (0-based), [limit] lines (0: to the end). */
+private fun List<TaskLogLine>.page(start: String?, limit: String?): List<TaskLogLine> {
+    val rest = drop(start?.toIntOrNull() ?: 0)
+    val count = limit?.toIntOrNull() ?: 50
+    return if (count > 0) rest.take(count) else rest
 }

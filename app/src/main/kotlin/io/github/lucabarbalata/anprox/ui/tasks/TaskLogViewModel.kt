@@ -41,8 +41,7 @@ class TaskLogViewModel(
         while (true) {
             current = try {
                 val status = guests.taskStatus(serverId, node, upid)
-                val lines = guests.taskLog(serverId, node, upid, start = 0, limit = 5_000)
-                current.copy(status = status, lines = lines, error = null)
+                current.copy(status = status, lines = readOn(current.lines).takeLast(MAX_LINES), error = null)
             } catch (e: ApiException) {
                 current.copy(error = e.toUiText())
             }
@@ -51,6 +50,16 @@ class TaskLogViewModel(
             delay(2_000)
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TaskLogState(Upid.parse(upid)))
+
+    /** The lines after those already read (and the last one again, which may have grown), page by page. */
+    private suspend fun readOn(lines: List<TaskLogLine>): List<TaskLogLine> {
+        var all = lines
+        while (true) {
+            val page = guests.taskLog(serverId, node, upid, start = TaskLogLine.nextStart(all), limit = PAGE)
+            all = TaskLogLine.merge(all, page)
+            if (page.size < PAGE) return all
+        }
+    }
 
     private val stopUi = MutableStateFlow(TaskStopState())
     val stop: StateFlow<TaskStopState> = stopUi.asStateFlow()
@@ -70,5 +79,12 @@ class TaskLogViewModel(
                 stopUi.update { it.copy(stopping = false, error = e.toUiText()) }
             }
         }
+    }
+
+    private companion object {
+        const val PAGE = 5_000
+
+        /** The end of a very long log matters most (it says how the task ended), so that is kept. */
+        const val MAX_LINES = 5_000
     }
 }

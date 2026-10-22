@@ -62,4 +62,18 @@ data class TaskStatus(
 
 /** One line of `GET /nodes/{node}/tasks/{upid}/log`. */
 @Serializable
-data class TaskLogLine(val n: Int, val t: String)
+data class TaskLogLine(val n: Int, val t: String) {
+    companion object {
+        /**
+         * Where to read a running task's log from next: the last line already read, which may
+         * have grown since, or the placeholder "no content" an empty log answers with.
+         */
+        fun nextStart(lines: List<TaskLogLine>): Int = ((lines.lastOrNull()?.n ?: 1) - 1).coerceAtLeast(0)
+
+        /** [lines] followed by [page], which replaces them from its first line number on. */
+        fun merge(lines: List<TaskLogLine>, page: List<TaskLogLine>): List<TaskLogLine> {
+            val first = page.firstOrNull()?.n ?: return lines
+            return lines.takeWhile { it.n < first } + page
+        }
+    }
+}

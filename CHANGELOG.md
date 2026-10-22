@@ -325,6 +325,11 @@ All notable changes to AnProx are documented here. The format follows
 - **Backup Server → Updates → Repositories** opens on Proxmox Backup Server 4.2. It showed an
   error ("Unexpected response"): the Backup Server reports a standard repository's state as
   true/false where Proxmox VE uses 1/0. Found by the real-server tests.
+- **Task logs** of very long tasks show how they ended: the app showed the first 5,000 lines,
+  so a long sync or upgrade log lost its last lines and the result. It now keeps the last
+  5,000 and says how many earlier ones are left out. While a task runs, only the new lines are
+  read every 2 seconds instead of the whole log, and the log is laid out as one text, which
+  keeps long logs smooth.
 
 ## [0.1.0-beta.2] — 2026-10-15 (milestone M1 "Daily driver", plus consoles and guest management from M2)
 

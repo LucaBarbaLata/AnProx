@@ -21,9 +21,16 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.lucabarbalata.anprox.R
@@ -36,6 +43,7 @@ import io.github.lucabarbalata.anprox.core.designsystem.theme.AnProxTheme
 import io.github.lucabarbalata.anprox.core.designsystem.theme.MonoStyle
 import io.github.lucabarbalata.anprox.model.format.TaskTypes
 import io.github.lucabarbalata.anprox.model.pve.DangerLevel
+import io.github.lucabarbalata.anprox.model.pve.TaskLogLine
 import io.github.lucabarbalata.anprox.model.pve.TaskStatus
 import io.github.lucabarbalata.anprox.ui.common.AnProxScaffold
 import io.github.lucabarbalata.anprox.ui.common.ConfirmActionDialog
@@ -58,7 +66,7 @@ fun TaskLogScreen(
     val c = AnProxTheme.colors
     val listState = rememberLazyListState()
     // Follow the log while it grows.
-    LaunchedEffect(state.lines.size) {
+    LaunchedEffect(state.lines.lastOrNull()?.n) {
         if (state.lines.isNotEmpty()) listState.animateScrollToItem((listState.layoutInfo.totalItemsCount - 1).coerceAtLeast(0))
     }
     val type = state.upid?.type ?: state.status?.type.orEmpty()
@@ -110,12 +118,15 @@ fun TaskLogScreen(
                 GlassCard {
                     SelectionContainer {
                         Column(Modifier.horizontalScroll(rememberScrollState())) {
+                            val skipped = (state.lines.firstOrNull()?.n ?: 1) - 1
                             if (state.lines.isEmpty()) {
                                 Text(stringResource(R.string.task_log_empty), style = MonoStyle, color = c.textTertiary)
+                            } else if (skipped > 0) {
+                                Text(pluralStringResource(R.plurals.task_log_skipped, skipped, skipped), style = MonoStyle, color = c.textTertiary)
                             }
-                            state.lines.forEach { line ->
-                                Text(line.t, style = MonoStyle, color = if (line.t.contains("ERROR") || line.t.startsWith("TASK ERROR")) c.danger else c.textPrimary, softWrap = false)
-                            }
+                            // One text for the whole log: thousands of lines as separate texts were slow to lay out.
+                            val log = remember(state.lines, c.danger) { logText(state.lines, c.danger) }
+                            Text(log, style = MonoStyle, color = c.textPrimary, softWrap = false)
                         }
                     }
                 }
@@ -132,5 +143,13 @@ fun TaskLogScreen(
             onConfirm = viewModel::stopTask,
             onDismiss = viewModel::dismissStop,
         )
+    }
+}
+
+/** The log's lines, those with an error in red. */
+private fun logText(lines: List<TaskLogLine>, error: Color): AnnotatedString = buildAnnotatedString {
+    lines.forEachIndexed { i, line ->
+        if (i > 0) append('\n')
+        if ("ERROR" in line.t) withStyle(SpanStyle(color = error)) { append(line.t) } else append(line.t)
     }
 }

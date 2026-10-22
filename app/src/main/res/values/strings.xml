@@ -620,6 +620,10 @@
     <string name="task_user">Started by</string>
     <string name="task_exit">Result</string>
     <string name="task_log_empty">No output yet.</string>
+    <plurals name="task_log_skipped">
+        <item quantity="one">(%1$d earlier line not shown)</item>
+        <item quantity="other">(%1$d earlier lines not shown)</item>
+    </plurals>
     <string name="task_stop">Stop task</string>
     <string name="task_stop_title">Stop %1$s?</string>
     <string name="task_stop_message">Proxmox interrupts the task where it is. Whatever it already did stays done: a half-finished backup is removed, a half-copied disk may be left behind.</string>

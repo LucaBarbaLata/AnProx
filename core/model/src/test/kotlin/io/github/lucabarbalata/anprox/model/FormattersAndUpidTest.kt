@@ -1,6 +1,7 @@
 package io.github.lucabarbalata.anprox.model
 
 import io.github.lucabarbalata.anprox.model.format.Formatters
+import io.github.lucabarbalata.anprox.model.pve.TaskLogLine
 import io.github.lucabarbalata.anprox.model.pve.TaskStatus
 import io.github.lucabarbalata.anprox.model.pve.Upid
 import java.util.Locale
@@ -20,6 +21,20 @@ class FormattersAndUpidTest {
         assertFalse(TaskStatus.isLockTimeout("VM is locked (backup)"))
         assertFalse(TaskStatus.isLockTimeout("OK"))
         assertFalse(TaskStatus.isLockTimeout(null))
+    }
+
+    @Test
+    fun `a running task's log is read on from its last line`() {
+        val empty = listOf(TaskLogLine(1, "no content"))         // what Proxmox VE answers for an empty log
+        assertEquals(0, TaskLogLine.nextStart(emptyList()))
+        assertEquals(0, TaskLogLine.nextStart(empty))
+        val first = TaskLogLine.merge(empty, listOf(TaskLogLine(1, "starting"), TaskLogLine(2, "INFO: 10%")))
+        assertEquals(listOf("starting", "INFO: 10%"), first.map { it.t })
+        assertEquals(1, TaskLogLine.nextStart(first))
+        val next = TaskLogLine.merge(first, listOf(TaskLogLine(2, "INFO: 10% done"), TaskLogLine(3, "TASK OK")))
+        assertEquals(listOf("starting", "INFO: 10% done", "TASK OK"), next.map { it.t })
+        assertEquals(next, TaskLogLine.merge(next, emptyList()))  // nothing new
+        assertEquals(2, TaskLogLine.nextStart(next.takeLast(1)))  // only the last lines kept
     }
 
     @Test

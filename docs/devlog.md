@@ -102,6 +102,18 @@ The button is now the + in the top bar, like the Overview's. The same review fou
 Notifications step's function had the name of the tour helper `notifications()` that the alerts
 step calls, so it would have replaced it; the step is now `notification_targets`.
 
+**Task logs.** The log screen read the whole log (up to 5,000 lines) every 2 seconds while a task
+ran, drew each line as its own text, and for longer logs showed the *first* 5,000 lines, so the
+end with the result was missing. It now reads on from the last line it has (`start` is that
+line, which may have grown; Proxmox's `dump_logfile` answers an empty log with one "no content"
+line, which the next read replaces), keeps the last 5,000 lines, and lays the log out as one
+annotated text. The mock now pages task logs by `start` and `limit` like Proxmox.
+
+The push of `8f1c4ff` failed to compile: `PbsScreens.kt` imported `AccessPage` from
+`ui.access`, but it is in `ui.datacenter`. The local check only compiles the JVM modules, so a
+script now checks every `io.github.lucabarbalata.anprox.…` import against the declarations in
+that package before a push.
+
 **Dependencies.** The five Dependabot pull requests (Gradle 8.14.6, Bouncy Castle 1.86, JSch
 2.28.8, MINA SSHD 2.20.0, JUnit 5.14.4) had passed CI on their own; none touches an ADR 0002 pin.
 They went in as one commit on the branch, which closes them.
