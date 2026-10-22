@@ -3,8 +3,10 @@ package io.github.lucabarbalata.anprox.ui.login
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.github.lucabarbalata.anprox.R
+import io.github.lucabarbalata.anprox.data.hub.OpenIdStart
 import io.github.lucabarbalata.anprox.data.hub.ServerHub
 import io.github.lucabarbalata.anprox.model.ProxmoxProduct
+import io.github.lucabarbalata.anprox.model.auth.OpenIdCallback
 import io.github.lucabarbalata.anprox.model.auth.Realm
 import io.github.lucabarbalata.anprox.model.auth.TfaKind
 import io.github.lucabarbalata.anprox.model.profile.ServerProfile
@@ -41,6 +43,8 @@ data class LoginState(
     val certificateUntrusted: Boolean = false,
     val allowInsecure: Boolean = false,
     val done: Boolean = false,
+    /** Set while the identity provider's page is open (OpenID Connect realms). */
+    val openId: OpenIdStart? = null,
 ) {
     val selectedRealm: Realm? get() = realms.firstOrNull { it.realm == realm }
     val isOpenIdRealm: Boolean get() = selectedRealm?.isOpenId == true
@@ -48,7 +52,8 @@ data class LoginState(
 
 /**
  * Two-step login (questionnaire Q9): password (+ realm), then — if the account has one — a
- * second factor. OpenID Connect realms are listed but sign-in through them arrives in M1.
+ * second factor. OpenID Connect realms sign in on the identity provider's page instead
+ * ([OpenIdCallback]).
  */
 class LoginViewModel(
     private val serverId: String,
@@ -122,13 +127,53 @@ class LoginViewModel(
         viewModelScope.launch { loadRealms() }
     }
 
+    /** Opens the identity provider's sign-in page for the chosen OpenID Connect realm. */
+    fun startOpenId() {
+        val s = _state.value
+        if (s.busy || !s.isOpenIdRealm) return
+        _state.update { it.copy(busy = true, error = null) }
+        viewModelScope.launch {
+            try {
+                val start = hub.openIdStart(serverId, s.realm)
+                _state.update { it.copy(busy = false, openId = start) }
+            } catch (e: ApiException) {
+                _state.update {
+                    it.copy(busy = false, error = e.toUiText(), certificateUntrusted = e is ApiException.UntrustedCertificate)
+                }
+            }
+        }
+    }
+
+    /** The identity provider sent the browser back: sign in with what it carried. */
+    fun openIdReturned(callback: OpenIdCallback) {
+        val start = _state.value.openId ?: return
+        when (callback) {
+            is OpenIdCallback.Error -> _state.update {
+                it.copy(openId = null, error = UiText.res(R.string.login_openid_refused, callback.description ?: callback.error))
+            }
+            is OpenIdCallback.Code -> {
+                _state.update { it.copy(openId = null, busy = true, error = null) }
+                viewModelScope.launch {
+                    try {
+                        hub.openIdLogin(serverId, callback.code, callback.state, start.redirectUrl)
+                        _state.update { it.copy(busy = false, done = true) }
+                    } catch (e: ApiException) {
+                        _state.update { it.copy(busy = false, error = e.toUiText()) }
+                    }
+                }
+            }
+        }
+    }
+
+    /** The sign-in page could not be shown (no connection, a certificate the app won't accept). */
+    fun openIdFailed(reason: String) = _state.update { it.copy(openId = null, error = UiText.res(R.string.login_openid_page_failed, reason)) }
+
+    fun cancelOpenId() = _state.update { it.copy(openId = null) }
+
     fun submitPassword() {
         val s = _state.value
+        if (s.isOpenIdRealm) return startOpenId()
         if (s.busy || s.password.isEmpty() || s.username.isBlank()) return
-        if (s.isOpenIdRealm) {
-            _state.update { it.copy(error = UiText.res(R.string.login_openid_soon)) }
-            return
-        }
         _state.update { it.copy(busy = true, error = null) }
         viewModelScope.launch {
             try {
@@ -144,7 +189,7 @@ class LoginViewModel(
                     is LoginResult.NeedsTfa -> {
                         val supported = result.challenge.availableKinds.filter { it != TfaKind.WEBAUTHN }
                         if (supported.isEmpty()) {
-                            _state.update { it.copy(busy = false, error = UiText.res(R.string.login_webauthn_soon)) }
+                            _state.update { it.copy(busy = false, error = UiText.res(R.string.login_webauthn_only)) }
                         } else {
                             partialTicket = result.partialTicket
                             _state.update {

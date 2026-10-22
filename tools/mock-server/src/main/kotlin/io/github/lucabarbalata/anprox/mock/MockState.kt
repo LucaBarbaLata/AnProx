@@ -98,6 +98,7 @@ class MockState(
         ProxmoxProduct.PBS -> listOf(
             Realm("pam", "pam", "Linux PAM standard authentication", default = true),
             Realm("pbs", "pbs", "Proxmox Backup authentication server"),
+            Realm("sso", "openid", "Authentik SSO"),
         )
     }
 
@@ -114,6 +115,8 @@ class MockState(
         // Users added through /access log in with the password set there.
         val user = users[username]
             ?: (if (product == ProxmoxProduct.PVE) access.password(username)?.let { User(username, it) } else null)
+            // Signed in through OpenID Connect: no password, but its tickets renew.
+            ?: (if (username in openIdUsers) User(username, password = "\u0000" + token()) else null)
             ?: return LoginOutcome.Failed
         // Ticket renewal: the "password" is a still-valid ticket of the same user.
         sessions[password]?.let { s ->
@@ -147,6 +150,50 @@ class MockState(
         val csrf = "${hexTime()}:${token()}"
         sessions[ticket] = Session(user, csrf, clockMillis())
         return LoginOutcome.Ok(user, ticket, csrf)
+    }
+
+    // ------------------------------------------------------------------ OpenID Connect
+
+    private data class OpenIdRequest(val realm: String, val redirectUrl: String)
+
+    private val openIdRequests = HashMap<String, OpenIdRequest>()
+    private val openIdCodes = HashMap<String, String>()
+    private val openIdUsers = HashSet<String>()
+
+    /**
+     * `POST /access/openid/auth-url`: remembers a state for [realm] and [redirectUrl] and returns
+     * the mock identity provider's sign-in page, served at [providerBase].
+     */
+    fun openIdAuthUrl(realm: String, redirectUrl: String, providerBase: String): String = synchronized(lock) {
+        val state = token()
+        openIdRequests[state] = OpenIdRequest(realm, redirectUrl)
+        "$providerBase/mock-idp/authorize?response_type=code&client_id=proxmox&scope=openid&state=$state" +
+            "&redirect_uri=" + URLEncoder.encode(redirectUrl, StandardCharsets.UTF_8)
+    }
+
+    /**
+     * The identity provider's sign-in page. The user is already signed in there, so it sends the
+     * browser straight back to the redirect address with a code. Null for an unknown state.
+     */
+    fun openIdAuthorize(state: String): String? = synchronized(lock) {
+        val request = openIdRequests[state] ?: return null
+        val code = token()
+        openIdCodes[code] = state
+        request.redirectUrl + (if ('?' in request.redirectUrl) "&" else "?") + "state=$state&code=$code"
+    }
+
+    /** Test hook: where a browser ends up after opening [authUrl] (the redirect address with a code). */
+    fun openIdBrowse(authUrl: String): String? =
+        Regex("[?&]state=([^&]+)").find(authUrl)?.groupValues?.get(1)?.let(::openIdAuthorize)
+
+    /** `POST /access/openid/login`: the code, its state and the redirect address must belong together. */
+    fun openIdLogin(code: String, state: String, redirectUrl: String): LoginOutcome = synchronized(lock) {
+        if (openIdCodes.remove(code) != state) return LoginOutcome.Failed
+        val request = openIdRequests.remove(state) ?: return LoginOutcome.Failed
+        if (request.redirectUrl != redirectUrl) return LoginOutcome.Failed
+        val user = "$OPENID_USER@${request.realm}"
+        openIdUsers += user
+        issue(user)
     }
 
     /** Returns the session for a ticket cookie, or null if unknown/expired. */
@@ -1646,6 +1693,9 @@ class MockState(
 
     companion object {
         const val PASSWORD = "anprox"
+
+        /** The account the mock identity provider signs everyone in as (`sso-user@<realm>`). */
+        const val OPENID_USER = "sso-user"
         private val ALLOCATED = Regex("^([A-Za-z0-9][A-Za-z0-9_.-]*):\\d+(?:,|$)")
         const val RRD_SAMPLES = 70
         const val MIB = 1024L * 1024

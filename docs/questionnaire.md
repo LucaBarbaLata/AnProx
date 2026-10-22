@@ -291,3 +291,9 @@ Add dated entries here when an answer changes or needs clarifying.
   ("aplică tema curentă dar uncluttered"): the same Midnight palette and fonts, with flat solid
   cards instead of glass and glows, one accent, and screens that open on their common case and
   fold the rest. See [ADR 0016](adr/0016-calm-midnight.md) and [design-system.md](design-system.md).
+- 2026-10-21, Q9 (clarification): **OpenID Connect** is done in an in-app WebView rather than a
+  browser tab, because the identity provider sends the browser back to the server's own address
+  (the one the web interface registered), not to the app. **WebAuthn** is not possible: an
+  Android app may only use it for a site that publishes a Digital Asset Links file naming the
+  app, which no self-hosted Proxmox server does. TOTP, recovery keys and Yubico OTP remain. See
+  [security.md](security.md).

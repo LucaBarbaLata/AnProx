@@ -40,7 +40,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -114,6 +113,17 @@ fun LoginScreen(
             }
         }
     }
+
+    state.openId?.let { start ->
+        OpenIdSignInDialog(
+            start = start,
+            title = stringResource(R.string.login_openid_button, state.selectedRealm?.let { it.comment?.takeIf(String::isNotBlank) ?: it.realm }.orEmpty()),
+            allowInsecure = state.allowInsecure,
+            onReturned = viewModel::openIdReturned,
+            onFailed = viewModel::openIdFailed,
+            onDismiss = viewModel::cancelOpenId,
+        )
+    }
 }
 
 @Composable
@@ -124,7 +134,7 @@ private fun Hero(serverName: String, product: String) {
             Modifier
                 .size(64.dp)
                 .clip(RoundedCornerShape(20.dp))
-                .background(Brush.linearGradient(listOf(c.accent, c.accentAlt))),
+                .background(c.accent),
             contentAlignment = Alignment.Center,
         ) { Icon(Icons.Outlined.Lock, contentDescription = null, tint = c.onAccent, modifier = Modifier.size(30.dp)) }
         Text(serverName, style = MaterialTheme.typography.headlineSmall, color = c.textPrimary, textAlign = TextAlign.Center)
@@ -135,17 +145,21 @@ private fun Hero(serverName: String, product: String) {
 @Composable
 private fun PasswordStep(state: LoginState, viewModel: LoginViewModel) {
     var showPassword by rememberSaveable { mutableStateOf(false) }
+    val openIdName = state.selectedRealm?.let { it.comment?.takeIf(String::isNotBlank) ?: it.realm }.orEmpty()
     GlassCard(Modifier.fillMaxWidth()) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            GlassTextField(
-                value = state.username,
-                onValueChange = viewModel::setUsername,
-                label = stringResource(R.string.login_username),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
-            )
+            // An OpenID Connect realm names the account itself, after sign-in at its provider.
+            if (!state.isOpenIdRealm) {
+                GlassTextField(
+                    value = state.username,
+                    onValueChange = viewModel::setUsername,
+                    label = stringResource(R.string.login_username),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
+                )
+            }
             RealmPicker(state, viewModel::setRealm)
             if (state.isOpenIdRealm) {
-                ErrorBanner(stringResource(R.string.login_openid_soon), tone = Tone.INFO)
+                Text(stringResource(R.string.login_openid_body, openIdName), style = MaterialTheme.typography.bodySmall, color = AnProxTheme.colors.textSecondary)
             } else {
                 GlassTextField(
                     value = state.password,
@@ -171,10 +185,10 @@ private fun PasswordStep(state: LoginState, viewModel: LoginViewModel) {
                 )
             }
             AnProxButton(
-                text = stringResource(R.string.action_sign_in),
+                text = if (state.isOpenIdRealm) stringResource(R.string.login_openid_button, openIdName) else stringResource(R.string.action_sign_in),
                 onClick = viewModel::submitPassword,
                 loading = state.busy,
-                enabled = !state.isOpenIdRealm && state.password.isNotEmpty() && state.username.isNotBlank(),
+                enabled = state.isOpenIdRealm || (state.password.isNotEmpty() && state.username.isNotBlank()),
                 modifier = Modifier.fillMaxWidth(),
             )
             if (state.error != null && !state.realmsLoading && state.realms.isEmpty()) {

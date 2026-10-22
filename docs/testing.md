@@ -12,7 +12,7 @@ testing debug builds on **real hardware**.
 | Integration: multi-server hub, sessions, dashboard snapshots, guest actions, guest snapshots, performance history, app lock rules, backup and restore, guest network info, guest options, clone/template/migrate, console sessions (terminal and VNC handshake), node power, hardware (disks, drives, network, pending changes, container volumes), creating VMs and containers, cloud-init, SPICE, alerts, task notifications, backup jobs, storage, firewall, high availability, replication, pools, storage setup, encrypted server export, firewall groups, aliases, IP sets and log, node updates, repositories, services, journal, DNS, hosts, time, network and disks | `core/data/src/test` | JVM | 104 |
 | Android lint | `:app:lintDebug` | CI | — |
 | Build: debug and R8-minified release | `:app:assemble*` | CI | — |
-| **End-to-end tour** of the minified release APK on emulators against the mock server | `scripts/e2e/tour.py` | CI (Android 8.0 + 14), Release workflow | 33 steps |
+| **End-to-end tour** of the minified release APK on emulators against the mock server | `scripts/e2e/tour.py` | CI (Android 8.0 + 14), Release workflow | 34 steps |
 | UI / screenshot tests | planned (M1) | — | — |
 | Manual on real hardware | [checklist below](#manual-test-checklist-real-hardware) | owner | — |
 
@@ -69,7 +69,7 @@ history including a failed sync.
 | `admin@pve` | full | TOTP: `123456`; recovery keys `aaaa-bbbb-cccc`, `dddd-eeee-ffff` (single use) |
 | `auditor@pve` | read-only (power actions → 403) | none |
 
-PVE realms offered: `pam`, `pve`, `corp` (AD) and `sso` (OpenID, to exercise the "coming in M1" path).
+PVE realms offered: `pam`, `pve`, `corp` (AD) and `sso` (OpenID); PBS offers `pam`, `pbs` and `sso`. The `sso` realm's identity provider is the mock itself (`/mock-idp/authorize`): the user is already signed in there, so it sends the browser straight back with a code, and `/access/openid/login` signs in as `sso-user@sso`.
 
 ### Run it by hand
 

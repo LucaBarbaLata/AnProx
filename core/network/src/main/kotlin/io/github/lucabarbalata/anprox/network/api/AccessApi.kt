@@ -23,6 +23,16 @@ interface AccessApi {
     @POST("access/ticket")
     suspend fun ticket(@FieldMap fields: Map<String, String>): ApiEnvelope<TicketResponse>
 
+    /** Unauthenticated: the identity provider's sign-in page for an OpenID Connect realm. */
+    @FormUrlEncoded
+    @POST("access/openid/auth-url")
+    suspend fun openIdAuthUrl(@FieldMap fields: Map<String, String>): ApiEnvelope<String>
+
+    /** Unauthenticated: trade the code and state the identity provider sent back for a ticket. */
+    @FormUrlEncoded
+    @POST("access/openid/login")
+    suspend fun openIdLogin(@FieldMap fields: Map<String, String>): ApiEnvelope<TicketResponse>
+
     @GET("version")
     suspend fun version(): ApiEnvelope<VersionInfo>
 }

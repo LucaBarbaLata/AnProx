@@ -58,6 +58,13 @@ Tick each line, or note what happened instead.
 5. **Datacenter** and **More**: titles only, in small groups.
 6. Settings → Theme: light, dark and AMOLED are all readable; nothing glows.
 
+### A1. Single sign-on (only if you have an OpenID Connect realm), new after beta.2
+1. Servers → your server → ⋮ → **Sign out**, then **Sign in**. Pick the OpenID realm: the user
+   and password fields go away and the button says **Sign in with *realm***.
+2. Tap it: the provider's page opens with its host at the top. Sign in there → the login screen
+   closes; Servers shows the account the provider named (`you@realm`).
+3. **×** on the provider's page goes back to the login screen without signing in.
+
 ### A. Network card (guest agent)
 1. Start the test VM, open it. Tap **Network**: you see the OS name and its IP addresses
    (no `127.0.0.1` or `fe80::` noise).

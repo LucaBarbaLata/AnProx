@@ -1302,6 +1302,22 @@ def light_theme():
     screenshot("14-dashboard-light")
 
 
+@step("Single sign-on: a server signed in through its OpenID Connect realm")
+def openid():
+    tap("More")
+    tap("Servers")
+    tap("Add server")
+    add_server(None, "SSO", HOST)
+    find("Remember password", timeout=30)                    # the login screen
+    tap("Linux PAM standard authentication (pam)", timeout=30)  # the realm field, once the realms are in
+    tap("Authentik SSO (sso)")
+    tap("Sign in with Authentik SSO")
+    # The mock's identity provider signs in at once and sends the browser back to the server's
+    # address; the app catches that, trades the code for a ticket and closes the login screen.
+    find("sso-user@sso", timeout=45)                         # the server list, with the account it named
+    screenshot("17-openid")
+
+
 def main():
     if len(sys.argv) != 2:
         sys.exit(__doc__)
@@ -1321,7 +1337,7 @@ def main():
         for s in (launch, add_pve, add_pbs, resources, performance, agent, guest_start, snapshots, backups,
                   options, hardware, console, vm_console, cloud_init, bulk, clone_migrate, tasks, create_vm, alerts,
                   backup_jobs, storage, storage_setup, firewall, high_availability, replication, pools, permissions, ceph, sdn, backup_server, node_admin, ssh,
-                  light_theme):
+                  light_theme, openid):
             s()
         ok = True
     finally:

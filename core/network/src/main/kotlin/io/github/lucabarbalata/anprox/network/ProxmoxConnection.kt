@@ -3,6 +3,7 @@ package io.github.lucabarbalata.anprox.network
 import io.github.lucabarbalata.anprox.model.ApiEnvelope
 import io.github.lucabarbalata.anprox.model.ProxmoxProduct
 import io.github.lucabarbalata.anprox.model.auth.AuthSession
+import io.github.lucabarbalata.anprox.model.auth.OpenIdCallback
 import io.github.lucabarbalata.anprox.model.auth.Realm
 import io.github.lucabarbalata.anprox.model.auth.TfaChallenge
 import io.github.lucabarbalata.anprox.model.auth.TfaKind
@@ -130,6 +131,24 @@ class ProxmoxConnection(
         if (TfaChallenge.isPartialTicket(response.ticket)) throw ApiException.Unauthorized("Second factor rejected")
         return adopt(response)
     }
+
+    /**
+     * The address an OpenID Connect provider sends the browser back to: the origin of the address
+     * in use, as the web interface sends it (see [OpenIdCallback]).
+     */
+    fun openIdRedirectUrl(): String = OpenIdCallback.origin((endpoints.active ?: profile.endpoints.first()).url)
+
+    /** OpenID Connect, first step: the identity provider's sign-in page for [realm]. */
+    suspend fun openIdAuthUrl(realm: String, redirectUrl: String): String =
+        execute(renew = false) { accessApi.openIdAuthUrl(mapOf("realm" to realm, "redirect-url" to redirectUrl)) }
+
+    /**
+     * OpenID Connect, second step: trades what the identity provider sent back for a session.
+     * [redirectUrl] must be the one given to [openIdAuthUrl].
+     */
+    suspend fun openIdLogin(code: String, state: String, redirectUrl: String): AuthSession = adopt(
+        execute(renew = false) { accessApi.openIdLogin(mapOf("code" to code, "state" to state, "redirect-url" to redirectUrl)) },
+    )
 
     /** Re-use a session saved earlier (e.g. after the app restarted). Ignored if it expired. */
     fun restore(saved: AuthSession?) {

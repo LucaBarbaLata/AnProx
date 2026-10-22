@@ -31,6 +31,24 @@ It went in three steps, each pushed and checked by CI and the emulator tour:
    ("Users", "Permissions", "Ceph", "SDN") instead of those descriptions; the Datacenter's
    "Permissions" header became "Users and permissions" so "Permissions" is unique.
 
+**OpenID Connect.** Written from the web interface's own flow (`LoginWindow.js` sends
+`location.origin` as `redirect-url`): `POST /access/openid/auth-url` gives the provider's page,
+the provider sends the browser back to the server's origin with `code` and `state`, and
+`POST /access/openid/login` trades them for an ordinary ticket. PBS has the same two calls.
+- A browser tab can't be used: the way back goes to the server's address, which the provider
+  has registered, not to the app. So the page opens in a WebView that checks every main-frame
+  navigation, redirects included (`shouldOverrideUrlLoading` sees those since Android 7), with
+  `OpenIdCallback.parse` and stops before the address loads.
+- The account is only known after sign-in (`alice@sso`). The hub stores the session *before* it
+  writes the profile's new user and realm, because a profile with a different user gets a new
+  connection, which restores its session from the store.
+- The mock's `sso` realm has an identity provider at `/mock-idp/authorize` that sends the browser
+  straight back. Tests: 4 for parsing the way back, 2 connection tests (both products, ticket
+  renewal, a spent code, a wrong redirect address, a non-OpenID realm), 1 hub test, and tour
+  step 34, which adds a server and signs in through `sso`.
+- WebAuthn stays out: Android lets an app use it only for a site whose Digital Asset Links file
+  names the app ([security.md](security.md#why-not-webauthn-security-keys-passkeys)).
+
 ---
 
 ## 2026-10-18 — Session 5: the rest of the app (M7, M6, M8 and leftovers), while the owner prepares a real host

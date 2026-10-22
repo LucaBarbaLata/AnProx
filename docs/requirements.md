@@ -42,8 +42,8 @@ or backup, and confirming the result in the task log, without reaching for a lap
 |---|---|---|---|
 | FR-AUTH-1 | Password login for PAM, PVE/PBS, LDAP and AD realms, chosen from the server's realm list | Q9 | M0 ✅ |
 | FR-AUTH-2 | Second factor: TOTP, recovery key, Yubico OTP | Q9 | M0 ✅ |
-| FR-AUTH-3 | Second factor: WebAuthn / security keys | Q9 | M1 🗓 |
-| FR-AUTH-4 | OpenID Connect SSO | Q9 | M1 🗓 |
+| FR-AUTH-3 | Second factor: WebAuthn / security keys | Q9 | ✖ not possible in an app for self-hosted servers (security.md) |
+| FR-AUTH-4 | OpenID Connect SSO | Q9 | ✅ |
 | FR-AUTH-5 | Automatic ticket renewal; silent re-login with a remembered password | Q9 | M0 ✅ |
 | FR-AUTH-6 | Optional app lock (biometric/PIN) | Q11 | M1 ✅ |
 | FR-AUTH-7 | Biometric re-authentication before destructive actions | Q11 | M1 ✅ |

@@ -9,7 +9,7 @@ Status legend: ✅ done · 🚧 in progress · 🗓 planned
 | Milestone | Theme | Status |
 |---|---|---|
 | [M0](#m0--foundation) | Foundation: servers, login, dashboard, resources, power, tasks | ✅ released as **0.1.0-beta.1** (M1 work so far: **0.1.0-beta.2**) |
-| [M1](#m1--daily-driver) | Daily driver: app lock, SSO, snapshots, backups, charts, notifications | 🚧 snapshots, charts, app lock, backups, guest IPs, bulk actions, favourites done |
+| [M1](#m1--daily-driver) | Daily driver: app lock, SSO, snapshots, backups, charts, notifications | 🚧 snapshots, charts, app lock, backups, guest IPs, bulk actions, favourites, SSO done |
 | [M2](#m2--consoles--guest-configuration) | Consoles and guest configuration | ✅ (beta.3 candidate) |
 | [M3](#m3--alerts--android-integration) | Alerts and Android integration | ✅ (beta.3 candidate) |
 | [M4](#m4--datacenter) | Datacenter: storage, backup jobs, HA, replication, firewall | ✅ (beta.3 candidate) |
@@ -85,7 +85,7 @@ single Proxmox VE node without Ceph and a Backup Server in a VM on it.
 
 - ✅ **App lock** (Q11): optional biometric/screen-lock check on launch and after a chosen time
   away, and re-authentication before `TYPE_TO_CONFIRM` actions ([ADR 0013](adr/0013-app-lock.md)).
-- **OpenID Connect** sign-in (Q9) through a browser tab or WebView, plus **WebAuthn** second factor.
+- ✅ **OpenID Connect** sign-in (Q9): the provider's page in a WebView, the way back caught before it loads (PVE and PBS). **WebAuthn** is not possible in an app for self-hosted servers (see [security.md](security.md#why-not-webauthn-security-keys-passkeys)).
 - ✅ **Snapshots** (Q18): list and tree, create (with RAM), roll back, delete, edit the description.
 - ✅ **Backup now and restore** (Q20): run vzdump on demand, restore to the same or a new VMID, browse backups
   per guest and per storage. (Choosing the restore target storage and deleting backups come with M4 storage.)

@@ -134,8 +134,12 @@
     <string name="login_recovery_left">%1$d recovery keys left</string>
     <string name="login_verify">Verify</string>
     <string name="login_code_rejected">That code was rejected. Sign in again and use a fresh code.</string>
-    <string name="login_openid_soon">Single sign-on (OpenID Connect) realms are coming in milestone M1. Pick another realm for now.</string>
-    <string name="login_webauthn_soon">This account only has security keys (WebAuthn), which arrive in milestone M1. Add a TOTP or recovery key in the web UI to sign in now.</string>
+    <string name="login_openid_body">You sign in on %1$s\'s own page; the account it names is the one AnProx uses.</string>
+    <string name="login_openid_button">Sign in with %1$s</string>
+    <string name="login_openid_refused">The sign-in was not completed: %1$s</string>
+    <string name="login_openid_page_failed">The sign-in page could not be opened: %1$s</string>
+    <string name="login_openid_certificate">its certificate is not trusted. Turn on “Allow insecure certificate” for this server if the provider uses a self-signed one.</string>
+    <string name="login_webauthn_only">This account only has security keys (WebAuthn), which an app can\'t use for a self-hosted server. Add a TOTP or recovery keys in the web interface to sign in here.</string>
 
     <!-- Dashboard -->
     <string name="dashboard_title">Overview</string>

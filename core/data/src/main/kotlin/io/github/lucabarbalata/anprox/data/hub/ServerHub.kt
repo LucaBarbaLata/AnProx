@@ -40,6 +40,9 @@ data class ServerState(
     val id: String get() = profile.id
 }
 
+/** Where to sign in through OpenID Connect, and the address the identity provider sends the browser back to. */
+data class OpenIdStart(val authUrl: String, val redirectUrl: String)
+
 /**
  * The heart of multi-server support (questionnaire Q6): one [ProxmoxConnection] per saved
  * server, kept in sync with [ProfileStore], with sessions persisted in [SecretStore].
@@ -149,6 +152,40 @@ class ServerHub(
 
     suspend fun completeTfa(id: String, partialTicket: String, kind: TfaKind, answer: String): AuthSession {
         val session = runtime(id).connection.completeTfa(partialTicket, kind, answer)
+        setAuth(id, AuthState.LOGGED_IN)
+        return session
+    }
+
+    /**
+     * OpenID Connect, first step: the identity provider's sign-in page for [realm], and the
+     * address it will send the browser back to (pass it to [openIdLogin]).
+     */
+    suspend fun openIdStart(id: String, realm: String): OpenIdStart {
+        val connection = runtime(id).connection
+        val redirectUrl = connection.openIdRedirectUrl()
+        return OpenIdStart(connection.openIdAuthUrl(realm, redirectUrl), redirectUrl)
+    }
+
+    /**
+     * OpenID Connect, second step. The account is only known now (`alice@sso`), so the profile
+     * takes its user and realm; the session is stored first so the new connection keeps it.
+     * There is no password to remember: when the ticket can't be renewed any more, the user
+     * signs in through the identity provider again.
+     */
+    suspend fun openIdLogin(id: String, code: String, state: String, redirectUrl: String): AuthSession {
+        val r = runtime(id)
+        val session = r.connection.openIdLogin(code, state, redirectUrl)
+        secretStore.setSession(id, session)
+        secretStore.setPassword(id, null)
+        val updated = r.profile.copy(
+            username = session.username.substringBeforeLast('@'),
+            realm = session.username.substringAfterLast('@', r.profile.realm),
+            rememberPassword = false,
+        )
+        if (updated != r.profile) {
+            profileStore.upsert(updated)
+            runtimes.first { it[id]?.profile == updated }
+        }
         setAuth(id, AuthState.LOGGED_IN)
         return session
     }

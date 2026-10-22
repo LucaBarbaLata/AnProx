@@ -7,6 +7,13 @@ All notable changes to AnProx are documented here. The format follows
 ## [Unreleased]
 
 ### Added
+- **Single sign-on (OpenID Connect)** for Proxmox VE and Backup Server realms of type OpenID:
+  pick the realm on the login screen and tap **Sign in with *realm***. The identity provider's
+  page opens in the app (its host shows at the top); after sign-in the app takes the account the
+  provider names. Uses the same redirect address as the web interface, so nothing needs to change
+  at the provider. Accounts that only have security keys (WebAuthn) are told why an app can't use
+  them and to add a TOTP or recovery keys.
+
 - **Hardware** for VMs and containers (Guest → Tools → Hardware).
   - VMs: sockets, cores and CPU type; memory and ballooning; disks (add on any storage with
     SCSI/VirtIO/SATA/IDE, IO thread, discard, SSD emulation; grow; move to another storage; detach;

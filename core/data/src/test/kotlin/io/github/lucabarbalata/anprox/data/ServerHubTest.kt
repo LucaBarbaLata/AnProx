@@ -11,6 +11,7 @@ import io.github.lucabarbalata.anprox.data.store.InMemoryProfileStore
 import io.github.lucabarbalata.anprox.data.store.InMemorySecretStore
 import io.github.lucabarbalata.anprox.mock.MockProxmoxServer
 import io.github.lucabarbalata.anprox.model.ProxmoxProduct
+import io.github.lucabarbalata.anprox.model.auth.OpenIdCallback
 import io.github.lucabarbalata.anprox.model.auth.TfaKind
 import io.github.lucabarbalata.anprox.model.profile.Endpoint
 import io.github.lucabarbalata.anprox.model.profile.ServerProfile
@@ -78,6 +79,25 @@ class ServerHubTest {
         val restarted = hubWith(pveProfile(), secrets = secrets)
         assertEquals(AuthState.LOGGED_IN, restarted.server("pve")!!.auth)
         assertTrue(restarted.use("pve") { it.pve { clusterStatus() } }.isNotEmpty())
+    }
+
+    @Test
+    fun `OpenID Connect sign-in takes the account the identity provider names`() = runBlocking {
+        val secrets = InMemorySecretStore()
+        val hub = hubWith(pveProfile(realm = "sso"), secrets = secrets)
+        hub.realms("pve")
+        val start = hub.openIdStart("pve", "sso")
+        val back = assertIs<OpenIdCallback.Code>(OpenIdCallback.parse(pve.state.openIdBrowse(start.authUrl)!!, start.redirectUrl))
+
+        hub.openIdLogin("pve", back.code, back.state, start.redirectUrl)
+        val server = hub.server("pve")!!
+        assertEquals(AuthState.LOGGED_IN, server.auth)
+        assertEquals("sso-user", server.profile.username)
+        assertEquals("sso", server.profile.realm)
+        assertEquals(null, secrets.password("pve"))
+        // The profile changed user, so the hub made a new connection: it carries the session on.
+        assertTrue(hub.use("pve") { it.pve { clusterStatus() } }.isNotEmpty())
+        assertEquals("sso-user@sso", secrets.session("pve")!!.username)
     }
 
     @Test

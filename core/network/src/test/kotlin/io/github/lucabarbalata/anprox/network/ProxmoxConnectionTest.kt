@@ -2,6 +2,7 @@ package io.github.lucabarbalata.anprox.network
 
 import io.github.lucabarbalata.anprox.mock.MockProxmoxServer
 import io.github.lucabarbalata.anprox.model.ProxmoxProduct
+import io.github.lucabarbalata.anprox.model.auth.OpenIdCallback
 import io.github.lucabarbalata.anprox.model.auth.TfaKind
 import io.github.lucabarbalata.anprox.model.profile.Endpoint
 import io.github.lucabarbalata.anprox.model.profile.ServerProfile
@@ -71,6 +72,49 @@ class ProxmoxConnectionTest {
         assertTrue(resources.any { it.id == "node/pve1" })
         assertEquals(9, conn.pve { clusterResources("vm") }.size)
         assertEquals("9", conn.version().version.substringBefore('.'))
+    }
+
+    @Test
+    fun `OpenID Connect sign-in on both products, then the ticket renews`() = runBlocking {
+        for (product in ProxmoxProduct.entries) {
+            val server = mock(product)
+            var now = 1_000_000L
+            val conn = ProxmoxConnection(profile(server.baseUrl, realm = "sso", product = product), clock = { now })
+            conn.realms()                                       // the login screen has talked to it
+            val redirect = conn.openIdRedirectUrl()
+            assertEquals(server.baseUrl, redirect)              // no sub-path, so the origin is the address
+            val authUrl = conn.openIdAuthUrl("sso", redirect)
+            assertTrue(authUrl.startsWith(server.baseUrl + "/mock-idp/authorize?"), authUrl)
+
+            val back = assertIs<OpenIdCallback.Code>(OpenIdCallback.parse(server.state.openIdBrowse(authUrl)!!, redirect))
+            val session = conn.openIdLogin(back.code, back.state, redirect)
+            assertEquals("sso-user@sso", session.username)
+            assertTrue(conn.version().version.isNotEmpty())
+
+            // Tickets of an OpenID account renew like any other (it has no password to fall back on).
+            now += 3_700
+            assertNotEquals(session.ticket, conn.renewSession().ticket)
+
+            // A code works once.
+            assertFailsWith<ApiException.Unauthorized> { conn.openIdLogin(back.code, back.state, redirect) }
+        }
+    }
+
+    @Test
+    fun `OpenID Connect needs an OpenID realm and the same redirect address`() = runBlocking {
+        val server = mock(pathPrefix = "/pve")
+        val conn = ProxmoxConnection(profile(server.baseUrl))
+        conn.realms()
+        // Behind a reverse proxy's sub-path the web interface still sends the bare origin.
+        val redirect = conn.openIdRedirectUrl()
+        assertEquals(server.baseUrl.removeSuffix("/pve"), redirect)
+        assertFailsWith<ApiException> { conn.openIdAuthUrl("pam", redirect) }
+
+        val authUrl = conn.openIdAuthUrl("sso", redirect)
+        val back = assertIs<OpenIdCallback.Code>(OpenIdCallback.parse(server.state.openIdBrowse(authUrl)!!, redirect))
+        assertFailsWith<ApiException.Unauthorized> { conn.openIdLogin(back.code, back.state, "https://elsewhere.example.com") }
+        assertFailsWith<ApiException.Unauthorized> { conn.openIdLogin(back.code, back.state, redirect) }  // the code is spent
+        Unit
     }
 
     @Test

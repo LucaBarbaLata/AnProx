@@ -19,8 +19,8 @@ Code: `core/network/src/main/kotlin/.../network/api/` (`AccessApi`, `PveApi`, `P
 |---|---|---|
 | `GET /version` | Server version (feature detection) | ✅ |
 | `GET /access/domains` | Realms for the login screen (unauthenticated) | ✅ |
-| `POST /access/ticket` | Login, TFA challenge answer, ticket renewal | ✅ (password, TOTP, recovery, Yubico; WebAuthn 🗓 M1) |
-| `/access/openid/{auth-url,login}` | OpenID Connect SSO | 🗓 M1 |
+| `POST /access/ticket` | Login, TFA challenge answer, ticket renewal | ✅ (password, TOTP, recovery, Yubico; WebAuthn ✖ not possible in an app, see security.md) |
+| `/access/openid/{auth-url,login}` | OpenID Connect sign-in (PVE and PBS): the provider's page in a WebView, the way back caught before it loads | ✅ |
 | `GET /access/permissions` | A user's effective privileges (Users → a user); hiding what you can't do 🗓 M9 | ✅ M7 |
 | `PUT /access/password` | Change password (with the confirmation password PVE 8.1+ asks for) | ✅ M7 |
 | `/access/users` (+ `/token`, `/unlock-tfa`) | Users (create, edit, delete, groups, expiry), API tokens (secret shown once), unlock TFA | ✅ M7 |

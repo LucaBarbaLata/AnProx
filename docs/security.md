@@ -24,7 +24,7 @@ AnProx uses the same mechanism as the Proxmox web UI ([ADR 0008](adr/0008-creden
 1. `POST /api2/json/access/ticket` with `username=user@realm` and the password.
 2. If the account has two-factor authentication, Proxmox answers with `NeedTFA: 1` and a
    **partial ticket** that embeds the challenge. AnProx shows the second-factor step (TOTP,
-   recovery key or Yubico OTP; WebAuthn arrives in M1) and sends
+   recovery key or Yubico OTP) and sends
    `tfa-challenge=<partial ticket>` with `password=<kind>:<answer>`.
 3. The response contains the **ticket** (sent as the `PVEAuthCookie`/`PBSAuthCookie` cookie) and a
    **CSRF prevention token** (sent as a header on every non-GET request).
@@ -34,7 +34,40 @@ AnProx uses the same mechanism as the Proxmox web UI ([ADR 0008](adr/0008-creden
    - with **Remember password** on and no second factor, AnProx signs in again silently;
    - otherwise the server is marked **Session expired** and the user signs in again.
 
-API tokens are **not** supported by design (Q9). OpenID Connect sign-in arrives in M1.
+API tokens are **not** supported by design (Q9).
+
+### OpenID Connect (single sign-on)
+
+For a realm of type `openid` the login screen offers **Sign in with *realm*** instead of a
+password, and follows the web interface:
+
+1. `POST /access/openid/auth-url` with the realm and a **redirect address**: the origin of the
+   server address in use (`https://pve.example.com:8006`), which is what the web interface sends,
+   so the identity provider already allows it.
+2. The provider's page opens full screen in a WebView. The top bar names its host. The user signs
+   in there; AnProx never sees that password.
+3. The provider sends the browser back to the redirect address with `code` and `state`. The
+   WebView catches that navigation (redirects included) and never loads the address.
+4. `POST /access/openid/login` with `code`, `state` and the same redirect address returns a
+   normal ticket. The profile takes the account the provider named (`alice@sso`).
+
+Nothing is remembered for a silent sign-in: the ticket renews every hour like any other, and once
+it has expired the user signs in at the provider again. The WebView keeps the provider's cookies,
+so that is usually one tap.
+
+Certificates: the server's **Allow insecure certificate** setting also lets the WebView accept a
+self-signed certificate from the server's own host and from the provider host that the server
+named in step 1, and from no other host. Some providers refuse embedded browsers (Google sign-in
+does); a self-hosted one (Authentik, Keycloak, Zitadel, …) works.
+
+### Why not WebAuthn (security keys, passkeys)
+
+An Android app can only use WebAuthn for a website that vouches for it: the site must publish a
+Digital Asset Links file (`/.well-known/assetlinks.json`) naming the app's signing key, and
+Android's own WebAuthn support needs Google Play services. Every Proxmox server is someone's own
+host, so neither is possible for an app that talks to any server. Accounts that only have security
+keys are told to add a TOTP or recovery keys in the web interface (questionnaire amendment of
+2026-10-21).
 
 ## What is stored, and where
 

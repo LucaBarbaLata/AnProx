@@ -20,6 +20,7 @@ import io.ktor.websocket.CloseReason
 import io.ktor.server.websocket.DefaultWebSocketServerSession
 import io.ktor.server.websocket.webSocket
 import io.ktor.server.websocket.WebSockets
+import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.network.tls.certificates.buildKeyStore
 import io.ktor.server.application.Application
@@ -35,6 +36,7 @@ import io.ktor.server.netty.NettyApplicationEngine
 import io.ktor.server.request.httpMethod
 import io.ktor.server.request.receiveParameters
 import io.ktor.server.response.respondBytes
+import io.ktor.server.response.respondRedirect
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.delete
@@ -138,6 +140,13 @@ class MockProxmoxServer(
                     ProxmoxProduct.PBS -> pbs()
                 }
             }
+            // The identity provider of the "sso" realm, on the same host: the user is already
+            // signed in there, so it sends the browser straight back with a code.
+            get("/mock-idp/authorize") {
+                val back = call.parameters["state"]?.let(state::openIdAuthorize)
+                    ?: return@get call.respondText("Unknown sign-in request", status = HttpStatusCode.BadRequest)
+                call.respondRedirect(back)
+            }
         }
     }
 
@@ -155,6 +164,27 @@ class MockProxmoxServer(
                 is MockState.LoginOutcome.Ok -> call.ok(TicketResponse(username = r.user, ticket = r.ticket, csrfToken = r.csrf, clusterName = if (product == ProxmoxProduct.PVE) state.clusterName else null))
                 is MockState.LoginOutcome.NeedTfa -> call.ok(TicketResponse(username = r.user, ticket = r.partialTicket, needTfa = true))
                 MockState.LoginOutcome.Failed -> call.fail(401, "authentication failure")
+            }
+        }
+
+        post("access/openid/auth-url") {
+            val p = call.receiveParameters()
+            val realm = p["realm"].orEmpty()
+            val type = (if (product == ProxmoxProduct.PVE) state.access.realmList() else state.realms).firstOrNull { it.realm == realm }?.type
+                ?: return@post call.fail(400, "realm '$realm' does not exist")
+            if (type != "openid") return@post call.fail(400, "wrong realm type ($type != openid)")
+            val redirect = p["redirect-url"]
+                ?: return@post call.fail(400, "Parameter verification failed.", mapOf("redirect-url" to "property is missing and it is not optional"))
+            // The page is served by this server, at the address the client used.
+            val authority = call.request.headers[HttpHeaders.Host] ?: "$host:$port"
+            call.ok(state.openIdAuthUrl(realm, redirect, "${if (tls) "https" else "http"}://$authority"))
+        }
+
+        post("access/openid/login") {
+            val p = call.receiveParameters()
+            when (val r = state.openIdLogin(p["code"].orEmpty(), p["state"].orEmpty(), p["redirect-url"].orEmpty())) {
+                is MockState.LoginOutcome.Ok -> call.ok(TicketResponse(username = r.user, ticket = r.ticket, csrfToken = r.csrf, clusterName = if (product == ProxmoxProduct.PVE) state.clusterName else null))
+                else -> call.fail(401, "authentication failure")
             }
         }
 
