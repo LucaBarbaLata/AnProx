@@ -356,6 +356,13 @@ fun AnProxApp() {
                     onJobs = { nav.navigate(PbsJobsRoute(route.serverId)) },
                     onRemotes = { nav.navigate(PbsRemotesRoute(route.serverId)) },
                     onAdmin = { page -> nav.navigate(NodeAdminRoute(route.serverId, PbsRepository.NODE, page.name, backupServer = true)) },
+                    onAccess = { page ->
+                        when (page) {
+                            AccessPage.ACL -> nav.navigate(AclRoute(route.serverId))
+                            AccessPage.ROLES -> nav.navigate(RolesRoute(route.serverId))
+                            else -> nav.navigate(UsersRoute(route.serverId))
+                        }
+                    },
                 )
             }
             composable<DatastoreRoute> { entry ->

@@ -13,7 +13,9 @@ import io.github.lucabarbalata.anprox.model.pve.TaskStatus
 import io.github.lucabarbalata.anprox.model.pve.TaskSummary
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
+import okhttp3.RequestBody
 import okhttp3.ResponseBody
+import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.Field
 import retrofit2.http.FieldMap
@@ -193,4 +195,65 @@ interface PbsApi {
 
     @GET("nodes/{node}/journal")
     suspend fun journal(@Path("node") node: String, @Query("lastentries") lastEntries: Int): ApiEnvelope<List<String>>
+
+    // ------------------------------------------------------------------ access control (M9)
+    // The same paths as Proxmox VE's; the differences are in the parameters (no groups, one
+    // `role` and an `auth-id` in the ACL, `delete` as repeated keys).
+
+    @GET("access/users")
+    suspend fun users(@Query("include_tokens") includeTokens: Int = 1): ApiEnvelope<JsonElement>
+
+    @FormUrlEncoded
+    @POST("access/users")
+    suspend fun createUser(@FieldMap params: Map<String, String>): ApiEnvelope<JsonElement>
+
+    @PUT("access/users/{userid}")
+    suspend fun updateUser(@Path("userid") userId: String, @Body form: RequestBody): ApiEnvelope<JsonElement>
+
+    @DELETE("access/users/{userid}")
+    suspend fun deleteUser(@Path("userid") userId: String): ApiEnvelope<JsonElement>
+
+    @FormUrlEncoded
+    @PUT("access/password")
+    suspend fun changePassword(@FieldMap params: Map<String, String>): ApiEnvelope<JsonElement>
+
+    @PUT("access/users/{userid}/unlock-tfa")
+    suspend fun unlockTfa(@Path("userid") userId: String): ApiEnvelope<JsonElement>
+
+    @GET("access/users/{userid}/token")
+    suspend fun tokens(@Path("userid") userId: String): ApiEnvelope<JsonElement>
+
+    @FormUrlEncoded
+    @POST("access/users/{userid}/token/{name}")
+    suspend fun createToken(@Path("userid") userId: String, @Path("name") name: String, @FieldMap params: Map<String, String>): ApiEnvelope<JsonObject>
+
+    @DELETE("access/users/{userid}/token/{name}")
+    suspend fun deleteToken(@Path("userid") userId: String, @Path("name") name: String): ApiEnvelope<JsonElement>
+
+    @GET("access/roles")
+    suspend fun roles(): ApiEnvelope<JsonElement>
+
+    @GET("access/acl")
+    suspend fun acl(): ApiEnvelope<JsonElement>
+
+    @FormUrlEncoded
+    @PUT("access/acl")
+    suspend fun updateAcl(@FieldMap params: Map<String, String>): ApiEnvelope<JsonElement>
+
+    @GET("access/tfa")
+    suspend fun tfa(): ApiEnvelope<JsonElement>
+
+    @FormUrlEncoded
+    @POST("access/tfa/{userid}")
+    suspend fun addTfa(@Path("userid") userId: String, @FieldMap params: Map<String, String>): ApiEnvelope<JsonObject>
+
+    @FormUrlEncoded
+    @PUT("access/tfa/{userid}/{id}")
+    suspend fun updateTfa(@Path("userid") userId: String, @Path("id") id: String, @FieldMap params: Map<String, String>): ApiEnvelope<JsonElement>
+
+    @DELETE("access/tfa/{userid}/{id}")
+    suspend fun deleteTfa(@Path("userid") userId: String, @Path("id") id: String, @Query("password") password: String?): ApiEnvelope<JsonElement>
+
+    @GET("access/permissions")
+    suspend fun permissions(@Query("auth-id") authId: String?, @Query("path") path: String?): ApiEnvelope<JsonObject>
 }

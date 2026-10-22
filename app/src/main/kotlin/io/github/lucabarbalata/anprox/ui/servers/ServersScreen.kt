@@ -18,7 +18,6 @@ import androidx.compose.material.icons.outlined.Dns
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -64,15 +63,9 @@ fun ServersScreen(
     AnProxScaffold(
         title = stringResource(R.string.servers_title),
         onBack = onBack,
-        floatingActionButton = {
+        actions = {
             if (servers.isNotEmpty()) {
-                ExtendedFloatingActionButton(
-                    onClick = onAdd,
-                    icon = { Icon(Icons.Outlined.Add, contentDescription = null) },
-                    text = { Text(stringResource(R.string.servers_add)) },
-                    containerColor = AnProxTheme.colors.accent,
-                    contentColor = AnProxTheme.colors.onAccent,
-                )
+                IconButton(onClick = onAdd) { Icon(Icons.Outlined.Add, contentDescription = stringResource(R.string.servers_add)) }
             }
         },
     ) { inner ->

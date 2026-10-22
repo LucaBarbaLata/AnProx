@@ -173,7 +173,7 @@ Code: `core/network/src/main/kotlin/.../network/api/` (`AccessApi`, `PveApi`, `P
 | `/admin/{sync,verify,prune}` (+ `/{id}/run`) | Jobs with their last and next run; run one now | ✅ M8 |
 | `/tape/*` | Tape backup | 🗓 M8 (basic) / M9 |
 | `/nodes/localhost/{status,apt,subscription,services,journal}` | The server's status; updates, repositories, subscription, services and the journal through the M5 screens | ✅ M8 (`disks`, `network` 🗓 M9) |
-| `/access/{users,acl,roles,domains,tfa}` | Access control on a Backup Server | 🗓 M9 (Proxmox VE's is done in M7) |
+| `/access/{users,acl,roles,tfa,permissions}` (+ `/token`, `/unlock-tfa`, `/password`) | Access control on a Backup Server through the M7 screens: users (pam and pbs realms, password), API tokens (secret shown once), permissions with one role per entry and paths such as `/datastore/{store}` or `/remote/{id}`, the built-in roles, second factors, effective privileges | ✅ (realm settings and sync of PBS LDAP/AD realms 🗓) |
 | `/config/{acme,notifications,metrics}` | Certificates, notifications, metrics | 🗓 M9 |
 
 ---

@@ -25,6 +25,8 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.List
+import androidx.compose.material.icons.outlined.AdminPanelSettings
+import androidx.compose.material.icons.outlined.Badge
 import androidx.compose.material.icons.outlined.Computer
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Description
@@ -32,16 +34,17 @@ import androidx.compose.material.icons.outlined.Dns
 import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.Folder
 import androidx.compose.material.icons.outlined.History
+import androidx.compose.material.icons.outlined.Hub
 import androidx.compose.material.icons.outlined.Inventory
 import androidx.compose.material.icons.outlined.Link
+import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.Security
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Storage
 import androidx.compose.material.icons.outlined.SyncAlt
 import androidx.compose.material.icons.outlined.SystemUpdateAlt
-import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material.icons.outlined.Hub
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -95,6 +98,7 @@ import io.github.lucabarbalata.anprox.model.pbs.PbsJobKind
 import io.github.lucabarbalata.anprox.model.pbs.PbsNamespace
 import io.github.lucabarbalata.anprox.model.pbs.PbsRemoteForm
 import io.github.lucabarbalata.anprox.model.pve.DangerLevel
+import io.github.lucabarbalata.anprox.ui.access.AccessPage
 import io.github.lucabarbalata.anprox.ui.common.AnProxScaffold
 import io.github.lucabarbalata.anprox.ui.common.BusyCard
 import io.github.lucabarbalata.anprox.ui.common.ChoiceChips
@@ -111,10 +115,10 @@ import io.github.lucabarbalata.anprox.ui.common.contentPadding
 import io.github.lucabarbalata.anprox.ui.common.formatDuration
 import io.github.lucabarbalata.anprox.ui.common.relativeTime
 import io.github.lucabarbalata.anprox.ui.node.NodeAdminPage
-import org.koin.compose.viewmodel.koinViewModel
-import org.koin.core.parameter.parametersOf
 import java.text.DateFormat
 import java.util.Date
+import org.koin.compose.viewmodel.koinViewModel
+import org.koin.core.parameter.parametersOf
 
 @Composable
 private fun Spinner() {
@@ -180,6 +184,7 @@ fun BackupServerScreen(
     onJobs: () -> Unit,
     onRemotes: () -> Unit,
     onAdmin: (NodeAdminPage) -> Unit,
+    onAccess: (AccessPage) -> Unit,
 ) {
     val viewModel: BackupServerViewModel = koinViewModel(key = "pbs-$serverId") { parametersOf(serverId) }
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -232,6 +237,14 @@ fun BackupServerScreen(
                     MenuRow(Icons.Outlined.Settings, stringResource(R.string.services_title), stringResource(R.string.pbs_services_body)) { onAdmin(NodeAdminPage.SERVICES) }
                     MenuRow(Icons.AutoMirrored.Outlined.List, stringResource(R.string.journal_title), stringResource(R.string.pbs_journal_body)) { onAdmin(NodeAdminPage.JOURNAL) }
                     MenuRow(Icons.Outlined.History, stringResource(R.string.taskhistory_title), stringResource(R.string.taskhistory_open_body)) { onAdmin(NodeAdminPage.TASKS) }
+                }
+            }
+            item { SectionHeader(stringResource(R.string.access_section)) }
+            item {
+                GlassCard(contentPadding = PaddingValues(vertical = 6.dp)) {
+                    MenuRow(Icons.Outlined.Person, stringResource(R.string.access_users), null) { onAccess(AccessPage.USERS) }
+                    MenuRow(Icons.Outlined.AdminPanelSettings, stringResource(R.string.access_acl), null) { onAccess(AccessPage.ACL) }
+                    MenuRow(Icons.Outlined.Badge, stringResource(R.string.access_roles), null) { onAccess(AccessPage.ROLES) }
                 }
             }
         }

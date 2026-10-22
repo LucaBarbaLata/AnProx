@@ -31,11 +31,13 @@ data class UsersUiState(
     val loading: Boolean = true,
     val error: UiText? = null,
     val users: List<PveUser> = emptyList(),
+    /** A Backup Server has no groups. */
+    val backupServer: Boolean = false,
 )
 
 /** Datacenter → Permissions → Users. */
 class UsersViewModel(private val serverId: String, private val repo: AccessRepository) : ViewModel() {
-    private val ui = MutableStateFlow(UsersUiState())
+    private val ui = MutableStateFlow(UsersUiState(backupServer = repo.isBackupServer(serverId)))
     val state: StateFlow<UsersUiState> = ui.asStateFlow()
 
     fun load() {
@@ -167,13 +169,15 @@ data class RolesUiState(
     val confirmDelete: PveRole? = null,
     val busy: Boolean = false,
     val result: TaskResult? = null,
+    /** A Backup Server's roles are fixed: none can be added. */
+    val backupServer: Boolean = false,
 ) {
     fun nameTaken(id: String): Boolean = roles.any { it.id == id.trim() }
 }
 
 /** Datacenter → Permissions → Roles: the built-in ones to read, custom ones to create, edit and delete. */
 class RolesViewModel(private val serverId: String, private val repo: AccessRepository) : ViewModel() {
-    private val ui = MutableStateFlow(RolesUiState())
+    private val ui = MutableStateFlow(RolesUiState(backupServer = repo.isBackupServer(serverId)))
     val state: StateFlow<RolesUiState> = ui.asStateFlow()
 
     init {
@@ -273,7 +277,12 @@ data class AclUiState(
     val confirmRemove: AclEntry? = null,
     val busy: Boolean = false,
     val result: TaskResult? = null,
+    /** On a Backup Server there are no groups, and the paths are different. */
+    val backupServer: Boolean = false,
 ) {
+    val subjects: List<AclSubject> get() = if (backupServer) AclSubject.entries - AclSubject.GROUP else AclSubject.entries
+    val suggestedPaths: List<String> get() = if (backupServer) AclForm.PBS_PATHS else AclForm.SUGGESTED_PATHS
+
     /** The entries grouped by path, `/` first. */
     val byPath: List<Pair<String, List<AclEntry>>> get() = entries.groupBy { it.path }.toSortedMap().toList()
 
@@ -287,7 +296,7 @@ data class AclUiState(
 
 /** Datacenter → Permissions → Permissions: who has which role where. */
 class AclViewModel(private val serverId: String, private val repo: AccessRepository) : ViewModel() {
-    private val ui = MutableStateFlow(AclUiState())
+    private val ui = MutableStateFlow(AclUiState(backupServer = repo.isBackupServer(serverId)))
     val state: StateFlow<AclUiState> = ui.asStateFlow()
 
     init {

@@ -1656,7 +1656,83 @@ class MockProxmoxServer(
         }
     }
 
+    /** A Backup Server's access control (M9). Array parameters such as `delete` repeat their key. */
+    private fun Route.pbsAccess() {
+        val access = state.pbsAccess
+        suspend fun ApplicationCall.multi(): Map<String, List<String>> = receiveParameters().let { p -> p.names().associateWith { p.getAll(it).orEmpty() } }
+        suspend fun ApplicationCall.writer(): MockState.Session? {
+            val s = authed() ?: return null
+            if (state.isReadOnly(s.user)) {
+                fail(403, "permission check failed")
+                return null
+            }
+            return s
+        }
+        suspend fun ApplicationCall.done(error: String?) = if (error != null) fail(400, error) else ok(JsonNull)
+
+        get("access/users") {
+            call.authed() ?: return@get
+            val include = call.request.queryParameters["include_tokens"].let { it == "1" || it == "true" }
+            call.ok(access.users(include))
+        }
+        post("access/users") {
+            call.writer() ?: return@post
+            call.done(access.createUser(call.multi()))
+        }
+        put("access/users/{userid}") {
+            call.writer() ?: return@put
+            call.done(access.updateUser(call.parameters["userid"]!!, call.multi()))
+        }
+        delete("access/users/{userid}") {
+            call.writer() ?: return@delete
+            call.done(access.deleteUser(call.parameters["userid"]!!))
+        }
+        put("access/password") {
+            call.authed() ?: return@put
+            call.done(access.changePassword(call.multi()))
+        }
+        put("access/users/{userid}/unlock-tfa") {
+            call.writer() ?: return@put
+            call.ok(access.unlockTfa(call.parameters["userid"]!!) ?: return@put call.fail(400, "no such user"))
+        }
+        get("access/users/{userid}/token") {
+            call.authed() ?: return@get
+            call.ok(access.tokens(call.parameters["userid"]!!) ?: return@get call.fail(400, "no such user"))
+        }
+        post("access/users/{userid}/token/{name}") {
+            call.writer() ?: return@post
+            val (token, error) = access.createToken(call.parameters["userid"]!!, call.parameters["name"]!!, call.multi())
+            if (token != null) call.ok(token) else call.fail(400, error.orEmpty())
+        }
+        delete("access/users/{userid}/token/{name}") {
+            call.writer() ?: return@delete
+            call.done(access.deleteToken(call.parameters["userid"]!!, call.parameters["name"]!!))
+        }
+        get("access/roles") {
+            call.authed() ?: return@get
+            call.ok(access.roles())
+        }
+        get("access/acl") {
+            call.authed() ?: return@get
+            call.ok(access.acl())
+        }
+        put("access/acl") {
+            call.writer() ?: return@put
+            call.done(access.updateAcl(call.multi()))
+        }
+        // Second factors work the same as on Proxmox VE; the mock's Backup Server has none.
+        get("access/tfa") {
+            call.authed() ?: return@get
+            call.ok(JsonArray(emptyList()))
+        }
+        get("access/permissions") {
+            val s = call.authed() ?: return@get
+            call.ok(access.permissions(call.request.queryParameters["auth-id"], s.user))
+        }
+    }
+
     private fun Route.pbs() {
+        pbsAccess()
         get("status/datastore-usage") {
             call.authed() ?: return@get
             call.ok(state.datastoreUsage())

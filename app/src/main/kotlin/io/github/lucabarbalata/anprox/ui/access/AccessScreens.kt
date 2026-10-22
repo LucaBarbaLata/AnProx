@@ -219,14 +219,18 @@ fun RolesScreen(serverId: String, onBack: () -> Unit) {
         },
     ) { inner ->
         LazyColumn(contentPadding = contentPadding(inner), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            item {
-                AnProxButton(
-                    stringResource(R.string.access_role_add),
-                    onClick = viewModel::startCreate,
-                    icon = Icons.Outlined.Add,
-                    enabled = !state.busy && state.error == null && state.privileges.isNotEmpty(),
-                    modifier = Modifier.fillMaxWidth(),
-                )
+            if (state.backupServer) {
+                item { FormHint(stringResource(R.string.access_roles_fixed)) }
+            } else {
+                item {
+                    AnProxButton(
+                        stringResource(R.string.access_role_add),
+                        onClick = viewModel::startCreate,
+                        icon = Icons.Outlined.Add,
+                        enabled = !state.busy && state.error == null && state.privileges.isNotEmpty(),
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
             }
             state.error?.let { error ->
                 item { ErrorBanner(error.asString(), actionLabel = stringResource(R.string.action_retry), onAction = viewModel::load) }
@@ -425,9 +429,9 @@ private fun AclDialog(form: AclForm, state: AclUiState, subjectLabels: Map<AclSu
                     isError = problem == AclForm.Problem.PATH,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
                 )
-                ChoiceChips(AclForm.SUGGESTED_PATHS, form.path.trim(), { it }) { p -> viewModel.edit { copy(path = p) } }
+                ChoiceChips(state.suggestedPaths, form.path.trim(), { it }) { p -> viewModel.edit { copy(path = p) } }
                 FormLabel(stringResource(R.string.access_acl_who))
-                SegmentedPicker(AclSubject.entries, form.subject, { subjectLabels.getValue(it) }, viewModel::setSubject)
+                SegmentedPicker(state.subjects, form.subject, { subjectLabels.getValue(it) }, viewModel::setSubject)
                 if (candidates.isEmpty()) {
                     FormHint(stringResource(R.string.access_acl_no_candidates))
                 } else {

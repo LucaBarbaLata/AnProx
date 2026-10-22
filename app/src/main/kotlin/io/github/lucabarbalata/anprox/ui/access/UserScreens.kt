@@ -134,7 +134,7 @@ fun UsersScreen(serverId: String, onBack: () -> Unit, onUser: (userId: String) -
                 !state.loading && state.error == null && state.users.isEmpty() -> item {
                     EmptyState(Icons.Outlined.Person, stringResource(R.string.access_users_empty), stringResource(R.string.access_users_empty_body))
                 }
-                else -> items(state.users, key = { it.id }) { user -> UserCard(user) { onUser(user.id) } }
+                else -> items(state.users, key = { it.id }) { user -> UserCard(user, state.backupServer) { onUser(user.id) } }
             }
         }
     }
@@ -148,7 +148,7 @@ internal fun Loading() {
 }
 
 @Composable
-private fun UserCard(user: PveUser, onClick: () -> Unit) {
+private fun UserCard(user: PveUser, backupServer: Boolean, onClick: () -> Unit) {
     val c = AnProxTheme.colors
     GlassCard(contentPadding = PaddingValues(0.dp)) {
         Row(
@@ -166,7 +166,7 @@ private fun UserCard(user: PveUser, onClick: () -> Unit) {
                 }
                 UserPills(user)
                 Text(
-                    stringResource(R.string.access_user_counts, user.groups.size, user.tokens.size),
+                    if (backupServer) stringResource(R.string.access_user_tokens, user.tokens.size) else stringResource(R.string.access_user_counts, user.groups.size, user.tokens.size),
                     style = MaterialTheme.typography.labelMedium,
                     color = c.textSecondary,
                 )
@@ -318,7 +318,7 @@ fun UserScreen(
     }
 
     state.password?.let { draft -> PasswordDialog(draft, state.needsYourPassword, viewModel) }
-    state.token?.let { draft -> TokenDialog(draft, viewModel) }
+    state.token?.let { draft -> TokenDialog(draft, state.backupServer, viewModel) }
     state.createdToken?.let { token ->
         AlertDialog(
             onDismissRequest = {},
@@ -527,7 +527,7 @@ private fun PasswordDialog(draft: PasswordDraft, needsYourPassword: Boolean, vie
 }
 
 @Composable
-private fun TokenDialog(draft: TokenDraft, viewModel: UserViewModel) {
+private fun TokenDialog(draft: TokenDraft, backupServer: Boolean, viewModel: UserViewModel) {
     AlertDialog(
         onDismissRequest = viewModel::closeToken,
         containerColor = AnProxTheme.colors.surfaceSolid,
@@ -555,12 +555,15 @@ private fun TokenDialog(draft: TokenDraft, viewModel: UserViewModel) {
                     isError = draft.badExpiry,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Ascii),
                 )
-                SwitchRow(
-                    stringResource(R.string.access_token_privsep),
-                    draft.form.privsep,
-                    { on -> viewModel.editToken { copy(form = form.copy(privsep = on)) } },
-                    description = stringResource(R.string.access_token_privsep_hint),
-                )
+                // A Backup Server's tokens always have only the permissions given to them.
+                if (!backupServer) {
+                    SwitchRow(
+                        stringResource(R.string.access_token_privsep),
+                        draft.form.privsep,
+                        { on -> viewModel.editToken { copy(form = form.copy(privsep = on)) } },
+                        description = stringResource(R.string.access_token_privsep_hint),
+                    )
+                }
             }
         },
         confirmButton = {
@@ -733,11 +736,13 @@ fun UserEditorScreen(serverId: String, userId: String?, onDone: () -> Unit) {
                     }
                 }
             }
-            item {
-                GlassCard {
-                    FormLabel(stringResource(R.string.access_groups))
-                    if (state.groups.isEmpty()) FormHint(stringResource(R.string.access_groups_none))
-                    state.groups.forEach { g -> CheckRow(g.id, g.id in form.groups) { viewModel.toggleGroup(g.id) } }
+            if (!state.backupServer) {
+                item {
+                    GlassCard {
+                        FormLabel(stringResource(R.string.access_groups))
+                        if (state.groups.isEmpty()) FormHint(stringResource(R.string.access_groups_none))
+                        state.groups.forEach { g -> CheckRow(g.id, g.id in form.groups) { viewModel.toggleGroup(g.id) } }
+                    }
                 }
             }
             item {

@@ -91,8 +91,9 @@ data class UserUiState(
     val result: TaskResult? = null,
     /** The user was deleted: the screen closes. */
     val deleted: Boolean = false,
+    val backupServer: Boolean = false,
 ) {
-    val canChangePassword: Boolean get() = user?.realm == "pve" || user?.realm == "pam"
+    val canChangePassword: Boolean get() = user?.realm in setOf("pve", "pam", "pbs")
     val canDelete: Boolean get() = user != null && user.id != ROOT
 }
 
@@ -102,7 +103,7 @@ class UserViewModel(
     private val userId: String,
     private val repo: AccessRepository,
 ) : ViewModel() {
-    private val ui = MutableStateFlow(UserUiState(needsYourPassword = repo.currentUser(serverId) != ROOT))
+    private val ui = MutableStateFlow(UserUiState(needsYourPassword = repo.currentUser(serverId) != ROOT, backupServer = repo.isBackupServer(serverId)))
     val state: StateFlow<UserUiState> = ui.asStateFlow()
 
     fun load() {
@@ -343,6 +344,8 @@ data class UserEditorState(
     val saveError: UiText? = null,
     /** Saved: the screen closes. */
     val done: Boolean = false,
+    /** A Backup Server has no groups. */
+    val backupServer: Boolean = false,
 ) {
     val badExpiry: Boolean get() = expire.isNotBlank() && ExpiryDate.parse(expire) == null
     val problem: UserForm.Problem? get() = form.problem(creating)
@@ -355,7 +358,7 @@ class UserEditorViewModel(
     private val userId: String?,
     private val repo: AccessRepository,
 ) : ViewModel() {
-    private val ui = MutableStateFlow(UserEditorState(creating = userId == null))
+    private val ui = MutableStateFlow(UserEditorState(creating = userId == null, backupServer = repo.isBackupServer(serverId)))
     val state: StateFlow<UserEditorState> = ui.asStateFlow()
 
     init {
@@ -379,7 +382,10 @@ class UserEditorViewModel(
                             groups = groups,
                             realms = realms,
                             original = user,
-                            form = user?.let(UserForm::from) ?: s.form,
+                            // A new user starts in the server's own realm: `pve`, or `pbs` on a Backup Server.
+                            form = user?.let(UserForm::from) ?: s.form.let { f ->
+                                if (realms.any { it.realm == f.realm }) f else f.copy(realm = realms.firstOrNull { it.realm == "pbs" }?.realm ?: f.realm)
+                            },
                             expire = user?.expire?.takeIf { it > 0 }?.let { ExpiryDate.format(it) } ?: s.expire,
                         )
                     }

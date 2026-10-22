@@ -7,6 +7,12 @@ All notable changes to AnProx are documented here. The format follows
 ## [Unreleased]
 
 ### Added
+- **Backup Server users and permissions** (Manage Backup Server → Users and permissions): the
+  same screens as for Proxmox VE. Users of the `pam` and `pbs` realms (create, edit, password,
+  delete), API tokens (the secret is shown once), permissions (a role on `/datastore/store1`,
+  `/remote/…`, `/system` and so on, for a user or a token), second factors and what someone may
+  do. A Backup Server has no groups and its roles are built in, so those parts are left out.
+
 - **Notifications** (Datacenter → Notifications): Proxmox VE's targets (e-mail through sendmail
   or SMTP, Gotify, webhooks with headers, a templated body and secrets) and matchers (which
   targets, severities, fields such as `exact:type=vzdump`, calendar windows, all/any, invert).
@@ -285,6 +291,8 @@ All notable changes to AnProx are documented here. The format follows
   - **Resources:** rows share one card: a dot, the name, "VM 100 · node", and the CPU (or how
     full a storage is) on the right. No type icons, tags or bars per row; filters are plain words.
   - **Datacenter** and **More** list titles only, in small groups.
+  - **Servers:** **Add server** is the + in the top bar, as on the Overview, instead of a
+    floating button (which the emulator tour couldn't find on Android 8.0 or 14).
 - Dependencies: Gradle 8.14.6, Bouncy Castle 1.86, JSch 2.28.8, Apache MINA SSHD 2.20.0 (the
   mock server's SSH) and JUnit 5.14.4 (the five open Dependabot updates, applied together).
 - Consoles have a **Console details** button (the ⓘ in the top bar): what the connection

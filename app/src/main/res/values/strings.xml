@@ -1676,6 +1676,7 @@
     <string name="access_user_add">Add user</string>
     <string name="access_user_create">Create user</string>
     <string name="access_user_counts">Groups: %1$d · API tokens: %2$d</string>
+    <string name="access_user_tokens">API tokens: %1$d</string>
     <string name="access_user_disabled">Disabled</string>
     <string name="access_user_expired">Expired</string>
     <string name="access_user_tfa_locked">Second factor locked</string>
@@ -2340,6 +2341,7 @@
     <!-- Certificates and ACME (M9) -->
     <string name="action_add">Add</string>
     <string name="action_remove">Remove</string>
+    <string name="access_roles_fixed">A Backup Server\'s roles are built in; give them to users and tokens under Permissions.</string>
     <string name="cert_title">Certificates</string>
     <string name="cert_role_in_use">In use by the web interface</string>
     <string name="cert_role_node">The node\'s own, from the cluster CA</string>

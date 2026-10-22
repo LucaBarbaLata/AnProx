@@ -79,6 +79,29 @@ unless they are typed again. A matcher's `match-field` and `match-calendar` entr
 and spaces, so they are not split like other lists. Mock, 2 model tests, 3 integration tests and a
 tour step (a test through the Gotify target).
 
+**Backup Server access control.** Written from proxmox-backup's `src/api2/access/{user,acl,
+role,tfa}.rs` and `src/config/acl.rs`. The M7 screens are reused; `AccessRepository` asks which
+product the server is and talks to `PbsApi` instead. What differs:
+- No groups, and the roles are fixed (Admin, Audit, DatastoreAdmin, DatastoreBackup, …,
+  NoAccess), so the Groups entry and "Add role" are not offered; a hint says where roles are
+  given instead.
+- `PUT /access/acl` takes one `role` and an `auth-id` (a user or a token, `user@realm!name`);
+  removing an entry is the same call with `delete=1`. The list says `ugid_type: user` for
+  tokens too, so the app tells them apart by the `!`.
+- A user update deletes fields with `delete` repeated per field, so it is sent as `FormFields`.
+  A token's ID comes back as `tokenid` and the secret as `value`, which goes in the
+  `PBSAPIToken=id:secret` header rather than Proxmox VE's `PVEAPIToken=id=secret`.
+- PBS refuses parameters it doesn't know (`groups`, `keys`, `privsep`), and so does the mock.
+  Its seed: `root@pam` and `backup@pbs`, who has DatastoreBackup on `/datastore/store1`.
+  2 integration tests and a check in the tour's Backup Server step.
+
+**The first e2e run of this session** (commit `3b5d4d8`) failed on Android 8.0 and 14 in its last
+step: "Add server" didn't appear on the Servers screen. That screen was the only one with a
+floating button, and uiautomator didn't list it at all on either (the app was running, no crash).
+The button is now the + in the top bar, like the Overview's. The same review found that the new
+Notifications step's function had the name of the tour helper `notifications()` that the alerts
+step calls, so it would have replaced it; the step is now `notification_targets`.
+
 **Dependencies.** The five Dependabot pull requests (Gradle 8.14.6, Bouncy Castle 1.86, JSch
 2.28.8, MINA SSHD 2.20.0, JUnit 5.14.4) had passed CI on their own; none touches an ADR 0002 pin.
 They went in as one commit on the branch, which closes them.

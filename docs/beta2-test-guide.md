@@ -551,6 +551,12 @@ Backup now on each guest).
 10. Datastore → **Maintenance mode** → Read-only → **Save** → the PBS web UI shows it; set it back
     to Off.
 11. **Updates**, **Services**, **System log** and **Task history** work as for a Proxmox VE node.
+12. **Users and permissions → Users** lists the same users as the PBS web UI's Configuration →
+    Access Control. **Add user** `anprox-test` (realm `pbs`, a password) → **Create user** → open
+    it → **Add API token** `t1` → the secret is shown once → **Permissions** → **Add permission**
+    `/datastore/<your datastore>`, the token, role `DatastoreReader` → it is listed (and in the
+    PBS web UI's Permissions tab). Remove it, then delete the user. **Roles** lists the built-in
+    roles; none can be added.
 
 ## 4. Reporting back
 

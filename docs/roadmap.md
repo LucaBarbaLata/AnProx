@@ -233,12 +233,13 @@ single Proxmox VE node without Ceph and a Backup Server in a VM on it.
   file or a folder as a zip); sync, verify and prune jobs (run now, last log, switch prune jobs
   off); remotes; and updates, repositories, services and the journal through the M5 screens.
   Backup Server tasks open in the Tasks tab.
-- Later (M9): creating datastores and jobs, tape, VM file restore (through Proxmox VE), Backup
-  Server access control, disks and network.
+- Later (M9): creating datastores and jobs, tape, VM file restore (through Proxmox VE), disks
+  and network. (Backup Server access control: done in M9, below.)
 
 ## M9 — Parity & 1.0
 - ✅ Certificates: a node's certificates, a custom one, ACME orders and renewals with the node's domains, the cluster's ACME accounts and DNS plugins.
 - ✅ Notifications: targets (sendmail, SMTP, Gotify, webhooks) and matchers, with a test send.
+- ✅ Backup Server access control: users, API tokens, permissions, built-in roles, second factors, through the M7 screens.
 - Remaining endpoints from [api-coverage.md](api-coverage.md): metric servers,
   PCI/USB/directory mappings, advanced hardware (passthrough,
   NUMA, CPU flags), guest config history, cluster join/create.

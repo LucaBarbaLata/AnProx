@@ -1139,7 +1139,7 @@ def sdn():
 
 
 @step("Datacenter: notifications - the built-in target and matcher, a test through the Gotify target")
-def notifications():
+def notification_targets():
     tap("Overview")
     tap_node(scroll_to("Datacenter", exact=True))
     tap_node(scroll_to("Notifications", exact=True))
@@ -1153,7 +1153,7 @@ def notifications():
     back()
 
 
-@step("Backup Server: a datastore's backups, a container backup's files, a prune preview, run a sync job")
+@step("Backup Server: a datastore's backups, a container backup's files, a prune preview, its permissions, run a sync job")
 def backup_server():
     tap("Overview")
     tap_node(scroll_to("Manage Backup Server"))
@@ -1174,6 +1174,9 @@ def backup_server():
     tap("Cancel")
     back()                                        # to the datastore
     back()                                        # to the server
+    tap_node(scroll_to("Permissions", exact=True))  # its own users and permissions
+    find("/datastore/store1", timeout=30)         # backup@pbs may back up there in the mock
+    back()
     tap_node(scroll_to("Sync, verify and prune jobs"))
     tap_node(scroll_to("s-offsite"))              # failed last time in the mock
     tap("Run now")
@@ -1374,7 +1377,7 @@ def main():
     try:
         for s in (launch, add_pve, add_pbs, resources, performance, agent, guest_start, snapshots, backups,
                   options, hardware, console, vm_console, cloud_init, bulk, clone_migrate, tasks, create_vm, alerts,
-                  backup_jobs, storage, storage_setup, firewall, high_availability, replication, pools, permissions, ceph, sdn, notifications, backup_server, node_admin, certificates, ssh,
+                  backup_jobs, storage, storage_setup, firewall, high_availability, replication, pools, permissions, ceph, sdn, notification_targets, backup_server, node_admin, certificates, ssh,
                   light_theme, openid):
             s()
         ok = True

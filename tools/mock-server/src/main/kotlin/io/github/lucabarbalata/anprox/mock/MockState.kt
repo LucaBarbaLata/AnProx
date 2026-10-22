@@ -115,6 +115,7 @@ class MockState(
         // Users added through /access log in with the password set there.
         val user = users[username]
             ?: (if (product == ProxmoxProduct.PVE) access.password(username)?.let { User(username, it) } else null)
+            ?: (if (product == ProxmoxProduct.PBS) pbsAccess.password(username)?.let { User(username, it) } else null)
             // Signed in through OpenID Connect: no password, but its tickets renew.
             ?: (if (username in openIdUsers) User(username, password = "\u0000" + token()) else null)
             ?: return LoginOutcome.Failed
@@ -292,6 +293,9 @@ class MockState(
     internal val pbs = MockPbs { clockMillis() / 1000 }
 
     internal val sdn = MockSdn()
+
+    /** A Backup Server's users, tokens and ACL (M9). */
+    internal val pbsAccess = MockPbsAccess()
 
     /** Notification targets and matchers (M9). */
     internal val notifications = MockNotifications()

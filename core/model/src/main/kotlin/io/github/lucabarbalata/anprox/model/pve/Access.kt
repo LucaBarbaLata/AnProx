@@ -84,7 +84,9 @@ data class ApiToken(
         val ID = Regex("^[A-Za-z][A-Za-z0-9.\\-_]{0,63}$")
 
         fun fromJson(o: JsonObject) = ApiToken(
-            id = o.str("tokenid").orEmpty(),
+            // Proxmox VE sends the name as `tokenid`; a Backup Server sends `token-name`, and
+            // `tokenid` as the full `user@realm!name`.
+            id = (o.str("token-name") ?: o.str("tokenid")?.substringAfter('!')).orEmpty(),
             comment = o.str("comment"),
             expire = o.long("expire")?.takeIf { it > 0 },
             privsep = o.bool("privsep", default = true),
@@ -92,13 +94,17 @@ data class ApiToken(
     }
 }
 
-/** What `POST /access/users/{userid}/token/{tokenid}` returns once: the secret is never shown again. */
-data class NewApiToken(val fullId: String, val secret: String) {
-    /** The `Authorization` header value: `PVEAPIToken=user@realm!id=secret`. */
-    val header: String get() = "PVEAPIToken=$fullId=$secret"
+/**
+ * What `POST /access/users/{userid}/token/{tokenid}` returns once: the secret is never shown again.
+ * A Backup Server answers `tokenid` where Proxmox VE answers `full-tokenid`.
+ */
+data class NewApiToken(val fullId: String, val secret: String, val backupServer: Boolean = false) {
+    /** The `Authorization` header value: `PVEAPIToken=user@realm!id=secret`, or `PBSAPIToken=…:secret`. */
+    val header: String get() = if (backupServer) "PBSAPIToken=$fullId:$secret" else "PVEAPIToken=$fullId=$secret"
 
     companion object {
-        fun fromJson(o: JsonObject) = NewApiToken(o.str("full-tokenid").orEmpty(), o.str("value").orEmpty())
+        fun fromJson(o: JsonObject, backupServer: Boolean = false) =
+            NewApiToken((o.str("full-tokenid") ?: o.str("tokenid")).orEmpty(), o.str("value").orEmpty(), backupServer)
     }
 }
 
@@ -155,10 +161,14 @@ data class AclEntry(
         "delete" to "1",
     )
 
+    /** The same on a Backup Server: one `role`, and `auth-id` for users and tokens alike. */
+    fun pbsRemoveParams(): Map<String, String> = mapOf("path" to path, "role" to role, "auth-id" to ugid, "delete" to "1")
+
     companion object {
         fun fromJson(o: JsonObject) = AclEntry(
             path = o.str("path") ?: "/",
-            subject = AclSubject.fromApi(o.str("type")),
+            // A Backup Server says `ugid_type` (user or group); a token is a user id with `!`.
+            subject = if (o.str("ugid").orEmpty().contains('!')) AclSubject.TOKEN else AclSubject.fromApi(o.str("type") ?: o.str("ugid_type")),
             ugid = o.str("ugid").orEmpty(),
             role = o.str("roleid").orEmpty(),
             propagate = o.bool("propagate", default = true),
@@ -190,12 +200,23 @@ data class AclForm(
         "propagate" to if (propagate) "1" else "0",
     )
 
+    /** `PUT /access/acl` on a Backup Server: users and tokens are both an `auth-id`; there are no groups. */
+    fun pbsParams(): Map<String, String> = mapOf(
+        "path" to path.trim(),
+        "role" to role,
+        "auth-id" to ugid,
+        "propagate" to if (propagate) "1" else "0",
+    )
+
     companion object {
         /** `/`, `/vms/100`, `/storage/local`, `/pool/prod`, `/nodes/pve1`, `/sdn/zones/z1`, … */
         private val PATH = Regex("^/([A-Za-z0-9._\\-]+(/[A-Za-z0-9._\\-]+)*)?$")
 
         /** Common paths, to pick from. */
         val SUGGESTED_PATHS = listOf("/", "/vms", "/storage", "/pool", "/nodes", "/sdn", "/access", "/mapping")
+
+        /** The same for a Backup Server. */
+        val PBS_PATHS = listOf("/", "/datastore", "/remote", "/system", "/access", "/tape")
     }
 }
 
@@ -217,8 +238,8 @@ data class UserForm(
 ) {
     enum class Problem { NAME, PASSWORD, PASSWORD_MISMATCH, EMAIL }
 
-    /** Only users of the `pve` realm have a password Proxmox stores. */
-    val hasPassword: Boolean get() = realm == "pve"
+    /** Only users of the `pve` (or, on a Backup Server, `pbs`) realm have a password Proxmox stores. */
+    val hasPassword: Boolean get() = realm == "pve" || realm == "pbs"
 
     fun problem(creating: Boolean): Problem? = when {
         creating && !UserId.NAME.matches(name.trim()) -> Problem.NAME
@@ -258,6 +279,19 @@ data class UserForm(
         return set
     }
 
+    /** `POST /access/users` on a Backup Server: no groups or keys. */
+    fun pbsCreateParams(): Map<String, String> = createParams() - "groups" - "keys"
+
+    /**
+     * `PUT /access/users/{userid}` on a Backup Server: no groups or keys, and the cleared fields
+     * as repeated `delete` keys (it doesn't take a comma-separated list).
+     */
+    fun pbsUpdateFields(original: PveUser): FormFields {
+        val params = updateParams(original)
+        return params.filterKeys { it != "delete" && it != "groups" && it != "keys" }.toList() +
+            params["delete"].orEmpty().split(',').filter { it.isNotEmpty() && it != "keys" }.map { "delete" to it }
+    }
+
     companion object {
         const val MIN_PASSWORD = 8
         private val EMAIL = Regex("^[^\\s@]+@[^\\s@]+$")
@@ -286,6 +320,9 @@ data class TokenForm(val id: String = "", val comment: String = "", val privsep:
         put("privsep", if (privsep) "1" else "0")
         put("expire", (expire ?: 0).toString())
     }
+
+    /** A Backup Server's tokens always have only their own permissions: no `privsep`. */
+    fun pbsParams(): Map<String, String> = params() - "privsep"
 }
 
 /** Account and token expiry as a date (`YYYY-MM-DD`), as the Proxmox web UI shows it: the start of that day. */
