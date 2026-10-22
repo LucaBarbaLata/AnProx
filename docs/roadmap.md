@@ -237,7 +237,8 @@ single Proxmox VE node without Ceph and a Backup Server in a VM on it.
   Server access control, disks and network.
 
 ## M9 — Parity & 1.0
-- Remaining endpoints from [api-coverage.md](api-coverage.md): ACME/certificates, metric servers,
+- ✅ Certificates: a node's certificates, a custom one, ACME orders and renewals with the node's domains, the cluster's ACME accounts and DNS plugins.
+- Remaining endpoints from [api-coverage.md](api-coverage.md): metric servers,
   notification targets and matchers, PCI/USB/directory mappings, advanced hardware (passthrough,
   NUMA, CPU flags), guest config history, cluster join/create.
 - Accessibility audit (WCAG 2.1 AA), performance pass, translation platform (community translations).

@@ -44,10 +44,30 @@ the provider sends the browser back to the server's origin with `code` and `stat
   connection, which restores its session from the store.
 - The mock's `sso` realm has an identity provider at `/mock-idp/authorize` that sends the browser
   straight back. Tests: 4 for parsing the way back, 2 connection tests (both products, ticket
-  renewal, a spent code, a wrong redirect address, a non-OpenID realm), 1 hub test, and tour
-  step 34, which adds a server and signs in through `sso`.
+  renewal, a spent code, a wrong redirect address, a non-OpenID realm), 1 hub test, and the
+  tour's last step, which adds a server and signs in through `sso`.
 - WebAuthn stays out: Android lets an app use it only for a site whose Digital Asset Links file
   names the app ([security.md](security.md#why-not-webauthn-security-keys-passkeys)).
+
+**Certificates and ACME.** Written from pve-manager's `PVE/API2/{Certificates,ACME,
+ACMEAccount,ACMEPlugin,NodeConfig}.pm`:
+- `GET …/certificates/info` lists `pve-root-ca.pem`, `pve-ssl.pem` and, when there is one,
+  `pveproxy-ssl.pem`, the certificate the web interface serves (custom or ACME). Names come as
+  OpenSSL's one-line `/O=…/CN=…`.
+- The node's ACME setup lives in the node config: `acme: account=…,domains=a;b` (the older form,
+  always the standalone HTTP plugin) and `acmedomain0` … `acmedomain5`
+  (`domain=…,plugin=…,alias=…`). Changes go through `PUT /nodes/{node}/config` with the digest.
+- Ordering (`POST …/acme/certificate`) refuses when a custom certificate exists unless `force`;
+  renewing (`PUT`) refuses more than 30 days before expiry unless `force`. The app asks before
+  either. Both end by restarting pveproxy, so the app retries the task status a few times when
+  the connection drops.
+- DNS plugin credentials are stored base64-encoded (`data`); the app shows and edits them as
+  `KEY=value` lines. The provider list and each provider's fields come from
+  `GET /cluster/acme/challenge-schema`.
+- Mock: pve1 has a Let's Encrypt certificate with 20 days left, an `acmedomain0` through the
+  `cloudflare` plugin and the `default` account. 3 model tests, 4 integration tests (renewal,
+  domains with a stale digest, order with and without force, accounts with and without the
+  terms, plugins, a read-only user), and a tour step after node administration.
 
 **Dependencies.** The five Dependabot pull requests (Gradle 8.14.6, Bouncy Castle 1.86, JSch
 2.28.8, MINA SSHD 2.20.0, JUnit 5.14.4) had passed CI on their own; none touches an ADR 0002 pin.

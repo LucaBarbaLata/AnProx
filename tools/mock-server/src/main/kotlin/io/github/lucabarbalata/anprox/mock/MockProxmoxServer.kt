@@ -578,10 +578,135 @@ class MockProxmoxServer(
         }
     }
 
+    /** Node certificates, the node's ACME domains and the cluster's ACME accounts and plugins (M9). */
+    private fun Route.certificates() {
+        val certs = state.certificates
+        suspend fun ApplicationCall.params(): Map<String, String> = receiveParameters().let { p -> p.names().associateWith { p[it].orEmpty() } }
+        suspend fun ApplicationCall.writer(path: String): MockState.Session? {
+            val s = authed() ?: return null
+            if (state.isReadOnly(s.user)) {
+                fail(403, "Permission check failed ($path, Sys.Modify)")
+                return null
+            }
+            return s
+        }
+        /** The node, if it exists and is online (the call is proxied to it). */
+        suspend fun ApplicationCall.onlineNode(): String? {
+            val node = state.node(parameters["node"]!!) ?: return null.also { fail(404, "no such node") }
+            if (!node.online) return null.also { fail(595, "Connection refused") }
+            return node.name
+        }
+        suspend fun ApplicationCall.done(error: String?) = if (error != null) fail(400, error) else ok(JsonNull)
+        fun flag(v: String?) = v == "1" || v == "true"
+
+        get("nodes/{node}/certificates/info") {
+            call.authed() ?: return@get
+            val node = call.onlineNode() ?: return@get
+            call.ok(certs.info(node))
+        }
+        post("nodes/{node}/certificates/custom") {
+            call.writer("/nodes/${call.parameters["node"]}") ?: return@post
+            val node = call.onlineNode() ?: return@post
+            val p = call.params()
+            val (info, error) = certs.uploadCustom(node, p["certificates"].orEmpty(), p["key"], flag(p["force"]))
+            if (error != null) call.fail(400, error) else call.ok(info!!)
+        }
+        delete("nodes/{node}/certificates/custom") {
+            call.writer("/nodes/${call.parameters["node"]}") ?: return@delete
+            val node = call.onlineNode() ?: return@delete
+            certs.removeCustom(node)
+            call.ok(JsonNull)
+        }
+        /** Ordering and renewing check what Proxmox checks, then "order" in a task with its log. */
+        suspend fun ApplicationCall.order(renew: Boolean) {
+            val s = writer("/nodes/${parameters["node"]}") ?: return
+            val node = onlineNode() ?: return
+            val force = flag(params()["force"])
+            val error = if (renew) certs.renewCheck(node, force) else certs.orderCheck(node, force)
+            if (error != null) return fail(400, error)
+            ok(state.startTask(node, if (renew) "acmerenew" else "acmenewcert", "", s.user, log = certs.orderLog(node)) { certs.issue(node) })
+        }
+        post("nodes/{node}/certificates/acme/certificate") { call.order(renew = false) }
+        put("nodes/{node}/certificates/acme/certificate") { call.order(renew = true) }
+        get("nodes/{node}/config") {
+            call.authed() ?: return@get
+            val node = call.onlineNode() ?: return@get
+            call.ok(certs.config(node)!!)
+        }
+        put("nodes/{node}/config") {
+            call.writer("/nodes/${call.parameters["node"]}") ?: return@put
+            val node = call.onlineNode() ?: return@put
+            call.done(certs.setConfig(node, call.params()))
+        }
+
+        get("cluster/acme/account") {
+            call.authed() ?: return@get
+            call.ok(certs.accountNames())
+        }
+        get("cluster/acme/account/{name}") {
+            call.authed() ?: return@get
+            val account = certs.account(call.parameters["name"]!!) ?: return@get call.fail(500, "ACME account config file '${call.parameters["name"]}' does not exist.")
+            call.ok(account)
+        }
+        post("cluster/acme/account") {
+            val s = call.writer("/") ?: return@post
+            val p = call.params()
+            val name = p["name"] ?: "default"
+            val directory = p["directory"] ?: MockCertificates.DIRECTORIES[0].url
+            val contact = p["contact"].orEmpty()
+            certs.registerCheck(name, contact, directory)?.let { return@post call.fail(400, it) }
+            // Let's Encrypt refuses a new account whose terms weren't accepted.
+            val accepted = p["tos_url"] != null || p["eab-kid"] != null
+            val upid = if (accepted) {
+                state.startTask("pve1", "acmeregister", "", s.user, log = listOf("Generating ACME account key..", "Registering ACME account..", "Registration successful")) {
+                    certs.register(name, contact, directory)
+                }
+            } else {
+                state.startTask("pve1", "acmeregister", "", s.user, exitStatus = "Registration failed: urn:ietf:params:acme:error:malformed: must agree to terms of service")
+            }
+            call.ok(upid)
+        }
+        delete("cluster/acme/account/{name}") {
+            val s = call.writer("/") ?: return@delete
+            val name = call.parameters["name"]!!
+            if (!certs.accountExists(name)) return@delete call.fail(400, "ACME account config file '$name' does not exist.")
+            call.ok(state.startTask("pve1", "acmedeactivate", "", s.user, log = listOf("Deactivating account", "Removing account config")) { certs.deactivate(name) })
+        }
+        get("cluster/acme/directories") {
+            call.authed() ?: return@get
+            call.ok(MockCertificates.DIRECTORIES)
+        }
+        get("cluster/acme/meta") {
+            call.authed() ?: return@get
+            call.ok(certs.meta(call.request.queryParameters["directory"] ?: MockCertificates.DIRECTORIES[0].url))
+        }
+        get("cluster/acme/plugins") {
+            call.authed() ?: return@get
+            call.ok(certs.plugins())
+        }
+        post("cluster/acme/plugins") {
+            call.writer("/") ?: return@post
+            call.done(certs.createPlugin(call.params()))
+        }
+        put("cluster/acme/plugins/{id}") {
+            call.writer("/") ?: return@put
+            call.done(certs.updatePlugin(call.parameters["id"]!!, call.params()))
+        }
+        delete("cluster/acme/plugins/{id}") {
+            call.writer("/") ?: return@delete
+            call.done(certs.deletePlugin(call.parameters["id"]!!))
+        }
+        get("cluster/acme/challenge-schema") {
+            call.authed() ?: return@get
+            call.ok(certs.challengeSchema())
+        }
+    }
+
     private fun Route.pve() {
         accessAdmin()
         ceph()
         sdn()
+        certificates()
         get("cluster/status") {
             call.authed() ?: return@get
             call.ok(state.clusterStatus())

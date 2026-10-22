@@ -1211,6 +1211,29 @@ def node_admin():
     back()                                       # to Resources
 
 
+@step("Certificates: renew the node's Let's Encrypt certificate, add a domain, the ACME accounts and plugins")
+def certificates():
+    tap("Resources")
+    tap_node(scroll_to("pve1", exact=True))         # the node
+    open_tool("Certificates", anchor="Shell")       # behind More
+    find("pve1.example.com", timeout=30)            # the ACME certificate in use, 20 days left
+    tap_node(scroll_to("Renew", exact=True))        # within 30 days: no question asked
+    find("Certificate renewed", timeout=60)
+    wait_for_snackbar_to_close()
+    tap_node(scroll_to("Add domain", exact=True))
+    fill("Domain", "pve1.lan.example.com", fallback_index=0)
+    tap("Add")                                      # the dialog's button
+    find("pve1.lan.example.com", timeout=30)        # listed with "HTTP on port 80"
+    screenshot("15c-certificates")
+    tap_node(scroll_to("ACME accounts and plugins"))
+    find("admin@example.com", timeout=30)           # the default account's contact
+    find("cloudflare", timeout=10)                  # the DNS plugin pve1's domain uses
+    screenshot("15d-acme")
+    back()                                          # to Certificates
+    back()                                          # to the node
+    back()                                          # to Resources
+
+
 def replace_field(label, value, fallback_index=None, attempts=3):
     """
     Like [fill], for a field that already holds text: deletes it first. The tap can leave the
@@ -1336,7 +1359,7 @@ def main():
     try:
         for s in (launch, add_pve, add_pbs, resources, performance, agent, guest_start, snapshots, backups,
                   options, hardware, console, vm_console, cloud_init, bulk, clone_migrate, tasks, create_vm, alerts,
-                  backup_jobs, storage, storage_setup, firewall, high_availability, replication, pools, permissions, ceph, sdn, backup_server, node_admin, ssh,
+                  backup_jobs, storage, storage_setup, firewall, high_availability, replication, pools, permissions, ceph, sdn, backup_server, node_admin, certificates, ssh,
                   light_theme, openid):
             s()
         ok = True

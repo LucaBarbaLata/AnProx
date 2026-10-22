@@ -60,7 +60,7 @@ Code: `core/network/src/main/kotlin/.../network/api/` (`AccessApi`, `PveApi`, `P
 | `/cluster/mapping/{pci,usb,dir}` | Resource mappings | 🗓 M9 |
 | `/cluster/notifications/*` | Notification targets & matchers (also used for push, M3) | 🗓 M3 (webhook setup) / M9 (full) |
 | `/cluster/metrics/*` | External metric servers | 🗓 M9 |
-| `/cluster/acme/*` | ACME accounts & plugins | 🗓 M9 |
+| `/cluster/acme/{account,directories,meta,plugins,challenge-schema}` | ACME accounts (register with the CA's terms and external account binding, deactivate), DNS challenge plugins (add, change with the digest, delete; credentials base64-encoded as Proxmox stores them) | ✅ M9 (`tos`, updating an account's contact 🗓) |
 | `/cluster/config/*` | Create/join cluster, corosync | 🗓 M9 |
 | `GET /cluster/jobs/schedule-analyze` | Next runs of a calendar event (backup job preview) | ✅ |
 | `/cluster/jobs/realm-sync` | Scheduled realm sync jobs | 🗓 M9 |
@@ -94,7 +94,7 @@ Code: `core/network/src/main/kotlin/.../network/api/` (`AccessApi`, `PveApi`, `P
 | `GET/PUT /nodes/{node}/dns`, `GET/POST /nodes/{node}/hosts`, `GET/PUT /nodes/{node}/time` | DNS servers and search domain, /etc/hosts (with its digest), time zone | ✅ |
 | `GET /nodes/{node}/subscription` | Subscription status (on the Updates screen) | ✅ |
 | `PUT/DELETE /nodes/{node}/subscription` | Entering or removing a key | ✅ |
-| `/nodes/{node}/certificates/*` | Certificates, ACME orders | 🗓 M9 |
+| `/nodes/{node}/certificates/{info,custom,acme/certificate}`, `/nodes/{node}/config` | The node's certificates; upload or remove a custom one; order and renew through ACME; the node's ACME account and domains (`acme`, `acmedomain0`–`5`, with the digest) | ✅ M9 (revoking 🗓) |
 | `/nodes/{node}/firewall/{rules,options}` | Node firewall | ✅ |
 | `/nodes/{node}/firewall/log` | Node firewall log | ✅ M4 |
 | `/nodes/{node}/ceph/*` | Status; OSDs (create on an unused disk, in/out, scrub, start/stop/restart, destroy); pools (create, edit, delete); monitors, managers and metadata servers (add, start/stop/restart, remove); CephFS (list, create); `cfg/raw`, `cfg/db`, `crush`, `log`, `rules` | ✅ M6 (`init`, installing Ceph and removing a CephFS stay in the web UI) |

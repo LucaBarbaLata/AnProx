@@ -7,6 +7,15 @@ All notable changes to AnProx are documented here. The format follows
 ## [Unreleased]
 
 ### Added
+- **Certificates** (Node → Certificates): the certificate the web interface serves, the node's
+  own and the cluster CA, with who issued them, their names, fingerprint and the days left
+  (amber in the last 30). **ACME** (Let's Encrypt): the node's account and domains (HTTP on port
+  80 or a DNS plugin, with an optional DNS alias), **Order certificate** and **Renew** with the
+  task log. **Upload a certificate** of your own (PEM chain and key) or remove it. Datacenter →
+  **ACME accounts and plugins**: register an account (the CA's terms, external account binding
+  when the CA needs it), deactivate one, and add, change or delete DNS plugins with their
+  credentials.
+
 - **Single sign-on (OpenID Connect)** for Proxmox VE and Backup Server realms of type OpenID:
   pick the realm on the login screen and tap **Sign in with *realm***. The identity provider's
   page opens in the app (its host shows at the top); after sign-in the app takes the account the

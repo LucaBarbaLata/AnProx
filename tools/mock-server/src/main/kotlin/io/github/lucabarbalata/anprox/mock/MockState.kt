@@ -293,6 +293,9 @@ class MockState(
 
     internal val sdn = MockSdn()
 
+    /** Node certificates and ACME (M9). */
+    internal val certificates = MockCertificates(nodes.map { it.name }) { clockMillis() / 1000 }
+
     /** Ceph across the three nodes; off until a test or the runnable mock sets `installed`. */
     val ceph = MockCeph(
         online = { n -> node(n)?.online == true },

@@ -74,6 +74,7 @@ import kotlinx.serialization.Serializable
 @Serializable data class SdnRoute(val serverId: String)
 @Serializable data class ClusterLogRoute(val serverId: String)
 @Serializable data class DatacenterOptionsRoute(val serverId: String)
+@Serializable data class AcmeRoute(val serverId: String)
 @Serializable data class SdnVnetRoute(val serverId: String, val vnet: String)
 @Serializable data class SdnIpamRoute(val serverId: String, val ipam: String)
 // Backup Server (M8). ns "" is the root namespace.

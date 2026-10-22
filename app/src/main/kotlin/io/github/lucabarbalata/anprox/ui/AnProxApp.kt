@@ -105,6 +105,7 @@ import io.github.lucabarbalata.anprox.ui.navigation.AppLinks
 import io.github.lucabarbalata.anprox.ui.navigation.AgentRoute
 import io.github.lucabarbalata.anprox.ui.navigation.BackupGroupRoute
 import io.github.lucabarbalata.anprox.ui.navigation.BackupJobEditorRoute
+import io.github.lucabarbalata.anprox.ui.navigation.AcmeRoute
 import io.github.lucabarbalata.anprox.ui.navigation.BackupJobsRoute
 import io.github.lucabarbalata.anprox.ui.navigation.BackupServerRoute
 import io.github.lucabarbalata.anprox.ui.navigation.BackupsRoute
@@ -164,6 +165,8 @@ import io.github.lucabarbalata.anprox.ui.navigation.UserEditorRoute
 import io.github.lucabarbalata.anprox.ui.navigation.UserRoute
 import io.github.lucabarbalata.anprox.ui.navigation.UsersRoute
 import io.github.lucabarbalata.anprox.ui.navigation.firewallScope
+import io.github.lucabarbalata.anprox.ui.node.AcmeScreen
+import io.github.lucabarbalata.anprox.ui.node.CertificatesScreen
 import io.github.lucabarbalata.anprox.ui.node.DisksScreen
 import io.github.lucabarbalata.anprox.ui.node.JournalScreen
 import io.github.lucabarbalata.anprox.ui.node.NetworkScreen
@@ -328,6 +331,7 @@ fun AnProxApp() {
                     onSdn = { nav.navigate(SdnRoute(route.serverId)) },
                     onClusterLog = { nav.navigate(ClusterLogRoute(route.serverId)) },
                     onOptions = { nav.navigate(DatacenterOptionsRoute(route.serverId)) },
+                    onAcme = { nav.navigate(AcmeRoute(route.serverId)) },
                     onAccess = { page ->
                         when (page) {
                             AccessPage.USERS -> nav.navigate(UsersRoute(route.serverId))
@@ -697,7 +701,17 @@ fun AnProxApp() {
                     NodeAdminPage.SYSTEM -> SystemSettingsScreen(r.serverId, r.node, onBack = back, onTask = openTask)
                     NodeAdminPage.NETWORK -> NetworkScreen(r.serverId, r.node, onBack = back, onTask = openTask)
                     NodeAdminPage.DISKS -> DisksScreen(r.serverId, r.node, onBack = back, onTask = openTask)
+                    NodeAdminPage.CERTIFICATES -> CertificatesScreen(
+                        r.serverId,
+                        r.node,
+                        onBack = back,
+                        onTask = openTask,
+                        onAcme = { nav.navigate(AcmeRoute(r.serverId)) },
+                    )
                 }
+            }
+            composable<AcmeRoute> { entry ->
+                AcmeScreen(entry.toRoute<AcmeRoute>().serverId, onBack = back, onTask = openTask)
             }
             composable<TaskLogRoute> { entry ->
                 val r = entry.toRoute<TaskLogRoute>()

@@ -65,6 +65,16 @@ Tick each line, or note what happened instead.
    closes; Servers shows the account the provider named (`you@realm`).
 3. **×** on the provider's page goes back to the login screen without signing in.
 
+### A2. Certificates, new after beta.2
+1. Node → **Certificates** (behind **More**): the cards match the web UI's Node → System →
+   Certificates (names, issuer, valid until).
+2. If you use ACME: the account and domains match; **Renew** in the last 30 days renews (the log
+   ends with "Restarting pveproxy"), earlier it asks first. Datacenter → **ACME accounts and
+   plugins** lists the same accounts and plugins as the web UI.
+3. Only on a test node: **Upload a certificate** with a self-signed one (`openssl req -x509 …`),
+   then **Remove certificate in use**. The app keeps working (it may need "Allow insecure
+   certificate").
+
 ### A. Network card (guest agent)
 1. Start the test VM, open it. Tap **Network**: you see the OS name and its IP addresses
    (no `127.0.0.1` or `fe80::` noise).

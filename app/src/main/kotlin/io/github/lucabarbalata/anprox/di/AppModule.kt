@@ -26,6 +26,7 @@ import io.github.lucabarbalata.anprox.data.hardware.HardwareRepository
 import io.github.lucabarbalata.anprox.data.hub.ServerHub
 import io.github.lucabarbalata.anprox.data.metrics.MetricsRepository
 import io.github.lucabarbalata.anprox.data.metrics.MetricsSource
+import io.github.lucabarbalata.anprox.data.node.CertificateRepository
 import io.github.lucabarbalata.anprox.data.node.NodeAdminRepository
 import io.github.lucabarbalata.anprox.data.security.AppLock
 import io.github.lucabarbalata.anprox.data.snapshot.SnapshotRepository
@@ -102,6 +103,8 @@ import io.github.lucabarbalata.anprox.ui.hardware.HardwareViewModel
 import io.github.lucabarbalata.anprox.ui.login.LoginViewModel
 import io.github.lucabarbalata.anprox.ui.metrics.PerformanceViewModel
 import io.github.lucabarbalata.anprox.ui.navigation.AppLinks
+import io.github.lucabarbalata.anprox.ui.node.AcmeViewModel
+import io.github.lucabarbalata.anprox.ui.node.CertificatesViewModel
 import io.github.lucabarbalata.anprox.ui.node.DisksViewModel
 import io.github.lucabarbalata.anprox.ui.node.JournalViewModel
 import io.github.lucabarbalata.anprox.ui.node.NetworkViewModel
@@ -184,6 +187,7 @@ val appModule = module {
     single { StorageSetupRepository(get()) }
     single { ProfileTransfer(get(), get()) }
     single { NodeAdminRepository(get()) }
+    single { CertificateRepository(get()) }
     single { FavouriteRepository(get(), get()) }
 
     // Background alerts
@@ -234,6 +238,8 @@ val appModule = module {
     viewModel { (serverId: String, node: String) -> JournalViewModel(serverId, node, get()) }
     viewModel { (serverId: String, node: String) -> TaskHistoryViewModel(serverId, node, get()) }
     viewModel { (serverId: String, node: String) -> SystemSettingsViewModel(serverId, node, get()) }
+    viewModel { (serverId: String, node: String) -> CertificatesViewModel(serverId, node, get(), get()) }
+    viewModel { (serverId: String) -> AcmeViewModel(serverId, get(), get()) }
     viewModel { (serverId: String, node: String) -> NetworkViewModel(serverId, node, get(), get()) }
     viewModel { (serverId: String, node: String) -> DisksViewModel(serverId, node, get(), get()) }
     viewModel { TasksViewModel(get()) }

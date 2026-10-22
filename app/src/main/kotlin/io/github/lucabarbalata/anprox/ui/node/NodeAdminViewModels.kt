@@ -35,7 +35,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /** The node pages under Node → Administration (milestone M5). */
-enum class NodeAdminPage { UPDATES, REPOSITORIES, SERVICES, NETWORK, DISKS, SYSTEM, JOURNAL, TASKS }
+enum class NodeAdminPage { UPDATES, REPOSITORIES, SERVICES, NETWORK, DISKS, SYSTEM, JOURNAL, TASKS, CERTIFICATES }
 
 // ------------------------------------------------------------------------------ updates
 

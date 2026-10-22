@@ -32,6 +32,7 @@ import androidx.compose.material.icons.outlined.Storage
 import androidx.compose.material.icons.outlined.SwapHoriz
 import androidx.compose.material.icons.outlined.SystemUpdateAlt
 import androidx.compose.material.icons.outlined.Terminal
+import androidx.compose.material.icons.outlined.VerifiedUser
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -299,6 +300,7 @@ private fun nodeTools(
     ToolEntry(Icons.Outlined.Storage, stringResource(R.string.disks_title)) { onAdmin(NodeAdminPage.DISKS) },
     ToolEntry(Icons.Outlined.CloudDownload, stringResource(R.string.repos_title)) { onAdmin(NodeAdminPage.REPOSITORIES) },
     ToolEntry(Icons.Outlined.Language, stringResource(R.string.system_title)) { onAdmin(NodeAdminPage.SYSTEM) },
+    ToolEntry(Icons.Outlined.VerifiedUser, stringResource(R.string.cert_title)) { onAdmin(NodeAdminPage.CERTIFICATES) },
     ToolEntry(Icons.Outlined.History, stringResource(R.string.taskhistory_title)) { onAdmin(NodeAdminPage.TASKS) },
 )
 

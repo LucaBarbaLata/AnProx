@@ -1,6 +1,9 @@
 package io.github.lucabarbalata.anprox.network.api
 
 import io.github.lucabarbalata.anprox.model.ApiEnvelope
+import io.github.lucabarbalata.anprox.model.pve.AcmeAccountName
+import io.github.lucabarbalata.anprox.model.pve.AcmeDirectory
+import io.github.lucabarbalata.anprox.model.pve.AcmeMeta
 import io.github.lucabarbalata.anprox.model.pve.AgentInterface
 import io.github.lucabarbalata.anprox.model.pve.AgentOsInfo
 import io.github.lucabarbalata.anprox.model.pve.AgentResult
@@ -9,6 +12,7 @@ import io.github.lucabarbalata.anprox.model.pve.ApplianceTemplate
 import io.github.lucabarbalata.anprox.model.pve.AptRepositories
 import io.github.lucabarbalata.anprox.model.pve.AptUpdate
 import io.github.lucabarbalata.anprox.model.pve.CephStatus
+import io.github.lucabarbalata.anprox.model.pve.CertificateInfo
 import io.github.lucabarbalata.anprox.model.pve.CifsShare
 import io.github.lucabarbalata.anprox.model.pve.ClusterLogEntry
 import io.github.lucabarbalata.anprox.model.pve.ClusterResource
@@ -1162,4 +1166,71 @@ interface PveApi {
     /** Throws the pending changes away (Proxmox VE 8.4 and later). */
     @POST("cluster/sdn/rollback")
     suspend fun rollbackSdn(): ApiEnvelope<JsonElement>
+
+    // ------------------------------------------------------------------ certificates and ACME (M9)
+
+    @GET("nodes/{node}/certificates/info")
+    suspend fun certificates(@Path("node") node: String): ApiEnvelope<List<CertificateInfo>>
+
+    @FormUrlEncoded
+    @POST("nodes/{node}/certificates/custom")
+    suspend fun uploadCustomCertificate(@Path("node") node: String, @FieldMap params: Map<String, String>): ApiEnvelope<JsonElement>
+
+    @DELETE("nodes/{node}/certificates/custom")
+    suspend fun removeCustomCertificate(@Path("node") node: String, @Query("restart") restart: Int = 1): ApiEnvelope<JsonElement>
+
+    /** Orders a certificate for the node's ACME domains; answers the task's UPID. */
+    @FormUrlEncoded
+    @POST("nodes/{node}/certificates/acme/certificate")
+    suspend fun orderAcmeCertificate(@Path("node") node: String, @Field("force") force: Int): ApiEnvelope<String>
+
+    /** Renews it (refused more than 30 days before it expires unless [force]); a task. */
+    @FormUrlEncoded
+    @PUT("nodes/{node}/certificates/acme/certificate")
+    suspend fun renewAcmeCertificate(@Path("node") node: String, @Field("force") force: Int): ApiEnvelope<String>
+
+    @GET("nodes/{node}/config")
+    suspend fun nodeConfig(@Path("node") node: String): ApiEnvelope<JsonObject>
+
+    @FormUrlEncoded
+    @PUT("nodes/{node}/config")
+    suspend fun setNodeConfig(@Path("node") node: String, @FieldMap params: Map<String, String>): ApiEnvelope<JsonElement>
+
+    @GET("cluster/acme/account")
+    suspend fun acmeAccounts(): ApiEnvelope<List<AcmeAccountName>>
+
+    @GET("cluster/acme/account/{name}")
+    suspend fun acmeAccount(@Path("name") name: String): ApiEnvelope<JsonObject>
+
+    /** Registers an account with the CA; a task. */
+    @FormUrlEncoded
+    @POST("cluster/acme/account")
+    suspend fun registerAcmeAccount(@FieldMap params: Map<String, String>): ApiEnvelope<String>
+
+    /** Deactivates the account at the CA and removes it; a task. */
+    @DELETE("cluster/acme/account/{name}")
+    suspend fun deactivateAcmeAccount(@Path("name") name: String): ApiEnvelope<String>
+
+    @GET("cluster/acme/directories")
+    suspend fun acmeDirectories(): ApiEnvelope<List<AcmeDirectory>>
+
+    @GET("cluster/acme/meta")
+    suspend fun acmeMeta(@Query("directory") directory: String): ApiEnvelope<AcmeMeta>
+
+    @GET("cluster/acme/plugins")
+    suspend fun acmePlugins(): ApiEnvelope<List<JsonObject>>
+
+    @FormUrlEncoded
+    @POST("cluster/acme/plugins")
+    suspend fun createAcmePlugin(@FieldMap params: Map<String, String>): ApiEnvelope<JsonElement>
+
+    @FormUrlEncoded
+    @PUT("cluster/acme/plugins/{id}")
+    suspend fun updateAcmePlugin(@Path("id") id: String, @FieldMap params: Map<String, String>): ApiEnvelope<JsonElement>
+
+    @DELETE("cluster/acme/plugins/{id}")
+    suspend fun deleteAcmePlugin(@Path("id") id: String): ApiEnvelope<JsonElement>
+
+    @GET("cluster/acme/challenge-schema")
+    suspend fun acmeChallengeSchema(): ApiEnvelope<List<JsonObject>>
 }
