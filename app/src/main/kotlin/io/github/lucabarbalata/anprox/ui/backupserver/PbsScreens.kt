@@ -98,7 +98,6 @@ import io.github.lucabarbalata.anprox.model.pbs.PbsJobKind
 import io.github.lucabarbalata.anprox.model.pbs.PbsNamespace
 import io.github.lucabarbalata.anprox.model.pbs.PbsRemoteForm
 import io.github.lucabarbalata.anprox.model.pve.DangerLevel
-import io.github.lucabarbalata.anprox.ui.access.AccessPage
 import io.github.lucabarbalata.anprox.ui.common.AnProxScaffold
 import io.github.lucabarbalata.anprox.ui.common.BusyCard
 import io.github.lucabarbalata.anprox.ui.common.ChoiceChips
@@ -114,6 +113,7 @@ import io.github.lucabarbalata.anprox.ui.common.asString
 import io.github.lucabarbalata.anprox.ui.common.contentPadding
 import io.github.lucabarbalata.anprox.ui.common.formatDuration
 import io.github.lucabarbalata.anprox.ui.common.relativeTime
+import io.github.lucabarbalata.anprox.ui.datacenter.AccessPage
 import io.github.lucabarbalata.anprox.ui.node.NodeAdminPage
 import java.text.DateFormat
 import java.util.Date
