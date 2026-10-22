@@ -1,27 +1,43 @@
 package io.github.lucabarbalata.anprox.ui.node
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.CloudDownload
 import androidx.compose.material.icons.outlined.Computer
+import androidx.compose.material.icons.outlined.Description
+import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Inventory2
 import androidx.compose.material.icons.outlined.Key
+import androidx.compose.material.icons.outlined.Language
+import androidx.compose.material.icons.outlined.MoreHoriz
 import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.PowerSettingsNew
 import androidx.compose.material.icons.outlined.RestartAlt
+import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.SettingsEthernet
 import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material.icons.outlined.StopCircle
+import androidx.compose.material.icons.outlined.Storage
 import androidx.compose.material.icons.outlined.SwapHoriz
+import androidx.compose.material.icons.outlined.SystemUpdateAlt
 import androidx.compose.material.icons.outlined.Terminal
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
@@ -41,19 +57,15 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.lucabarbalata.anprox.R
-import io.github.lucabarbalata.anprox.core.designsystem.component.AnProxButton
-import io.github.lucabarbalata.anprox.core.designsystem.component.ButtonStyle
 import io.github.lucabarbalata.anprox.core.designsystem.component.ErrorBanner
 import io.github.lucabarbalata.anprox.core.designsystem.component.GlassCard
 import io.github.lucabarbalata.anprox.core.designsystem.component.InfoRow
-import io.github.lucabarbalata.anprox.core.designsystem.component.SectionHeader
 import io.github.lucabarbalata.anprox.core.designsystem.component.StatusDot
-import io.github.lucabarbalata.anprox.core.designsystem.component.UsageRing
 import io.github.lucabarbalata.anprox.core.designsystem.theme.AnProxTheme
-import io.github.lucabarbalata.anprox.core.designsystem.theme.MonoStyle
 import io.github.lucabarbalata.anprox.data.guest.GuestRef
 import io.github.lucabarbalata.anprox.data.metrics.MetricsSource
 import io.github.lucabarbalata.anprox.model.format.Formatters
+import io.github.lucabarbalata.anprox.model.pve.ClusterResource
 import io.github.lucabarbalata.anprox.model.pve.GuestType
 import io.github.lucabarbalata.anprox.model.pve.NodePowerAction
 import io.github.lucabarbalata.anprox.model.pve.NodeStatus
@@ -61,10 +73,13 @@ import io.github.lucabarbalata.anprox.security.LocalDangerousActionGuard
 import io.github.lucabarbalata.anprox.ui.common.AnProxScaffold
 import io.github.lucabarbalata.anprox.ui.common.CheckRow
 import io.github.lucabarbalata.anprox.ui.common.ChoiceChips
+import io.github.lucabarbalata.anprox.ui.common.CollapsibleHeader
 import io.github.lucabarbalata.anprox.ui.common.ConfirmActionDialog
 import io.github.lucabarbalata.anprox.ui.common.FormLabel
-import io.github.lucabarbalata.anprox.ui.common.MenuRow
 import io.github.lucabarbalata.anprox.ui.common.TaskResultSnackbar
+import io.github.lucabarbalata.anprox.ui.common.ToolEntry
+import io.github.lucabarbalata.anprox.ui.common.ToolGrid
+import io.github.lucabarbalata.anprox.ui.common.UsageLine
 import io.github.lucabarbalata.anprox.ui.common.asString
 import io.github.lucabarbalata.anprox.ui.common.contentPadding
 import io.github.lucabarbalata.anprox.ui.common.formatDuration
@@ -97,93 +112,36 @@ fun NodeScreen(
         }
     }
     TaskResultSnackbar(state.result, snackbar, serverId, node, onTask, viewModel::consumeResult)
-    AnProxScaffold(title = node, subtitle = stringResource(R.string.node_subtitle), onBack = onBack, snackbarHostState = snackbar) { inner ->
+    var chartsOpen by rememberSaveable { mutableStateOf(false) }
+    var systemOpen by rememberSaveable { mutableStateOf(false) }
+    AnProxScaffold(
+        title = node,
+        subtitle = stringResource(R.string.node_subtitle),
+        onBack = onBack,
+        snackbarHostState = snackbar,
+        actions = { if (state.online && state.status != null) PowerMenu(state.busy, viewModel::requestPower) },
+    ) { inner ->
         LazyColumn(contentPadding = contentPadding(inner), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             if (!state.online) item { ErrorBanner(stringResource(R.string.node_offline)) }
             state.error?.let { e -> if (state.online) item { ErrorBanner(e.asString()) } }
             state.status?.let { s ->
-                item { Gauges(s) }
+                item { Summary(s, state.online) }
                 if (state.online) {
-                    item { SectionHeader(stringResource(R.string.node_tools)) }
-                    item {
-                        GlassCard(contentPadding = PaddingValues(vertical = 6.dp)) {
-                            MenuRow(Icons.Outlined.Terminal, stringResource(R.string.node_shell), stringResource(R.string.node_shell_body), onShell)
-                            MenuRow(Icons.Outlined.Key, stringResource(R.string.ssh_title), stringResource(R.string.ssh_open_body_node), onSsh)
-                            MenuRow(Icons.Outlined.Computer, stringResource(R.string.node_create_vm), stringResource(R.string.node_create_vm_body)) {
-                                onCreate(GuestType.QEMU)
-                            }
-                            MenuRow(Icons.Outlined.Inventory2, stringResource(R.string.node_create_ct), stringResource(R.string.node_create_ct_body)) {
-                                onCreate(GuestType.LXC)
-                            }
-                            MenuRow(Icons.Outlined.Shield, stringResource(R.string.firewall_title), stringResource(R.string.firewall_open_body_node), onFirewall)
-                        }
-                    }
-                    item { SectionHeader(stringResource(R.string.node_admin)) }
-                    item { NodeAdminCard(onAdmin) }
+                    item { ToolGrid(nodeTools(onShell, onSsh, onCreate, onFirewall, onAdmin)) }
                 }
-                if (state.online) {
-                    item { SectionHeader(stringResource(R.string.perf_title)) }
-                    item { PerformanceSection(MetricsSource.Node(serverId, node)) }
-                }
-                item { SectionHeader(stringResource(R.string.node_system)) }
-                item { SystemInfo(s) }
             }
             if (state.guests.isNotEmpty()) {
-                item { SectionHeader(stringResource(R.string.node_guests, state.guests.size)) }
-                if (state.online) item { BulkCard(state.bulkBusy, viewModel::requestBulk) }
-                items(state.guests, key = { it.id }) { g ->
-                    val type = GuestType.fromApi(g.type)
-                    val appearance = statusAppearance(g.status)
-                    GlassCard(
-                        onClick = if (type != null && g.vmid != null) {
-                            { onGuest(GuestRef(serverId, node, type, g.vmid!!)) }
-                        } else {
-                            null
-                        },
-                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp),
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            StatusDot(appearance.tone)
-                            Spacer(Modifier.width(10.dp))
-                            Text("${g.vmid}", style = MonoStyle, color = AnProxTheme.colors.textTertiary)
-                            Spacer(Modifier.width(8.dp))
-                            Text(
-                                g.name.orEmpty(),
-                                style = MaterialTheme.typography.titleSmall,
-                                color = AnProxTheme.colors.textPrimary,
-                                modifier = Modifier.weight(1f),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                            Text(appearance.label, style = MaterialTheme.typography.labelMedium, color = AnProxTheme.colors.textSecondary)
-                        }
-                    }
-                }
+                item { GuestsHeader(state.guests.size, if (state.online) state.bulkBusy else null, state.online, viewModel::requestBulk) }
+                item { GuestRows(state.guests) { type, vmid -> onGuest(GuestRef(serverId, node, type, vmid)) } }
             }
-            if (state.online && state.status != null) {
-                item { SectionHeader(stringResource(R.string.node_power)) }
-                item {
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        AnProxButton(
-                            text = stringResource(R.string.node_reboot),
-                            onClick = { viewModel.requestPower(NodePowerAction.REBOOT) },
-                            style = ButtonStyle.SECONDARY,
-                            icon = Icons.Outlined.RestartAlt,
-                            enabled = state.busy == null,
-                            loading = state.busy == NodePowerAction.REBOOT,
-                            modifier = Modifier.weight(1f),
-                        )
-                        AnProxButton(
-                            text = stringResource(R.string.node_shutdown),
-                            onClick = { viewModel.requestPower(NodePowerAction.SHUTDOWN) },
-                            style = ButtonStyle.DANGER,
-                            icon = Icons.Outlined.PowerSettingsNew,
-                            enabled = state.busy == null,
-                            loading = state.busy == NodePowerAction.SHUTDOWN,
-                            modifier = Modifier.weight(1f),
-                        )
-                    }
+            state.status?.let { s ->
+                // Charts and the system details start folded: the screen opens on what is used most.
+                if (state.online) {
+                    item { CollapsibleHeader(stringResource(R.string.perf_title), chartsOpen, { chartsOpen = !chartsOpen }) }
+                    if (chartsOpen) item { PerformanceSection(MetricsSource.Node(serverId, node)) }
                 }
+                item { CollapsibleHeader(stringResource(R.string.node_system), systemOpen, { systemOpen = !systemOpen }) }
+                if (systemOpen) item { SystemInfo(s) }
             }
         }
     }
@@ -206,25 +164,143 @@ fun NodeScreen(
     }
 }
 
-/** Start, shut down or migrate every guest on the node, each as one Proxmox task. */
+/**
+ * The guests' header, with a ⋯ menu that starts, shuts down or migrates every guest on the node,
+ * each as one Proxmox task. A bar under it runs while that happens.
+ */
 @Composable
-private fun BulkCard(busy: NodeBulk?, onRequest: (NodeBulk) -> Unit) {
-    GlassCard(contentPadding = PaddingValues(vertical = 6.dp)) {
-        if (busy != null) {
-            LinearProgressIndicator(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp), color = AnProxTheme.colors.accent)
+private fun GuestsHeader(count: Int, busy: NodeBulk?, online: Boolean, onRequest: (NodeBulk) -> Unit) {
+    val c = AnProxTheme.colors
+    var menu by remember { mutableStateOf(false) }
+    Column {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                stringResource(R.string.node_guests, count),
+                style = MaterialTheme.typography.titleSmall,
+                color = c.textSecondary,
+                modifier = Modifier.weight(1f).padding(start = 4.dp),
+            )
+            if (online) {
+                Box {
+                    IconButton(onClick = { menu = true }, enabled = busy == null) {
+                        Icon(Icons.Outlined.MoreHoriz, contentDescription = stringResource(R.string.node_guest_actions), tint = c.textPrimary)
+                    }
+                    DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                        listOf(
+                            Triple(NodeBulk.START_ALL, R.string.node_start_all, Icons.Outlined.PlayArrow),
+                            Triple(NodeBulk.STOP_ALL, R.string.node_stop_all, Icons.Outlined.StopCircle),
+                            Triple(NodeBulk.MIGRATE_ALL, R.string.node_migrate_all, Icons.Outlined.SwapHoriz),
+                        ).forEach { (bulk, label, icon) ->
+                            val danger = bulk == NodeBulk.STOP_ALL
+                            DropdownMenuItem(
+                                text = { Text(stringResource(label), color = if (danger) c.danger else c.textPrimary) },
+                                leadingIcon = { Icon(icon, contentDescription = null, tint = if (danger) c.danger else c.textSecondary) },
+                                onClick = {
+                                    menu = false
+                                    onRequest(bulk)
+                                },
+                            )
+                        }
+                    }
+                }
+            }
         }
-        val idle = busy == null
-        MenuRow(Icons.Outlined.PlayArrow, stringResource(R.string.node_start_all), stringResource(R.string.node_start_all_body)) {
-            if (idle) onRequest(NodeBulk.START_ALL)
-        }
-        MenuRow(Icons.Outlined.StopCircle, stringResource(R.string.node_stop_all), stringResource(R.string.node_stop_all_body)) {
-            if (idle) onRequest(NodeBulk.STOP_ALL)
-        }
-        MenuRow(Icons.Outlined.SwapHoriz, stringResource(R.string.node_migrate_all), stringResource(R.string.node_migrate_all_body)) {
-            if (idle) onRequest(NodeBulk.MIGRATE_ALL)
+        if (busy != null) LinearProgressIndicator(Modifier.fillMaxWidth().padding(top = 4.dp), color = c.accent)
+    }
+}
+
+/** The node's guests as rows of one card: state, name and ID, CPU while running. */
+@Composable
+private fun GuestRows(guests: List<ClusterResource>, onOpen: (GuestType, Int) -> Unit) {
+    val c = AnProxTheme.colors
+    val vm = stringResource(R.string.guest_type_vm)
+    val ct = stringResource(R.string.guest_type_ct)
+    GlassCard(contentPadding = PaddingValues(vertical = 4.dp)) {
+        guests.forEachIndexed { i, g ->
+            if (i > 0) HorizontalDivider(Modifier.padding(horizontal = 16.dp), thickness = 1.dp, color = c.hairline)
+            val type = GuestType.fromApi(g.type)
+            val vmid = g.vmid
+            val appearance = statusAppearance(g.status)
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .then(if (type != null && vmid != null) Modifier.clickable { onOpen(type, vmid) } else Modifier)
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                StatusDot(appearance.tone)
+                Spacer(Modifier.width(12.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(g.name.orEmpty(), style = MaterialTheme.typography.bodyLarge, color = c.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text("${if (type == GuestType.QEMU) vm else ct} $vmid", style = MaterialTheme.typography.bodySmall, color = c.textTertiary)
+                }
+                Text(
+                    when {
+                        g.template -> stringResource(R.string.resources_template)
+                        g.status == "running" -> Formatters.percent(g.cpuFraction)
+                        else -> appearance.label
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = c.textSecondary,
+                )
+            }
         }
     }
 }
+
+/** Reboot and shut down, behind one button in the top bar: rare, and both ask first. */
+@Composable
+private fun PowerMenu(busy: NodePowerAction?, onRequest: (NodePowerAction) -> Unit) {
+    val c = AnProxTheme.colors
+    var menu by remember { mutableStateOf(false) }
+    Box {
+        IconButton(onClick = { menu = true }, enabled = busy == null) {
+            Icon(Icons.Outlined.PowerSettingsNew, contentDescription = stringResource(R.string.node_power))
+        }
+        DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.node_reboot)) },
+                leadingIcon = { Icon(Icons.Outlined.RestartAlt, contentDescription = null, tint = c.textSecondary) },
+                onClick = {
+                    menu = false
+                    onRequest(NodePowerAction.REBOOT)
+                },
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.node_shutdown), color = c.danger) },
+                leadingIcon = { Icon(Icons.Outlined.PowerSettingsNew, contentDescription = null, tint = c.danger) },
+                onClick = {
+                    menu = false
+                    onRequest(NodePowerAction.SHUTDOWN)
+                },
+            )
+        }
+    }
+}
+
+/** The node's tools, most used first; [ToolGrid] folds the rest behind More. */
+@Composable
+private fun nodeTools(
+    onShell: () -> Unit,
+    onSsh: () -> Unit,
+    onCreate: (GuestType) -> Unit,
+    onFirewall: () -> Unit,
+    onAdmin: (NodeAdminPage) -> Unit,
+): List<ToolEntry> = listOf(
+    ToolEntry(Icons.Outlined.Terminal, stringResource(R.string.node_shell), onClick = onShell),
+    ToolEntry(Icons.Outlined.Computer, stringResource(R.string.node_create_vm)) { onCreate(GuestType.QEMU) },
+    ToolEntry(Icons.Outlined.Inventory2, stringResource(R.string.node_create_ct)) { onCreate(GuestType.LXC) },
+    ToolEntry(Icons.Outlined.SystemUpdateAlt, stringResource(R.string.updates_title)) { onAdmin(NodeAdminPage.UPDATES) },
+    ToolEntry(Icons.Outlined.Settings, stringResource(R.string.services_title)) { onAdmin(NodeAdminPage.SERVICES) },
+    ToolEntry(Icons.Outlined.SettingsEthernet, stringResource(R.string.network_title)) { onAdmin(NodeAdminPage.NETWORK) },
+    ToolEntry(Icons.Outlined.Description, stringResource(R.string.journal_title)) { onAdmin(NodeAdminPage.JOURNAL) },
+    ToolEntry(Icons.Outlined.Key, stringResource(R.string.ssh_title), onClick = onSsh),
+    ToolEntry(Icons.Outlined.Shield, stringResource(R.string.firewall_title), onClick = onFirewall),
+    ToolEntry(Icons.Outlined.Storage, stringResource(R.string.disks_title)) { onAdmin(NodeAdminPage.DISKS) },
+    ToolEntry(Icons.Outlined.CloudDownload, stringResource(R.string.repos_title)) { onAdmin(NodeAdminPage.REPOSITORIES) },
+    ToolEntry(Icons.Outlined.Language, stringResource(R.string.system_title)) { onAdmin(NodeAdminPage.SYSTEM) },
+    ToolEntry(Icons.Outlined.History, stringResource(R.string.taskhistory_title)) { onAdmin(NodeAdminPage.TASKS) },
+)
 
 @Composable
 private fun BulkDialog(bulk: NodeBulk, node: String, otherNodes: List<String>, viewModel: NodeViewModel) {
@@ -296,16 +372,25 @@ private fun BulkDialog(bulk: NodeBulk, node: String, otherNodes: List<String>, v
     }
 }
 
+/** The node at a glance: whether it is up and for how long, then CPU, memory and the root disk. */
 @Composable
-private fun Gauges(s: NodeStatus) {
+private fun Summary(s: NodeStatus, online: Boolean) {
+    val c = AnProxTheme.colors
+    val appearance = statusAppearance(if (online) "online" else "offline")
     GlassCard {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-            val cpu = stringResource(R.string.metric_cpu)
-            val ram = stringResource(R.string.metric_ram)
-            val root = stringResource(R.string.metric_root)
-            UsageRing(s.cpu, Formatters.percent(s.cpu), caption = cpu)
-            UsageRing(s.memory.fraction, Formatters.percent(s.memory.fraction), caption = ram)
-            UsageRing(s.rootfs?.fraction, Formatters.percent(s.rootfs?.fraction), caption = root)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            StatusDot(appearance.tone)
+            Spacer(Modifier.width(8.dp))
+            Text(appearance.label, style = MaterialTheme.typography.bodyMedium, color = c.textPrimary)
+            val version = s.pveversion?.substringAfter('/')?.substringBefore('/')
+            val extra = listOfNotNull(formatDuration(s.uptime).takeIf { online && s.uptime > 0 }, version).joinToString(" · ")
+            if (extra.isNotEmpty()) Text(" · $extra", style = MaterialTheme.typography.bodyMedium, color = c.textSecondary, maxLines = 1)
+        }
+        Spacer(Modifier.height(16.dp))
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            UsageLine(stringResource(R.string.metric_cpu), Formatters.percent(s.cpu), s.cpu)
+            UsageLine(stringResource(R.string.guest_memory), Formatters.usage(s.memory.used, s.memory.total), s.memory.fraction)
+            s.rootfs?.let { UsageLine(stringResource(R.string.metric_root), Formatters.usage(it.used, it.total), it.fraction) }
         }
     }
 }

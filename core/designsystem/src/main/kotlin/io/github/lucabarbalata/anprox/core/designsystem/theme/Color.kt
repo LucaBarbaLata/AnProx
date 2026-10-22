@@ -5,7 +5,7 @@ import androidx.compose.ui.graphics.Color
 
 /**
  * Midnight colour tokens (docs/design-system.md → "Colour"): a flat navy page, solid cards, one
- * accent. (The token names still say "glass": the look was translucent before 0.1.0-beta.4.)
+ * accent. (The token names still say "glass": the look was translucent before 0.1.0-beta.3.)
  *
  * The app does not use Material You dynamic colour: the bespoke palette is the identity
  * (questionnaire Q29/Q37). Material components still get a matching [androidx.compose.material3.ColorScheme]

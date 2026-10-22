@@ -244,6 +244,24 @@ All notable changes to AnProx are documented here. The format follows
   it on the new phone. Servers already there are replaced, the rest added.
 
 ### Changed
+- **A calmer design** ([ADR 0016](docs/adr/0016-calm-midnight.md)): the same Midnight colours,
+  without the clutter.
+  - The page is one flat navy (or white, or black); cards are solid, without glows, borders or
+    highlights; buttons and bars are solid; the accent is the only colour that isn't a status.
+    Section headers are no longer upper case. Faint text is easier to read (4.6:1 and 4.8:1).
+  - **Overview:** one card per server with three numbers (guests running, CPU, memory), its
+    nodes in a line each and its own warnings; the totals tiles and the separate "Needs
+    attention" list are gone. Favourites are one card.
+  - **Guests:** one summary card (state, uptime, first address, CPU, memory, disk) with
+    **Console** and the power action that fits (Start, Shut down or Resume); the other power
+    actions are in a ⋯ menu. Tools are a grid of icons, with **More** for the rarer ones.
+    Network, Performance and Details are folded until you open them.
+  - **Nodes:** the same summary card and tool grid (Shell, Create VM, Create container, Updates,
+    Services, Network, System log, then More); actions for all guests in a ⋯ beside the guest
+    list; reboot and shutdown behind the power icon in the top bar; Performance and System folded.
+  - **Resources:** rows share one card: a dot, the name, "VM 100 · node", and the CPU (or how
+    full a storage is) on the right. No type icons, tags or bars per row; filters are plain words.
+  - **Datacenter** and **More** list titles only, in small groups.
 - Consoles have a **Console details** button (the ⓘ in the top bar): what the connection
   received and sent, the Android System WebView version, the page's size and any error the page
   reported. Page errors also show above the console. This is for reporting console problems.

@@ -12,7 +12,7 @@ The goal is every function of the web UI in a fast, beautiful, native app.
 | Platform | Android 8.0+ (phones, tablets, foldables) |
 | Built with | Kotlin, Jetpack Compose, coroutines, OkHttp/Retrofit, Koin |
 | Servers | Proxmox VE 9 (8 best-effort), Proxmox Backup Server 4 (3 best-effort) |
-| Design | "Midnight Glass", a bespoke dark-first design with light, dark and AMOLED themes |
+| Design | "Midnight", a calm bespoke dark-first design with light, dark and AMOLED themes |
 | Privacy | No analytics, no ads, no Google services. The app only talks to your own servers. |
 | License | [GPL-3.0](LICENSE) |
 | Status | **Beta**: [0.1.0-beta.2](https://github.com/LucaBarbaLata/AnProx/releases/tag/v0.1.0-beta.2) (milestone M1, daily driver, plus consoles and guest management). See the [roadmap](docs/roadmap.md). |

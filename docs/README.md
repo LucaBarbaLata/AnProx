@@ -18,7 +18,7 @@ back to one of its 40 answers, cited as **Q1–Q40**.
 
 - [Getting started](getting-started.md): install the tools, build, run, debug
 - [Architecture](architecture.md): modules, layers, data flow, and a step-by-step recipe for new features
-- [Design system](design-system.md): Midnight Glass tokens, components, motion and accessibility
+- [Design system](design-system.md): Midnight tokens, components, screen patterns, motion and accessibility
 - [Testing](testing.md): unit and integration tests, the mock server, the emulator end-to-end tour, the manual checklist
 - [Releasing](releasing.md): signing key setup, version numbers, the Release workflow, distribution channels
 - [Decision records (ADRs)](adr/README.md): the reasoning behind each major technical choice

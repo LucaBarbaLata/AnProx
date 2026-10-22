@@ -44,16 +44,12 @@
     <string name="status_offline">Offline</string>
     <string name="status_available">Available</string>
     <string name="status_unknown">Unknown</string>
-    <string name="status_quorate">Quorate</string>
-    <string name="status_no_quorum">No quorum</string>
-    <string name="status_standalone">Standalone</string>
     <string name="auth_signed_in">Signed in</string>
     <string name="auth_signed_out">Signed out</string>
     <string name="auth_expired">Session expired</string>
 
     <!-- Metrics -->
     <string name="metric_cpu">CPU</string>
-    <string name="metric_ram">RAM</string>
     <string name="metric_disk">Disk</string>
     <string name="metric_root">Root</string>
 
@@ -146,15 +142,15 @@
     <string name="dashboard_subtitle">%1$d servers · live every %2$d s</string>
     <string name="dashboard_welcome_title">Welcome to AnProx</string>
     <string name="dashboard_welcome_body">Manage your Proxmox VE clusters and Backup Servers from your pocket. Start by adding a server.</string>
-    <string name="dashboard_vms_running">VMs running</string>
-    <string name="dashboard_cts_running">Containers running</string>
-    <string name="dashboard_nodes_online">Nodes online</string>
-    <string name="dashboard_attention">Needs attention</string>
-    <string name="dashboard_servers">Servers</string>
+    <string name="dashboard_guests_running">Guests running</string>
+    <string name="dashboard_cpu_value">CPU %1$s</string>
+    <string name="dashboard_node_load">CPU %1$s · RAM %2$s</string>
+    <plurals name="dashboard_nodes">
+        <item quantity="one">%1$d node</item>
+        <item quantity="other">%1$d nodes</item>
+    </plurals>
     <string name="dashboard_connecting">Connecting…</string>
     <string name="dashboard_stale">Showing data from %1$s. The latest refresh failed.</string>
-    <string name="dashboard_vms_line">VMs %1$d / %2$d running</string>
-    <string name="dashboard_cts_line">Containers %1$d / %2$d running</string>
     <string name="dashboard_full_in">full %1$s</string>
     <string name="dashboard_failed_tasks">%1$d recent tasks failed</string>
     <string name="alert_signed_out">Not signed in. Tap to sign in.</string>
@@ -175,7 +171,6 @@
     <string name="resources_pick_body">Select a VM or container on the left to see its details here.</string>
     <string name="resources_template">Template</string>
     <string name="resources_shared">Shared</string>
-    <string name="resources_vcpus">%1$d vCPU</string>
     <string name="resources_cores">%1$d cores</string>
     <string name="filter_all">All</string>
     <string name="filter_vms">VMs</string>
@@ -186,10 +181,13 @@
     <!-- Guest -->
     <string name="guest_type_vm">VM</string>
     <string name="guest_type_ct">CT</string>
-    <string name="guest_power">Power</string>
     <string name="guest_details">Details</string>
-    <string name="guest_more_tools">Tools</string>
     <string name="guest_network_section">Network</string>
+    <string name="guest_power_other">Other power actions</string>
+    <string name="tools_more">More</string>
+    <string name="tools_fewer">Fewer</string>
+    <string name="state_expanded">Expanded</string>
+    <string name="state_collapsed">Collapsed</string>
     <string name="guest_network_loading">Asking the guest for its addresses…</string>
     <string name="guest_os">Operating system</string>
     <string name="guest_agent_missing">Install the QEMU guest agent in this VM (qemu-guest-agent), turn on Tools → Options → QEMU guest agent, then stop and start the VM to see its IP addresses.</string>
@@ -224,7 +222,6 @@
 
     <!-- Guest options (Q19) -->
     <string name="options_title">Options</string>
-    <string name="options_open_body">Name, tags, notes, start at boot, protection</string>
     <string name="options_name_vm">Name</string>
     <string name="options_name_ct">Hostname</string>
     <string name="options_name_error">Letters, digits, hyphens and dots only, like web-01 or web.lan</string>
@@ -278,8 +275,6 @@
 
     <!-- Consoles (Q15) -->
     <string name="console_title">Console</string>
-    <string name="console_open_body_vm">The VM\'s screen (noVNC)</string>
-    <string name="console_open_body_ct">The container\'s terminal</string>
     <string name="console_reconnect">Reconnect</string>
     <string name="console_connecting">Connecting…</string>
     <string name="console_connected">Connected</string>
@@ -300,8 +295,6 @@
 
     <!-- SSH client (Q15) -->
     <string name="ssh_title">SSH</string>
-    <string name="ssh_open_body_node">Sign in with the app\'s SSH client, with a key or a password</string>
-    <string name="ssh_open_body_guest">SSH to the guest\'s address (from its guest agent)</string>
     <string name="ssh_failed">Couldn\'t connect over SSH</string>
     <string name="ssh_intro">AnProx connects straight to this address, not through Proxmox. The address the cluster reports is filled in; change it if the phone reaches the machine at another one (VPN, port forwarding).</string>
     <string name="ssh_host">Host or IP address</string>
@@ -373,9 +366,7 @@
     <string name="ssh_host_forget_body">The next connection asks again whether to trust its host key.</string>
 
     <!-- Node tools and power (Q12) -->
-    <string name="node_tools">Tools</string>
     <string name="node_shell">Shell</string>
-    <string name="node_shell_body">A root terminal on this node (needs the Sys.Console permission)</string>
     <string name="node_power">Power</string>
     <string name="node_reboot">Reboot</string>
     <string name="node_shutdown">Shut down</string>
@@ -388,8 +379,6 @@
 
     <!-- Clone and templates (Q18) -->
     <string name="clone_title">Clone</string>
-    <string name="clone_open_body">Copy to a new ID or node, or make it a template</string>
-    <string name="clone_open_body_template">Create new guests from this template</string>
     <string name="clone_id">New ID</string>
     <string name="clone_id_error">Use a number from 100 to 999999999</string>
     <string name="clone_name_help">Optional. Leave it empty to let Proxmox choose.</string>
@@ -421,10 +410,6 @@
 
     <!-- Migration (Q18) -->
     <string name="migrate_title">Migrate</string>
-    <string name="migrate_open_body">Move to another node</string>
-    <string name="destroy_vm">Delete VM</string>
-    <string name="destroy_ct">Delete container</string>
-    <string name="destroy_open_body">Remove it with its disks and snapshots</string>
     <string name="destroy_vm_title">Delete VM %1$d (%2$s)?</string>
     <string name="destroy_ct_title">Delete container %1$d (%2$s)?</string>
     <string name="destroy_message">Its disks and snapshots are deleted for good. Backups are kept.</string>
@@ -475,7 +460,6 @@
 
     <!-- Backups (M1) -->
     <string name="backups_title">Backups</string>
-    <string name="backups_open_body">Back up now and restore</string>
     <string name="storage_subtitle">Backups · %1$s</string>
     <string name="backup_now">Back up now</string>
     <string name="backup_now_title">Back up now</string>
@@ -522,7 +506,6 @@
 
     <!-- Snapshots (M1) -->
     <string name="snapshots_title">Snapshots</string>
-    <string name="snapshots_open_body">Save this state and roll back to it later</string>
     <string name="snapshots_take">Take snapshot</string>
     <string name="snapshots_empty_title">No snapshots yet</string>
     <string name="snapshots_empty_body">A snapshot saves the disks, and optionally the memory, so you can return to exactly this state later. Take one before upgrades or risky changes.</string>
@@ -551,7 +534,6 @@
     <string name="snapshot_delete_title">Delete snapshot %1$s?</string>
     <string name="snapshot_delete_message">The snapshot is removed for good. The guest’s current state is not affected.</string>
     <string name="agent_title">Guest agent</string>
-    <string name="agent_open_body">Freeze or trim filesystems, set a user\'s password</string>
     <string name="agent_unavailable">The guest agent isn\'t answering. Check that qemu-guest-agent is installed and running in the VM.\n\n%1$s</string>
     <string name="agent_filesystems">Filesystems</string>
     <string name="agent_state_thawed">Writable</string>
@@ -592,18 +574,16 @@
     <string name="node_subtitle">Node</string>
     <string name="node_offline">This node is offline. Showing what the cluster last knew.</string>
     <string name="node_system">System</string>
+    <string name="node_guest_actions">Actions for all guests</string>
     <string name="node_guests">Guests on this node (%1$d)</string>
     <string name="node_start_all">Start all</string>
-    <string name="node_start_all_body">Start the stopped guests in their start order</string>
     <string name="node_start_all_title">Start the guests on %1$s?</string>
     <string name="node_start_all_message">Stopped guests start one after another, in their start order. Templates are skipped.</string>
     <string name="node_start_all_force">Also guests that aren\'t set to start at boot</string>
     <string name="node_stop_all">Shut down all</string>
-    <string name="node_stop_all_body">Shut down every running guest, in reverse start order</string>
     <string name="node_stop_all_title">Shut down every guest on %1$s?</string>
     <string name="node_stop_all_message">Each guest is asked to shut down; those that don\'t within their timeout are stopped hard. Services on them are unavailable until you start them again.</string>
     <string name="node_migrate_all">Migrate all</string>
-    <string name="node_migrate_all_body">Move every guest to another node, for example before maintenance</string>
     <string name="node_migrate_all_title">Migrate every guest from %1$s?</string>
     <string name="node_migrate_all_message">Running guests move live, stopped ones offline.</string>
     <string name="node_migrate_all_target">To node</string>
@@ -649,10 +629,6 @@
 
     <!-- More / settings / about -->
     <string name="more_title">More</string>
-    <string name="more_servers_body">Add, edit and sign in to servers</string>
-    <string name="more_settings_body">Theme, refresh rate, security</string>
-    <string name="more_alerts_body">Notifications about your servers while the app is closed</string>
-    <string name="more_about_body">Version, license, privacy</string>
     <string name="settings_title">Settings</string>
     <string name="settings_appearance">Appearance</string>
     <string name="settings_theme">Theme</string>
@@ -711,8 +687,6 @@
 
     <!-- Hardware (Q19) -->
     <string name="hardware_title">Hardware</string>
-    <string name="hardware_open_body_vm">CPU, memory, disks, CD/DVD, network, boot order</string>
-    <string name="hardware_open_body_ct">Cores, memory, root disk, mount points, network</string>
     <string name="hardware_pending">After restart</string>
     <string name="hardware_pending_banner">Some changes take effect the next time the guest starts. Shut it down and start it again (a reboot from inside the guest is not enough).</string>
     <string name="hardware_saving">Saving…</string>
@@ -869,9 +843,7 @@
 
     <!-- Creating guests (Q17) -->
     <string name="node_create_vm">Create VM</string>
-    <string name="node_create_vm_body">On this node, with a short guided form</string>
     <string name="node_create_ct">Create container</string>
-    <string name="node_create_ct_body">From a template on this node</string>
     <string name="create_vm_title">Create VM</string>
     <string name="create_ct_title">Create container</string>
     <string name="create_on_node">On %1$s</string>
@@ -924,12 +896,10 @@
 
     <!-- SPICE (Q15) -->
     <string name="spice_title">SPICE viewer</string>
-    <string name="spice_open_body">Open the VM\'s screen in aSPICE or another SPICE app (needs the SPICE display)</string>
     <string name="spice_no_viewer">No app on this phone opens SPICE connections. Install aSPICE (or another app that opens .vv files) and try again.</string>
 
     <!-- Cloud-init (Q18) -->
     <string name="cloudinit_title">Cloud-init</string>
-    <string name="cloudinit_open_body">User, password, SSH keys, IP addresses, DNS</string>
     <string name="cloudinit_no_drive_title">No cloud-init drive</string>
     <string name="cloudinit_no_drive_body">Cloud-init settings reach the VM through a small drive Proxmox writes them to. Add one, then the VM\'s image (a cloud image with cloud-init) picks them up when it starts.</string>
     <string name="cloudinit_add_drive">Add cloud-init drive</string>
@@ -1055,8 +1025,8 @@
     <!-- Datacenter (M4) -->
     <string name="dashboard_datacenter">Datacenter</string>
     <string name="datacenter_title">Datacenter</string>
-    <string name="datacenter_backup_jobs_body">Scheduled backups, run now, guests without a backup</string>
-    <string name="datacenter_storage_body">Every storage and what it holds; add, edit or remove storages</string>
+    <string name="datacenter_network_section">Network and security</string>
+    <string name="datacenter_cluster_section">Cluster</string>
     <string name="datacenter_replication">Replication</string>
     <string name="datacenter_pools">Resource pools</string>
     <string name="backupjobs_title">Backup jobs</string>
@@ -1250,9 +1220,6 @@
 
     <!-- Firewall (M4, questionnaire Q24) -->
     <string name="firewall_title">Firewall</string>
-    <string name="firewall_open_body_dc">Rules and policies for the whole cluster</string>
-    <string name="firewall_open_body_node">This node\'s own rules</string>
-    <string name="firewall_open_body_guest">Rules, policies and address filters for this guest</string>
     <string name="firewall_rules">Rules</string>
     <string name="firewall_options">Options</string>
     <string name="firewall_disabled_hint">This firewall is switched off (Options), so these rules don\'t apply. Guests and nodes also need the datacenter firewall on.</string>
@@ -1356,7 +1323,6 @@
 
     <!-- High availability (M4, questionnaire Q21) -->
     <string name="ha_title">High availability</string>
-    <string name="ha_open_body">Guests restarted or moved automatically when a node fails</string>
     <string name="ha_status">Status</string>
     <string name="ha_quorum">Quorum</string>
     <string name="ha_master">Manager: %1$s</string>
@@ -1424,7 +1390,6 @@
     <string name="ha_rule_off">off</string>
 
     <!-- Replication (Datacenter → Replication) -->
-    <string name="replication_open_body">Guests\' local disks copied to another node on a schedule</string>
     <string name="replication_add">Add replication job</string>
     <string name="replication_add_short">Add</string>
     <string name="replication_needs_nodes">Replication needs at least two online nodes.</string>
@@ -1503,9 +1468,7 @@
     <string name="transfer_imported">Servers imported: %1$d added, %2$d replaced</string>
 
     <!-- Node administration (Node → Administration) -->
-    <string name="node_admin">Administration</string>
     <string name="updates_title">Updates</string>
-    <string name="updates_open_body">Packages with newer versions, refresh, upgrade</string>
     <string name="updates_subscription">Subscription</string>
     <string name="updates_subscription_active">Active</string>
     <string name="updates_subscription_none">None</string>
@@ -1528,14 +1491,12 @@
     <string name="updates_version_change">%1$s → %2$s</string>
     <string name="updates_changelog">Changelog</string>
     <string name="repos_title">Repositories</string>
-    <string name="repos_open_body">Where the node gets its packages</string>
     <string name="repos_enabled">Repository switched on</string>
     <string name="repos_disabled">Repository switched off</string>
     <string name="repos_added">%1$s repository added</string>
     <string name="repos_add">Add a Proxmox repository</string>
     <string name="repos_add_one">Add %1$s</string>
     <string name="services_title">Services</string>
-    <string name="services_open_body">Start, stop and restart Proxmox\'s services</string>
     <string name="services_running">%1$s…</string>
     <string name="services_done">%1$s: done</string>
     <string name="services_failed">%1$s: failed</string>
@@ -1547,9 +1508,7 @@
     <string name="services_confirm_title">%1$s %2$s?</string>
     <string name="services_confirm_body">AnProx and the web interface talk to the node through this service, or the cluster depends on it. The connection drops for a moment; stopping it cuts it until the service is started again on the node.</string>
     <string name="journal_title">System log</string>
-    <string name="journal_open_body">The newest 500 lines of the journal</string>
     <string name="network_title">Network</string>
-    <string name="network_open_body">Bridges, bonds and VLANs, applied when you say so</string>
     <string name="network_pending">Changes not applied yet</string>
     <string name="network_pending_body">They are saved in /etc/network/interfaces.new and take effect when you apply them.</string>
     <string name="network_show_changes">Show changes</string>
@@ -1605,7 +1564,6 @@
     <string name="network_problem_slaves">A bond needs at least one member.</string>
     <string name="network_problem_vlan">Give the device and a tag from 1 to 4094, or a name like eno1.20.</string>
     <string name="disks_title">Disks</string>
-    <string name="disks_open_body">Health, SMART, and storage on unused disks</string>
     <string name="disks_create">Create storage on disks</string>
     <string name="disks_create_short">Create storage</string>
     <string name="disks_running">%1$s…</string>
@@ -1634,7 +1592,6 @@
     <string name="disks_problem_devices">Choose one unused disk (ZFS can use several).</string>
     <string name="disks_problem_raid">This RAID level needs more disks (mirror and RAIDZ 2+, RAIDZ2 3+, RAID10 and RAIDZ3 4+; RAID10 an even number).</string>
     <string name="system_title">DNS, hosts and time</string>
-    <string name="system_open_body">Name servers, /etc/hosts, time zone</string>
     <string name="system_dns">DNS</string>
     <string name="system_search_domain">Search domain</string>
     <string name="system_dns_server">DNS server %1$d</string>
@@ -1653,7 +1610,6 @@
     <string name="system_hosts_saved">Hosts saved</string>
 
     <!-- Resource pools (Datacenter → Resource pools) -->
-    <string name="pools_open_body">Groups of guests and storages for permissions and backups</string>
     <string name="pools_create">Create pool</string>
     <string name="pools_create_short">Create</string>
     <string name="pools_created">Pool %1$s created</string>
@@ -1684,17 +1640,12 @@
     <string name="action_copy">Copy</string>
 
     <!-- Datacenter → Permissions (M7) -->
-    <string name="access_section">Permissions</string>
+    <string name="access_section">Users and permissions</string>
     <string name="access_users">Users</string>
-    <string name="access_users_body">Accounts, passwords, API tokens and second factors</string>
     <string name="access_groups">Groups</string>
-    <string name="access_groups_body">Give permissions to many users at once</string>
     <string name="access_roles">Roles</string>
-    <string name="access_roles_body">Named sets of privileges</string>
     <string name="access_acl">Permissions</string>
-    <string name="access_acl_body">Who has which role, and where</string>
     <string name="access_realms">Realms</string>
-    <string name="access_realms_body">Where users sign in from: Linux, Proxmox, LDAP, Active Directory, OpenID</string>
     <string name="access_saved">Saved</string>
     <string name="access_deleted">%1$s deleted</string>
     <string name="access_create">Create</string>
@@ -1894,7 +1845,6 @@
     <string name="access_sync_dry_started">Previewing the sync of %1$s</string>
     <!-- Datacenter → Ceph (M6) -->
     <string name="ceph_title">Ceph</string>
-    <string name="ceph_open_body">Health, OSDs, pools, monitors, CephFS and flags</string>
     <string name="ceph_read_from">Read through %1$s</string>
     <string name="ceph_not_set_up">Ceph isn\'t set up</string>
     <string name="ceph_not_set_up_body">This cluster has no Ceph, or it isn\'t initialised yet. Install and configure it once in the Proxmox web interface (a node → Ceph); then manage it here.</string>
@@ -2051,13 +2001,10 @@
     <string name="ceph_fs_pools">Metadata: %1$s · Data: %2$s</string>
     <!-- Datacenter → SDN (M6) -->
     <string name="sdn_title">SDN</string>
-    <string name="sdn_open_body">Software-defined networks: zones, VNets, subnets, IPAM</string>
     <string name="clusterlog_title">Cluster log</string>
-    <string name="clusterlog_open_body">What the nodes logged: tasks, logins, cluster events</string>
     <string name="clusterlog_empty">Nothing logged</string>
     <string name="clusterlog_empty_body">No entries match. Clear the filter to see everything.</string>
     <string name="dcoptions_title">Datacenter options</string>
-    <string name="dcoptions_open_body">Console, keyboard, proxy, migration network, HA shutdown policy, next free ID</string>
     <string name="dcoptions_saved">Datacenter options saved</string>
     <string name="dcoptions_default">Default</string>
     <string name="dcoptions_section_console">Console</string>

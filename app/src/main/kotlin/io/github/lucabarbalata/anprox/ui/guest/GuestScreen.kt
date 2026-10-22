@@ -2,14 +2,13 @@ package io.github.lucabarbalata.anprox.ui.guest
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
@@ -25,20 +24,21 @@ import androidx.compose.material.icons.outlined.DeleteForever
 import androidx.compose.material.icons.outlined.Key
 import androidx.compose.material.icons.outlined.Memory
 import androidx.compose.material.icons.outlined.Monitor
+import androidx.compose.material.icons.outlined.MoreHoriz
 import androidx.compose.material.icons.outlined.PauseCircle
 import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.PowerSettingsNew
 import androidx.compose.material.icons.outlined.RestartAlt
-import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material.icons.outlined.StarOutline
 import androidx.compose.material.icons.outlined.StopCircle
 import androidx.compose.material.icons.outlined.SupportAgent
 import androidx.compose.material.icons.outlined.SwapHoriz
-import androidx.compose.material.icons.outlined.Terminal
 import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -68,10 +68,8 @@ import io.github.lucabarbalata.anprox.core.designsystem.component.ButtonStyle
 import io.github.lucabarbalata.anprox.core.designsystem.component.ErrorBanner
 import io.github.lucabarbalata.anprox.core.designsystem.component.GlassCard
 import io.github.lucabarbalata.anprox.core.designsystem.component.InfoRow
-import io.github.lucabarbalata.anprox.core.designsystem.component.SectionHeader
-import io.github.lucabarbalata.anprox.core.designsystem.component.StatusPill
+import io.github.lucabarbalata.anprox.core.designsystem.component.StatusDot
 import io.github.lucabarbalata.anprox.core.designsystem.component.TagChip
-import io.github.lucabarbalata.anprox.core.designsystem.component.UsageRing
 import io.github.lucabarbalata.anprox.core.designsystem.theme.AnProxTheme
 import io.github.lucabarbalata.anprox.core.designsystem.theme.MonoStyle
 import io.github.lucabarbalata.anprox.data.guest.GuestNetworkInfo
@@ -85,9 +83,12 @@ import io.github.lucabarbalata.anprox.model.pve.PowerAction
 import io.github.lucabarbalata.anprox.security.LocalDangerousActionGuard
 import io.github.lucabarbalata.anprox.ui.common.AnProxScaffold
 import io.github.lucabarbalata.anprox.ui.common.CheckRow
+import io.github.lucabarbalata.anprox.ui.common.CollapsibleHeader
 import io.github.lucabarbalata.anprox.ui.common.ConfirmActionDialog
-import io.github.lucabarbalata.anprox.ui.common.MenuRow
 import io.github.lucabarbalata.anprox.ui.common.TaskResultSnackbar
+import io.github.lucabarbalata.anprox.ui.common.ToolEntry
+import io.github.lucabarbalata.anprox.ui.common.ToolGrid
+import io.github.lucabarbalata.anprox.ui.common.UsageLine
 import io.github.lucabarbalata.anprox.ui.common.asString
 import io.github.lucabarbalata.anprox.ui.common.contentPadding
 import io.github.lucabarbalata.anprox.ui.common.formatDuration
@@ -128,6 +129,9 @@ fun GuestDetail(
     val scope = rememberCoroutineScope()
     val openSpice = rememberSpiceLauncher(snackbar)
     val copiedLabel = stringResource(R.string.guest_copied)
+    var networkOpen by rememberSaveable { mutableStateOf(false) }
+    var chartsOpen by rememberSaveable { mutableStateOf(false) }
+    var detailsOpen by rememberSaveable { mutableStateOf(false) }
     TaskResultSnackbar(state.result, snackbar, ref.serverId, ref.node, onTask, viewModel::consumeResult)
 
     val typeLabel = stringResource(if (ref.type == GuestType.QEMU) R.string.guest_type_vm else R.string.guest_type_ct)
@@ -153,107 +157,31 @@ fun GuestDetail(
             state.error?.let { error -> item { ErrorBanner(error.asString()) } }
             val status = state.status
             if (status != null) {
-                item { Overview(status) }
-                if (state.availableActions.isNotEmpty()) {
-                    item { SectionHeader(stringResource(R.string.guest_power)) }
-                    item { PowerActions(state.availableActions, state.running, viewModel::request) }
+                item {
+                    Summary(
+                        status = status,
+                        address = state.network?.nics?.flatMap { it.ipv4 }?.firstOrNull(),
+                        actions = state.availableActions,
+                        running = state.running,
+                        onAction = viewModel::request,
+                        onConsole = { onTool(GuestTool.CONSOLE, ref, state.title) },
+                    )
                 }
+                item { ToolGrid(guestTools(ref, status, onTool = { tool -> onTool(tool, ref, state.title) }, openSpice = { openSpice(ref) }, onDelete = viewModel::requestDestroy)) }
+                // Network, charts and details start folded, so the screen opens on what is used most.
                 if (status.isRunning) {
-                    item { SectionHeader(stringResource(R.string.guest_network_section)) }
-                    item { NetworkCard(ref.type, state.network, onCopied = { text -> scope.launch { snackbar.showSnackbar(copiedLabel.format(text)) } }) }
+                    item { CollapsibleHeader(stringResource(R.string.guest_network_section), networkOpen, { networkOpen = !networkOpen }) }
+                    if (networkOpen) {
+                        item { NetworkCard(ref.type, state.network, onCopied = { text -> scope.launch { snackbar.showSnackbar(copiedLabel.format(text)) } }) }
+                    }
                 }
                 // Templates never run, so they have no history.
                 if (!status.template) {
-                    item { SectionHeader(stringResource(R.string.perf_title)) }
-                    item { PerformanceSection(MetricsSource.Guest(ref)) }
+                    item { CollapsibleHeader(stringResource(R.string.perf_title), chartsOpen, { chartsOpen = !chartsOpen }) }
+                    if (chartsOpen) item { PerformanceSection(MetricsSource.Guest(ref)) }
                 }
-                item { SectionHeader(stringResource(R.string.guest_details)) }
-                item { Details(ref, status) }
-                item { SectionHeader(stringResource(R.string.guest_more_tools)) }
-                item {
-                    GlassCard(contentPadding = PaddingValues(vertical = 6.dp)) {
-                        // Templates never run, so there is nothing to show.
-                        if (!status.template) {
-                            MenuRow(
-                                Icons.Outlined.Terminal,
-                                stringResource(R.string.console_title),
-                                stringResource(if (ref.type == GuestType.QEMU) R.string.console_open_body_vm else R.string.console_open_body_ct),
-                            ) { onTool(GuestTool.CONSOLE, ref, state.title) }
-                            MenuRow(
-                                Icons.Outlined.Key,
-                                stringResource(R.string.ssh_title),
-                                stringResource(R.string.ssh_open_body_guest),
-                            ) { onTool(GuestTool.SSH, ref, state.title) }
-                        }
-                        // SPICE needs a running VM with a SPICE display; Proxmox explains otherwise.
-                        if (ref.type == GuestType.QEMU && status.isRunning) {
-                            MenuRow(
-                                Icons.Outlined.Monitor,
-                                stringResource(R.string.spice_title),
-                                stringResource(R.string.spice_open_body),
-                            ) { openSpice(ref) }
-                        }
-                        // Templates can't have snapshots in Proxmox.
-                        if (!status.template) {
-                            MenuRow(
-                                Icons.Outlined.PhotoCamera,
-                                stringResource(R.string.snapshots_title),
-                                stringResource(R.string.snapshots_open_body),
-                            ) { onTool(GuestTool.SNAPSHOTS, ref, state.title) }
-                        }
-                        MenuRow(
-                            Icons.Outlined.Backup,
-                            stringResource(R.string.backups_title),
-                            stringResource(R.string.backups_open_body),
-                        ) { onTool(GuestTool.BACKUPS, ref, state.title) }
-                        MenuRow(
-                            Icons.Outlined.Memory,
-                            stringResource(R.string.hardware_title),
-                            stringResource(if (ref.type == GuestType.QEMU) R.string.hardware_open_body_vm else R.string.hardware_open_body_ct),
-                        ) { onTool(GuestTool.HARDWARE, ref, state.title) }
-                        // Agent commands need the agent enabled in the config and a running VM.
-                        if (ref.type == GuestType.QEMU && status.agent && status.isRunning) {
-                            MenuRow(
-                                Icons.Outlined.SupportAgent,
-                                stringResource(R.string.agent_title),
-                                stringResource(R.string.agent_open_body),
-                            ) { onTool(GuestTool.AGENT, ref, state.title) }
-                        }
-                        if (ref.type == GuestType.QEMU) {
-                            MenuRow(
-                                Icons.Outlined.CloudQueue,
-                                stringResource(R.string.cloudinit_title),
-                                stringResource(R.string.cloudinit_open_body),
-                            ) { onTool(GuestTool.CLOUD_INIT, ref, state.title) }
-                        }
-                        MenuRow(
-                            Icons.Outlined.Tune,
-                            stringResource(R.string.options_title),
-                            stringResource(R.string.options_open_body),
-                        ) { onTool(GuestTool.OPTIONS, ref, state.title) }
-                        MenuRow(
-                            Icons.Outlined.Shield,
-                            stringResource(R.string.firewall_title),
-                            stringResource(R.string.firewall_open_body_guest),
-                        ) { onTool(GuestTool.FIREWALL, ref, state.title) }
-                        MenuRow(
-                            Icons.Outlined.ContentCopy,
-                            stringResource(R.string.clone_title),
-                            stringResource(if (status.template) R.string.clone_open_body_template else R.string.clone_open_body),
-                        ) { onTool(GuestTool.CLONE, ref, state.title) }
-                        MenuRow(
-                            Icons.Outlined.SwapHoriz,
-                            stringResource(R.string.migrate_title),
-                            stringResource(R.string.migrate_open_body),
-                        ) { onTool(GuestTool.MIGRATE, ref, state.title) }
-                        MenuRow(
-                            Icons.Outlined.DeleteForever,
-                            stringResource(if (ref.type == GuestType.QEMU) R.string.destroy_vm else R.string.destroy_ct),
-                            stringResource(R.string.destroy_open_body),
-                            viewModel::requestDestroy,
-                        )
-                    }
-                }
+                item { CollapsibleHeader(stringResource(R.string.guest_details), detailsOpen, { detailsOpen = !detailsOpen }) }
+                if (detailsOpen) item { Details(ref, status) }
             }
         }
     }
@@ -349,61 +277,136 @@ private fun DestroyGuestDialog(
     )
 }
 
+/**
+ * The guest at a glance, in one card: its state, how long it runs and its first address; CPU,
+ * memory and disk; then Console, the power action that fits the state and the others in a menu.
+ */
 @Composable
-private fun Overview(status: GuestStatus) {
+private fun Summary(
+    status: GuestStatus,
+    address: String?,
+    actions: List<PowerAction>,
+    running: PowerAction?,
+    onAction: (PowerAction) -> Unit,
+    onConsole: () -> Unit,
+) {
     val c = AnProxTheme.colors
     val appearance = statusAppearance(status.status, paused = status.isPaused)
     GlassCard {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            StatusPill(appearance.label, appearance.tone)
-            Spacer(Modifier.width(10.dp))
-            if (status.isRunning) {
-                Icon(Icons.Outlined.Schedule, contentDescription = null, tint = c.textTertiary, modifier = Modifier.size(14.dp))
-                Spacer(Modifier.width(4.dp))
-                Text(formatDuration(status.uptime), style = MaterialTheme.typography.labelMedium, color = c.textSecondary)
-            }
+            StatusDot(appearance.tone)
+            Spacer(Modifier.width(8.dp))
+            Text(appearance.label, style = MaterialTheme.typography.bodyMedium, color = c.textPrimary)
+            val extra = listOfNotNull(status.uptime?.takeIf { status.isRunning }?.let { formatDuration(it) }, address).joinToString(" · ")
+            if (extra.isNotEmpty()) Text(" · $extra", style = MaterialTheme.typography.bodyMedium, color = c.textSecondary, maxLines = 1)
         }
         val tags = status.tags.orEmpty().split(';', ',', ' ').filter { it.isNotBlank() }
         if (tags.isNotEmpty()) {
             Spacer(Modifier.height(10.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) { tags.take(6).forEach { TagChip(it) } }
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) { tags.take(4).forEach { TagChip(it) } }
         }
         Spacer(Modifier.height(16.dp))
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-            val cpu = stringResource(R.string.metric_cpu)
-            val ram = stringResource(R.string.metric_ram)
-            val disk = stringResource(R.string.metric_disk)
-            UsageRing(status.cpu, Formatters.percent(status.cpu), caption = cpu)
-            UsageRing(status.memFraction, Formatters.percent(status.memFraction), caption = ram)
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            UsageLine(stringResource(R.string.metric_cpu), Formatters.percent(status.cpu), status.cpu)
+            UsageLine(stringResource(R.string.guest_memory), Formatters.usage(status.mem, status.maxmem), status.memFraction)
             // VM disk usage is only known with the guest agent; containers report it.
-            UsageRing(status.diskFraction?.takeIf { (status.disk ?: 0) > 0 }, Formatters.bytes(status.maxdisk), caption = disk)
+            val diskKnown = (status.disk ?: 0) > 0
+            UsageLine(
+                stringResource(R.string.metric_disk),
+                if (diskKnown) Formatters.usage(status.disk, status.maxdisk) else Formatters.bytes(status.maxdisk),
+                status.diskFraction?.takeIf { diskKnown },
+            )
+        }
+        if (!status.template) {
+            Spacer(Modifier.height(16.dp))
+            PowerRow(status.isRunning, actions, running, onAction, onConsole)
         }
     }
 }
 
+/**
+ * Console and the one power action the state calls for (start a stopped guest, shut down a
+ * running one, resume a paused one); the rest sit in the ⋯ menu.
+ */
 @Composable
-private fun PowerActions(actions: List<PowerAction>, running: PowerAction?, onAction: (PowerAction) -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        actions.chunked(2).forEach { row ->
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                row.forEach { action ->
-                    AnProxButton(
-                        text = actionLabel(action),
-                        onClick = { onAction(action) },
-                        icon = actionIcon(action),
-                        style = when (action) {
-                            PowerAction.START, PowerAction.RESUME -> ButtonStyle.PRIMARY
-                            PowerAction.STOP, PowerAction.RESET -> ButtonStyle.DANGER
-                            else -> ButtonStyle.SECONDARY
-                        },
-                        loading = running == action,
-                        enabled = running == null,
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-                if (row.size == 1) Spacer(Modifier.weight(1f))
+private fun PowerRow(isRunning: Boolean, actions: List<PowerAction>, running: PowerAction?, onAction: (PowerAction) -> Unit, onConsole: () -> Unit) {
+    val c = AnProxTheme.colors
+    val main = actions.firstOrNull { it == PowerAction.START || it == PowerAction.RESUME } ?: actions.firstOrNull { it == PowerAction.SHUTDOWN }
+    val others = actions.filter { it != main }
+    var menu by remember { mutableStateOf(false) }
+    Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+        val console: @Composable () -> Unit = {
+            AnProxButton(
+                stringResource(R.string.console_title),
+                onClick = onConsole,
+                style = if (isRunning) ButtonStyle.PRIMARY else ButtonStyle.SECONDARY,
+                modifier = Modifier.weight(1f),
+            )
+        }
+        val power: @Composable () -> Unit = {
+            if (main != null) {
+                AnProxButton(
+                    actionLabel(main),
+                    onClick = { onAction(main) },
+                    style = if (main == PowerAction.SHUTDOWN) ButtonStyle.SECONDARY else ButtonStyle.PRIMARY,
+                    loading = running == main,
+                    enabled = running == null,
+                    modifier = Modifier.weight(1f),
+                )
             }
         }
+        // The action that fits the state comes first: Start before Console on a stopped guest.
+        if (isRunning) {
+            console()
+            power()
+        } else {
+            power()
+            console()
+        }
+        if (others.isNotEmpty()) {
+            Box {
+                IconButton(onClick = { menu = true }, enabled = running == null) {
+                    Icon(Icons.Outlined.MoreHoriz, contentDescription = stringResource(R.string.guest_power_other), tint = c.textPrimary)
+                }
+                DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
+                    others.forEach { action ->
+                        val danger = action == PowerAction.STOP || action == PowerAction.RESET
+                        DropdownMenuItem(
+                            text = { Text(actionLabel(action), color = if (danger) c.danger else c.textPrimary) },
+                            leadingIcon = { Icon(actionIcon(action), contentDescription = null, tint = if (danger) c.danger else c.textSecondary) },
+                            onClick = {
+                                menu = false
+                                onAction(action)
+                            },
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * The guest's tools for the [ToolGrid], most used first; [ToolGrid] folds the rest behind More.
+ * Which ones show depends on the guest: templates have no console or snapshots, SPICE needs a
+ * running VM, the agent's commands need the agent and a running VM.
+ */
+@Composable
+private fun guestTools(ref: GuestRef, status: GuestStatus, onTool: (GuestTool) -> Unit, openSpice: () -> Unit, onDelete: () -> Unit): List<ToolEntry> {
+    val isVm = ref.type == GuestType.QEMU
+    return buildList {
+        if (!status.template) add(ToolEntry(Icons.Outlined.PhotoCamera, stringResource(R.string.snapshots_title)) { onTool(GuestTool.SNAPSHOTS) })
+        add(ToolEntry(Icons.Outlined.Backup, stringResource(R.string.backups_title)) { onTool(GuestTool.BACKUPS) })
+        add(ToolEntry(Icons.Outlined.Memory, stringResource(R.string.hardware_title)) { onTool(GuestTool.HARDWARE) })
+        add(ToolEntry(Icons.Outlined.Tune, stringResource(R.string.options_title)) { onTool(GuestTool.OPTIONS) })
+        add(ToolEntry(Icons.Outlined.Shield, stringResource(R.string.firewall_title)) { onTool(GuestTool.FIREWALL) })
+        if (!status.template) add(ToolEntry(Icons.Outlined.Key, stringResource(R.string.ssh_title)) { onTool(GuestTool.SSH) })
+        add(ToolEntry(Icons.Outlined.ContentCopy, stringResource(R.string.clone_title)) { onTool(GuestTool.CLONE) })
+        add(ToolEntry(Icons.Outlined.SwapHoriz, stringResource(R.string.migrate_title)) { onTool(GuestTool.MIGRATE) })
+        if (isVm) add(ToolEntry(Icons.Outlined.CloudQueue, stringResource(R.string.cloudinit_title)) { onTool(GuestTool.CLOUD_INIT) })
+        if (isVm && status.agent && status.isRunning) add(ToolEntry(Icons.Outlined.SupportAgent, stringResource(R.string.agent_title)) { onTool(GuestTool.AGENT) })
+        if (isVm && status.isRunning) add(ToolEntry(Icons.Outlined.Monitor, stringResource(R.string.spice_title), onClick = openSpice))
+        add(ToolEntry(Icons.Outlined.DeleteForever, stringResource(R.string.action_delete), danger = true, onClick = onDelete))
     }
 }
 

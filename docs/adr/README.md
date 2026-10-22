@@ -14,12 +14,13 @@ consequences. ADRs are never rewritten. If a decision changes, a new ADR superse
 | [0007](0007-insecure-tls-switch.md) | Per-server "allow insecure certificate" switch | Accepted |
 | [0008](0008-credential-storage.md) | Ticket auth; secrets encrypted with an Android Keystore key | Accepted |
 | [0009](0009-foss-no-telemetry.md) | GPL-3.0, no telemetry, no Google services | Accepted |
-| [0010](0010-bespoke-design.md) | Bespoke "Midnight Glass" design instead of Material You | Accepted |
+| [0010](0010-bespoke-design.md) | Bespoke "Midnight Glass" design instead of Material You | Accepted, amended by 0016 |
 | [0011](0011-polling-while-visible.md) | Poll only while a screen is visible | Accepted |
 | [0012](0012-release-pipeline.md) | Release pipeline: owner-held key, GitHub pre-releases, emulator gate | Accepted |
 | [0013](0013-app-lock.md) | App lock uses the phone's own biometrics and screen lock | Accepted |
 | [0014](0014-consoles-through-the-app.md) | Consoles connect through the app; noVNC and xterm.js are bundled | Accepted |
 | [0015](0015-ssh-client.md) | Built-in SSH client on JSch, with Bouncy Castle and trust on first use | Accepted |
+| [0016](0016-calm-midnight.md) | Calm Midnight: the same palette, without the clutter | Accepted |
 
 Template for new ADRs:
 

@@ -51,28 +51,40 @@ fun DatacenterScreen(
 ) {
     AnProxScaffold(title = stringResource(R.string.datacenter_title), subtitle = title, onBack = onBack) { inner ->
         LazyColumn(contentPadding = contentPadding(inner), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            // Short titles only, in four small groups: what a datacenter holds, its network and
+            // security, the cluster itself, and who may do what.
             item {
                 GlassCard(contentPadding = PaddingValues(vertical = 6.dp)) {
-                    MenuRow(Icons.Outlined.Backup, stringResource(R.string.backupjobs_title), stringResource(R.string.datacenter_backup_jobs_body), onBackupJobs)
-                    MenuRow(Icons.Outlined.Storage, stringResource(R.string.storage_title), stringResource(R.string.datacenter_storage_body), onStorage)
-                    MenuRow(Icons.Outlined.Shield, stringResource(R.string.firewall_title), stringResource(R.string.firewall_open_body_dc), onFirewall)
-                    MenuRow(Icons.Outlined.Sync, stringResource(R.string.ha_title), stringResource(R.string.ha_open_body), onHa)
-                    MenuRow(Icons.Outlined.ContentCopy, stringResource(R.string.datacenter_replication), stringResource(R.string.replication_open_body), onReplication)
-                    MenuRow(Icons.Outlined.Workspaces, stringResource(R.string.datacenter_pools), stringResource(R.string.pools_open_body), onPools)
-                    MenuRow(Icons.Outlined.Hub, stringResource(R.string.ceph_title), stringResource(R.string.ceph_open_body), onCeph)
-                    MenuRow(Icons.Outlined.Lan, stringResource(R.string.sdn_title), stringResource(R.string.sdn_open_body), onSdn)
-                    MenuRow(Icons.Outlined.History, stringResource(R.string.clusterlog_title), stringResource(R.string.clusterlog_open_body), onClusterLog)
-                    MenuRow(Icons.Outlined.Tune, stringResource(R.string.dcoptions_title), stringResource(R.string.dcoptions_open_body), onOptions)
+                    MenuRow(Icons.Outlined.Backup, stringResource(R.string.backupjobs_title), null, onBackupJobs)
+                    MenuRow(Icons.Outlined.Storage, stringResource(R.string.storage_title), null, onStorage)
+                    MenuRow(Icons.Outlined.ContentCopy, stringResource(R.string.datacenter_replication), null, onReplication)
+                    MenuRow(Icons.Outlined.Sync, stringResource(R.string.ha_title), null, onHa)
+                    MenuRow(Icons.Outlined.Workspaces, stringResource(R.string.datacenter_pools), null, onPools)
+                }
+            }
+            item { SectionHeader(stringResource(R.string.datacenter_network_section)) }
+            item {
+                GlassCard(contentPadding = PaddingValues(vertical = 6.dp)) {
+                    MenuRow(Icons.Outlined.Shield, stringResource(R.string.firewall_title), null, onFirewall)
+                    MenuRow(Icons.Outlined.Lan, stringResource(R.string.sdn_title), null, onSdn)
+                }
+            }
+            item { SectionHeader(stringResource(R.string.datacenter_cluster_section)) }
+            item {
+                GlassCard(contentPadding = PaddingValues(vertical = 6.dp)) {
+                    MenuRow(Icons.Outlined.Hub, stringResource(R.string.ceph_title), null, onCeph)
+                    MenuRow(Icons.Outlined.History, stringResource(R.string.clusterlog_title), null, onClusterLog)
+                    MenuRow(Icons.Outlined.Tune, stringResource(R.string.dcoptions_title), null, onOptions)
                 }
             }
             item { SectionHeader(stringResource(R.string.access_section)) }
             item {
                 GlassCard(contentPadding = PaddingValues(vertical = 6.dp)) {
-                    MenuRow(Icons.Outlined.Person, stringResource(R.string.access_users), stringResource(R.string.access_users_body)) { onAccess(AccessPage.USERS) }
-                    MenuRow(Icons.Outlined.Group, stringResource(R.string.access_groups), stringResource(R.string.access_groups_body)) { onAccess(AccessPage.GROUPS) }
-                    MenuRow(Icons.Outlined.Badge, stringResource(R.string.access_roles), stringResource(R.string.access_roles_body)) { onAccess(AccessPage.ROLES) }
-                    MenuRow(Icons.Outlined.AdminPanelSettings, stringResource(R.string.access_acl), stringResource(R.string.access_acl_body)) { onAccess(AccessPage.ACL) }
-                    MenuRow(Icons.Outlined.Domain, stringResource(R.string.access_realms), stringResource(R.string.access_realms_body)) { onAccess(AccessPage.REALMS) }
+                    MenuRow(Icons.Outlined.Person, stringResource(R.string.access_users), null) { onAccess(AccessPage.USERS) }
+                    MenuRow(Icons.Outlined.Group, stringResource(R.string.access_groups), null) { onAccess(AccessPage.GROUPS) }
+                    MenuRow(Icons.Outlined.Badge, stringResource(R.string.access_roles), null) { onAccess(AccessPage.ROLES) }
+                    MenuRow(Icons.Outlined.AdminPanelSettings, stringResource(R.string.access_acl), null) { onAccess(AccessPage.ACL) }
+                    MenuRow(Icons.Outlined.Domain, stringResource(R.string.access_realms), null) { onAccess(AccessPage.REALMS) }
                 }
             }
         }

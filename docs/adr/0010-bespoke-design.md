@@ -1,6 +1,6 @@
 # 0010. Bespoke "Midnight Glass" design instead of Material You
 
-- Status: Accepted
+- Status: Accepted; the glass, glows and gradients were dropped by [0016](0016-calm-midnight.md)
 - Date: 2026-10-14
 - Questionnaire: Q29, Q30, Q31, Q37
 

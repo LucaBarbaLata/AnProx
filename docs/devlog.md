@@ -5,6 +5,34 @@ solved. Newest first.
 
 ---
 
+## 2026-10-21 — Session 6: a calmer design before 1.0
+
+The owner found the app "cluttered and overwhelming" and asked for several directions to choose
+from. A design canvas showed five (A–E) on three screens each (Overview, Resources, a VM); the
+owner picked **E**, "the current theme, uncluttered" ([ADR 0016](adr/0016-calm-midnight.md)).
+It went in three steps, each pushed and checked by CI and the emulator tour:
+
+1. **Building blocks** (`:core:designsystem`): a flat page, solid cards without border or
+   highlight, solid buttons and bars, status dots without halo (a stopped guest is a ring),
+   charts in the accent and a grey, sentence-case section headers, a quieter `MenuRow`, lighter
+   tertiary text. CI caught one Kotlin trap: adding `danger: Boolean = false` *after* `onClick`
+   in `MenuRow` made every trailing lambda bind to `onClick`'s neighbour, 82 errors in one go.
+   `MenuRow` keeps its old signature and gained an overload with `danger` before `onClick`.
+2. **Guest screen:** a summary card with Console and the power action that fits the state (the
+   rest in a ⋯ menu), a `ToolGrid` (four per row, More after seven), and Network, Performance and
+   Details folded (`CollapsibleHeader`). The tour opens folded tools with `open_tool()`, which
+   taps More only when the tool isn't already showing.
+3. **Overview, Resources, Node, Datacenter, More:** one card per server with three numbers and
+   its own warnings; list rows in one surface with a hairline between them; the node gets the
+   guest screen's pattern (summary, tool grid, ⋯ for all guests, power in the top bar); menus
+   lose their explanations. A row's dot carries the state as a content description when the
+   right side shows a number, which also keeps the tour's `row_shows(…, "Running")` working.
+   68 strings that only described menu entries or old sections went away; the tour now taps titles
+   ("Users", "Permissions", "Ceph", "SDN") instead of those descriptions; the Datacenter's
+   "Permissions" header became "Users and permissions" so "Permissions" is unique.
+
+---
+
 ## 2026-10-18 — Session 5: the rest of the app (M7, M6, M8 and leftovers), while the owner prepares a real host
 
 The owner asked to "complete the rest of the app and do as many tests as possible" while they

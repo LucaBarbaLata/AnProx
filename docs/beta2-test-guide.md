@@ -42,15 +42,31 @@ CI on Android 8.0 and 14 emulators against the mock server.
 
 Tick each line, or note what happened instead.
 
+### A0. The calmer design, new after beta.2
+1. **Overview**: one card per server with three numbers (guests running, CPU, memory) and its
+   nodes; warnings (an offline node, a full storage) sit inside that card. Favourites are one
+   card below. Tapping the guests number opens Resources.
+2. **Resources**: one list; each row is a dot, the name, "VM 100 · *node*" and the CPU (or
+   **Stopped**) on the right. The filters are words; **Running only** still works; a long press
+   still starts a selection.
+3. **A guest**: one card with its state, uptime and address, CPU, memory and disk, then
+   **Console** and **Start** or **Shut down**; the ⋯ beside them has the rest (Stop and Reset in
+   red). The tools are a grid; **More** shows the rest and **Fewer** folds them again.
+   **Network**, **Performance** and **Details** open when you tap them.
+4. **A node**: the same kind of card, a grid of tools, its guests with a ⋯ for all of them, and
+   reboot/shutdown behind the power icon at the top. **Performance** and **System** fold.
+5. **Datacenter** and **More**: titles only, in small groups.
+6. Settings → Theme: light, dark and AMOLED are all readable; nothing glows.
+
 ### A. Network card (guest agent)
-1. Start the test VM, open it. Under **Network** you see the OS name and its IP addresses
+1. Start the test VM, open it. Tap **Network**: you see the OS name and its IP addresses
    (no `127.0.0.1` or `fe80::` noise).
 2. Tap an IP: "Copied …" appears; paste it somewhere to check.
 3. Open the test container (running): its IPs show without any agent.
 4. A VM without the agent shows how to enable it.
 
 ### B. Performance charts
-1. On the test VM: **Performance** shows CPU, memory, network and disk I/O.
+1. On the test VM, tap **Performance**: CPU, memory, network and disk I/O.
 2. Switch Hour / Day / Week / Month / Year. Touch and drag across a chart: time and values follow
    your finger.
 3. Open a node (Resources → a node): CPU with IO wait, load, memory, network.
@@ -65,7 +81,7 @@ Tick each line, or note what happened instead.
 5. Change a field and press Back: "Discard changes?".
 6. Container: the field is called **Hostname**.
 
-### D. Consoles (Tools → Console, Node → Shell)
+### D. Consoles (the guest's **Console** button, Node → Shell)
 Rebuilt after beta.2 (the VM screen looped and terminals stayed empty). Test with a CI build
 newer than beta.2 (section 1). The subtitle under the title says **Connecting…**, then
 **Connected** (terminals) or **Connected · *VM name*** (VM screen).
@@ -273,7 +289,7 @@ Needs two nodes and a guest whose disks are on local ZFS storage that exists on 
 4. On a second phone or emulator (or after removing a server): import → the servers appear;
    with passwords included, they sign in without asking.
 
-### D14. Node administration (Node → Administration), new after beta.2
+### D14. Node administration (the node's tools: Updates, Services, Network, …), new after beta.2
 1. **Updates**: the list matches the web UI's Node → Updates after **Refresh**; tap a package →
    its changelog. **Installed versions** matches the web UI's Package versions.
 2. **Upgrade** opens a terminal running the upgrade; answer its questions there (try it on a
@@ -392,18 +408,18 @@ Needs the test VM running with the agent installed and enabled (see Prepare).
 3. **Tools → Backups → Restore** on a backup: **As a new VM**, **Disks go to** another storage (if
    you have two that hold disks) → **Start restore** → the new VM's disks are on that storage
    (web UI → Hardware). Delete that VM afterwards (next step).
-4. **Tools → Delete VM** on a running VM only says to shut it down first. On a stopped one: the
+4. **Tools → Delete** (behind **More**) on a running VM only says to shut it down first. On a stopped one: the
    dialog asks you to type its **ID** (not the name), with both options ticked → **Delete** (and
    the fingerprint if App lock checks again) → the screen closes; the VM is gone in the web UI;
    its backups are still there.
 
 ### D21. Nodes and tasks: all guests at once, history, catalogue, stop a task, new after beta.2
-1. Node → **Guests on this node** → **Shut down all** → type the node's name (and the
+1. Node → the **⋯** beside **Guests on this node** → **Shut down all** → type the node's name (and the
    fingerprint) → every guest on it shuts down.
 2. **Start all** with "Also guests that aren't set to start at boot" ticked → they start one
    after another; the guest with Order 1 (D20) starts first. **Migrate all** with one node says
    there is no other node to move to (with two nodes: pick one; the guests move).
-3. Node → **Administration → Task history** matches the web UI's Node → Task History. **Failed**
+3. Node → **Task history** (behind **More**) matches the web UI's Node → Task History. **Failed**
    shows only failed tasks; **Load older tasks** adds older pages; a task opens its log.
 4. Datacenter → **Storage** → tap the `local` row of your node → **CT templates** → **Template
    catalogue** → search `alpine` → **Download to this storage** → "… downloaded"; the entry now
@@ -469,7 +485,7 @@ Needs the test VM running with the agent installed and enabled (see Prepare).
 3. Unstar it: it disappears from the Overview.
 
 ### K. Nodes
-1. Node screen: **Tools → Shell** (see D) and **Power → Reboot / Shut down**.
+1. Node screen: **Shell** (see D), and the power icon in the top bar → **Reboot / Shut down**.
 2. Only on a node you can afford to restart: **Reboot** asks you to type the node name → "Reboot
    of … requested" → the node goes offline and comes back in the app.
 

@@ -411,6 +411,20 @@ def leave_console(marker="Reconnect"):
     raise AssertionError(f"Back didn't leave the console (still showing '{marker}')")
 
 
+def open_tool(label, anchor="Backups"):
+    """
+    Taps a tool in a guest's or node's grid. [anchor] is a tool that is always in the first row
+    (every guest has Backups, every node a Shell), so scrolling to it brings the grid on screen;
+    tools past the first rows are folded behind More.
+    """
+    scroll_to(anchor, exact=True)
+    root = dump()
+    more = first_match(root, "More", exact=True)
+    if first_match(root, label, exact=True) is None and more is not None:
+        tap_node(more)
+    tap_node(scroll_to(label, exact=True))
+
+
 def screenshot(name):
     path = os.path.join(OUT, f"{name}.png")
     with open(path, "wb") as f:
@@ -510,11 +524,13 @@ def resources():
 @step("Performance charts and guest agent info of a running VM")
 def performance():
     tap_node(scroll_to("k8s-master"))
-    # The Network card sits above the charts: check it first, before scrolling down.
-    scroll_to("10.0.0.103")                # IP address reported by the guest agent
-    find("Ubuntu 24.04.1 LTS", timeout=10)
+    scroll_to("10.0.0.103")                # the guest agent's first address, in the summary line
     tap("Add to favourites")               # the star in the top bar; checked on the dashboard at the end
     find("Remove from favourites", timeout=10)
+    # Network, Performance and Details start folded. Open Network first: it sits above the charts.
+    tap_node(scroll_to("Network", exact=True))
+    find("Ubuntu 24.04.1 LTS", timeout=10)
+    tap_node(scroll_to("Performance", exact=True))
     tap_node(scroll_to("Week"))            # timeframe picker
     time.sleep(2)                          # reload for the new timeframe
     scroll_to("Disk I/O")                  # the last chart
@@ -531,8 +547,7 @@ def performance():
 @step("Guest agent: freeze and thaw the filesystems, then trim them")
 def agent():
     tap_node(scroll_to("k8s-master"))      # running, with the agent enabled
-    # The Tools entry; "Guest agent" alone also matches the Details card's "Guest agent: Yes" row.
-    tap_node(scroll_to("Freeze or trim filesystems"))
+    open_tool("Guest agent")               # Details, with its "Guest agent: Yes" row, stays folded
     find("Writable", timeout=30)
     tap("Freeze filesystems")
     find("Every write inside the VM waits", timeout=10)
@@ -571,7 +586,7 @@ def guest_start():
 @step("Take a snapshot of the running VM")
 def snapshots():
     tap_node(scroll_to("win11"))           # running since the previous step
-    tap_node(scroll_to("Snapshots"))
+    open_tool("Snapshots")
     find("fresh-install", timeout=30)      # seeded by the mock
     screenshot("09-snapshots")
     tap("Take snapshot")
@@ -590,14 +605,14 @@ def snapshots():
     find("pre-25H2-baseline", timeout=15)  # shown under the snapshot after the reload
     back()
     # Back on the guest screen, which keeps its scroll position.
-    scroll_to("Save this state and roll back to it later")
+    scroll_to("Snapshots", exact=True)
     back()
 
 
 @step("Back up a container, then restore it as a new one")
 def backups():
     tap_node(scroll_to("pihole"))
-    tap_node(scroll_to("Backups"))
+    open_tool("Backups")
     find("Verified", timeout=30)           # the seeded Backup Server backup, verified
     screenshot("11b-backups")
     tap("Back up now")
@@ -612,14 +627,14 @@ def backups():
     find("CT restore finished", timeout=60)
     screenshot("11d-restored")
     back()
-    scroll_to("Back up now and restore")   # back on the guest screen (it keeps its scroll position)
+    scroll_to("Backups", exact=True)       # back on the guest screen (it keeps its scroll position)
     back()
 
 
 @step("Edit a container's options")
 def options():
     tap_node(scroll_to("nginx-proxy"))
-    tap_node(scroll_to("Options"))
+    open_tool("Options")
     find("Hostname", timeout=30)           # containers call their name a hostname
     # The hint sits under the Save button, below the start order fields: scroll to it.
     scroll_to("No unsaved changes.")
@@ -631,14 +646,14 @@ def options():
     wait_until(lambda: visible("No unsaved changes."), "the options to be saved", timeout=30)
     screenshot("11e-options")
     back()
-    scroll_to("Name, tags, notes, start at boot, protection")  # back on the guest screen
+    scroll_to("Options", exact=True)       # back on the guest screen
     back()
 
 
 @step("VM hardware: add a disk, and a memory change that waits for the next start")
 def hardware():
     tap_node(scroll_to("win11"))           # running since the start step
-    tap_node(scroll_to("Hardware"))
+    open_tool("Hardware")
     find("Processor", timeout=30)          # section headers are upper-case on screen; this is a row
     find("SCSI 0", timeout=30)             # the seeded system disk
     tap_node(scroll_to("Add disk"))
@@ -653,7 +668,7 @@ def hardware():
     find("After restart", timeout=30)
     screenshot("11e3-hardware")
     back()
-    scroll_to("CPU, memory, disks, CD/DVD, network, boot order")  # back on the guest screen
+    scroll_to("Hardware", exact=True)      # back on the guest screen
     back()
 
 
@@ -722,7 +737,7 @@ def console():
         time.sleep(1)
     screenshot("11f-console")
     leave_console()
-    scroll_to("The container's terminal")  # back on the guest screen
+    scroll_to("Console", exact=True)       # back on the guest screen
     back()
 
 
@@ -737,19 +752,19 @@ def vm_console():
         assert_console_fills(console_probe("vnc"), "screen")  # the mock's screen is #1e293b
     screenshot("11f2-vm-console")
     leave_console()
-    scroll_to("The VM's screen (noVNC)")
+    scroll_to("Console", exact=True)
     back()
 
 
 @step("Cloud-init settings of a VM")
 def cloud_init():
     tap_node(scroll_to("k8s-master"))
-    tap_node(scroll_to("Cloud-init"))
+    open_tool("Cloud-init")
     find("ubuntu", timeout=30)             # the user from the VM's config
     scroll_to("10.0.0.103/24")             # net0's static address
     screenshot("11f3-cloud-init")
     back()
-    scroll_to("User, password, SSH keys, IP addresses, DNS")  # back on the guest screen
+    scroll_to("Cloud-init", exact=True)    # back on the guest screen
     back()
 
 
@@ -772,7 +787,7 @@ def bulk():
 @step("Clone the template, migrate the clone to another node, then delete it")
 def clone_migrate():
     tap_node(scroll_to("ubuntu-2404-template"))
-    tap_node(scroll_to("Clone"))
+    open_tool("Clone")
     find("Linked clone", timeout=30)       # templates clone linked by default
     tap_node(scroll_to("Create clone"))
     find("Open it", timeout=60)            # the clone task finished
@@ -780,14 +795,14 @@ def clone_migrate():
     wait_for_snackbar_to_close()           # it covers the end of the form, where the button is
     tap_node(scroll_to("Open it"))
     find("ubuntu-2404-template-clone", timeout=30)
-    tap_node(scroll_to("Migrate"))
+    open_tool("Migrate")                   # behind More on a VM with all its tools
     find("Offline migration", timeout=30)  # the clone is stopped; pve2 is preselected
     tap_node(scroll_to("Start migration"))
     tap("Start migration", pick="lowest")  # the confirmation dialog's button
     find("· pve2 ·", timeout=60)           # the guest screen again, now on pve2
     screenshot("11i-migrated")
     # Delete the clone again: type its ID, then the guest screen closes by itself.
-    tap_node(scroll_to("Delete VM"))
+    open_tool("Delete")
     title = find("Delete VM ", timeout=10)  # "Delete VM 106 (ubuntu-2404-template-clone)?"
     vmid = re.search(r"Delete VM (\d+)", " ".join(labels(title))).group(1)
     fill(f"Type “{vmid}” to confirm", vmid, fallback_index=0)
@@ -795,7 +810,7 @@ def clone_migrate():
     find("Open it", timeout=60)            # back on the clone screen
     screenshot("11j-clone-deleted")
     back()                                 # to the template
-    scroll_to("Create new guests from this template")
+    scroll_to("Clone", exact=True)
     back()
 
 
@@ -1022,7 +1037,7 @@ def pools():
 def permissions():
     tap("Overview")
     tap_node(scroll_to("Datacenter", exact=True))
-    tap_node(scroll_to("Accounts, passwords, API tokens and second factors"))   # Users
+    tap_node(scroll_to("Users", exact=True))
     find("alice@corp", timeout=30)
     tap("Add user")
     fill("User name", "dave", fallback_index=0)
@@ -1041,7 +1056,7 @@ def permissions():
     find("Own permissions", timeout=30)           # the new token, with separated privileges
     back()                                        # to Users
     back()                                        # to Datacenter
-    tap_node(scroll_to("Who has which role, and where"))
+    tap_node(scroll_to("Permissions", exact=True))
     find("/pool/prod", timeout=30)                # given to an API token in the mock
     tap("Add permission")
     tap("/storage")
@@ -1052,7 +1067,7 @@ def permissions():
     find("Operator given to auditors on /storage", timeout=30)
     screenshot("13i-permissions")
     back()
-    tap_node(scroll_to("Where users sign in from"))   # Realms
+    tap_node(scroll_to("Realms", exact=True))
     find("Active Directory", timeout=30)          # corp
     tap("Sync")
     tap("Preview", pick="lowest")                 # a dry run is the default
@@ -1067,7 +1082,7 @@ def permissions():
 def ceph():
     tap("Overview")
     tap_node(scroll_to("Datacenter", exact=True))
-    tap_node(scroll_to("Health, OSDs, pools, monitors, CephFS and flags"))   # Ceph
+    tap_node(scroll_to("Ceph", exact=True))
     find("2 osds down", timeout=30)               # pve3 is offline in the mock
     screenshot("13j-ceph")
     tap_node(scroll_to("OSDs will not automatically be marked out"))    # the noout switch
@@ -1092,7 +1107,7 @@ def ceph():
 def sdn():
     tap("Overview")
     tap_node(scroll_to("Datacenter", exact=True))
-    tap_node(scroll_to("Software-defined networks: zones, VNets, subnets, IPAM"))   # SDN
+    tap_node(scroll_to("SDN", exact=True))
     find("1 change not applied yet", timeout=30)  # the mock's new VNet iot
     tap_node(scroll_to("IoT · Zone vlans"))
     find("No subnets yet", timeout=30)
@@ -1156,7 +1171,7 @@ def backup_server():
 def node_admin():
     tap("Resources")
     tap_node(scroll_to("pve1", exact=True))      # the node
-    tap_node(scroll_to("Updates", exact=True))
+    open_tool("Updates", anchor="Shell")
     find("pve-manager", timeout=30)              # upgradable in the mock
     screenshot("15-updates")
     tap("Repositories")
@@ -1165,12 +1180,12 @@ def node_admin():
     wait_until(lambda: not visible("Add No-Subscription"), "the repository to be added", timeout=30)
     back()                                       # to Updates
     back()                                       # to the node
-    tap_node(scroll_to("Services", exact=True))
+    open_tool("Services", anchor="Shell")
     tap_node(scroll_to("ksmtuned", exact=True))  # stopped in the mock
     tap("Start", pick="lowest")
     wait_until(lambda: row_shows("ksmtuned", "Running"), "ksmtuned to run", timeout=60)
     back()
-    tap_node(scroll_to("Bridges, bonds and VLANs"))  # Network (a chart is called Network too)
+    open_tool("Network", anchor="Shell")         # the charts, with a Network chart too, stay folded
     find("vmbr0", timeout=30)
     tap("Bridge")                                # new bridge, named vmbr2
     tap("Save", pick="lowest")
@@ -1179,15 +1194,16 @@ def node_admin():
     tap("Revert", pick="lowest")                 # the confirmation
     wait_until(lambda: not visible("Changes not applied yet"), "the changes to be reverted", timeout=30)
     back()
-    tap_node(scroll_to("System log", exact=True))
+    open_tool("System log", anchor="Shell")
     find("pvestatd", timeout=30)
     back()
-    tap_node(scroll_to("Start all", exact=True))  # the node's stopped guests, in start order
+    tap_node(scroll_to("Actions for all guests"))  # the ⋯ menu by the guests' header
+    tap("Start all")                             # the node's stopped guests, in start order
     find("Start the guests on pve1?", timeout=10)
     tap("Start all", pick="lowest")              # the dialog's button
     find("Start all guests finished", timeout=60)
     screenshot("15b-start-all")
-    tap_node(scroll_to("Task history", exact=True))
+    open_tool("Task history", anchor="Shell")    # behind More
     find("Start all guests", timeout=30)         # the newest task of pve1
     tap("Failed")
     wait_until(lambda: not visible("Start all guests"), "the failed tasks only", timeout=30)
@@ -1237,7 +1253,7 @@ def ssh():
     back()                                        # More
     tap("Resources")
     tap_node(scroll_to("pve1", exact=True))       # the node
-    tap_node(scroll_to("SSH", exact=True))
+    open_tool("SSH", anchor="Shell")              # behind More
     find("Host or IP address", timeout=30)
     # The mock's cluster says 10.0.0.11; the emulator reaches the mock's SSH server on the host.
     wait_until(lambda: not visible("Looking up the address"), "the address lookup", timeout=30)

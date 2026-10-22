@@ -24,15 +24,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.CheckCircle
-import androidx.compose.material.icons.outlined.CloudDownload
-import androidx.compose.material.icons.outlined.Description
-import androidx.compose.material.icons.outlined.History
-import androidx.compose.material.icons.outlined.Language
 import androidx.compose.material.icons.outlined.Refresh
-import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material.icons.outlined.SettingsEthernet
-import androidx.compose.material.icons.outlined.Storage
-import androidx.compose.material.icons.outlined.SystemUpdateAlt
 import androidx.compose.material.icons.outlined.Terminal
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
@@ -533,65 +525,6 @@ private fun TextDialog(title: String, text: String?, error: String?, onClose: ()
         },
         confirmButton = { TextButton(onClick = onClose) { Text(stringResource(R.string.action_close)) } },
     )
-}
-
-/** Node → Administration: the M5 pages. */
-@Composable
-fun NodeAdminCard(onOpen: (NodeAdminPage) -> Unit) {
-    val c = AnProxTheme.colors
-    GlassCard(contentPadding = PaddingValues(vertical = 4.dp)) {
-        NodeAdminPage.entries.forEach { page ->
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .clickable { onOpen(page) }
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Icon(
-                    when (page) {
-                        NodeAdminPage.UPDATES -> Icons.Outlined.SystemUpdateAlt
-                        NodeAdminPage.REPOSITORIES -> Icons.Outlined.CloudDownload
-                        NodeAdminPage.SERVICES -> Icons.Outlined.Settings
-                        NodeAdminPage.JOURNAL -> Icons.Outlined.Description
-                        NodeAdminPage.SYSTEM -> Icons.Outlined.Language
-                        NodeAdminPage.NETWORK -> Icons.Outlined.SettingsEthernet
-                        NodeAdminPage.DISKS -> Icons.Outlined.Storage
-                        NodeAdminPage.TASKS -> Icons.Outlined.History
-                    },
-                    contentDescription = null,
-                    tint = c.accent,
-                )
-                Spacer(Modifier.width(14.dp))
-                Column(Modifier.weight(1f)) {
-                    Text(stringResource(pageTitle(page)), style = MaterialTheme.typography.titleSmall, color = c.textPrimary)
-                    Text(stringResource(pageBody(page)), style = MaterialTheme.typography.bodySmall, color = c.textSecondary)
-                }
-            }
-        }
-    }
-}
-
-private fun pageTitle(page: NodeAdminPage): Int = when (page) {
-    NodeAdminPage.UPDATES -> R.string.updates_title
-    NodeAdminPage.REPOSITORIES -> R.string.repos_title
-    NodeAdminPage.SERVICES -> R.string.services_title
-    NodeAdminPage.JOURNAL -> R.string.journal_title
-    NodeAdminPage.SYSTEM -> R.string.system_title
-    NodeAdminPage.NETWORK -> R.string.network_title
-    NodeAdminPage.DISKS -> R.string.disks_title
-    NodeAdminPage.TASKS -> R.string.taskhistory_title
-}
-
-private fun pageBody(page: NodeAdminPage): Int = when (page) {
-    NodeAdminPage.UPDATES -> R.string.updates_open_body
-    NodeAdminPage.REPOSITORIES -> R.string.repos_open_body
-    NodeAdminPage.SERVICES -> R.string.services_open_body
-    NodeAdminPage.JOURNAL -> R.string.journal_open_body
-    NodeAdminPage.SYSTEM -> R.string.system_open_body
-    NodeAdminPage.NETWORK -> R.string.network_open_body
-    NodeAdminPage.DISKS -> R.string.disks_open_body
-    NodeAdminPage.TASKS -> R.string.taskhistory_open_body
 }
 
 // ------------------------------------------------------------------------------ DNS, hosts, time

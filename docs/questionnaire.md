@@ -286,3 +286,8 @@ Add dated entries here when an answer changes or needs clarifying.
   (PIN, pattern or password) through Android's biometric prompt, not a separate AnProx PIN. The
   extra check before dangerous actions applies to type-to-confirm actions while the app lock is
   on, and can be switched off. See [ADR 0013](adr/0013-app-lock.md).
+- 2026-10-21, Q37 (refined): before 1.0 the owner found the design "cluttered and overwhelming"
+  and, from five directions on a design canvas, chose to keep the current theme but uncluttered
+  ("aplică tema curentă dar uncluttered"): the same Midnight palette and fonts, with flat solid
+  cards instead of glass and glows, one accent, and screens that open on their common case and
+  fold the rest. See [ADR 0016](adr/0016-calm-midnight.md) and [design-system.md](design-system.md).

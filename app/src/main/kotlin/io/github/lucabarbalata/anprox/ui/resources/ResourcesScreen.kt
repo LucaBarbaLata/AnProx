@@ -1,8 +1,8 @@
 package io.github.lucabarbalata.anprox.ui.resources
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -11,35 +11,31 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.outlined.Close
-import androidx.compose.material.icons.outlined.Computer
-import androidx.compose.material.icons.outlined.Dns
-import androidx.compose.material.icons.outlined.Inventory2
 import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.PowerSettingsNew
 import androidx.compose.material.icons.outlined.SearchOff
 import androidx.compose.material.icons.outlined.StopCircle
-import androidx.compose.material.icons.outlined.Storage
 import androidx.compose.material.icons.outlined.TouchApp
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -49,9 +45,14 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -60,11 +61,9 @@ import io.github.lucabarbalata.anprox.core.designsystem.component.EmptyState
 import io.github.lucabarbalata.anprox.core.designsystem.component.GlassCard
 import io.github.lucabarbalata.anprox.core.designsystem.component.GlassTextField
 import io.github.lucabarbalata.anprox.core.designsystem.component.StatusDot
-import io.github.lucabarbalata.anprox.core.designsystem.component.TagChip
-import io.github.lucabarbalata.anprox.core.designsystem.component.UsageBar
+import io.github.lucabarbalata.anprox.core.designsystem.component.Tone
 import io.github.lucabarbalata.anprox.core.designsystem.component.isWideLayout
 import io.github.lucabarbalata.anprox.core.designsystem.theme.AnProxTheme
-import io.github.lucabarbalata.anprox.core.designsystem.theme.MonoStyle
 import io.github.lucabarbalata.anprox.data.guest.GuestRef
 import io.github.lucabarbalata.anprox.model.format.Formatters
 import io.github.lucabarbalata.anprox.model.pve.ClusterResource
@@ -250,8 +249,8 @@ private fun ResourceList(
     onLongClick: (ResourceItem) -> Unit,
     onClick: (ResourceItem) -> Unit,
 ) {
-    LazyColumn(modifier, contentPadding = padding, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        busyText?.let { text -> item { BusyCard(text) } }
+    LazyColumn(modifier, contentPadding = padding) {
+        busyText?.let { text -> item { Box(Modifier.padding(bottom = 12.dp)) { BusyCard(text) } } }
         item {
             GlassTextField(
                 value = state.query,
@@ -269,7 +268,7 @@ private fun ResourceList(
                 },
             )
         }
-        item { Filters(state, onFilter, onRunningOnly) }
+        item { Filters(state, onFilter, onRunningOnly, Modifier.padding(vertical = 8.dp)) }
         if (state.loaded && state.items.isEmpty()) {
             item {
                 EmptyState(
@@ -279,7 +278,8 @@ private fun ResourceList(
                 )
             }
         }
-        items(state.items, key = { it.key }) { item ->
+        // The rows share one surface: rounded at the ends, a hairline between two rows.
+        itemsIndexed(state.items, key = { _, item -> item.key }) { i, item ->
             val r = item.resource
             val type = GuestType.fromApi(r.type)
             val isSelected = selectedKey != null && type != null && r.vmid != null && r.node != null &&
@@ -287,6 +287,8 @@ private fun ResourceList(
             ResourceRow(
                 item,
                 state.showServerNames,
+                first = i == 0,
+                last = i == state.items.lastIndex,
                 selected = isSelected,
                 checked = item.key in checkedKeys,
                 onLongClick = if (item.selectable) {
@@ -299,39 +301,41 @@ private fun ResourceList(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun Filters(state: ResourcesState, onFilter: (ResourceFilter) -> Unit, onRunningOnly: (Boolean) -> Unit) {
-    val c = AnProxTheme.colors
-    val colors = FilterChipDefaults.filterChipColors(
-        containerColor = c.glass,
-        labelColor = c.textSecondary,
-        selectedContainerColor = c.accent.copy(alpha = 0.2f),
-        selectedLabelColor = c.accent,
-    )
+private fun Filters(state: ResourcesState, onFilter: (ResourceFilter) -> Unit, onRunningOnly: (Boolean) -> Unit, modifier: Modifier = Modifier) {
     Row(
-        Modifier
+        modifier
             .fillMaxWidth()
             .horizontalScroll(rememberScrollState()),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         ResourceFilter.entries.forEach { f ->
-            FilterChip(
-                selected = state.filter == f,
-                onClick = { onFilter(f) },
-                label = { Text("${filterLabel(f)} · ${state.counts[f] ?: 0}") },
-                colors = colors,
-                shape = RoundedCornerShape(50),
-            )
+            FilterPill(filterLabel(f), state.filter == f, Modifier.selectable(selected = state.filter == f, role = Role.Tab) { onFilter(f) })
         }
-        FilterChip(
-            selected = state.runningOnly,
-            onClick = { onRunningOnly(!state.runningOnly) },
-            label = { Text(stringResource(R.string.resources_running_only)) },
-            colors = colors,
-            shape = RoundedCornerShape(50),
+        FilterPill(
+            stringResource(R.string.resources_running_only),
+            state.runningOnly,
+            Modifier.toggleable(value = state.runningOnly, role = Role.Checkbox) { onRunningOnly(it) },
         )
     }
+}
+
+/** A filter as plain text; the chosen one sits on a soft pill. [modifier] makes it selectable. */
+@Composable
+private fun FilterPill(label: String, selected: Boolean, modifier: Modifier) {
+    val c = AnProxTheme.colors
+    Text(
+        label,
+        style = MaterialTheme.typography.labelLarge,
+        color = if (selected) c.textPrimary else c.textSecondary,
+        maxLines = 1,
+        modifier = Modifier
+            .minimumInteractiveComponentSize()
+            .clip(RoundedCornerShape(50))
+            .background(if (selected) c.glassStrong else Color.Transparent)
+            .then(modifier)
+            .padding(horizontal = 14.dp, vertical = 8.dp),
+    )
 }
 
 @Composable
@@ -345,10 +349,17 @@ private fun filterLabel(f: ResourceFilter): String = stringResource(
     },
 )
 
+/**
+ * One row of the list: a status dot, the name, what it is and where, and one number on the right
+ * (CPU for a running guest or node, how full a storage is). Anything that isn't running says its
+ * state there instead.
+ */
 @Composable
 private fun ResourceRow(
     item: ResourceItem,
     showServer: Boolean,
+    first: Boolean,
+    last: Boolean,
     selected: Boolean,
     checked: Boolean,
     onLongClick: (() -> Unit)?,
@@ -358,73 +369,63 @@ private fun ResourceRow(
     val r = item.resource
     val appearance = statusAppearance(r.status)
     val clickable = r.isGuest || r.resourceType == ResourceType.NODE || r.holdsBackups
+    val corner = 20.dp
+    val shape = RoundedCornerShape(
+        topStart = if (first) corner else 0.dp,
+        topEnd = if (first) corner else 0.dp,
+        bottomStart = if (last) corner else 0.dp,
+        bottomEnd = if (last) corner else 0.dp,
+    )
+    val number = when {
+        r.template -> null
+        r.resourceType == ResourceType.STORAGE && r.status == "available" -> Formatters.percent(r.diskFraction)
+        r.isRunning || (r.resourceType == ResourceType.NODE && r.status == "online") -> Formatters.percent(r.cpuFraction)
+        else -> null
+    }
     GlassCard(
         onClick = if (clickable) onClick else null,
         onLongClick = onLongClick,
+        shape = shape,
         strong = selected || checked,
-        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp),
+        contentPadding = PaddingValues(0.dp),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            if (checked) {
-                Icon(Icons.Filled.CheckCircle, contentDescription = stringResource(R.string.resources_checked), tint = c.accent, modifier = Modifier.size(22.dp))
-            } else {
-                Icon(
-                    when (r.resourceType) {
-                        ResourceType.QEMU -> Icons.Outlined.Computer
-                        ResourceType.LXC -> Icons.Outlined.Inventory2
-                        ResourceType.NODE -> Icons.Outlined.Dns
-                        else -> Icons.Outlined.Storage
-                    },
-                    contentDescription = null,
-                    tint = if (r.template) c.textTertiary else c.textSecondary,
-                    modifier = Modifier.size(22.dp),
-                )
+        if (!first) HorizontalDivider(Modifier.padding(start = 40.dp, end = 16.dp), thickness = 1.dp, color = c.hairline)
+        Row(Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.width(12.dp), contentAlignment = Alignment.Center) {
+                if (checked) {
+                    Icon(Icons.Filled.CheckCircle, contentDescription = stringResource(R.string.resources_checked), tint = c.accent, modifier = Modifier.size(18.dp))
+                } else {
+                    // The state is in words on the right unless a number stands there; then the dot says it.
+                    val label = appearance.label
+                    StatusDot(appearance.tone, if (number != null) Modifier.semantics { contentDescription = label } else Modifier)
+                }
             }
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (r.vmid != null) {
-                        Text("${r.vmid}", style = MonoStyle, color = c.textTertiary)
-                        Spacer(Modifier.width(8.dp))
-                    }
-                    Text(
-                        r.name ?: r.storage ?: r.node ?: r.id,
-                        style = MaterialTheme.typography.titleSmall,
-                        color = c.textPrimary,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
                 Text(
-                    subtitle(item, showServer),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = c.textSecondary,
+                    r.name ?: r.storage ?: r.node ?: r.id,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = if (r.template) c.textSecondary else c.textPrimary,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                if (r.tagList.isNotEmpty()) {
-                    Spacer(Modifier.height(6.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) { r.tagList.take(4).forEach { TagChip(it) } }
-                }
+                Text(
+                    subtitle(item, showServer),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = c.textTertiary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
             }
             Spacer(Modifier.width(12.dp))
-            Column(Modifier.width(72.dp), horizontalAlignment = Alignment.End) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    StatusDot(appearance.tone, size = 6.dp)
-                    Spacer(Modifier.width(4.dp))
-                    Text(
-                        if (r.template) stringResource(R.string.resources_template) else appearance.label,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = c.textSecondary,
-                        maxLines = 1,
-                    )
-                }
-                val usage = if (r.resourceType == ResourceType.STORAGE) r.diskFraction else r.memFraction
-                if (r.isRunning || r.resourceType == ResourceType.STORAGE) {
-                    Spacer(Modifier.height(6.dp))
-                    UsageBar(usage, height = 4.dp)
-                    Text(Formatters.percent(if (r.resourceType == ResourceType.STORAGE) usage else r.cpuFraction), style = MaterialTheme.typography.labelSmall, color = c.textTertiary)
-                }
+            when {
+                r.template -> Text(stringResource(R.string.resources_template), style = MaterialTheme.typography.bodySmall, color = c.textTertiary)
+                number != null -> Text(number, style = MaterialTheme.typography.bodyMedium, color = c.textPrimary)
+                else -> Text(
+                    appearance.label,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (appearance.tone == Tone.DANGER) c.danger else c.textSecondary,
+                )
             }
         }
     }
@@ -434,24 +435,23 @@ private fun ResourceRow(
 private fun subtitle(item: ResourceItem, showServer: Boolean): String {
     val r = item.resource
     val parts = mutableListOf<String>()
-    if (showServer) parts += item.serverName
     when (r.resourceType) {
         ResourceType.QEMU, ResourceType.LXC -> {
+            val type = stringResource(if (r.resourceType == ResourceType.QEMU) R.string.guest_type_vm else R.string.guest_type_ct)
+            parts += "$type ${r.vmid ?: ""}".trim()
             r.node?.let { parts += it }
-            r.maxcpu?.let { parts += stringResource(R.string.resources_vcpus, it.toInt()) }
-            r.maxmem?.let { parts += Formatters.bytes(it) }
         }
         ResourceType.NODE -> {
+            parts += stringResource(R.string.node_subtitle)
             r.maxcpu?.let { parts += stringResource(R.string.resources_cores, it.toInt()) }
-            r.maxmem?.let { parts += Formatters.bytes(it) }
         }
         ResourceType.STORAGE -> {
             parts += if (r.shared) stringResource(R.string.resources_shared) else r.node.orEmpty()
             r.plugintype?.let { parts += it }
-            parts += Formatters.usage(r.disk, r.maxdisk)
         }
         else -> Unit
     }
+    if (showServer) parts += item.serverName
     return parts.filter { it.isNotBlank() }.joinToString(" · ")
 }
 

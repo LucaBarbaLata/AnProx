@@ -126,7 +126,7 @@ or backup, and confirming the result in the task log, without reaching for a lap
 | NFR-3 | Adaptive phone and tablet/foldable layouts | Q3 | ✅ (rail + split view) |
 | NFR-4 | PVE 9 / PBS 4 first-class, PVE 8 / PBS 3 best-effort; detect the version and hide unsupported features | Q5 | 🔸 (version shown; feature gating as features land) |
 | NFR-5 | Translation-ready: every user-visible string in resources | Q16 | ✅ |
-| NFR-6 | Bespoke "Midnight Glass" design; light/dark/AMOLED | Q29, Q30, Q37 | ✅ |
+| NFR-6 | Bespoke "Midnight" design (calm since 2026-10-21, ADR 0016); light/dark/AMOLED | Q29, Q30, Q37 | ✅ |
 | NFR-7 | Bottom bar on phones, rail on tablets | Q31 | ✅ |
 | NFR-8 | Zero telemetry; no Google Play Services/Firebase; F-Droid compatible | Q34, Q36 | ✅ |
 | NFR-9 | GPL-3.0 | Q33 | ✅ |

@@ -24,10 +24,10 @@ fun MoreScreen(onServers: () -> Unit, onSettings: () -> Unit, onAlerts: () -> Un
         LazyColumn(contentPadding = contentPadding(inner), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             item {
                 GlassCard(contentPadding = PaddingValues(vertical = 6.dp)) {
-                    MenuRow(Icons.Outlined.Dns, stringResource(R.string.servers_title), stringResource(R.string.more_servers_body), onServers)
-                    MenuRow(Icons.Outlined.NotificationsActive, stringResource(R.string.alerts_title), stringResource(R.string.more_alerts_body), onAlerts)
-                    MenuRow(Icons.Outlined.Palette, stringResource(R.string.settings_title), stringResource(R.string.more_settings_body), onSettings)
-                    MenuRow(Icons.Outlined.Info, stringResource(R.string.about_title), stringResource(R.string.more_about_body), onAbout)
+                    MenuRow(Icons.Outlined.Dns, stringResource(R.string.servers_title), null, onServers)
+                    MenuRow(Icons.Outlined.NotificationsActive, stringResource(R.string.alerts_title), null, onAlerts)
+                    MenuRow(Icons.Outlined.Palette, stringResource(R.string.settings_title), null, onSettings)
+                    MenuRow(Icons.Outlined.Info, stringResource(R.string.about_title), null, onAbout)
                 }
             }
         }

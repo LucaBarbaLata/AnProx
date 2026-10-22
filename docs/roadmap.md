@@ -40,7 +40,7 @@ Exit criteria for every milestone:
 | Guests | Live status; start, shut down, reboot, stop, pause, resume, reset; tiered confirmation; task follow-up | Q12 |
 | Nodes | Live usage, hardware and kernel info, guests on the node | — |
 | Tasks | Merged timeline across servers, filters, live task log | — |
-| Design | Midnight Glass design system; light, dark and AMOLED; bottom bar and side rail | Q29–Q31, Q37 |
+| Design | Midnight Glass design system; light, dark and AMOLED; bottom bar and side rail (calmed down in beta.3, ADR 0016) | Q29–Q31, Q37 |
 | Privacy | Zero telemetry; translation-ready strings | Q16, Q36 |
 
 ### Beta 0.1.0-beta.1 (M0 release): ✅ released

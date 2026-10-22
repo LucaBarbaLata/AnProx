@@ -35,7 +35,7 @@ Android (Q39), so it explains concepts as it goes. Words in **bold** are explain
 │ UPID parser, TFA challenge parser, endpoint URL normalisation                            │
 └──────────────────────────────────────────────────────────────────────────────────────────┘
 
-:core:designsystem (Android) — Midnight Glass theme + components, used by :app
+:core:designsystem (Android) — Midnight theme + components, used by :app
 :tools:mock-server (pure Kotlin) — fake PVE/PBS API, used by tests and for manual testing
 ```
 
@@ -168,7 +168,7 @@ Key ideas:
 
 ### 5. Design system (`:core:designsystem`)
 
-`AnProxTheme` provides the Midnight Glass colour tokens (`AnProxTheme.colors.accent` …), Inter
+`AnProxTheme` provides the Midnight colour tokens (`AnProxTheme.colors.accent` …), Inter
 typography and shapes, and maps them onto Material 3 so stock components (dialogs, text fields)
 match. Reusable components: `GlassBackground`, `GlassCard`, `UsageRing`, `UsageBar`,
 `StatusPill`, `MetricTile`, `GlassTextField`, `SwitchRow`, `SegmentedPicker`, `AnProxButton`,

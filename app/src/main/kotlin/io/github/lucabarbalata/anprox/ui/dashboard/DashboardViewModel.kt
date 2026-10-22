@@ -22,16 +22,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 
-data class DashboardTotals(
-    val vmsRunning: Int = 0,
-    val vmsTotal: Int = 0,
-    val ctsRunning: Int = 0,
-    val ctsTotal: Int = 0,
-    val nodesOnline: Int = 0,
-    val nodesTotal: Int = 0,
-)
-
-/** Things that need the admin's attention, shown at the top of the dashboard. */
+/** Things that need the admin's attention, shown inside their server's card on the dashboard. */
 sealed interface DashboardAlert {
     val serverId: String
     val serverName: String
@@ -55,7 +46,6 @@ data class DashboardState(
     val loaded: Boolean = false,
     val favourites: List<FavouriteGuest> = emptyList(),
     val servers: List<SnapshotState> = emptyList(),
-    val totals: DashboardTotals = DashboardTotals(),
     val alerts: List<DashboardAlert> = emptyList(),
     val refreshSeconds: Long = 5,
 ) {
@@ -83,7 +73,6 @@ class DashboardViewModel(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), DashboardState())
 
     private fun build(loaded: Boolean, list: List<SnapshotState>, interval: Long, favouriteKeys: Set<String>): DashboardState {
-        var totals = DashboardTotals()
         val alerts = mutableListOf<DashboardAlert>()
         val favourites = mutableListOf<FavouriteGuest>()
         for (s in list) {
@@ -94,16 +83,6 @@ class DashboardViewModel(
             }
             when (val snap = s.snapshot) {
                 is PveSnapshot -> {
-                    val vms = snap.guestCounts(GuestType.QEMU)
-                    val cts = snap.guestCounts(GuestType.LXC)
-                    totals = totals.copy(
-                        vmsRunning = totals.vmsRunning + vms.running,
-                        vmsTotal = totals.vmsTotal + vms.total,
-                        ctsRunning = totals.ctsRunning + cts.running,
-                        ctsTotal = totals.ctsTotal + cts.total,
-                        nodesOnline = totals.nodesOnline + snap.nodesOnline,
-                        nodesTotal = totals.nodesTotal + snap.nodes.size,
-                    )
                     snap.guests
                         .filter { g -> g.vmid != null && favouriteKey(id, g.type, g.vmid!!) in favouriteKeys }
                         .forEach { favourites += FavouriteGuest(id, name, it) }
@@ -125,7 +104,6 @@ class DashboardViewModel(
             loaded = loaded,
             favourites = favourites.sortedBy { it.resource.name?.lowercase() ?: "" },
             servers = list,
-            totals = totals,
             alerts = alerts,
             refreshSeconds = interval / 1000,
         )
