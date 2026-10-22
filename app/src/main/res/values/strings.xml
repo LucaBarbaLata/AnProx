@@ -2426,4 +2426,74 @@
     <string name="acme_delete_plugin_named">Delete %1$s</string>
     <string name="acme_delete_plugin_body">Domains validated through it can\'t be renewed until they use another plugin.</string>
     <string name="acme_plugin_deleted">Plugin deleted</string>
+
+    <!-- Notifications (M9) -->
+    <string name="notify_title">Notifications</string>
+    <string name="notify_targets">Targets</string>
+    <string name="notify_matchers">Matchers</string>
+    <string name="notify_target">Target</string>
+    <string name="notify_matcher">Matcher</string>
+    <string name="notify_add_target">Add target</string>
+    <string name="notify_add_matcher">Add matcher</string>
+    <string name="notify_type_sendmail">E-mail (sendmail)</string>
+    <string name="notify_type_smtp">E-mail (SMTP)</string>
+    <string name="notify_type_gotify">Gotify</string>
+    <string name="notify_type_webhook">Webhook</string>
+    <string name="notify_disabled">disabled</string>
+    <string name="notify_matcher_to">to %1$s</string>
+    <string name="notify_send_test">Send a test</string>
+    <string name="notify_actions_named">Actions for %1$s</string>
+    <string name="notify_delete_named">Delete %1$s</string>
+    <string name="notify_delete_target_body">Matchers that send to it stop doing so.</string>
+    <string name="notify_delete_matcher_body">The notifications it routed go only where other matchers send them.</string>
+    <string name="notify_name">Name</string>
+    <string name="notify_comment">Comment</string>
+    <string name="notify_disable">Disabled</string>
+    <string name="notify_keep_secret">Leave empty to keep the one saved</string>
+    <string name="notify_smtp_server">SMTP server</string>
+    <string name="notify_port">Port</string>
+    <string name="notify_port_hint">Empty: 465 with TLS, 587 with STARTTLS, 25 without</string>
+    <string name="notify_encryption">Encryption</string>
+    <string name="notify_mode_tls">TLS</string>
+    <string name="notify_mode_starttls">STARTTLS</string>
+    <string name="notify_mode_insecure">None</string>
+    <string name="notify_username">User name</string>
+    <string name="notify_password">Password</string>
+    <string name="notify_mailto">Recipients</string>
+    <string name="notify_mailto_hint">E-mail addresses, separated by commas</string>
+    <string name="notify_mailto_user">Proxmox users</string>
+    <string name="notify_mailto_user_hint">Their e-mail address is used, e.g. root@pam</string>
+    <string name="notify_from">From address</string>
+    <string name="notify_from_optional">From address (optional)</string>
+    <string name="notify_author">Author</string>
+    <string name="notify_gotify_server">Gotify server URL</string>
+    <string name="notify_token">App token</string>
+    <string name="notify_url">URL</string>
+    <string name="notify_method">Method</string>
+    <string name="notify_headers">Headers</string>
+    <string name="notify_headers_hint">One per line: Name: value</string>
+    <string name="notify_body">Body</string>
+    <string name="notify_body_hint">Templates such as {{ title }} and {{ message }} are filled in</string>
+    <string name="notify_secrets">Secrets</string>
+    <string name="notify_secrets_hint">One per line: name=value; use them as {{ secrets.name }}</string>
+    <string name="notify_send_to">Send to</string>
+    <string name="notify_need_target">Pick at least one target.</string>
+    <string name="notify_severities">Severities</string>
+    <string name="notify_severities_hint">None ticked: every severity.</string>
+    <string name="notify_fields">Fields</string>
+    <string name="notify_fields_hint">One per line: exact:type=vzdump or regex:hostname=pve.*</string>
+    <string name="notify_fields_known">One per line, e.g. exact:type=vzdump. Known types: %1$s</string>
+    <string name="notify_calendar">When</string>
+    <string name="notify_calendar_hint">Calendar events, one per line, e.g. mon..fri 8-17</string>
+    <string name="notify_mode">Match</string>
+    <string name="notify_mode_all">All rules</string>
+    <string name="notify_mode_any">Any rule</string>
+    <string name="notify_invert">Invert the match</string>
+    <string name="notify_target_added">Target added</string>
+    <string name="notify_target_saved">Target saved</string>
+    <string name="notify_target_deleted">Target deleted</string>
+    <string name="notify_matcher_added">Matcher added</string>
+    <string name="notify_matcher_saved">Matcher saved</string>
+    <string name="notify_matcher_deleted">Matcher deleted</string>
+    <string name="notify_test_sent">Test notification sent</string>
 </resources>

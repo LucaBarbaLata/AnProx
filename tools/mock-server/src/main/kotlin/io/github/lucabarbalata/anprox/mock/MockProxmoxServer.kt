@@ -578,6 +578,68 @@ class MockProxmoxServer(
         }
     }
 
+    /** Notification targets and matchers (M9). Array parameters arrive as repeated keys. */
+    private fun Route.notifications() {
+        val n = state.notifications
+        suspend fun ApplicationCall.multi(): Map<String, List<String>> = receiveParameters().let { p -> p.names().associateWith { p.getAll(it).orEmpty() } }
+        suspend fun ApplicationCall.writer(): MockState.Session? {
+            val s = authed() ?: return null
+            if (state.isReadOnly(s.user)) {
+                fail(403, "Permission check failed (/mapping/notifications, Mapping.Modify)")
+                return null
+            }
+            return s
+        }
+        suspend fun ApplicationCall.done(error: String?) = if (error != null) fail(400, error) else ok(JsonNull)
+
+        get("cluster/notifications/targets") {
+            call.authed() ?: return@get
+            call.ok(n.targets())
+        }
+        post("cluster/notifications/targets/{name}/test") {
+            call.authed() ?: return@post
+            val error = n.test(call.parameters["name"]!!)
+            if (error != null) call.fail(500, error) else call.ok(JsonNull)
+        }
+        get("cluster/notifications/endpoints/{type}/{name}") {
+            call.authed() ?: return@get
+            val endpoint = n.endpoint(call.parameters["type"]!!, call.parameters["name"]!!) ?: return@get call.fail(404, "endpoint does not exist")
+            call.ok(endpoint)
+        }
+        post("cluster/notifications/endpoints/{type}") {
+            call.writer() ?: return@post
+            call.done(n.create(call.parameters["type"]!!, call.multi()))
+        }
+        put("cluster/notifications/endpoints/{type}/{name}") {
+            call.writer() ?: return@put
+            call.done(n.update(call.parameters["type"]!!, call.parameters["name"]!!, call.multi()))
+        }
+        delete("cluster/notifications/endpoints/{type}/{name}") {
+            call.writer() ?: return@delete
+            call.done(n.delete(call.parameters["type"]!!, call.parameters["name"]!!))
+        }
+        get("cluster/notifications/matchers") {
+            call.authed() ?: return@get
+            call.ok(n.matchers())
+        }
+        post("cluster/notifications/matchers") {
+            call.writer() ?: return@post
+            call.done(n.createMatcher(call.multi()))
+        }
+        put("cluster/notifications/matchers/{name}") {
+            call.writer() ?: return@put
+            call.done(n.updateMatcher(call.parameters["name"]!!, call.multi()))
+        }
+        delete("cluster/notifications/matchers/{name}") {
+            call.writer() ?: return@delete
+            call.done(n.deleteMatcher(call.parameters["name"]!!))
+        }
+        get("cluster/notifications/matcher-field-values") {
+            call.authed() ?: return@get
+            call.ok(n.fieldValues(state.backupJobs().mapNotNull { (it["id"] as? JsonPrimitive)?.content }))
+        }
+    }
+
     /** Node certificates, the node's ACME domains and the cluster's ACME accounts and plugins (M9). */
     private fun Route.certificates() {
         val certs = state.certificates
@@ -707,6 +769,7 @@ class MockProxmoxServer(
         ceph()
         sdn()
         certificates()
+        notifications()
         get("cluster/status") {
             call.authed() ?: return@get
             call.ok(state.clusterStatus())

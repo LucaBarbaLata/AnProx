@@ -76,6 +76,7 @@ import io.github.lucabarbalata.anprox.ui.datacenter.BackupJobsScreen
 import io.github.lucabarbalata.anprox.ui.datacenter.ClusterLogScreen
 import io.github.lucabarbalata.anprox.ui.datacenter.DatacenterOptionsScreen
 import io.github.lucabarbalata.anprox.ui.datacenter.DatacenterScreen
+import io.github.lucabarbalata.anprox.ui.datacenter.NotificationsScreen
 import io.github.lucabarbalata.anprox.ui.datacenter.FirewallAliasesScreen
 import io.github.lucabarbalata.anprox.ui.datacenter.FirewallExtra
 import io.github.lucabarbalata.anprox.ui.datacenter.FirewallIpSetsScreen
@@ -134,6 +135,7 @@ import io.github.lucabarbalata.anprox.ui.navigation.LoginRoute
 import io.github.lucabarbalata.anprox.ui.navigation.MigrateRoute
 import io.github.lucabarbalata.anprox.ui.navigation.MoreRoute
 import io.github.lucabarbalata.anprox.ui.navigation.NodeAdminRoute
+import io.github.lucabarbalata.anprox.ui.navigation.NotificationsRoute
 import io.github.lucabarbalata.anprox.ui.navigation.NodeRoute
 import io.github.lucabarbalata.anprox.ui.navigation.OptionsRoute
 import io.github.lucabarbalata.anprox.ui.navigation.PbsJobsRoute
@@ -332,6 +334,7 @@ fun AnProxApp() {
                     onClusterLog = { nav.navigate(ClusterLogRoute(route.serverId)) },
                     onOptions = { nav.navigate(DatacenterOptionsRoute(route.serverId)) },
                     onAcme = { nav.navigate(AcmeRoute(route.serverId)) },
+                    onNotifications = { nav.navigate(NotificationsRoute(route.serverId)) },
                     onAccess = { page ->
                         when (page) {
                             AccessPage.USERS -> nav.navigate(UsersRoute(route.serverId))
@@ -709,6 +712,9 @@ fun AnProxApp() {
                         onAcme = { nav.navigate(AcmeRoute(r.serverId)) },
                     )
                 }
+            }
+            composable<NotificationsRoute> { entry ->
+                NotificationsScreen(entry.toRoute<NotificationsRoute>().serverId, onBack = back)
             }
             composable<AcmeRoute> { entry ->
                 AcmeScreen(entry.toRoute<AcmeRoute>().serverId, onBack = back, onTask = openTask)

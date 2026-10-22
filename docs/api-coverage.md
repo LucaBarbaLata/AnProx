@@ -58,7 +58,7 @@ Code: `core/network/src/main/kotlin/.../network/api/` (`AccessApi`, `PveApi`, `P
 | `GET /cluster/ceph/status` | Ceph health for background alerts | ✅ (the Ceph screen reads `/nodes/{node}/ceph/status`) |
 | `/cluster/ceph/flags` (+ `/{flag}`) | OSD map flags (noout for maintenance, …) | ✅ M6 (`metadata`, `health-mute`, `restart-bulk` 🗓 M9) |
 | `/cluster/mapping/{pci,usb,dir}` | Resource mappings | 🗓 M9 |
-| `/cluster/notifications/*` | Notification targets & matchers (also used for push, M3) | 🗓 M3 (webhook setup) / M9 (full) |
+| `/cluster/notifications/{targets,endpoints/{sendmail,smtp,gotify,webhook},matchers,matcher-field-values}` | Targets of every kind (add, change with the digest, delete, send a test; secrets kept unless retyped), matchers (targets, severities, fields, calendar, mode, invert) | ✅ M9 |
 | `/cluster/metrics/*` | External metric servers | 🗓 M9 |
 | `/cluster/acme/{account,directories,meta,plugins,challenge-schema}` | ACME accounts (register with the CA's terms and external account binding, deactivate), DNS challenge plugins (add, change with the digest, delete; credentials base64-encoded as Proxmox stores them) | ✅ M9 (`tos`, updating an account's contact 🗓) |
 | `/cluster/config/*` | Create/join cluster, corosync | 🗓 M9 |

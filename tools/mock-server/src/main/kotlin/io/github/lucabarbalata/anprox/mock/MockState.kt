@@ -293,6 +293,12 @@ class MockState(
 
     internal val sdn = MockSdn()
 
+    /** Notification targets and matchers (M9). */
+    internal val notifications = MockNotifications()
+
+    /** Test hook: the targets that were sent a test notification, oldest first. */
+    fun notificationsTested(): List<String> = synchronized(notifications) { notifications.tested.toList() }
+
     /** Node certificates and ACME (M9). */
     internal val certificates = MockCertificates(nodes.map { it.name }) { clockMillis() / 1000 }
 

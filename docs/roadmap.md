@@ -238,8 +238,9 @@ single Proxmox VE node without Ceph and a Backup Server in a VM on it.
 
 ## M9 — Parity & 1.0
 - ✅ Certificates: a node's certificates, a custom one, ACME orders and renewals with the node's domains, the cluster's ACME accounts and DNS plugins.
+- ✅ Notifications: targets (sendmail, SMTP, Gotify, webhooks) and matchers, with a test send.
 - Remaining endpoints from [api-coverage.md](api-coverage.md): metric servers,
-  notification targets and matchers, PCI/USB/directory mappings, advanced hardware (passthrough,
+  PCI/USB/directory mappings, advanced hardware (passthrough,
   NUMA, CPU flags), guest config history, cluster join/create.
 - Accessibility audit (WCAG 2.1 AA), performance pass, translation platform (community translations).
 - Release engineering: signed releases on GitHub, F-Droid/IzzyOnDroid metadata (Q34), donation links (Q35).

@@ -7,6 +7,13 @@ All notable changes to AnProx are documented here. The format follows
 ## [Unreleased]
 
 ### Added
+- **Notifications** (Datacenter → Notifications): Proxmox VE's targets (e-mail through sendmail
+  or SMTP, Gotify, webhooks with headers, a templated body and secrets) and matchers (which
+  targets, severities, fields such as `exact:type=vzdump`, calendar windows, all/any, invert).
+  **Send a test** through any target. Passwords, tokens and secrets are never shown and are kept
+  unless typed again; the built-in `mail-to-root` and `default-matcher` can be changed but not
+  deleted.
+
 - **Certificates** (Node → Certificates): the certificate the web interface serves, the node's
   own and the cluster CA, with who issued them, their names, fingerprint and the days left
   (amber in the last 30). **ACME** (Let's Encrypt): the node's account and domains (HTTP on port

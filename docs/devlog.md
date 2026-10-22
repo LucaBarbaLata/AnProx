@@ -69,6 +69,16 @@ ACMEAccount,ACMEPlugin,NodeConfig}.pm`:
   domains with a stale digest, order with and without force, accounts with and without the
   terms, plugins, a read-only user), and a tour step after node administration.
 
+**Notifications.** Written from pve-manager's `PVE/API2/Cluster/Notifications.pm`. Array
+parameters (`mailto`, `target`, `match-field`, webhook `header` and `secret`) repeat their key in
+the form body, which Retrofit's `@FieldMap` can't do, so these calls take a `FormFields` list
+(`network/api/Forms.kt` builds an OkHttp `FormBody`). Webhook headers and secrets are property
+strings with base64 values (`name=X-Token,value=YWJj`) and the body is base64 too; the app shows
+plain text. Proxmox never returns passwords, tokens or secret values, so an edit leaves them out
+unless they are typed again. A matcher's `match-field` and `match-calendar` entries contain commas
+and spaces, so they are not split like other lists. Mock, 2 model tests, 3 integration tests and a
+tour step (a test through the Gotify target).
+
 **Dependencies.** The five Dependabot pull requests (Gradle 8.14.6, Bouncy Castle 1.86, JSch
 2.28.8, MINA SSHD 2.20.0, JUnit 5.14.4) had passed CI on their own; none touches an ADR 0002 pin.
 They went in as one commit on the branch, which closes them.

@@ -13,6 +13,7 @@ import androidx.compose.material.icons.outlined.Group
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.outlined.Hub
 import androidx.compose.material.icons.outlined.Lan
+import androidx.compose.material.icons.outlined.NotificationsActive
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material.icons.outlined.Storage
@@ -49,6 +50,7 @@ fun DatacenterScreen(
     onClusterLog: () -> Unit,
     onOptions: () -> Unit,
     onAcme: () -> Unit,
+    onNotifications: () -> Unit,
     onAccess: (AccessPage) -> Unit,
 ) {
     AnProxScaffold(title = stringResource(R.string.datacenter_title), subtitle = title, onBack = onBack) { inner ->
@@ -76,6 +78,7 @@ fun DatacenterScreen(
                 GlassCard(contentPadding = PaddingValues(vertical = 6.dp)) {
                     MenuRow(Icons.Outlined.Hub, stringResource(R.string.ceph_title), null, onCeph)
                     MenuRow(Icons.Outlined.History, stringResource(R.string.clusterlog_title), null, onClusterLog)
+                    MenuRow(Icons.Outlined.NotificationsActive, stringResource(R.string.notify_title), null, onNotifications)
                     MenuRow(Icons.Outlined.VerifiedUser, stringResource(R.string.acme_title), null, onAcme)
                     MenuRow(Icons.Outlined.Tune, stringResource(R.string.dcoptions_title), null, onOptions)
                 }

@@ -44,6 +44,7 @@ import io.github.lucabarbalata.anprox.model.pve.NodeStorage
 import io.github.lucabarbalata.anprox.model.pve.NodeSubscription
 import io.github.lucabarbalata.anprox.model.pve.NodeTime
 import io.github.lucabarbalata.anprox.model.pve.NotBackedUp
+import io.github.lucabarbalata.anprox.model.pve.NotifyTarget
 import io.github.lucabarbalata.anprox.model.pve.PackageVersion
 import io.github.lucabarbalata.anprox.model.pve.PbsDatastore
 import io.github.lucabarbalata.anprox.model.pve.PendingEntry
@@ -64,6 +65,7 @@ import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
+import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.Field
 import retrofit2.http.FieldMap
@@ -1233,4 +1235,41 @@ interface PveApi {
 
     @GET("cluster/acme/challenge-schema")
     suspend fun acmeChallengeSchema(): ApiEnvelope<List<JsonObject>>
+
+    // ------------------------------------------------------------------ notifications (M9)
+    // Array parameters repeat their key, so the forms are built with [Forms.body].
+
+    @GET("cluster/notifications/targets")
+    suspend fun notifyTargets(): ApiEnvelope<List<NotifyTarget>>
+
+    @POST("cluster/notifications/targets/{name}/test")
+    suspend fun testNotifyTarget(@Path("name") name: String): ApiEnvelope<JsonElement>
+
+    @GET("cluster/notifications/endpoints/{type}/{name}")
+    suspend fun notifyEndpoint(@Path("type") type: String, @Path("name") name: String): ApiEnvelope<JsonObject>
+
+    @POST("cluster/notifications/endpoints/{type}")
+    suspend fun createNotifyEndpoint(@Path("type") type: String, @Body form: RequestBody): ApiEnvelope<JsonElement>
+
+    @PUT("cluster/notifications/endpoints/{type}/{name}")
+    suspend fun updateNotifyEndpoint(@Path("type") type: String, @Path("name") name: String, @Body form: RequestBody): ApiEnvelope<JsonElement>
+
+    @DELETE("cluster/notifications/endpoints/{type}/{name}")
+    suspend fun deleteNotifyEndpoint(@Path("type") type: String, @Path("name") name: String): ApiEnvelope<JsonElement>
+
+    @GET("cluster/notifications/matchers")
+    suspend fun notifyMatchers(): ApiEnvelope<List<JsonObject>>
+
+    @POST("cluster/notifications/matchers")
+    suspend fun createNotifyMatcher(@Body form: RequestBody): ApiEnvelope<JsonElement>
+
+    @PUT("cluster/notifications/matchers/{name}")
+    suspend fun updateNotifyMatcher(@Path("name") name: String, @Body form: RequestBody): ApiEnvelope<JsonElement>
+
+    @DELETE("cluster/notifications/matchers/{name}")
+    suspend fun deleteNotifyMatcher(@Path("name") name: String): ApiEnvelope<JsonElement>
+
+    /** Known values for matcher fields: notification types and job IDs. */
+    @GET("cluster/notifications/matcher-field-values")
+    suspend fun notifyFieldValues(): ApiEnvelope<List<JsonObject>>
 }

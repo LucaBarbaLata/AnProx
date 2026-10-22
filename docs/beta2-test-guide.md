@@ -75,6 +75,13 @@ Tick each line, or note what happened instead.
    then **Remove certificate in use**. The app keeps working (it may need "Allow insecure
    certificate").
 
+### A3. Notifications, new after beta.2
+1. Datacenter → **Notifications** lists the same targets and matchers as the web UI's
+   Datacenter → Notifications.
+2. ⋮ on a target → **Send a test**: it arrives (mail, Gotify, …).
+3. **Add matcher**: send `error` notifications of type `vzdump` to a target → the web UI shows
+   the same matcher. Delete it again.
+
 ### A. Network card (guest agent)
 1. Start the test VM, open it. Tap **Network**: you see the OS name and its IP addresses
    (no `127.0.0.1` or `fe80::` noise).

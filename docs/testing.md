@@ -12,7 +12,7 @@ testing debug builds on **real hardware**.
 | Integration: multi-server hub, sessions, dashboard snapshots, guest actions, guest snapshots, performance history, app lock rules, backup and restore, guest network info, guest options, clone/template/migrate, console sessions (terminal and VNC handshake), node power, hardware (disks, drives, network, pending changes, container volumes), creating VMs and containers, cloud-init, SPICE, alerts, task notifications, backup jobs, storage, firewall, high availability, replication, pools, storage setup, encrypted server export, firewall groups, aliases, IP sets and log, node updates, repositories, services, journal, DNS, hosts, time, network and disks | `core/data/src/test` | JVM | 104 |
 | Android lint | `:app:lintDebug` | CI | — |
 | Build: debug and R8-minified release | `:app:assemble*` | CI | — |
-| **End-to-end tour** of the minified release APK on emulators against the mock server | `scripts/e2e/tour.py` | CI (Android 8.0 + 14), Release workflow | 35 steps |
+| **End-to-end tour** of the minified release APK on emulators against the mock server | `scripts/e2e/tour.py` | CI (Android 8.0 + 14), Release workflow | 36 steps |
 | UI / screenshot tests | planned (M1) | — | — |
 | Manual on real hardware | [checklist below](#manual-test-checklist-real-hardware) | owner | — |
 
