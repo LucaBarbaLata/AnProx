@@ -49,6 +49,8 @@ fun GlassCard(
     shape: Shape = RoundedCornerShape(20.dp),
     strong: Boolean = false,
     contentPadding: PaddingValues = PaddingValues(16.dp),
+    /** What a long press does, read out by TalkBack ("Select"). */
+    onLongClickLabel: String? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val c = AnProxTheme.colors
@@ -56,7 +58,7 @@ fun GlassCard(
         .clip(shape)
         .background(if (strong) c.glassStrong else c.glass)
     if (onLongClick != null) {
-        m = m.combinedClickable(onClickLabel = onClickLabel, role = Role.Button, onLongClick = onLongClick, onClick = onClick ?: {})
+        m = m.combinedClickable(onClickLabel = onClickLabel, role = Role.Button, onLongClickLabel = onLongClickLabel, onLongClick = onLongClick, onClick = onClick ?: {})
     } else if (onClick != null) {
         m = m.clickable(onClickLabel = onClickLabel, role = Role.Button, onClick = onClick)
     }

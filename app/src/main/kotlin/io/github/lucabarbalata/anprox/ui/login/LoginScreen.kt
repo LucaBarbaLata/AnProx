@@ -41,6 +41,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -206,20 +209,24 @@ private fun PasswordStep(state: LoginState, viewModel: LoginViewModel) {
 @Composable
 private fun RealmPicker(state: LoginState, onSelect: (String) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
+    val label = stringResource(R.string.login_realm)
+    val value = state.selectedRealm?.label ?: state.realm
     Box {
         GlassTextField(
-            value = state.selectedRealm?.label ?: state.realm,
+            value = value,
             onValueChange = {},
-            label = stringResource(R.string.login_realm),
+            label = label,
             enabled = false,
             trailingIcon = { Icon(Icons.Outlined.ArrowDropDown, contentDescription = null) },
         )
-        // Transparent overlay so the disabled field opens the menu when tapped.
+        // Transparent overlay so the disabled field opens the menu when tapped. It covers the field,
+        // which therefore isn't read out, so it says what the field shows: "Realm, Proxmox VE (pve)".
         Box(
             Modifier
                 .matchParentSize()
                 .clip(RoundedCornerShape(16.dp))
-                .clickable(enabled = state.realms.isNotEmpty(), onClickLabel = stringResource(R.string.login_choose_realm)) { expanded = true },
+                .clickable(enabled = state.realms.isNotEmpty(), onClickLabel = stringResource(R.string.login_choose_realm), role = Role.DropdownList) { expanded = true }
+                .semantics { contentDescription = "$label, $value" },
         )
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             state.realms.forEach { realm ->

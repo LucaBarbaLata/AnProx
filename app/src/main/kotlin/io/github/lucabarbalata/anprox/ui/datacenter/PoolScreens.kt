@@ -368,6 +368,7 @@ private fun PickDialog(pick: PoolPick, state: PoolUiState, viewModel: PoolViewMo
                     Row(
                         Modifier
                             .fillMaxWidth()
+                            .heightIn(min = 48.dp)
                             .toggleable(value = checked, role = Role.Checkbox, onValueChange = { viewModel.toggle(key) })
                             .padding(vertical = 2.dp),
                         verticalAlignment = Alignment.CenterVertically,

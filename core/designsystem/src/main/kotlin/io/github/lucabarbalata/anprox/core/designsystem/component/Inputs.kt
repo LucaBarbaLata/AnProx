@@ -188,7 +188,7 @@ fun <T> SegmentedPicker(
                     .clip(RoundedCornerShape(12.dp))
                     .background(bg)
                     .selectable(selected = isSelected, role = Role.RadioButton, onClick = { onSelect(option) })
-                    .padding(vertical = 12.dp),
+                    .padding(vertical = 14.dp), // 48 dp to tap
             )
         }
     }

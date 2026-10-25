@@ -49,6 +49,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -263,11 +266,17 @@ private fun HealthCard(o: CephOverview) {
 private fun HealthCheckRow(check: CephHealthCheck) {
     val c = AnProxTheme.colors
     var open by remember { mutableStateOf(false) }
+    // How serious it is shows only in colour, and whether it is open only by its details; say both.
+    val severity = stringResource(if (check.error) R.string.ceph_health_err else R.string.ceph_health_warn)
+    val state = if (check.details.isEmpty()) severity else "$severity, " + stringResource(if (open) R.string.state_expanded else R.string.state_collapsed)
     Column(
         Modifier
             .fillMaxWidth()
-            .clickable(enabled = check.details.isNotEmpty()) { open = !open }
+            .heightIn(min = 48.dp)
+            .clickable(enabled = check.details.isNotEmpty(), role = Role.Button) { open = !open }
+            .semantics { stateDescription = state }
             .padding(vertical = 4.dp),
+        verticalArrangement = Arrangement.Center,
     ) {
         Text(
             check.summary + if (check.muted) " " + stringResource(R.string.ceph_health_muted) else "",

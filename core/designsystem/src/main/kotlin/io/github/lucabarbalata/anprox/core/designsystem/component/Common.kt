@@ -22,7 +22,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -132,6 +134,9 @@ fun ErrorBanner(
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
             .background(color.copy(alpha = 0.12f))
+            // One stop for the message (the retry button stays its own), read out when it appears
+            // or changes, wherever the focus is.
+            .semantics(mergeDescendants = true) { liveRegion = LiveRegionMode.Polite }
             .padding(start = 14.dp, end = 6.dp, top = 10.dp, bottom = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {

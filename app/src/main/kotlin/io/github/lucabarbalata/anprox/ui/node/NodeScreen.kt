@@ -54,6 +54,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -222,6 +224,7 @@ private fun GuestRows(guests: List<ClusterResource>, onOpen: (GuestType, Int) ->
             val type = GuestType.fromApi(g.type)
             val vmid = g.vmid
             val appearance = statusAppearance(g.status)
+            val label = appearance.label
             Row(
                 Modifier
                     .fillMaxWidth()
@@ -229,7 +232,8 @@ private fun GuestRows(guests: List<ClusterResource>, onOpen: (GuestType, Int) ->
                     .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                StatusDot(appearance.tone)
+                // The state is in words on the right unless the CPU stands there; then the dot says it.
+                StatusDot(appearance.tone, if (!g.template && g.status == "running") Modifier.semantics { contentDescription = label } else Modifier)
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
                     Text(g.name.orEmpty(), style = MaterialTheme.typography.bodyLarge, color = c.textPrimary, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -386,7 +390,8 @@ private fun Summary(s: NodeStatus, online: Boolean) {
             Text(appearance.label, style = MaterialTheme.typography.bodyMedium, color = c.textPrimary)
             val version = s.pveversion?.substringAfter('/')?.substringBefore('/')
             val extra = listOfNotNull(formatDuration(s.uptime).takeIf { online && s.uptime > 0 }, version).joinToString(" · ")
-            if (extra.isNotEmpty()) Text(" · $extra", style = MaterialTheme.typography.bodyMedium, color = c.textSecondary, maxLines = 1)
+            // Wraps rather than cut off the version with large fonts.
+            if (extra.isNotEmpty()) Text(" · $extra", style = MaterialTheme.typography.bodyMedium, color = c.textSecondary, modifier = Modifier.weight(1f))
         }
         Spacer(Modifier.height(16.dp))
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {

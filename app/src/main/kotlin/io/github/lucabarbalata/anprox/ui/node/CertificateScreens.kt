@@ -620,7 +620,7 @@ private fun PluginDialog(edit: PluginEdit, state: AcmeState, viewModel: AcmeView
                                 viewModel.editPlugin { copy(api = candidate.id) }
                                 query = ""
                             }
-                            .padding(vertical = 8.dp),
+                            .padding(vertical = 14.dp), // 48 dp to tap
                     )
                 }
                 GlassTextField(

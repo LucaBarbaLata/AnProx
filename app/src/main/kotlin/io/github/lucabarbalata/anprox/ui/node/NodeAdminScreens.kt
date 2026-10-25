@@ -48,6 +48,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -308,7 +310,7 @@ fun RepositoriesScreen(
                                         Text(it.joinToString(" · "), style = MaterialTheme.typography.labelSmall, color = c.textSecondary)
                                     }
                                 }
-                                Switch(checked = r.enabled, onCheckedChange = { on -> viewModel.setEnabled(file.path, index, on) }, enabled = !state.busy)
+                                Switch(checked = r.enabled, onCheckedChange = { on -> viewModel.setEnabled(file.path, index, on) }, enabled = !state.busy, modifier = Modifier.semantics { contentDescription = r.line })
                             }
                         }
                     }
@@ -614,7 +616,7 @@ fun SystemSettingsScreen(
                                                 viewModel.setTimezone(zone)
                                                 zoneQuery = ""
                                             }
-                                            .padding(vertical = 8.dp),
+                                            .padding(vertical = 14.dp), // 48 dp to tap
                                     )
                                 }
                             }
@@ -1040,6 +1042,7 @@ private fun CreateDiskStorageDialog(form: DiskStorageForm, state: DisksState, vi
                     Row(
                         Modifier
                             .fillMaxWidth()
+                            .heightIn(min = 48.dp)
                             .toggleable(value = checked, role = Role.Checkbox, onValueChange = { viewModel.toggleDevice(disk.devpath) })
                             .padding(vertical = 2.dp),
                         verticalAlignment = Alignment.CenterVertically,

@@ -385,6 +385,7 @@ private fun ResourceRow(
     GlassCard(
         onClick = if (clickable) onClick else null,
         onLongClick = onLongClick,
+        onLongClickLabel = stringResource(if (checked) R.string.resources_unselect else R.string.resources_select),
         shape = shape,
         strong = selected || checked,
         contentPadding = PaddingValues(0.dp),

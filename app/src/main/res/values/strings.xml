@@ -254,6 +254,8 @@
     <string name="options_discard">Discard</string>
 
     <!-- Bulk actions on the Resources list -->
+    <string name="resources_select">Select</string>
+    <string name="resources_unselect">Unselect</string>
     <plurals name="resources_selected">
         <item quantity="one">%1$d selected</item>
         <item quantity="other">%1$d selected</item>
@@ -616,6 +618,10 @@
     <string name="task_running">Running</string>
     <string name="task_ok">Finished</string>
     <string name="task_failed">Failed</string>
+    <string name="task_state_running">Task running</string>
+    <string name="task_state_ok">Task finished</string>
+    <string name="task_state_warnings">Task finished with warnings</string>
+    <string name="task_state_failed">Task failed</string>
     <string name="task_target">Target</string>
     <string name="task_user">Started by</string>
     <string name="task_exit">Result</string>

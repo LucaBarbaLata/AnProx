@@ -36,6 +36,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleResumeEffect
@@ -155,6 +157,7 @@ private fun JobCard(
 ) {
     val c = AnProxTheme.colors
     val context = LocalContext.current
+    val title = scheduleLabel(job.schedule)
     GlassCard(contentPadding = PaddingValues(0.dp)) {
         Column(
             Modifier
@@ -165,7 +168,7 @@ private fun JobCard(
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
-                    Text(scheduleLabel(job.schedule), style = MaterialTheme.typography.titleMedium, color = c.textPrimary)
+                    Text(title, style = MaterialTheme.typography.titleMedium, color = c.textPrimary)
                     Text(
                         listOfNotNull(job.storage, selectionLabel(job, guestNames), modeLabel(job.mode)).joinToString(" · "),
                         style = MaterialTheme.typography.bodySmall,
@@ -175,7 +178,7 @@ private fun JobCard(
                     )
                 }
                 Spacer(Modifier.width(8.dp))
-                Switch(checked = job.enabled, onCheckedChange = onToggle, enabled = enabled)
+                Switch(checked = job.enabled, onCheckedChange = onToggle, enabled = enabled, modifier = Modifier.semantics { contentDescription = title })
             }
             Spacer(Modifier.height(8.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {

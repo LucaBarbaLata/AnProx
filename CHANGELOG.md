@@ -293,6 +293,17 @@ All notable changes to AnProx are documented here. The format follows
   - **Datacenter** and **More** list titles only, in small groups.
   - **Servers:** **Add server** is the + in the top bar, as on the Overview, instead of a
     floating button (which the emulator tour couldn't find on Android 8.0 or 14).
+- **Accessibility** (from an audit of the code against WCAG 2.1 AA):
+  - TalkBack reads errors when they appear, wherever the focus is.
+  - Checkbox and radio rows, choice chips, segmented pickers, address rows, the console's keys
+    and search results are at least 48 dp to tap.
+  - Switches say what they switch (a backup job, a firewall rule, a repository, a second
+    factor); tasks say whether they are running, finished or failed; status dots say the state
+    where a number stands beside them; the login screen's realm field says which realm is chosen.
+  - A label and its value are read together ("CPU, 12 %"); a Ceph health check says whether it
+    is an error or a warning and whether it is open.
+  - With large fonts the top bar makes room for its subtitle and the bottom bar for its labels;
+    a guest's state line and the Overview's labels wrap instead of being cut off.
 - Dependencies: Gradle 8.14.6, Bouncy Castle 1.86, JSch 2.28.8, Apache MINA SSHD 2.20.0 (the
   mock server's SSH) and JUnit 5.14.4 (the five open Dependabot updates, applied together).
 - Consoles have a **Console details** button (the ⓘ in the top bar): what the connection

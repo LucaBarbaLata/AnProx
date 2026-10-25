@@ -44,6 +44,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
@@ -156,6 +158,7 @@ private fun JobCard(
     val state = ReplicationStatus.state(job, status)
     val schedule = replicationScheduleLabel(job.schedule)
     val rate = job.rate?.let { stringResource(R.string.replication_rate, formatRate(it)) }
+    val title = stringResource(R.string.replication_to, guest, job.target)
     GlassCard(contentPadding = PaddingValues(0.dp)) {
         Column(
             Modifier
@@ -166,7 +169,7 @@ private fun JobCard(
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
-                    Text(stringResource(R.string.replication_to, guest, job.target), style = MaterialTheme.typography.titleMedium, color = c.textPrimary)
+                    Text(title, style = MaterialTheme.typography.titleMedium, color = c.textPrimary)
                     Text(
                         listOfNotNull(schedule, rate, job.comment).joinToString(" · "),
                         style = MaterialTheme.typography.bodySmall,
@@ -176,7 +179,7 @@ private fun JobCard(
                     )
                 }
                 Spacer(Modifier.width(8.dp))
-                Switch(checked = job.enabled, onCheckedChange = onToggle, enabled = enabled && !job.removing)
+                Switch(checked = job.enabled, onCheckedChange = onToggle, enabled = enabled && !job.removing, modifier = Modifier.semantics { contentDescription = title })
             }
             Spacer(Modifier.height(8.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {

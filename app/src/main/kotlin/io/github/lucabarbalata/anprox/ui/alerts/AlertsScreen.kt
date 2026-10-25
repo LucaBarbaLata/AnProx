@@ -12,7 +12,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
@@ -31,6 +31,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleResumeEffect
@@ -186,7 +189,8 @@ private fun PercentStepper(label: String, value: Int, onChange: (Int) -> Unit) {
             stringResource(R.string.alerts_percent, value),
             style = MaterialTheme.typography.titleMedium,
             color = AnProxTheme.colors.textPrimary,
-            modifier = Modifier.width(56.dp),
+            // The new value is read out after − or +.
+            modifier = Modifier.widthIn(min = 56.dp).semantics { liveRegion = LiveRegionMode.Polite },
             textAlign = TextAlign.Center,
         )
         IconButton(onClick = { onChange((value + PERCENT_STEP).coerceIn(range)) }, enabled = value < range.last) {

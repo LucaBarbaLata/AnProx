@@ -20,6 +20,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -45,6 +46,13 @@ fun AnProxScaffold(
 ) {
     val c = AnProxTheme.colors
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
+    // With large fonts a title and subtitle need more than the bar's 64 dp, which would cut the subtitle off.
+    val typography = MaterialTheme.typography
+    val barHeight = if (subtitle == null) {
+        TopAppBarDefaults.TopAppBarExpandedHeight
+    } else {
+        with(LocalDensity.current) { maxOf(TopAppBarDefaults.TopAppBarExpandedHeight, typography.titleLarge.lineHeight.toDp() + typography.bodySmall.lineHeight.toDp() + 16.dp) }
+    }
     Scaffold(
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         containerColor = Color.Transparent,
@@ -68,6 +76,7 @@ fun AnProxScaffold(
                     }
                 },
                 actions = actions,
+                expandedHeight = barHeight,
                 scrollBehavior = scrollBehavior,
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = Color.Transparent,

@@ -271,7 +271,7 @@ private fun KeyRow(
                 .clip(RoundedCornerShape(10.dp))
                 .background(c.accent.copy(alpha = 0.22f))
                 .clickable(role = Role.Button, onClickLabel = keyboard, onClick = onKeyboard)
-                .padding(horizontal = 12.dp, vertical = 8.dp),
+                .padding(horizontal = 12.dp, vertical = 13.dp), // 48 dp to tap
         ) {
             Icon(Icons.Outlined.Keyboard, contentDescription = keyboard, tint = c.textPrimary, modifier = Modifier.size(22.dp))
         }
@@ -295,7 +295,7 @@ private fun KeyChip(label: String, onClick: () -> Unit) {
             .clip(RoundedCornerShape(10.dp))
             .background(c.glassStrong)
             .clickable(role = Role.Button, onClick = onClick)
-            .padding(horizontal = 14.dp, vertical = 10.dp),
+            .padding(horizontal = 14.dp, vertical = 14.dp), // 48 dp to tap
     )
 }
 

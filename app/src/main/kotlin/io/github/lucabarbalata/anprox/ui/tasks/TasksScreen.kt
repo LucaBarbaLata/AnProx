@@ -25,6 +25,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -107,15 +109,24 @@ fun TaskSummaryRow(t: TaskSummary, subtitle: String, onClick: () -> Unit) {
         TaskState.WARNING -> Tone.WARNING to Icons.Outlined.ReportProblem
         TaskState.FAILED -> Tone.DANGER to Icons.Outlined.ErrorOutline
     }
+    // The outcome is otherwise only an icon's colour and shape.
+    val outcome = stringResource(
+        when (t.state) {
+            TaskState.RUNNING -> R.string.task_state_running
+            TaskState.OK -> R.string.task_state_ok
+            TaskState.WARNING -> R.string.task_state_warnings
+            TaskState.FAILED -> R.string.task_state_failed
+        },
+    )
     GlassCard(
         onClick = onClick,
         contentPadding = PaddingValues(horizontal = 14.dp, vertical = 12.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             if (icon == null) {
-                CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp, color = tone.color())
+                CircularProgressIndicator(Modifier.size(20.dp).semantics { contentDescription = outcome }, strokeWidth = 2.dp, color = tone.color())
             } else {
-                Icon(icon, contentDescription = null, tint = tone.color(), modifier = Modifier.size(20.dp))
+                Icon(icon, contentDescription = outcome, tint = tone.color(), modifier = Modifier.size(20.dp))
             }
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {

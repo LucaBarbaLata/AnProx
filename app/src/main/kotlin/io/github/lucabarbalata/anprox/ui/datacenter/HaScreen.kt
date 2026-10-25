@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -339,6 +340,7 @@ private fun NodePriorityPicker(all: List<String>, nodes: Map<String, Int?>, onCh
             Row(
                 Modifier
                     .weight(1f)
+                    .heightIn(min = 48.dp)
                     .toggleable(value = checked, role = Role.Checkbox, onValueChange = { on -> onChange(if (on) nodes + (node to null) else nodes - node) })
                     .padding(vertical = 2.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -409,6 +411,7 @@ private fun RuleDialog(edit: HaRuleEdit, state: HaUiState, viewModel: HaViewMode
                     Row(
                         Modifier
                             .fillMaxWidth()
+                            .heightIn(min = 48.dp)
                             .toggleable(value = checked, role = Role.Checkbox, onValueChange = { on -> viewModel.editRuleForm { copy(resources = if (on) resources + sid else resources - sid) } })
                             .padding(vertical = 2.dp),
                         verticalAlignment = Alignment.CenterVertically,

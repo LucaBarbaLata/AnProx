@@ -36,6 +36,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -136,6 +138,7 @@ private fun FavouritesCard(favourites: List<FavouriteGuest>, onGuest: (GuestRef)
             val r = f.resource
             val ref = f.ref
             val appearance = statusAppearance(r.status)
+            val label = appearance.label
             Row(
                 Modifier
                     .fillMaxWidth()
@@ -143,7 +146,8 @@ private fun FavouritesCard(favourites: List<FavouriteGuest>, onGuest: (GuestRef)
                     .padding(horizontal = 16.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                StatusDot(appearance.tone)
+                // The state is in words on the right unless the CPU stands there; then the dot says it.
+                StatusDot(appearance.tone, if (r.status == "running") Modifier.semantics { contentDescription = label } else Modifier)
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
                     Text(
@@ -275,11 +279,12 @@ private fun Stat(value: String, label: String, modifier: Modifier = Modifier, on
     Column(
         modifier
             .clip(RoundedCornerShape(12.dp))
-            .then(if (onClick != null) Modifier.clickable(onClickLabel = label, onClick = onClick) else Modifier)
+            // Read as one: "12 %, CPU".
+            .then(if (onClick != null) Modifier.clickable(onClickLabel = label, onClick = onClick) else Modifier.semantics(mergeDescendants = true) {})
             .padding(vertical = 4.dp),
     ) {
         Text(value, style = MaterialTheme.typography.titleLarge, color = c.textPrimary, maxLines = 1)
-        Text(label, style = MaterialTheme.typography.bodySmall, color = c.textSecondary, maxLines = 1)
+        Text(label, style = MaterialTheme.typography.bodySmall, color = c.textSecondary)
     }
 }
 
@@ -298,6 +303,7 @@ private fun PveBody(snap: PveSnapshot, alerts: List<DashboardAlert>, onNode: (St
     Column {
         snap.nodes.forEach { node ->
             val appearance = statusAppearance(node.status)
+            val label = appearance.label
             Row(
                 Modifier
                     .fillMaxWidth()
@@ -306,7 +312,7 @@ private fun PveBody(snap: PveSnapshot, alerts: List<DashboardAlert>, onNode: (St
                     .padding(vertical = 10.dp, horizontal = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                StatusDot(appearance.tone)
+                StatusDot(appearance.tone, if (node.status == "online") Modifier.semantics { contentDescription = label } else Modifier)
                 Spacer(Modifier.width(12.dp))
                 Text(node.node ?: node.id, style = MaterialTheme.typography.bodyLarge, color = c.textPrimary, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
                 if (node.status == "online") {
@@ -328,7 +334,8 @@ private fun PveBody(snap: PveSnapshot, alerts: List<DashboardAlert>, onNode: (St
 private fun PbsBody(snap: PbsSnapshot, alerts: List<DashboardAlert>, onManage: () -> Unit) {
     val c = AnProxTheme.colors
     snap.datastores.forEach { ds ->
-        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        // One datastore is read as one: its name, how full and how much.
+        Column(Modifier.semantics(mergeDescendants = true) {}, verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(ds.store, style = MaterialTheme.typography.bodyMedium, color = c.textSecondary, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
                 val full = ds.estimatedFullDate?.takeIf { it > 0 }

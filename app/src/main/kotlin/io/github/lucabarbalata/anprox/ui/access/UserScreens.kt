@@ -56,6 +56,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -449,13 +453,14 @@ private fun tfaTypeLabel(type: String): String = when (type) {
 @Composable
 private fun TfaRow(entry: TfaEntry, enabled: Boolean, onToggle: () -> Unit, onDelete: () -> Unit) {
     val c = AnProxTheme.colors
+    val name = entry.description ?: tfaTypeLabel(entry.type)
     Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp, top = 4.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
-            Text(entry.description ?: tfaTypeLabel(entry.type), style = MaterialTheme.typography.titleSmall, color = c.textPrimary)
+            Text(name, style = MaterialTheme.typography.titleSmall, color = c.textPrimary)
             val created = entry.created?.let { DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(it * 1000)) }
             Text(listOfNotNull(tfaTypeLabel(entry.type), created).joinToString(" · "), style = MaterialTheme.typography.bodySmall, color = c.textSecondary)
         }
-        Switch(checked = entry.enabled, onCheckedChange = { onToggle() }, enabled = enabled)
+        Switch(checked = entry.enabled, onCheckedChange = { onToggle() }, enabled = enabled, modifier = Modifier.semantics { contentDescription = name })
         IconButton(onClick = onDelete, enabled = enabled) {
             Icon(Icons.Outlined.Delete, contentDescription = stringResource(R.string.action_delete), tint = c.textSecondary)
         }
@@ -467,13 +472,16 @@ private fun TfaRow(entry: TfaEntry, enabled: Boolean, onToggle: () -> Unit, onDe
 private fun PermissionsCard(paths: Map<String, Map<String, Boolean>>) {
     val c = AnProxTheme.colors
     var open by remember { mutableStateOf(setOf<String>()) }
+    val expandedLabel = stringResource(R.string.state_expanded)
+    val collapsedLabel = stringResource(R.string.state_collapsed)
     GlassCard(contentPadding = PaddingValues(vertical = 4.dp)) {
         paths.toSortedMap().forEach { (path, privileges) ->
             val expanded = path in open
             Column(
                 Modifier
                     .fillMaxWidth()
-                    .clickable { open = if (expanded) open - path else open + path }
+                    .clickable(role = Role.Button) { open = if (expanded) open - path else open + path }
+                    .semantics { stateDescription = if (expanded) expandedLabel else collapsedLabel }
                     .padding(horizontal = 16.dp, vertical = 8.dp),
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {

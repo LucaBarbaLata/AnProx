@@ -12,7 +12,7 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
@@ -29,13 +29,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import io.github.lucabarbalata.anprox.core.designsystem.theme.AnProxTheme
@@ -80,8 +86,11 @@ fun AdaptiveNavScaffold(
         }
     } else {
         val navInset = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+        val density = LocalDensity.current
+        // The bar grows with large fonts; screens leave room for the height it really has.
+        var barHeight by remember { mutableStateOf(BAR_HEIGHT) }
         Box(modifier.fillMaxSize()) {
-            CompositionLocalProvider(LocalBottomBarPadding provides if (showNavigation) BAR_HEIGHT + 24.dp else 0.dp) {
+            CompositionLocalProvider(LocalBottomBarPadding provides if (showNavigation) barHeight + 24.dp else 0.dp) {
                 content()
             }
             if (showNavigation) {
@@ -89,7 +98,8 @@ fun AdaptiveNavScaffold(
                     items, selectedKey, onSelect,
                     Modifier
                         .align(Alignment.BottomCenter)
-                        .padding(start = 16.dp, end = 16.dp, bottom = navInset + 12.dp),
+                        .padding(start = 16.dp, end = 16.dp, bottom = navInset + 12.dp)
+                        .onSizeChanged { size -> barHeight = with(density) { size.height.toDp() } },
                 )
             }
         }
@@ -105,7 +115,7 @@ private fun GlassBottomBar(items: List<NavItem>, selectedKey: String?, onSelect:
     Row(
         modifier
             .fillMaxWidth()
-            .height(BAR_HEIGHT)
+            .heightIn(min = BAR_HEIGHT)
             .clip(shape)
             .background(c.glass)
             .padding(horizontal = 6.dp)
@@ -135,7 +145,7 @@ private fun GlassRail(items: List<NavItem>, selectedKey: String?, onSelect: (Nav
         verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        items.forEach { item -> NavButton(item, item.key == selectedKey, onSelect, Modifier.height(64.dp)) }
+        items.forEach { item -> NavButton(item, item.key == selectedKey, onSelect, Modifier.heightIn(min = 64.dp)) }
     }
 }
 
@@ -160,6 +170,6 @@ private fun NavButton(item: NavItem, selected: Boolean, onSelect: (NavItem) -> U
         ) {
             Icon(if (selected) item.selectedIcon else item.icon, contentDescription = null, tint = tint, modifier = Modifier.size(22.dp))
         }
-        Text(item.label, style = MaterialTheme.typography.labelSmall, color = tint, maxLines = 1)
+        Text(item.label, style = MaterialTheme.typography.labelSmall, color = tint, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }

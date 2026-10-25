@@ -298,7 +298,8 @@ private fun Summary(
             Spacer(Modifier.width(8.dp))
             Text(appearance.label, style = MaterialTheme.typography.bodyMedium, color = c.textPrimary)
             val extra = listOfNotNull(status.uptime?.takeIf { status.isRunning }?.let { formatDuration(it) }, address).joinToString(" · ")
-            if (extra.isNotEmpty()) Text(" · $extra", style = MaterialTheme.typography.bodyMedium, color = c.textSecondary, maxLines = 1)
+            // Wraps rather than cut off the address with large fonts.
+            if (extra.isNotEmpty()) Text(" · $extra", style = MaterialTheme.typography.bodyMedium, color = c.textSecondary, modifier = Modifier.weight(1f))
         }
         val tags = status.tags.orEmpty().split(';', ',', ' ').filter { it.isNotBlank() }
         if (tags.isNotEmpty()) {
@@ -450,7 +451,7 @@ private fun NetworkCard(type: GuestType, network: GuestNetworkInfo?, onCopied: (
                                     clipboard.setText(AnnotatedString(address))
                                     onCopied(address)
                                 }
-                                .padding(vertical = 6.dp),
+                                .padding(vertical = 14.dp), // 48 dp to tap
                         )
                     }
                 }

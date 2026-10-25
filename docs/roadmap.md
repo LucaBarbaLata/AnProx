@@ -243,5 +243,13 @@ single Proxmox VE node without Ceph and a Backup Server in a VM on it.
 - Remaining endpoints from [api-coverage.md](api-coverage.md): metric servers,
   PCI/USB/directory mappings, advanced hardware (passthrough,
   NUMA, CPU flags), guest config history, cluster join/create.
-- Accessibility audit (WCAG 2.1 AA), performance pass, translation platform (community translations).
+- ✅ Accessibility pass from a code audit (WCAG 2.1 AA): 48 dp targets, errors read out, labels
+  and values read together, switches and task outcomes named, bars that grow with the font
+  ([design-system.md](design-system.md#accessibility-checklist-wcag-21-aa-target)). Still to do:
+  a TalkBack run on a device.
+- ✅ Performance pass: task logs read only their new lines and render as one text; polling
+  already stops when a screen is off (`WhileSubscribed`), Compose's strong skipping is on
+  (Kotlin 2.4) and R8 runs in full mode. A baseline profile is left for later (it needs a
+  macrobenchmark module and a device to generate).
+- Translation platform (community translations).
 - Release engineering: signed releases on GitHub, F-Droid/IzzyOnDroid metadata (Q34), donation links (Q35).

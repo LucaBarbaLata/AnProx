@@ -155,12 +155,24 @@ and `UiText`.
 
 - [x] Text contrast ≥ 4.5:1 in all three themes, tertiary text included.
 - [x] Status never conveyed by colour alone (words beside it, or a description on the dot).
-- [x] Touch targets ≥ 48 dp (buttons, nav items, rows, filters, tool cells).
+- [x] Touch targets ≥ 48 dp (buttons, nav items, rows, filters, tool cells, checkbox and radio
+      rows, choice chips, segmented pickers, the console's keys). Chips keep their 36 dp look with
+      `minimumInteractiveComponentSize()`; rows get `heightIn(min = 48.dp)`.
 - [x] Gauges expose `contentDescription` and progress semantics to TalkBack.
 - [x] Section headers are headings; folded sections say whether they are open; nav items are
       tabs in a selectable group; filters are tabs or a checkbox.
-- [x] All text comes from string resources and respects the system font size.
-- [ ] Full TalkBack audit on device (M9).
+- [x] Errors (`ErrorBanner`, `FormHint(error = true)`) are polite live regions: TalkBack reads
+      them when they appear or change.
+- [x] A label and its value (`UsageLine`, the Overview's numbers, a datastore) are one stop.
+      Don't merge inside something clickable: the clickable already merges, and a merging child
+      would split it.
+- [x] A switch beside a title carries the title as its description; a task's outcome icon says
+      the outcome; a field covered by a tap overlay has its label and value on the overlay.
+- [x] All text comes from string resources and respects the system font size. The top bar grows
+      for a subtitle and the bottom bar for its labels at large font sizes.
+- [ ] Full TalkBack audit on device (M9), and the rest of the 2026-10 code audit: focus after a
+      form's result replaces its button, the console's state change, tag chips that don't wrap,
+      fixed-width names on the HA and storage screens.
 
 ## Iconography and brand
 

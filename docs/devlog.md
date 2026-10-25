@@ -114,6 +114,22 @@ The push of `8f1c4ff` failed to compile: `PbsScreens.kt` imported `AccessPage` f
 script now checks every `io.github.lucabarbalata.anprox.…` import against the declarations in
 that package before a push.
 
+**Accessibility pass.** A read-only audit of the UI code (WCAG 2.1 AA, TalkBack, 200 % font,
+touch targets) found no unlabelled icon buttons but a list of smaller things; the shared
+components were fixed first, since one change there covers many screens
+([design-system.md](design-system.md#accessibility-checklist-wcag-21-aa-target)). Two things to
+know:
+- Compose leaves a node out of the accessibility tree when a later sibling with semantics covers
+  it. The login screen's realm field sits under a transparent tap overlay, so neither TalkBack nor
+  uiautomator saw it; the tour's SSO step failed on that ("Linux PAM standard authentication
+  (pam)" did not appear, on both Android versions). The overlay now carries "Realm, <value>" and
+  the drop-down role.
+- `semantics(mergeDescendants = true)` on a child of something clickable splits the clickable's
+  label, so label/value merging is only on parts that are not inside a clickable card.
+Not done yet: moving focus to a form's result, announcing the console's state, wrapping tag
+chips (`FlowRow` isn't used in the app yet), fixed-width names on the HA and storage screens,
+and a TalkBack run on a device.
+
 **Dependencies.** The five Dependabot pull requests (Gradle 8.14.6, Bouncy Castle 1.86, JSch
 2.28.8, MINA SSHD 2.20.0, JUnit 5.14.4) had passed CI on their own; none touches an ADR 0002 pin.
 They went in as one commit on the branch, which closes them.
