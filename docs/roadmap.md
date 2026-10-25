@@ -67,12 +67,13 @@ Android integration, datacenter, node administration, Ceph and SDN, access contr
 complete Backup Server, plus the M1 leftovers done since beta.2 (guest agent tools, deleting
 guests, node bulk actions, template catalogue, datacenter options, task history, cluster log).
 Gates:
-- [x] CI green: tests, lint, debug and release builds, and the emulator tour on Android 8.0 and 14 (33 steps; last on 2026-10-20, commit `ed6a844`)
+- [x] CI green: tests, lint, debug and release builds, and the emulator tour on Android 8.0 and 14 (36 steps; last on 2026-10-25, commit `7f6b1fb`)
 - [x] Real-server tests against the owner's Proxmox VE 9.2.21: every read the app makes, and every write step including the three consoles (2026-10-20, run 7; see [testing.md](testing.md))
 - [x] Real-server tests against the owner's Proxmox Backup Server 4.2: every read, the write steps, and a container backup made through Proxmox VE checked on it (notes, protection, verify, file restore, prune preview) (2026-10-21, run 10; it found the repositories bug fixed in this beta)
 - [x] `CHANGELOG.md` entries, store changelog (`fastlane/…/changelogs/10023.txt`, updated for M6–M8)
 - [x] README: the "Coming in 0.1.0-beta.3" list covers M2–M8 and the smaller additions
-- [x] [Test guide](beta2-test-guide.md) for the owner: D–D15 (M2–M5), D16–D22 (M6–M8 and the smaller additions), N (Backup Server)
+- [x] [Test guide](beta2-test-guide.md) for the owner: A0–A3 (the design, single sign-on, certificates, notifications), D–D15 (M2–M5), D16–D22 (M6–M8 and the smaller additions), N (Backup Server, N12 its permissions)
+- [ ] Real-server tests for what came after run 10: certificates and ACME, notifications, Backup Server access control (the mock covers them; `RealServer*Test` doesn't yet)
 - [ ] Owner: run the test guide on real hardware (Proxmox VE 9)
 - [ ] Head the CHANGELOG section `## [0.1.0-beta.3] — <date>`, then run the Release workflow
 

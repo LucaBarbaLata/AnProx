@@ -52,6 +52,12 @@ The goal is every function of the web UI in a fast, beautiful, native app.
 
 Coming in **0.1.0-beta.3** (in the CI test builds now):
 
+- **A calmer design.** The same Midnight colours with less on each screen: one card per server
+  on the overview, a summary and a grid of tools for guests and nodes, folded sections.
+- **Single sign-on.** Sign in through an OpenID Connect realm (Proxmox VE and Backup Server).
+- **Certificates and notifications.** A node's certificates, ACME (Let's Encrypt) orders and
+  renewals with HTTP or DNS plugins, your own certificate; notification targets (e-mail, SMTP,
+  Gotify, webhooks) and matchers, with a test send.
 - **Guest configuration.** Hardware (CPU, memory, disks, CD/DVD, network, boot order; container
   resources and mount points), cloud-init, start and shutdown order, and a wizard to create VMs
   and containers. Delete a VM or container (you type its ID).
@@ -69,7 +75,7 @@ Coming in **0.1.0-beta.3** (in the CI test builds now):
   availability, replication, resource pools, datacenter options, the cluster log, and moving
   your servers to another phone.
 - **Permissions.** Users, groups, roles, permissions (ACLs), realms with sync, API tokens,
-  second factors and passwords.
+  second factors and passwords, on Proxmox VE and on the Backup Server.
 - **Ceph and SDN.** Ceph health, OSDs, pools, monitors, managers, CephFS, flags and
   configuration; SDN zones, VNets, subnets, controllers and IPAM, with pending changes and apply.
 - **Node administration.** Updates and repositories, services, the system log, network
@@ -80,12 +86,14 @@ Coming in **0.1.0-beta.3** (in the CI test builds now):
   garbage collection and sync jobs (run them now), remotes, notes and protection, and restoring
   single files from container and host backups.
 - **Backups and tasks.** Restore to another storage, edit snapshot descriptions, stop a running
-  task; a task that meets a locked guest says to try again shortly.
+  task; a task that meets a locked guest says to try again shortly. Long task logs keep their end.
+- **Accessibility.** Larger touch targets, errors and states read out by TalkBack, and screens
+  that hold up at large font sizes.
 
 Before each beta, automated tests run every read and write the app makes against a real
 Proxmox VE 9 and Proxmox Backup Server 4 (see [testing.md](docs/testing.md)). Next is the road to 1.0: the
-remaining API areas (certificates, notifications, hardware mappings, cluster setup), an
-accessibility pass and community translations. See the [roadmap](docs/roadmap.md) and the
+remaining API areas (hardware mappings, metric servers, cluster setup), a TalkBack run on a
+phone and community translations. See the [roadmap](docs/roadmap.md) and the
 [API coverage tracker](docs/api-coverage.md).
 
 ## Try it
