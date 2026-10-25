@@ -1,6 +1,7 @@
 package io.github.lucabarbalata.anprox.data
 
 import io.github.lucabarbalata.anprox.data.backupserver.PbsRepository
+import io.github.lucabarbalata.anprox.data.datacenter.AccessRepository
 import io.github.lucabarbalata.anprox.data.guest.GuestRepository
 import io.github.lucabarbalata.anprox.data.hub.ServerHub
 import io.github.lucabarbalata.anprox.data.node.NodeAdminRepository
@@ -17,6 +18,10 @@ import io.github.lucabarbalata.anprox.model.pbs.PbsJobKind
 import io.github.lucabarbalata.anprox.model.pbs.PbsRemoteForm
 import io.github.lucabarbalata.anprox.model.profile.Endpoint
 import io.github.lucabarbalata.anprox.model.profile.ServerProfile
+import io.github.lucabarbalata.anprox.model.pve.AclForm
+import io.github.lucabarbalata.anprox.model.pve.AclSubject
+import io.github.lucabarbalata.anprox.model.pve.TokenForm
+import io.github.lucabarbalata.anprox.model.pve.UserForm
 import io.github.lucabarbalata.anprox.network.ApiException
 import io.github.lucabarbalata.anprox.network.auth.LoginResult
 import kotlinx.coroutines.CancellationException
@@ -74,12 +79,12 @@ class RealServerPbsTest {
     fun `create, change and delete on a real test Backup Server`() = runBlocking {
         val login = PbsLogin.fromEnv()
         assumeTrue(login != null && System.getenv("ANPROX_PBS_WRITE") == "1", "ANPROX_PBS_URL/USER/PASSWORD and ANPROX_PBS_WRITE=1 not set")
-        writeEverything(login!!.signIn(scope))
+        writeEverything(login!!.signIn(scope), login.password)
     }
 
     @Test
     fun `the write steps pass against the mock`() = runBlocking {
-        withMock { writeEverything(it) }
+        withMock { writeEverything(it, "anprox") }
     }
 
     private suspend fun withMock(block: suspend (ServerHub) -> Unit) {
@@ -185,10 +190,19 @@ class RealServerPbsTest {
         check("system log") { admin.journal(ID, node, 50) }
         check("task history") { guests.taskHistory(ID, node, 0, 50, errorsOnly = false) }
         check("failed tasks") { guests.taskHistory(ID, node, 0, 50, errorsOnly = true) }
+        println("Backup Server: users and permissions")
+        val access = AccessRepository(hub)
+        check("users") { access.users(ID) }
+        check("roles") { access.roles(ID) }
+        check("permissions (ACL)") { access.acl(ID) }
+        check("realms") { access.realms(ID) }
+        check("second factors") { access.tfa(ID) }
+        check("own permissions") { access.permissions(ID, null) }
         finish()
     }
 
-    private suspend fun writeEverything(hub: ServerHub) {
+    /** [password]: the signed-in user's, which the Backup Server asks for to change another user's password. */
+    private suspend fun writeEverything(hub: ServerHub, password: String) {
         val pbs = PbsRepository(hub)
         val guests = GuestRepository(hub)
         val admin = NodeAdminRepository(hub)
@@ -207,6 +221,10 @@ class RealServerPbsTest {
             if (pbs.maintenance(ID, store).message == MAINTENANCE_NOTE) step("end the test's maintenance mode on $store") { pbs.setMaintenance(ID, store, null, "") }
         }
         if (pbs.remotes(ID).any { it.name == PREFIX }) step("remove remote $PREFIX") { pbs.deleteRemote(ID, PREFIX) }
+        AccessRepository(hub).let { access ->
+            access.acl(ID).filter { it.ugid.startsWith("$PREFIX@pbs") }.forEach { e -> step("remove the permission of ${e.ugid} on ${e.path}") { access.removeAcl(ID, e) } }
+            if (access.users(ID).any { it.id == "$PREFIX@pbs" }) step("remove user $PREFIX@pbs") { access.deleteUser(ID, "$PREFIX@pbs") }
+        }
 
         val store = stores.firstOrNull { pbs.maintenance(ID, it).type == null } ?: error("no datastore that isn't in maintenance")
         println("Backup Server: datastore $store")
@@ -242,6 +260,40 @@ class RealServerPbsTest {
             checkPbsSnapshot({ name, block -> step(name) { block() } }, pbs, guests, ID, store, ns, group, snapshot)
         }
 
+        println("Backup Server: users and permissions")
+        val access = AccessRepository(hub)
+        val user = "$PREFIX@pbs"
+        val made = step("user in the pbs realm: create, change, set a new password") {
+            access.createUser(ID, UserForm(name = PREFIX, realm = "pbs", password = TEST_PASSWORD, confirmPassword = TEST_PASSWORD, comment = "AnProx test"))
+            val created = access.users(ID).firstOrNull { it.id == user } ?: error("the new user is not listed")
+            access.updateUser(ID, created, UserForm.from(created).copy(comment = "AnProx test, changed", email = "anprox-test@example.invalid"))
+            val changed = access.users(ID).first { it.id == user }
+            expect(changed.comment == "AnProx test, changed" && changed.email == "anprox-test@example.invalid", "the new comment and e-mail, got ${changed.comment} / ${changed.email}")
+            access.changePassword(ID, user, "AnProx-test-2027!", yourPassword = password)
+        }
+        if (made != null) {
+            step("API token and permissions on /datastore/$store: give, check, take away") {
+                val token = access.createToken(ID, user, TokenForm(id = "ci", comment = "AnProx test"))
+                expect(token.fullId == "$user!ci", "the token's ID, got ${token.fullId}")
+                val path = "/datastore/$store"
+                // A token can do at most what its user may, so the user gets the role too.
+                access.addAcl(ID, AclForm(path, AclSubject.USER, user, "DatastoreReader"))
+                access.addAcl(ID, AclForm(path, AclSubject.TOKEN, "$user!ci", "DatastoreReader", propagate = false))
+                val entries = access.acl(ID).filter { it.path == path && it.ugid.startsWith(user) }
+                expect(entries.map { it.subject }.toSet() == setOf(AclSubject.USER, AclSubject.TOKEN), "an entry for the user and one for the token, got $entries")
+                val privileges = access.permissions(ID, user).paths[path].orEmpty()
+                expect("Datastore.Read" in privileges, "Datastore.Read for the user on $path, got ${privileges.keys}")
+                entries.forEach { access.removeAcl(ID, it) }
+                expect(access.acl(ID).none { it.ugid.startsWith(user) }, "the entries to be gone")
+                access.deleteToken(ID, user, "ci")
+                expect(access.tokens(ID, user).isEmpty(), "the token to be gone")
+            }
+            step("delete the user") {
+                access.deleteUser(ID, user)
+                expect(access.users(ID).none { it.id == user }, "the user to be gone")
+            }
+        }
+
         println("Backup Server: jobs, remotes and the node")
         step("remote: add, then delete") {
             // Only the configuration: nothing connects to it.
@@ -272,6 +324,7 @@ class RealServerPbsTest {
         const val ID = "pbs"
         const val PREFIX = "anprox-test"
         const val MAINTENANCE_NOTE = "AnProx test"
+        const val TEST_PASSWORD = "AnProx-test-2026!"
     }
 }
 

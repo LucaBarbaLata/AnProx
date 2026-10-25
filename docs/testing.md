@@ -171,10 +171,12 @@ scripts/e2e/run.sh app/build/outputs/apk/release/app-release.apk
 
 `RealServerSmokeTest` (in `:core:data`) makes every read the app makes against a real Proxmox VE
 and checks that the answers parse: dashboard, node (status, history, tasks, updates,
-repositories, services, network, disks, DNS, time, journal, firewall), storages and their content
-and history, a few guests of each kind (status, options, snapshots, addresses, hardware,
-cloud-init, history, backups, firewall), and the datacenter (options, cluster log, backup jobs,
-firewall, HA, replication, pools, access control, SDN, Ceph). It changes nothing on the server.
+repositories, services, network, disks, DNS, time, journal, firewall, certificates and ACME
+settings), storages and their content and history, a few guests of each kind (status, options,
+snapshots, addresses, hardware, cloud-init, history, backups, firewall), and the datacenter
+(options, cluster log, backup jobs, firewall, HA, replication, pools, access control, SDN, Ceph,
+ACME accounts, directories, terms, plugins and DNS providers, notification targets with each
+one's settings, matchers and the known fields). It changes nothing on the server.
 Features the server doesn't have (no Ceph, no guest agent) are reported, not failed.
 
 ```bash
@@ -208,6 +210,15 @@ repositories:
   changed and restored.
 - **Access:** a group and user, a role with a permission for the group, an API token, a
   password change.
+- **Notifications:** an e-mail target (switched off, to an `.invalid` address) created, changed
+  and deleted; a webhook target with a header, a body and a secret, a test send through it (to
+  port 9 of the server itself, so the server reports the failure and nothing leaves it), and a
+  matcher (switched off) for it, changed and deleted.
+- **Certificates:** an ACME domain `anprox-test.invalid` added to the node and removed (nothing
+  is ordered), a DNS plugin added, changed and deleted (only its settings). When the node serves
+  the certificate its cluster CA signed and "Allow insecure certificate" is on, a self-signed
+  certificate (made with `openssl`) is uploaded, checked in use after the web proxy restarts,
+  and removed again; a node that already has its own (uploaded or ACME) is left alone.
 - **Consoles**, through the app's own connection, with the test playing the part of the bundled
   pages: the VM's screen over VNC (handshake with the generated VNC password, a full frame
   saved to `core/data/build/real-server/vm-screen.png`, a key press); the container's console
@@ -234,9 +245,12 @@ ANPROX_PVE_URL=… ANPROX_PVE_USER=root@pam ANPROX_PVE_PASSWORD=… ANPROX_PVE_W
 (`https://host:8007`), `ANPROX_PBS_USER` and `ANPROX_PBS_PASSWORD`: every read the app makes
 (dashboard, the server's status, each datastore's status, garbage collection, maintenance,
 namespaces, groups, snapshots and a file catalog, jobs, remotes, updates, repositories,
-services, log, task history), and with `ANPROX_PBS_WRITE=1` a namespace created, verified and
-deleted, garbage collection, read-only maintenance switched on and off, a remote added and
-deleted (only its configuration), a verify job run if there is one, and an apt index refresh.
+services, log, task history, users, roles, permissions, realms, second factors), and with
+`ANPROX_PBS_WRITE=1` a namespace created, verified and deleted, garbage collection, read-only
+maintenance switched on and off, a remote added and deleted (only its configuration), a verify
+job run if there is one, an apt index refresh, and a user `anprox-test@pbs` created, changed and
+given a new password, with an API token and DatastoreReader on a datastore for both (checked in
+the user's effective permissions), then all removed.
 The backup checks (notes and protection changed and put back, verify, file restore of a file and
 a folder, a prune preview) run on the newest container or host backup the datastore has. The
 folder's zip is checked like an unzip tool reads it, by its central directory with every file's

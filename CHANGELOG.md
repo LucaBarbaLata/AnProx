@@ -336,6 +336,8 @@ All notable changes to AnProx are documented here. The format follows
 - **Backup Server → Updates → Repositories** opens on Proxmox Backup Server 4.2. It showed an
   error ("Unexpected response"): the Backup Server reports a standard repository's state as
   true/false where Proxmox VE uses 1/0. Found by the real-server tests.
+- **Backup Server permissions** of a user show whether they propagate: the Backup Server answers
+  true/false where Proxmox VE answers 1/0, and the app read every one as "not propagated".
 - **Single sign-on** on a phone without Android System WebView (or with it switched off) says
   so and suggests the password, instead of closing the app. Found by the emulator tour on
   Android 8.0, whose image has no WebView.

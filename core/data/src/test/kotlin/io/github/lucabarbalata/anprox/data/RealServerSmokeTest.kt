@@ -7,6 +7,7 @@ import io.github.lucabarbalata.anprox.data.datacenter.CephRepository
 import io.github.lucabarbalata.anprox.data.datacenter.ClusterRepository
 import io.github.lucabarbalata.anprox.data.datacenter.FirewallRepository
 import io.github.lucabarbalata.anprox.data.datacenter.HaRepository
+import io.github.lucabarbalata.anprox.data.datacenter.NotificationRepository
 import io.github.lucabarbalata.anprox.data.datacenter.PoolRepository
 import io.github.lucabarbalata.anprox.data.datacenter.ReplicationRepository
 import io.github.lucabarbalata.anprox.data.datacenter.SdnRepository
@@ -18,6 +19,7 @@ import io.github.lucabarbalata.anprox.data.hardware.HardwareRepository
 import io.github.lucabarbalata.anprox.data.hub.ServerHub
 import io.github.lucabarbalata.anprox.data.metrics.MetricsRepository
 import io.github.lucabarbalata.anprox.data.metrics.MetricsSource
+import io.github.lucabarbalata.anprox.data.node.CertificateRepository
 import io.github.lucabarbalata.anprox.data.node.NodeAdminRepository
 import io.github.lucabarbalata.anprox.data.snapshot.PveSnapshot
 import io.github.lucabarbalata.anprox.data.snapshot.SnapshotRepository
@@ -170,6 +172,9 @@ class RealServerSmokeTest {
         check("template catalogue") { storage.appliances(id, node) }
         check("LVM volume groups", notConfigured) { StorageSetupRepository(hub).scanLvm(id, node) }
         check("ZFS pools", notConfigured) { StorageSetupRepository(hub).scanZfs(id, node) }
+        val certs = CertificateRepository(hub)
+        check("certificates") { certs.certificates(id, node).joinToString { "${it.role}: ${it.commonName}" } }
+        check("ACME settings") { certs.acmeConfig(id, node).let { "${it.domains.size} domain(s), account ${it.accountOrDefault}" } }
 
         println("Storage")
         check("storages") { storage.storages(id) }
@@ -240,6 +245,33 @@ class RealServerSmokeTest {
         check("SDN DNS", notConfigured) { sdn.dnsServers(id) }
         val ceph = CephRepository(hub)
         check("Ceph status", { CephRepository.notSetUp(it) }) { ceph.overview(id, node) }
+        // Accounts and plugins need Sys.Modify; an auditor gets "–".
+        check("ACME accounts", notConfigured) { certs.accounts(id) }
+        val directories = try {
+            certs.directories(id).also { println("  ✓ ACME directories: ${it.size} item(s)") }
+        } catch (e: ApiException) {
+            failures += "ACME directories: ${e.message}"
+            println("  ✗ ACME directories: ${e::class.simpleName}: ${e.message}")
+            emptyList()
+        }
+        // The terms come from the CA itself, so the server needs to reach it.
+        directories.firstOrNull()?.let { dir -> check("ACME terms of ${dir.name}", notConfigured) { certs.meta(id, dir.url) } }
+        check("ACME plugins", notConfigured) { certs.plugins(id) }
+        check("ACME DNS providers") { certs.dnsApis(id) }
+        val notify = NotificationRepository(hub)
+        val targets = try {
+            notify.targets(id).also { println("  ✓ notification targets: ${it.size} item(s)") }
+        } catch (e: ApiException) {
+            failures += "notification targets: ${e.message}"
+            println("  ✗ notification targets: ${e::class.simpleName}: ${e.message}")
+            emptyList()
+        }
+        targets.forEach { t ->
+            val type = t.kind ?: return@forEach
+            check("${t.type} target ${t.name}: settings") { notify.settings(id, type, t.name).form.type }
+        }
+        check("notification matchers") { notify.matchers(id) }
+        check("notification fields and values") { notify.fieldValues(id) }
 
         println(if (failures.isEmpty()) "All checks passed." else "Failed:\n" + failures.joinToString("\n") { "  $it" })
         assertTrue(failures.isEmpty(), failures.joinToString("\n"))

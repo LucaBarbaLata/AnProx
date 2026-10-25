@@ -549,7 +549,8 @@ data class EffectivePermissions(val paths: Map<String, Map<String, Boolean>>) {
         fun fromJson(o: JsonObject): EffectivePermissions = EffectivePermissions(
             o.entries.associate { (path, v) ->
                 path to ((v as? JsonObject)?.entries?.associate { (priv, flag) ->
-                    priv to (flag.toString().trim('"') == "1")
+                    // Whether it propagates: 1/0 on Proxmox VE, true/false on a Backup Server.
+                    priv to (flag.toString().trim('"') in setOf("1", "true"))
                 }.orEmpty())
             },
         )

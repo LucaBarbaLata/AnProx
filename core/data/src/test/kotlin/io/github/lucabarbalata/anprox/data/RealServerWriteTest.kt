@@ -8,6 +8,7 @@ import io.github.lucabarbalata.anprox.data.datacenter.BackupJobRepository
 import io.github.lucabarbalata.anprox.data.datacenter.ClusterRepository
 import io.github.lucabarbalata.anprox.data.datacenter.FirewallRepository
 import io.github.lucabarbalata.anprox.data.datacenter.HaRepository
+import io.github.lucabarbalata.anprox.data.datacenter.NotificationRepository
 import io.github.lucabarbalata.anprox.data.datacenter.PoolRepository
 import io.github.lucabarbalata.anprox.data.datacenter.SdnRepository
 import io.github.lucabarbalata.anprox.data.datacenter.StorageRepository
@@ -16,6 +17,7 @@ import io.github.lucabarbalata.anprox.data.guest.GuestRef
 import io.github.lucabarbalata.anprox.data.guest.GuestRepository
 import io.github.lucabarbalata.anprox.data.hardware.HardwareRepository
 import io.github.lucabarbalata.anprox.data.hub.ServerHub
+import io.github.lucabarbalata.anprox.data.node.CertificateRepository
 import io.github.lucabarbalata.anprox.data.node.NodeAdminRepository
 import io.github.lucabarbalata.anprox.data.snapshot.PveSnapshot
 import io.github.lucabarbalata.anprox.data.snapshot.SnapshotRepository
@@ -27,14 +29,18 @@ import io.github.lucabarbalata.anprox.model.profile.Endpoint
 import io.github.lucabarbalata.anprox.model.profile.ServerProfile
 import io.github.lucabarbalata.anprox.model.pve.AclForm
 import io.github.lucabarbalata.anprox.model.pve.AclSubject
+import io.github.lucabarbalata.anprox.model.pve.AcmeDomain
+import io.github.lucabarbalata.anprox.model.pve.AcmePluginForm
 import io.github.lucabarbalata.anprox.model.pve.BackupJobForm
 import io.github.lucabarbalata.anprox.model.pve.BackupMode
 import io.github.lucabarbalata.anprox.model.pve.BackupSelection
+import io.github.lucabarbalata.anprox.model.pve.CertificateInfo
 import io.github.lucabarbalata.anprox.model.pve.CloneRequest
 import io.github.lucabarbalata.anprox.model.pve.ConsoleKind
 import io.github.lucabarbalata.anprox.model.pve.ConsoleTarget
 import io.github.lucabarbalata.anprox.model.pve.ContentType
 import io.github.lucabarbalata.anprox.model.pve.CtNetSettings
+import io.github.lucabarbalata.anprox.model.pve.CustomCertificateForm
 import io.github.lucabarbalata.anprox.model.pve.DownloadUrlForm
 import io.github.lucabarbalata.anprox.model.pve.FirewallAliasForm
 import io.github.lucabarbalata.anprox.model.pve.FirewallRuleForm
@@ -46,6 +52,9 @@ import io.github.lucabarbalata.anprox.model.pve.NetworkInterfaceForm
 import io.github.lucabarbalata.anprox.model.pve.NewContainer
 import io.github.lucabarbalata.anprox.model.pve.NewVm
 import io.github.lucabarbalata.anprox.model.pve.NodeStorage
+import io.github.lucabarbalata.anprox.model.pve.NotifyMatcherForm
+import io.github.lucabarbalata.anprox.model.pve.NotifyTargetForm
+import io.github.lucabarbalata.anprox.model.pve.NotifyTargetType
 import io.github.lucabarbalata.anprox.model.pve.PoolChange
 import io.github.lucabarbalata.anprox.model.pve.PowerAction
 import io.github.lucabarbalata.anprox.model.pve.Retention
@@ -73,6 +82,9 @@ import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assumptions.assumeTrue
 import java.io.ByteArrayInputStream
 import java.io.File
+import java.io.IOException
+import java.nio.file.Files
+import java.util.concurrent.TimeUnit
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertIs
@@ -180,6 +192,8 @@ class RealServerWriteTest {
         val cluster = ClusterRepository(hub)
         val ha = HaRepository(hub)
         val consoles = ConsoleRepository(hub)
+        val notify = NotificationRepository(hub)
+        val certs = CertificateRepository(hub)
 
         suspend fun clusterState() = snapshots.fetch(hub.server(id)!!) as PveSnapshot
         /** Waits for a task; a failed one is reported with the end of its log, which says why. */
@@ -285,6 +299,7 @@ class RealServerWriteTest {
             done(ref.node, guests.destroy(ref, purge = true, destroyUnreferencedDisks = true), "destroy ${ref.vmid}")
         }
 
+
         val node = clusterState().nodes.firstOrNull { it.status == "online" }?.node ?: error("no online node")
         println("Working on node $node")
 
@@ -329,6 +344,7 @@ class RealServerWriteTest {
         } catch (_: ApiException) {
             // No SDN on this server.
         }
+        removeLeftovers(notify, certs, id, node)
 
         val bridge = hardware.bridges(id, node).firstOrNull()?.iface ?: "vmbr0"
         val vmStorage = guests.diskStorages(id, node, GuestType.QEMU).firstOrNull()?.storage ?: error("no storage for VM disks on $node")
@@ -698,6 +714,9 @@ class RealServerWriteTest {
                 expect(cluster.options(id).emailFrom == original.emailFrom, "the original sender address back")
             }
 
+            notificationSteps(notify, id)
+            certificateSteps(certs, id, node, insecure)
+
             println("Users and groups")
             val userMade = step("group and user: create") {
                 access.createGroup(id, PREFIX, "AnProx write test")
@@ -741,9 +760,177 @@ class RealServerWriteTest {
         assertTrue(failures.isEmpty(), failures.joinToString("\n"))
     }
 
+    /** Notification targets and a matcher, all `anprox-test…`; nothing is sent anywhere real. */
+    private suspend fun notificationSteps(notify: NotificationRepository, id: String) {
+        println("Notifications")
+        step("e-mail target: create, change, delete") {
+            val name = "$PREFIX-mail"
+            // Switched off and to an address that can't exist: nothing is ever sent through it.
+            notify.createTarget(id, NotifyTargetForm(type = NotifyTargetType.SENDMAIL, name = name, mailto = "anprox-test@example.invalid", comment = PREFIX, disabled = true))
+            val settings = notify.settings(id, NotifyTargetType.SENDMAIL, name)
+            expect("anprox-test@example.invalid" in settings.form.mailto, "the recipient back, got ${settings.form.mailto}")
+            notify.updateTarget(id, settings.form.copy(comment = "$PREFIX changed", author = "AnProx test"), settings.digest)
+            val target = notify.targets(id).firstOrNull { it.name == name } ?: error("the target is not listed")
+            expect(target.comment == "$PREFIX changed" && target.disable, "the new comment, still switched off, got $target")
+            notify.deleteTarget(id, target)
+            expect(notify.targets(id).none { it.name == name }, "the target to be gone")
+        }
+        step("webhook target with a header and a secret, a test send, a matcher, then remove them") {
+            val hook = "$PREFIX-hook"
+            val matcher = "$PREFIX-matcher"
+            // Nothing listens on port 9 of the server itself, so nothing leaves it.
+            notify.createTarget(
+                id,
+                NotifyTargetForm(
+                    type = NotifyTargetType.WEBHOOK, name = hook, url = "http://127.0.0.1:9/anprox-test", method = "post",
+                    headers = "X-AnProx: test", body = "{{ title }}", secrets = "token=not-a-secret", comment = PREFIX,
+                ),
+            )
+            val settings = notify.settings(id, NotifyTargetType.WEBHOOK, hook)
+            expect(settings.form.url == "http://127.0.0.1:9/anprox-test" && "X-AnProx" in settings.form.headers, "the address and header back, got ${settings.form.url} / ${settings.form.headers}")
+            expect(settings.form.body.trim() == "{{ title }}", "the body back, got ${settings.form.body}")
+            // The server reports the failed send; the app shows its message.
+            val sent = try {
+                notify.test(id, hook)
+                "sent"
+            } catch (e: ApiException) {
+                "the server says: ${e.message}"
+            }
+            println("    (test through $hook: $sent)")
+            // Switched off, so no real notification goes to the test target.
+            notify.createMatcher(id, NotifyMatcherForm(name = matcher, targets = setOf(hook), severities = setOf("error"), fields = "exact:type=vzdump", mode = "any", comment = PREFIX, disabled = true))
+            val m = notify.matchers(id).firstOrNull { it.name == matcher } ?: error("the matcher is not listed")
+            expect(m.targets == listOf(hook) && m.severities == listOf("error") && m.fields == listOf("exact:type=vzdump") && m.disabled, "the matcher as made, got $m")
+            notify.updateMatcher(id, m, NotifyMatcherForm.from(m).copy(invert = true, comment = "$PREFIX changed"))
+            val changed = notify.matchers(id).first { it.name == matcher }
+            expect(changed.invert && changed.comment == "$PREFIX changed", "the matcher inverted, got $changed")
+            notify.deleteMatcher(id, matcher)
+            notify.deleteTarget(id, notify.targets(id).first { it.name == hook })
+            expect(notify.matchers(id).none { it.name == matcher } && notify.targets(id).none { it.name == hook }, "the matcher and the target to be gone")
+        }
+    }
+
+    /**
+     * An ACME domain and a DNS plugin (only settings: nothing is ordered), and, when the node serves
+     * the certificate its cluster CA signed, an uploaded one of its own and back.
+     */
+    private suspend fun certificateSteps(certs: CertificateRepository, id: String, node: String, insecure: Boolean) {
+        println("Certificates")
+        step("ACME domain: add to $node, then remove it") {
+            val config = certs.acmeConfig(id, node)
+            if (config.freeKey == null) {
+                println("    ($node already has all six ACME domains: nothing added)")
+            } else {
+                certs.addDomain(id, node, config, ACME_DOMAIN, AcmeDomain.STANDALONE, null)
+                val after = certs.acmeConfig(id, node)
+                val added = after.domains.firstOrNull { it.domain == ACME_DOMAIN } ?: error("the domain is not listed")
+                expect(added.isStandalone, "HTTP validation (standalone), got ${added.plugin}")
+                certs.removeDomain(id, node, after, added)
+                expect(certs.acmeConfig(id, node).domains.none { it.domain == ACME_DOMAIN }, "the domain to be gone")
+            }
+        }
+        step("ACME DNS plugin: add, change, delete (only its settings)") {
+            val apis = certs.dnsApis(id)
+            val api = apis.firstOrNull { it.id == "acmedns" } ?: apis.firstOrNull() ?: error("no DNS providers listed")
+            val data = api.fields.take(2).ifEmpty { listOf("ANPROX_TEST") }.joinToString("\n") { "$it=anprox-test" }
+            certs.createPlugin(id, AcmePluginForm(id = PREFIX, api = api.id, data = data, validationDelay = "30"))
+            val plugin = certs.plugins(id).firstOrNull { it.id == PREFIX } ?: error("the plugin is not listed")
+            expect(plugin.api == api.id && plugin.data.lines().map { it.trim() }.filter { it.isNotEmpty() }.size == data.lines().size, "the provider and its ${data.lines().size} line(s) back, got ${plugin.api} with ${plugin.data.lines().size}")
+            certs.updatePlugin(id, plugin, AcmePluginForm.from(plugin).copy(validationDelay = "60"))
+            expect(certs.plugins(id).first { it.id == PREFIX }.validationDelay == 60, "the new validation delay")
+            certs.deletePlugin(id, PREFIX)
+            expect(certs.plugins(id).none { it.id == PREFIX }, "the plugin to be gone")
+        }
+        val inUse = (step("certificates of $node") { certs.certificates(id, node) } ?: return).firstOrNull { it.role == CertificateInfo.Role.IN_USE }
+        when {
+            !insecure -> println("  – own certificate: only tried with \"Allow insecure certificate\" on (the test's certificate is self-signed)")
+            // Never replace a certificate the server already has: its own upload, or an ACME one. Its
+            // name stays out of the log, which is public on GitHub.
+            inUse != null -> println("  – own certificate: $node already serves its own (uploaded or ACME), which the test leaves alone")
+            else -> step("own certificate: upload one (the web proxy restarts), then go back to the node's") {
+                val (pem, key) = selfSignedCertificate() ?: error("openssl could not make a test certificate")
+                ignoreRestart { certs.uploadCustom(id, node, CustomCertificateForm(pem, key)) }
+                val served = afterRestart("the uploaded certificate in use") { certs.certificates(id, node).firstOrNull { it.role == CertificateInfo.Role.IN_USE } }
+                try {
+                    expect(served.commonName == PREFIX, "the uploaded certificate (CN=$PREFIX) in use, got another one")
+                } finally {
+                    ignoreRestart { certs.removeCustom(id, node) }
+                }
+                afterRestart("the node's own certificate back") { certs.certificates(id, node).takeIf { list -> list.none { it.role == CertificateInfo.Role.IN_USE } } }
+            }
+        }
+    }
+
+    /** What an earlier run's notification and certificate steps may have left. */
+    private suspend fun removeLeftovers(notify: NotificationRepository, certs: CertificateRepository, id: String, node: String) {
+        // Notification matchers first: a target a matcher still names can't be deleted.
+        notify.matchers(id).filter { it.name.startsWith(PREFIX) }.forEach { m -> step("remove notification matcher ${m.name}") { notify.deleteMatcher(id, m.name) } }
+        notify.targets(id).filter { it.name.startsWith(PREFIX) }.forEach { t -> step("remove notification target ${t.name}") { notify.deleteTarget(id, t) } }
+        certs.acmeConfig(id, node).let { config ->
+            config.domains.firstOrNull { it.domain == ACME_DOMAIN }?.let { d -> step("remove ACME domain $ACME_DOMAIN") { certs.removeDomain(id, node, config, d) } }
+        }
+        try {
+            if (certs.plugins(id).any { it.id == PREFIX }) step("remove ACME plugin $PREFIX") { certs.deletePlugin(id, PREFIX) }
+        } catch (_: ApiException) {
+            // Not allowed to read plugins: then this user didn't make one either.
+        }
+        if (certs.certificates(id, node).any { it.role == CertificateInfo.Role.IN_USE && it.commonName == PREFIX }) {
+            step("remove the test's certificate from $node") {
+                ignoreRestart { certs.removeCustom(id, node) }
+                afterRestart("the node's own certificate back") { certs.certificates(id, node).takeIf { list -> list.none { it.role == CertificateInfo.Role.IN_USE } } }
+            }
+        }
+    }
+
+    /** A call that restarts the web proxy (a certificate change): the connection may drop as it does. */
+    private suspend fun ignoreRestart(block: suspend () -> Unit) {
+        try {
+            block()
+        } catch (_: ApiException.Unreachable) {
+            println("    (the connection dropped while the web proxy restarted)")
+        }
+    }
+
+    /** Asks [block] again, for up to 90 s, until it answers (not null) once the web proxy is back. */
+    private suspend fun <T : Any> afterRestart(what: String, block: suspend () -> T?): T {
+        repeat(30) {
+            try {
+                block()?.let { return it }
+            } catch (e: ApiException) {
+                // Still restarting: no connection, or a proxy error while it comes back.
+                if (e !is ApiException.Unreachable && !(e is ApiException.Server && e.code >= 500)) throw e
+            }
+            delay(3_000)
+        }
+        error("expected $what within 90 s")
+    }
+
+    /** A self-signed certificate and its key (PEM) for CN=anprox-test, made with openssl; null without it. */
+    private fun selfSignedCertificate(): Pair<String, String>? = try {
+        val dir = Files.createTempDirectory("anprox-cert").toFile()
+        try {
+            val key = File(dir, "key.pem")
+            val cert = File(dir, "cert.pem")
+            val process = ProcessBuilder(
+                "openssl", "req", "-x509", "-newkey", "rsa:2048", "-nodes", "-days", "2",
+                "-subj", "/CN=$PREFIX", "-addext", "subjectAltName=DNS:$ACME_DOMAIN",
+                "-keyout", key.path, "-out", cert.path,
+            ).redirectErrorStream(true).start()
+            process.inputStream.readBytes()
+            if (process.waitFor(60, TimeUnit.SECONDS) && process.exitValue() == 0) cert.readText() to key.readText() else null
+        } finally {
+            dir.deleteRecursively()
+        }
+    } catch (_: IOException) {
+        null
+    }
+
     private companion object {
         const val PREFIX = "anprox-test"
         const val TEST_PASSWORD = "AnProx-test-2026!"
+
+        /** Only ever in the node's ACME settings: `.invalid` can't be ordered or resolved. */
+        const val ACME_DOMAIN = "anprox-test.invalid"
 
         /** SDN IDs are at most 8 lowercase letters and digits. */
         const val SDN_ZONE = "apxtest"

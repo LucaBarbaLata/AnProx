@@ -106,6 +106,10 @@ class AccessModelTest {
         val p = EffectivePermissions.fromJson(json("""{"/":{"Sys.Audit":1},"/vms":{"VM.PowerMgmt":0}}"""))
         assertEquals(true, p.paths["/"]?.get("Sys.Audit"))
         assertEquals(false, p.paths["/vms"]?.get("VM.PowerMgmt"))
+        // A Backup Server answers with booleans.
+        val pbs = EffectivePermissions.fromJson(json("""{"/datastore/store1":{"Datastore.Read":true,"Datastore.Audit":false}}"""))
+        assertEquals(true, pbs.paths["/datastore/store1"]?.get("Datastore.Read"))
+        assertEquals(false, pbs.paths["/datastore/store1"]?.get("Datastore.Audit"))
     }
 
     @Test
