@@ -12,6 +12,7 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -45,6 +46,7 @@ import io.github.lucabarbalata.anprox.R
 import io.github.lucabarbalata.anprox.core.designsystem.theme.AnProxTheme
 import io.github.lucabarbalata.anprox.data.hub.OpenIdStart
 import io.github.lucabarbalata.anprox.model.auth.OpenIdCallback
+import io.github.lucabarbalata.anprox.ui.common.webViewVersion
 
 /**
  * The identity provider's sign-in page for an OpenID Connect realm, full screen. When the provider
@@ -66,6 +68,8 @@ fun OpenIdSignInDialog(
     val returned by rememberUpdatedState(onReturned)
     val failed by rememberUpdatedState(onFailed)
     val certificateRejected = stringResource(R.string.login_openid_certificate)
+    // Without a WebView provider, creating one would crash the app.
+    val hasWebView = remember { webViewVersion() != null }
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Column(
             Modifier
@@ -80,21 +84,28 @@ fun OpenIdSignInDialog(
                     Text(Uri.parse(start.authUrl).host.orEmpty(), style = MaterialTheme.typography.bodySmall, color = c.textSecondary, maxLines = 1)
                 }
             }
-            if (loading) LinearProgressIndicator(Modifier.fillMaxWidth(), color = c.accent) else Spacer(Modifier.height(4.dp))
-            AndroidView(
-                factory = { context ->
-                    openIdWebView(
-                        context,
-                        start,
-                        allowInsecure,
-                        onLoading = { loading = it },
-                        onReturned = { returned(it) },
-                        onFailed = { reason -> failed(reason ?: certificateRejected) },
-                    )
-                },
-                onRelease = { it.destroy() },
-                modifier = Modifier.fillMaxSize(),
-            )
+            if (!hasWebView) {
+                Column(Modifier.fillMaxWidth().padding(24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(stringResource(R.string.login_openid_no_webview_title), style = MaterialTheme.typography.titleMedium, color = c.textPrimary)
+                    Text(stringResource(R.string.login_openid_no_webview_body), style = MaterialTheme.typography.bodyMedium, color = c.textSecondary)
+                }
+            } else {
+                if (loading) LinearProgressIndicator(Modifier.fillMaxWidth(), color = c.accent) else Spacer(Modifier.height(4.dp))
+                AndroidView(
+                    factory = { context ->
+                        openIdWebView(
+                            context,
+                            start,
+                            allowInsecure,
+                            onLoading = { loading = it },
+                            onReturned = { returned(it) },
+                            onFailed = { reason -> failed(reason ?: certificateRejected) },
+                        )
+                    },
+                    onRelease = { it.destroy() },
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
         }
     }
 }

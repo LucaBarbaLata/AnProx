@@ -72,6 +72,7 @@ import io.github.lucabarbalata.anprox.model.pve.TerminalKey
 import io.github.lucabarbalata.anprox.model.pve.VncKey
 import io.github.lucabarbalata.anprox.ui.common.AnProxScaffold
 import io.github.lucabarbalata.anprox.ui.common.asString
+import io.github.lucabarbalata.anprox.ui.common.webViewVersion
 import org.json.JSONObject
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
@@ -382,11 +383,4 @@ private fun WebView.showKeyboard() {
         val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
         imm.showSoftInput(this, InputMethodManager.SHOW_IMPLICIT)
     }
-}
-
-/** e.g. "131.0.6778.200", or null if there is no WebView provider. */
-private fun webViewVersion(): String? = try {
-    WebView.getCurrentWebViewPackage()?.versionName
-} catch (_: Exception) {
-    null
 }

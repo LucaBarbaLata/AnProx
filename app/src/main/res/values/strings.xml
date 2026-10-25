@@ -291,6 +291,8 @@
     <string name="console_failed_node">Couldn\'t open the node\'s shell</string>
     <string name="console_keyboard">Keyboard</string>
     <string name="console_ctrl_alt_del">Ctrl+Alt+Del</string>
+    <string name="login_openid_no_webview_title">Android System WebView is missing</string>
+    <string name="login_openid_no_webview_body">Single sign-on shows the provider\'s page in Android System WebView, which this phone doesn\'t have or has switched off. Install or turn it on from the Play Store, then try again. Signing in with a password works without it.</string>
     <string name="console_webview_old_title">Android System WebView is too old</string>
     <string name="console_details">Console details</string>
     <string name="console_details_body">Status: %1$s\nAndroid System WebView: %2$s\nPage loads: %3$d\nReceived: %4$d messages, %5$s\nSent: %6$s</string>

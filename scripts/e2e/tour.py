@@ -1355,7 +1355,12 @@ def openid():
     tap("Sign in with Authentik SSO")
     # The mock's identity provider signs in at once and sends the browser back to the server's
     # address; the app catches that, trades the code for a ticket and closes the login screen.
-    find("sso-user@sso", timeout=45)                         # the server list, with the account it named
+    node = find_any(["sso-user@sso", "Android System WebView"], timeout=45)  # the server list, with the account it named
+    if "Android System WebView" in " ".join(labels(node)):
+        # The Android 8.0 emulator image has no WebView: the app says so instead of crashing.
+        screenshot("17-openid-no-webview")
+        back()
+        return
     screenshot("17-openid")
 
 

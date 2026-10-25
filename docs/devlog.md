@@ -126,6 +126,12 @@ know:
   the drop-down role.
 - `semantics(mergeDescendants = true)` on a child of something clickable splits the clickable's
   label, so label/value merging is only on parts that are not inside a clickable card.
+The run after the pass got through all 36 steps up to the SSO sign-in, where Android 8.0
+crashed: its emulator image has no WebView provider, and `WebView(context)` then throws
+`MissingWebViewPackageException`. The consoles already checked
+`WebView.getCurrentWebViewPackage()` first; that check is now shared (`ui/common/WebViews.kt`)
+and the sign-in dialog shows a message instead, which the tour accepts on that image.
+
 Not done yet: moving focus to a form's result, announcing the console's state, wrapping tag
 chips (`FlowRow` isn't used in the app yet), fixed-width names on the HA and storage screens,
 and a TalkBack run on a device.

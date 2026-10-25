@@ -149,7 +149,7 @@ so no test code is compiled into the app. `scripts/e2e/run.sh` starts the mock s
 33. Resources → `pve1` → **Certificates** (behind More) shows the ACME certificate `pve1.example.com` with 20 days left → **Renew** → "Certificate renewed" → **Add domain** `pve1.lan.example.com` → it is listed → **ACME accounts and plugins** lists the account `admin@example.com` and the DNS plugin `cloudflare`.
 34. Settings → **SSH keys** → **New key** "Tour phone" → Resources → `pve1` → **SSH** → host `10.0.2.2`, port `2222`, password → **Trust this server?** → **Trust** → "Connected" → **Add key** → "Tour phone" → **Change connection** → **Connect** with the key, without a host key question.
 35. Settings → Light theme; turning on the app lock explains that the emulator has no screen lock → dashboard in light mode, with the starred VM under Favourites.
-36. More → Servers → **Add server** (the + in the top bar) → the same mock as `SSO` → realm **Authentik SSO (sso)** → **Sign in with Authentik SSO** → the mock's identity provider sends the browser straight back → the server list shows `sso-user@sso`.
+36. More → Servers → **Add server** (the + in the top bar) → the same mock as `SSO` → realm **Authentik SSO (sso)** → **Sign in with Authentik SSO** → the mock's identity provider sends the browser straight back → the server list shows `sso-user@sso`. (The Android 8.0 image has no WebView: the app says so instead, as in the console steps.)
 
 After every step the script checks that the app process is alive and that logcat has no
 `FATAL EXCEPTION` for the app. Screenshots of each step, plus UI dumps and logcat on failure,
