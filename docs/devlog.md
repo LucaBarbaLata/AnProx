@@ -132,6 +132,15 @@ crashed: its emulator image has no WebView provider, and `WebView(context)` then
 `WebView.getCurrentWebViewPackage()` first; that check is now shared (`ui/common/WebViews.kt`)
 and the sign-in dialog shows a message instead, which the tour accepts on that image.
 
+On Android 14 the same step got `net::ERR_CONNECTION_REFUSED` in the sign-in page: the mock
+built the provider's address from the `Host` header, which an HTTP/2 request (OkHttp and the
+mock agree on h2 over TLS) doesn't have, and fell back to the address it listens on, `0.0.0.0`.
+Reproduced with curl: `--http1.1` gave `https://127.0.0.1:8006/mock-idp/…`, `--http2` gave
+`https://0.0.0.0:8006/mock-idp/…`. The JVM tests didn't notice because their mock listens on
+127.0.0.1. The mock now takes the origin of the client's `redirect-url`, the address the
+client really uses. The app itself was right: a real server's provider address comes from the
+realm's issuer URL.
+
 Not done yet: moving focus to a form's result, announcing the console's state, wrapping tag
 chips (`FlowRow` isn't used in the app yet), fixed-width names on the HA and storage screens,
 and a TalkBack run on a device.

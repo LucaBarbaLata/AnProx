@@ -21,7 +21,6 @@ import io.ktor.websocket.CloseReason
 import io.ktor.server.websocket.DefaultWebSocketServerSession
 import io.ktor.server.websocket.webSocket
 import io.ktor.server.websocket.WebSockets
-import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.network.tls.certificates.buildKeyStore
 import io.ktor.server.application.Application
@@ -47,6 +46,7 @@ import io.ktor.server.routing.put
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
 import io.ktor.http.Headers
+import java.net.URI
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonNull
@@ -176,9 +176,13 @@ class MockProxmoxServer(
             if (type != "openid") return@post call.fail(400, "wrong realm type ($type != openid)")
             val redirect = p["redirect-url"]
                 ?: return@post call.fail(400, "Parameter verification failed.", mapOf("redirect-url" to "property is missing and it is not optional"))
-            // The page is served by this server, at the address the client used.
-            val authority = call.request.headers[HttpHeaders.Host] ?: "$host:$port"
-            call.ok(state.openIdAuthUrl(realm, redirect, "${if (tls) "https" else "http"}://$authority"))
+            // The page is served by this server, at the address the client uses: the origin of its
+            // redirect address. (Not the Host header: over HTTP/2 the address comes as :authority,
+            // and the fallback, the address the server listens on, is 0.0.0.0 for the emulator.)
+            val origin = runCatching { URI(redirect) }.getOrNull()?.takeIf { it.scheme != null && it.rawAuthority != null }
+                ?.let { "${it.scheme}://${it.rawAuthority}" }
+                ?: return@post call.fail(400, "Parameter verification failed.", mapOf("redirect-url" to "value does not match the regex pattern"))
+            call.ok(state.openIdAuthUrl(realm, redirect, origin))
         }
 
         post("access/openid/login") {
