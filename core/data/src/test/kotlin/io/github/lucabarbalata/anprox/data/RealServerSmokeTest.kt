@@ -236,6 +236,7 @@ class RealServerSmokeTest {
         check("roles") { access.roles(id) }
         check("permissions (ACL)") { access.acl(id) }
         check("realms") { access.realms(id) }
+        check("scheduled realm syncs", notConfigured) { access.syncJobs(id) }
         check("second factors", notConfigured) { access.tfa(id) }
         check("own permissions") { access.permissions(id, null) }
         val sdn = SdnRepository(hub)

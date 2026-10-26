@@ -59,6 +59,9 @@ import io.github.lucabarbalata.anprox.model.pve.NotifyTargetForm
 import io.github.lucabarbalata.anprox.model.pve.NotifyTargetType
 import io.github.lucabarbalata.anprox.model.pve.PoolChange
 import io.github.lucabarbalata.anprox.model.pve.PowerAction
+import io.github.lucabarbalata.anprox.model.pve.RealmForm
+import io.github.lucabarbalata.anprox.model.pve.RealmSyncJobForm
+import io.github.lucabarbalata.anprox.model.pve.RealmType
 import io.github.lucabarbalata.anprox.model.pve.Retention
 import io.github.lucabarbalata.anprox.model.pve.SdnVnetForm
 import io.github.lucabarbalata.anprox.model.pve.SdnZoneForm
@@ -739,6 +742,8 @@ class RealServerWriteTest {
     /** A group and user, a role and permission for the group, an API token, a new password; all removed again. */
     private suspend fun accessSteps(access: AccessRepository, id: String, password: String) {
         println("Users and groups")
+        if (access.syncJobs(id).any { it.id == PREFIX }) step("remove realm sync job $PREFIX") { access.deleteSyncJob(id, PREFIX) }
+        if (access.realms(id).any { it.realm == PREFIX }) step("remove realm $PREFIX") { access.deleteRealm(id, PREFIX) }
         val userMade = step("group and user: create") {
             access.createGroup(id, PREFIX, "AnProx write test")
             access.createUser(id, UserForm(name = PREFIX, realm = "pve", password = TEST_PASSWORD, confirmPassword = TEST_PASSWORD, groups = setOf(PREFIX)))
@@ -765,6 +770,22 @@ class RealServerWriteTest {
                 access.deleteUser(id, "$PREFIX@pve")
                 access.deleteGroup(id, PREFIX)
                 expect(access.users(id).none { it.id == "$PREFIX@pve" }, "the user to be gone")
+            }
+        }
+        // An LDAP realm that nothing is synced from: its scheduled sync is switched off.
+        step("scheduled sync of a test LDAP realm: add, change, delete") {
+            access.createRealm(id, RealmForm(type = RealmType.LDAP, id = PREFIX, server1 = "127.0.0.1", baseDn = "dc=anprox,dc=invalid", comment = PREFIX))
+            try {
+                access.createSyncJob(id, RealmSyncJobForm(id = PREFIX, realm = PREFIX, enabled = false, comment = PREFIX))
+                val job = access.syncJobs(id).firstOrNull { it.id == PREFIX } ?: error("the job is not listed")
+                expect(job.realm == PREFIX && !job.enabled, "the job as added, got $job")
+                access.updateSyncJob(id, RealmSyncJobForm.from(job).copy(schedule = "sun 02:00", comment = ""))
+                val changed = access.syncJob(id, PREFIX)
+                expect(changed.schedule == "sun 02:00" && changed.comment == null && !changed.enabled, "the new schedule, no comment, still off; got $changed")
+                access.deleteSyncJob(id, PREFIX)
+                expect(access.syncJobs(id).none { it.id == PREFIX }, "the job to be gone")
+            } finally {
+                access.deleteRealm(id, PREFIX)
             }
         }
     }

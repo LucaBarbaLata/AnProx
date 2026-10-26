@@ -7,6 +7,11 @@ All notable changes to AnProx are documented here. The format follows
 ## [Unreleased]
 
 ### Added
+- **Scheduled realm sync** (Datacenter → Realms → Scheduled sync): sync an LDAP or Active
+  Directory realm on a schedule (every day at 02:00, weekly, every six hours, or your own), with
+  the same choices as a sync by hand; the list shows when each runs next. Switch one off or
+  delete it.
+
 - **Metric servers** (Datacenter → Metric servers): send Proxmox VE's node, guest and storage
   metrics to InfluxDB (UDP, or HTTP/HTTPS with organization, bucket and token), Graphite (UDP or
   TCP) or OpenTelemetry. Add, change, switch off or delete them; the InfluxDB token is never shown

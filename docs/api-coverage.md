@@ -63,7 +63,7 @@ Code: `core/network/src/main/kotlin/.../network/api/` (`AccessApi`, `PveApi`, `P
 | `/cluster/acme/{account,directories,meta,plugins,challenge-schema}` | ACME accounts (register with the CA's terms and external account binding, deactivate), DNS challenge plugins (add, change with the digest, delete; credentials base64-encoded as Proxmox stores them) | ✅ M9 (`tos`, updating an account's contact 🗓) |
 | `/cluster/config/*` | Create/join cluster, corosync | 🗓 M9 |
 | `GET /cluster/jobs/schedule-analyze` | Next runs of a calendar event (backup job preview) | ✅ |
-| `/cluster/jobs/realm-sync` | Scheduled realm sync jobs | 🗓 M9 |
+| `/cluster/jobs/realm-sync` (+ `/{id}`) | Scheduled sync of LDAP and AD realms: schedule, scope, new users enabled, what to remove when it vanishes; switch off, delete; the next run | ✅ M9 |
 
 ### `/nodes/{node}`
 

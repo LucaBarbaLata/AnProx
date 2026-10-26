@@ -140,7 +140,7 @@ so no test code is compiled into the app. `scripts/e2e/run.sh` starts the mock s
 24. Datacenter → **High availability** → "Manager: pve1" → `100 · web` (managed in the mock) → **Ignored** → **Save** → "HA settings saved".
 25. Datacenter → **Replication** → `103 · k8s-master → pve1` and the failing job to the offline pve3 → **Add replication job** → **Add** → `100 · web → pve2` is listed.
 26. Datacenter → **Resource pools** → `prod` ("Guests: 3 · Storages: 1") → `lab` (`104 · lab-vm`) → **Add guests** → `103 · k8s-master` → **Add (1)** → it is listed in the pool.
-27. Datacenter → **Users** → **Add user** `dave` (pve realm, two passwords, group `ops`) → **Create user** → `dave@pve` → **Add API token** `ci` → "API token created" with `dave@pve!ci` and the secret, once → **Permissions** → **Add permission** `/storage`, group `auditors`, role `Operator` → it is listed → **Realms** → **Sync** `corp` as a preview → **View log** lists `adding user 'bob@corp'`.
+27. Datacenter → **Users** → **Add user** `dave` (pve realm, two passwords, group `ops`) → **Create user** → `dave@pve` → **Add API token** `ci` → "API token created" with `dave@pve!ci` and the secret, once → **Permissions** → **Add permission** `/storage`, group `auditors`, role `Operator` → it is listed → **Realms** → **Sync** `corp` as a preview → **View log** lists `adding user 'bob@corp'` → **Add scheduled sync** `nightly` (corp, every day at 02:00) → "Scheduled sync added".
 28. Datacenter → **Ceph** → "2 osds down" (pve3 is offline in the mock) → the **noout** switch → "noout set" → **OSDs** → `osd.5` (down and out) offers **Mark in** → **Pools** → **Create pool** `fast` → "Pool fast created".
 29. Datacenter → **SDN** → "1 change not applied yet" (the mock's new VNet `iot`) → `iot` → **Add subnet** `10.40.0.0/24`, gateway `10.40.0.1` → it is listed → **Apply** → "SDN changes applied" → **Cluster log** ends with the apply task → **Datacenter options** → console **xterm.js** → **Save**.
 30. Datacenter → **Notifications** lists the built-in `mail-to-root` target and `default-matcher` → the Gotify target `phone`'s ⋮ → **Send a test** → "Test notification sent".
@@ -210,7 +210,8 @@ repositories:
   pending network changes); an apt package index refresh; the datacenter's sender address
   changed and restored.
 - **Access:** a group and user, a role with a permission for the group, an API token, a
-  password change.
+  password change; an LDAP realm pointing at 127.0.0.1 with a scheduled sync (switched off)
+  added, changed and deleted.
 - **Notifications:** an e-mail target (switched off, to an `.invalid` address) created, changed
   and deleted; a webhook target with a header, a body and a secret, a test send through it (to
   port 9 of the server itself, so the server reports the failure and nothing leaves it), and a

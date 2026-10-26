@@ -2,10 +2,12 @@ package io.github.lucabarbalata.anprox.ui.access
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -17,6 +19,7 @@ import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Save
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -38,9 +41,11 @@ import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.lucabarbalata.anprox.R
 import io.github.lucabarbalata.anprox.core.designsystem.component.AnProxButton
+import io.github.lucabarbalata.anprox.core.designsystem.component.ButtonStyle
 import io.github.lucabarbalata.anprox.core.designsystem.component.ErrorBanner
 import io.github.lucabarbalata.anprox.core.designsystem.component.GlassCard
 import io.github.lucabarbalata.anprox.core.designsystem.component.GlassTextField
+import io.github.lucabarbalata.anprox.core.designsystem.component.SectionHeader
 import io.github.lucabarbalata.anprox.core.designsystem.component.StatusPill
 import io.github.lucabarbalata.anprox.core.designsystem.component.SwitchRow
 import io.github.lucabarbalata.anprox.core.designsystem.component.Tone
@@ -49,6 +54,7 @@ import io.github.lucabarbalata.anprox.model.auth.Realm
 import io.github.lucabarbalata.anprox.model.pve.DangerLevel
 import io.github.lucabarbalata.anprox.model.pve.RealmForm
 import io.github.lucabarbalata.anprox.model.pve.RealmSync
+import io.github.lucabarbalata.anprox.model.pve.RealmSyncJobForm
 import io.github.lucabarbalata.anprox.model.pve.RealmType
 import io.github.lucabarbalata.anprox.ui.common.AnProxScaffold
 import io.github.lucabarbalata.anprox.ui.common.CheckRow
@@ -61,6 +67,8 @@ import io.github.lucabarbalata.anprox.ui.common.RadioRow
 import io.github.lucabarbalata.anprox.ui.common.TaskResultSnackbar
 import io.github.lucabarbalata.anprox.ui.common.asString
 import io.github.lucabarbalata.anprox.ui.common.contentPadding
+import io.github.lucabarbalata.anprox.ui.common.relativeTime
+import io.github.lucabarbalata.anprox.ui.datacenter.EntryRow
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
 
@@ -125,6 +133,10 @@ fun RealmsScreen(
                     onDelete = { viewModel.requestDelete(realm) },
                 )
             }
+            if (state.syncable.isNotEmpty() || state.jobs.isNotEmpty()) {
+                item { SectionHeader(stringResource(R.string.access_sync_jobs)) }
+                item { SyncJobsCard(state, viewModel) }
+            }
         }
     }
 
@@ -151,6 +163,17 @@ fun RealmsScreen(
         )
     }
     state.syncing?.let { draft -> SyncDialog(draft, viewModel) }
+    state.jobEdit?.let { edit -> SyncJobDialog(edit, state, viewModel) }
+    state.confirmDeleteJob?.let { job ->
+        ConfirmActionDialog(
+            title = stringResource(R.string.access_sync_job_delete_title, job.id),
+            message = stringResource(R.string.access_sync_job_delete_body),
+            confirmLabel = stringResource(R.string.action_delete),
+            danger = DangerLevel.CONFIRM,
+            onConfirm = viewModel::deleteJob,
+            onDismiss = viewModel::dismissDeleteJob,
+        )
+    }
     state.confirmDelete?.let { realm ->
         ConfirmActionDialog(
             title = stringResource(R.string.access_realm_delete_title, realm.realm),
@@ -189,6 +212,38 @@ private fun RealmCard(realm: Realm, enabled: Boolean, onEdit: () -> Unit, onSync
                 if (type != RealmType.OPENID) TextButton(onClick = onSync, enabled = enabled) { Text(stringResource(R.string.access_realm_sync)) }
                 TextButton(onClick = onDelete, enabled = enabled) { Text(stringResource(R.string.action_delete), color = c.danger) }
             }
+        }
+    }
+}
+
+/** The realms' scheduled syncs, each opening its editor. */
+@Composable
+private fun SyncJobsCard(state: RealmsUiState, viewModel: RealmsViewModel) {
+    val c = AnProxTheme.colors
+    val off = stringResource(R.string.access_sync_job_off)
+    GlassCard(contentPadding = PaddingValues(vertical = 8.dp)) {
+        if (state.jobs.isEmpty()) {
+            Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) { FormHint(stringResource(R.string.access_sync_jobs_empty)) }
+        }
+        state.jobs.forEachIndexed { i, job ->
+            if (i > 0) HorizontalDivider(Modifier.padding(horizontal = 16.dp), thickness = 1.dp, color = c.hairline)
+            val next = job.nextRun?.takeIf { job.enabled }?.let { stringResource(R.string.access_sync_job_next, relativeTime(it * 1000)) }
+            EntryRow(
+                title = job.id,
+                subtitle = listOfNotNull(job.realm, job.schedule, next, off.takeIf { !job.enabled }).joinToString(" · "),
+                enabled = !state.busy,
+                onClick = { viewModel.startEditJob(job) },
+                actions = listOf(stringResource(R.string.action_delete) to { viewModel.requestDeleteJob(job) }),
+            )
+        }
+        if (state.syncable.isNotEmpty()) {
+            AnProxButton(
+                stringResource(R.string.access_sync_job_add),
+                onClick = viewModel::startAddJob,
+                style = ButtonStyle.SECONDARY,
+                enabled = !state.busy,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+            )
         }
     }
 }
@@ -238,6 +293,70 @@ private fun SyncDialog(draft: SyncDraft, viewModel: RealmsViewModel) {
             }
         },
         dismissButton = { TextButton(onClick = viewModel::closeSync) { Text(stringResource(R.string.action_cancel)) } },
+    )
+}
+
+@Composable
+private fun SyncJobDialog(edit: SyncJobEdit, state: RealmsUiState, viewModel: RealmsViewModel) {
+    val form = edit.form
+    val sync = form.sync
+    val problem = form.problem()
+    val scopeLabels = mapOf(
+        "users" to stringResource(R.string.access_sync_scope_users),
+        "groups" to stringResource(R.string.access_sync_scope_groups),
+        "both" to stringResource(R.string.access_sync_scope_both),
+    )
+    val vanishedLabels = mapOf(
+        "acl" to stringResource(R.string.access_sync_vanished_acl),
+        "entry" to stringResource(R.string.access_sync_vanished_entry),
+        "properties" to stringResource(R.string.access_sync_vanished_properties),
+    )
+    AlertDialog(
+        onDismissRequest = viewModel::cancelJob,
+        containerColor = AnProxTheme.colors.surfaceSolid,
+        title = { Text(stringResource(if (edit.create) R.string.access_sync_job_add else R.string.access_sync_job_title)) },
+        text = {
+            Column(Modifier.heightIn(max = 560.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                if (edit.create) {
+                    GlassTextField(
+                        value = form.id,
+                        onValueChange = { v -> viewModel.editJob { copy(id = v) } },
+                        label = stringResource(R.string.access_sync_job_id),
+                        isError = problem == RealmSyncJobForm.Problem.ID && form.id.isNotEmpty(),
+                    )
+                    FormLabel(stringResource(R.string.access_sync_job_realm))
+                    state.syncable.forEach { r ->
+                        RadioRow(form.realm == r.realm, r.realm, r.comment) { viewModel.editJob { copy(realm = r.realm) } }
+                    }
+                } else {
+                    FormHint(stringResource(R.string.access_sync_job_of, form.id, form.realm))
+                }
+                FormLabel(stringResource(R.string.access_sync_job_schedule))
+                ChoiceChips(RealmSyncJobForm.SCHEDULE_PRESETS, form.schedule.trim(), { it }) { v -> viewModel.editJob { copy(schedule = v) } }
+                GlassTextField(
+                    value = form.schedule,
+                    onValueChange = { v -> viewModel.editJob { copy(schedule = v) } },
+                    label = stringResource(R.string.access_sync_job_schedule),
+                    supportingText = stringResource(R.string.access_sync_job_schedule_hint),
+                    isError = problem == RealmSyncJobForm.Problem.SCHEDULE,
+                )
+                FormLabel(stringResource(R.string.access_sync_scope))
+                RealmSync.SCOPES.forEach { scope ->
+                    RadioRow(sync.scope == scope, scopeLabels.getValue(scope), null) { viewModel.editJob { copy(sync = sync.copy(scope = scope)) } }
+                }
+                SwitchRow(stringResource(R.string.access_sync_enable_new), sync.enableNew, { on -> viewModel.editJob { copy(sync = sync.copy(enableNew = on)) } })
+                FormLabel(stringResource(R.string.access_sync_vanished))
+                RealmSync.VANISHED.forEach { what ->
+                    CheckRow(vanishedLabels.getValue(what), what in sync.removeVanished) {
+                        viewModel.editJob { copy(sync = sync.copy(removeVanished = if (what in sync.removeVanished) sync.removeVanished - what else sync.removeVanished + what)) }
+                    }
+                }
+                SwitchRow(stringResource(R.string.access_sync_job_enabled), form.enabled, { on -> viewModel.editJob { copy(enabled = on) } })
+                GlassTextField(value = form.comment, onValueChange = { v -> viewModel.editJob { copy(comment = v) } }, label = stringResource(R.string.access_sync_job_comment))
+            }
+        },
+        confirmButton = { TextButton(onClick = viewModel::saveJob, enabled = problem == null && !state.busy) { Text(stringResource(R.string.action_save)) } },
+        dismissButton = { TextButton(onClick = viewModel::cancelJob) { Text(stringResource(R.string.action_cancel)) } },
     )
 }
 

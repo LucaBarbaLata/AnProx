@@ -82,7 +82,12 @@ Tick each line, or note what happened instead.
 3. **Add matcher**: send `error` notifications of type `vzdump` to a target → the web UI shows
    the same matcher. Delete it again.
 
-### A4. Metric servers, new after beta.2
+### A4. Scheduled realm sync (only if you have an LDAP or AD realm), new after beta.2
+1. Datacenter → **Realms** → **Add scheduled sync**: your realm, **sun 02:00**, scope Users,
+   switched off → **Save** → the web UI's Datacenter → Realms → Sync jobs shows it.
+2. Open it, switch it on, **Save**: the list shows when it runs next. Delete it again.
+
+### A5. Metric servers, new after beta.2
 1. Datacenter → **Metric servers** lists the same servers as the web UI's Datacenter → Metric
    Server.
 2. **Add metric server** → InfluxDB, ID `anprox-test`, server `127.0.0.1`, port `8089`, UDP,

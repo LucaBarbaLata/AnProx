@@ -559,6 +559,27 @@ class MockProxmoxServer(
             }
             call.ok(state.startTask(state.nodes.first().name, "auth-realm-sync", realm, s.user, log = log, effect = effect))
         }
+        get("cluster/jobs/realm-sync") {
+            call.authed() ?: return@get
+            call.ok(access.syncJobs())
+        }
+        get("cluster/jobs/realm-sync/{id}") {
+            call.authed() ?: return@get
+            val job = access.syncJob(call.parameters["id"]!!) ?: return@get call.fail(500, "no such realm-sync job")
+            call.ok(job)
+        }
+        post("cluster/jobs/realm-sync/{id}") {
+            call.writer() ?: return@post
+            call.done(access.createSyncJob(call.parameters["id"]!!, call.params()))
+        }
+        put("cluster/jobs/realm-sync/{id}") {
+            call.writer() ?: return@put
+            call.done(access.updateSyncJob(call.parameters["id"]!!, call.params()))
+        }
+        delete("cluster/jobs/realm-sync/{id}") {
+            call.writer() ?: return@delete
+            call.done(access.deleteSyncJob(call.parameters["id"]!!))
+        }
         get("access/tfa") {
             call.authed() ?: return@get
             call.ok(access.tfaList())

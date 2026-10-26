@@ -9,6 +9,8 @@ import io.github.lucabarbalata.anprox.model.pve.ExpiryDate
 import io.github.lucabarbalata.anprox.model.pve.PveUser
 import io.github.lucabarbalata.anprox.model.pve.RealmForm
 import io.github.lucabarbalata.anprox.model.pve.RealmSync
+import io.github.lucabarbalata.anprox.model.pve.RealmSyncJob
+import io.github.lucabarbalata.anprox.model.pve.RealmSyncJobForm
 import io.github.lucabarbalata.anprox.model.pve.RealmType
 import io.github.lucabarbalata.anprox.model.pve.TotpSetup
 import io.github.lucabarbalata.anprox.model.pve.UserForm
@@ -99,6 +101,28 @@ class AccessModelTest {
         assertEquals("ldaps", read.mode)
         assertEquals(mapOf("scope" to "users", "enable-new" to "1", "remove-vanished" to "acl;entry", "dry-run" to "0"),
             RealmSync(scope = "users", removeVanished = setOf("entry", "acl"), dryRun = false).params())
+    }
+
+    @Test
+    fun `scheduled realm sync jobs`() {
+        val form = RealmSyncJobForm(id = "nightly", realm = "corp", sync = RealmSync(scope = "users", enableNew = false, removeVanished = setOf("entry", "acl"), dryRun = false))
+        assertNull(form.problem())
+        assertEquals(
+            mapOf("realm" to "corp", "schedule" to "02:00", "enabled" to "1", "scope" to "users", "enable-new" to "0", "remove-vanished" to "acl;entry"),
+            form.params(create = true),
+        )
+        // A change can't move the job to another realm, and an emptied comment is deleted.
+        val change = form.copy(enabled = false).params(create = false)
+        assertNull(change["realm"])
+        assertEquals("0", change["enabled"])
+        assertEquals("comment", change["delete"])
+        assertEquals(RealmSyncJobForm.Problem.ID, form.copy(id = "x").problem())
+
+        val job = RealmSyncJob.fromJson(json("""{"id":"nightly","realm":"corp","schedule":"02:00","enabled":0,"scope":"both","remove-vanished":"none","next-run":1800000000}"""))
+        assertEquals(false, job.enabled)
+        assertTrue(job.sync.removeVanished.isEmpty())
+        assertEquals(1800000000L, job.nextRun)
+        assertEquals(form.copy(sync = form.sync.copy(scope = "both", enableNew = true, removeVanished = emptySet()), enabled = false), RealmSyncJobForm.from(job))
     }
 
     @Test

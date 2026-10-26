@@ -1074,6 +1074,10 @@ def permissions():
     tap("View log", timeout=20)
     find("adding user 'bob@corp'", timeout=30)
     back()                                        # to Realms
+    tap_node(scroll_to("Add scheduled sync", exact=True))  # corp, every day at 02:00
+    fill("ID", "nightly", fallback_index=0)
+    tap("Save", pick="lowest")
+    find("Scheduled sync added", timeout=20)
     back()                                        # to Datacenter
     back()
 

@@ -419,6 +419,50 @@ internal class MockAccess(private val clockSeconds: () -> Long) {
         null
     }
 
+    // ---- scheduled realm sync (`/cluster/jobs/realm-sync`)
+
+    private val syncJobs = linkedMapOf<String, LinkedHashMap<String, String>>()
+
+    private fun syncJobJson(id: String, job: Map<String, String>) = buildJsonObject {
+        put("id", id)
+        put("type", "realm-sync")
+        job.forEach { (k, v) -> put(k, v) }
+        // The real server works this out from the schedule; an hour from now will do here.
+        if (job["enabled"] != "0") put("next-run", clockSeconds() + 3600)
+    }
+
+    fun syncJobs(): JsonArray = synchronized(this) { JsonArray(syncJobs.map { (id, job) -> syncJobJson(id, job) }) }
+
+    fun syncJob(id: String): JsonObject? = synchronized(this) { syncJobs[id]?.let { syncJobJson(id, it) } }
+
+    /** Null on success, or an error message. */
+    fun createSyncJob(id: String, p: Map<String, String>): String? = synchronized(this) {
+        if (!Regex("^[A-Za-z][A-Za-z0-9_-]+$").matches(id)) return "id: invalid format - invalid configuration ID '$id'"
+        if (id in syncJobs) return "Job '$id' already exists"
+        val realm = p["realm"] ?: return "realm: property is missing and it is not optional"
+        val type = realms[realm]?.get("type") ?: return "realm '$realm' does not exist"
+        if (type != "ad" && type != "ldap") return "realm type '$type' does not support syncing"
+        if (p["schedule"].isNullOrBlank()) return "schedule: property is missing and it is not optional"
+        if (p["scope"].isNullOrBlank()) return "scope: property is missing and it is not optional"
+        p.keys.firstOrNull { it !in SYNC_JOB_KEYS }?.let { return "parameter verification failed - '$it': property is not defined in schema and the schema does not allow additional properties" }
+        syncJobs[id] = LinkedHashMap(p)
+        null
+    }
+
+    fun updateSyncJob(id: String, p: Map<String, String>): String? = synchronized(this) {
+        val job = syncJobs[id] ?: return "no such realm-sync job"
+        // The update schema has neither the fixed realm nor a digest.
+        p.keys.firstOrNull { it !in SYNC_JOB_KEYS - "realm" + "delete" }?.let { return "parameter verification failed - '$it': property is not defined in schema and the schema does not allow additional properties" }
+        p["delete"]?.split(',', ';')?.map { it.trim() }?.forEach { job.remove(it) }
+        (p - "delete").forEach { (k, v) -> job[k] = v }
+        null
+    }
+
+    fun deleteSyncJob(id: String): String? = synchronized(this) {
+        syncJobs.remove(id) ?: return "no such realm-sync job"
+        null
+    }
+
     /** What a sync of [realm] finds in its directory, and the log of applying it (or not). */
     fun sync(realm: String, p: Map<String, String>): Pair<List<String>, (() -> Unit)?> = synchronized(this) {
         val type = realms[realm]?.get("type")
@@ -513,6 +557,8 @@ internal class MockAccess(private val clockSeconds: () -> Long) {
     private fun uuid(): String = java.util.UUID(random.nextLong(), random.nextLong()).toString()
 
     companion object {
+        private val SYNC_JOB_KEYS = setOf("realm", "schedule", "enabled", "comment", "scope", "enable-new", "remove-vanished")
+
         /** The privileges of Proxmox VE 8. */
         val PRIVILEGES = listOf(
             "Datastore.Allocate", "Datastore.AllocateSpace", "Datastore.AllocateTemplate", "Datastore.Audit",

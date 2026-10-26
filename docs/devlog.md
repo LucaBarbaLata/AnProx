@@ -154,6 +154,12 @@ OpenTelemetry's headers and resource attributes are base64-encoded JSON; the app
 `Name: value` and `key=value` lines. The write test's `writeEverything` hit the JVM's 64 KB
 method limit again, so its access and metric steps moved into their own functions.
 
+**Scheduled realm sync.** Written from pve-access-control's `PVE/API2/Jobs/RealmSync.pm` and
+`PVE/Jobs/RealmSync.pm`. Unlike most of Proxmox's settings these jobs take no digest (the update
+schema drops it, so sending one is refused) and the realm is fixed once the job exists. The list
+answers each job's next run. The write test makes an LDAP realm that points at 127.0.0.1 for its
+switched-off job and deletes both.
+
 **Dependencies.** The five Dependabot pull requests (Gradle 8.14.6, Bouncy Castle 1.86, JSch
 2.28.8, MINA SSHD 2.20.0, JUnit 5.14.4) had passed CI on their own; none touches an ADR 0002 pin.
 They went in as one commit on the branch, which closes them.

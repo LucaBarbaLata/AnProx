@@ -17,6 +17,8 @@ import io.github.lucabarbalata.anprox.model.pve.PveRole
 import io.github.lucabarbalata.anprox.model.pve.PveUser
 import io.github.lucabarbalata.anprox.model.pve.RealmForm
 import io.github.lucabarbalata.anprox.model.pve.RealmSync
+import io.github.lucabarbalata.anprox.model.pve.RealmSyncJob
+import io.github.lucabarbalata.anprox.model.pve.RealmSyncJobForm
 import io.github.lucabarbalata.anprox.model.pve.TfaUser
 import io.github.lucabarbalata.anprox.model.pve.TokenForm
 import io.github.lucabarbalata.anprox.model.pve.TotpSetup
@@ -213,6 +215,25 @@ class AccessRepository(private val hub: ServerHub) {
     suspend fun deleteTfa(serverId: String, userId: String, id: String, yourPassword: String?) {
         val password = yourPassword?.takeIf { it.isNotEmpty() }
         eitherNoData(serverId, { deleteTfa(userId, id, password) }, { deleteTfa(userId, id, password) })
+    }
+
+    // ---- scheduled realm sync (Proxmox VE only)
+
+    suspend fun syncJobs(serverId: String): List<RealmSyncJob> =
+        hub.use(serverId) { it.pve { realmSyncJobs() } }.map(RealmSyncJob::fromJson).sortedBy { it.id }
+
+    suspend fun syncJob(serverId: String, id: String): RealmSyncJob = RealmSyncJob.fromJson(hub.use(serverId) { it.pve { realmSyncJob(id) } }).copy(id = id)
+
+    suspend fun createSyncJob(serverId: String, form: RealmSyncJobForm) {
+        hub.use(serverId) { it.pveNoData { createRealmSyncJob(form.id.trim(), form.params(create = true)) } }
+    }
+
+    suspend fun updateSyncJob(serverId: String, form: RealmSyncJobForm) {
+        hub.use(serverId) { it.pveNoData { updateRealmSyncJob(form.id, form.params(create = false)) } }
+    }
+
+    suspend fun deleteSyncJob(serverId: String, id: String) {
+        hub.use(serverId) { it.pveNoData { deleteRealmSyncJob(id) } }
     }
 
     // ---- effective permissions

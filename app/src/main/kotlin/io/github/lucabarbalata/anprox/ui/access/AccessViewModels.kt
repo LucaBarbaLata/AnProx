@@ -12,6 +12,9 @@ import io.github.lucabarbalata.anprox.model.pve.PveGroup
 import io.github.lucabarbalata.anprox.model.pve.PveRole
 import io.github.lucabarbalata.anprox.model.pve.PveUser
 import io.github.lucabarbalata.anprox.model.pve.RealmSync
+import io.github.lucabarbalata.anprox.model.pve.RealmSyncJob
+import io.github.lucabarbalata.anprox.model.pve.RealmSyncJobForm
+import io.github.lucabarbalata.anprox.model.pve.RealmType
 import io.github.lucabarbalata.anprox.network.ApiException
 import io.github.lucabarbalata.anprox.ui.common.TaskResult
 import io.github.lucabarbalata.anprox.ui.common.UiText
@@ -385,6 +388,9 @@ class AclViewModel(private val serverId: String, private val repo: AccessReposit
 /** The directory sync dialog. */
 data class SyncDraft(val realm: Realm, val sync: RealmSync = RealmSync())
 
+/** A scheduled sync being added ([create]) or changed. */
+data class SyncJobEdit(val form: RealmSyncJobForm, val create: Boolean)
+
 data class RealmsUiState(
     val loading: Boolean = true,
     val error: UiText? = null,
@@ -393,7 +399,14 @@ data class RealmsUiState(
     val confirmDelete: Realm? = null,
     val busy: Boolean = false,
     val result: TaskResult? = null,
-)
+    /** Scheduled syncs (empty for a user who may not read them). */
+    val jobs: List<RealmSyncJob> = emptyList(),
+    val jobEdit: SyncJobEdit? = null,
+    val confirmDeleteJob: RealmSyncJob? = null,
+) {
+    /** The realms a directory sync works with: LDAP and Active Directory. */
+    val syncable: List<Realm> get() = realms.filter { RealmType.fromApi(it.type).let { t -> t == RealmType.LDAP || t == RealmType.AD } }
+}
 
 /** Datacenter → Permissions → Realms: the list, directory sync and removing realms. Editing has its own screen. */
 class RealmsViewModel(private val serverId: String, private val repo: AccessRepository) : ViewModel() {
@@ -404,11 +417,78 @@ class RealmsViewModel(private val serverId: String, private val repo: AccessRepo
         ui.update { it.copy(loading = true, error = null) }
         viewModelScope.launch {
             try {
-                val realms = repo.realms(serverId)
-                ui.update { it.copy(loading = false, realms = realms) }
+                coroutineScope {
+                    val realms = async { repo.realms(serverId) }
+                    // Reading the jobs needs Sys.Audit; without it the section just stays empty.
+                    val jobs = async {
+                        try {
+                            repo.syncJobs(serverId)
+                        } catch (_: ApiException) {
+                            emptyList()
+                        }
+                    }
+                    ui.update { it.copy(loading = false, realms = realms.await(), jobs = jobs.await()) }
+                }
             } catch (e: ApiException) {
                 ui.update { it.copy(loading = false, error = e.toUiText()) }
             }
+        }
+    }
+
+    fun startAddJob() {
+        val realm = ui.value.syncable.firstOrNull()?.realm ?: return
+        ui.update { it.copy(jobEdit = SyncJobEdit(RealmSyncJobForm(realm = realm), create = true)) }
+    }
+
+    fun startEditJob(job: RealmSyncJob) {
+        ui.update { it.copy(jobEdit = SyncJobEdit(RealmSyncJobForm.from(job), create = false)) }
+    }
+
+    fun editJob(change: RealmSyncJobForm.() -> RealmSyncJobForm) {
+        ui.update { s -> s.copy(jobEdit = s.jobEdit?.let { it.copy(form = it.form.change()) }) }
+    }
+
+    fun cancelJob() {
+        ui.update { it.copy(jobEdit = null) }
+    }
+
+    fun saveJob() {
+        val edit = ui.value.jobEdit ?: return
+        if (ui.value.busy || edit.form.problem() != null) return
+        ui.update { it.copy(jobEdit = null, busy = true) }
+        viewModelScope.launch {
+            val result = try {
+                if (edit.create) repo.createSyncJob(serverId, edit.form) else repo.updateSyncJob(serverId, edit.form)
+                TaskResult(UiText.res(if (edit.create) R.string.access_sync_job_added else R.string.access_sync_job_saved), null, ok = true)
+            } catch (e: ApiException) {
+                TaskResult(e.toUiText(), null, ok = false)
+            }
+            ui.update { it.copy(busy = false, result = result) }
+            load()
+        }
+    }
+
+    fun requestDeleteJob(job: RealmSyncJob) {
+        ui.update { it.copy(confirmDeleteJob = job) }
+    }
+
+    fun dismissDeleteJob() {
+        ui.update { it.copy(confirmDeleteJob = null) }
+    }
+
+    fun deleteJob() {
+        val job = ui.value.confirmDeleteJob ?: return
+        if (ui.value.busy) return
+        ui.update { it.copy(confirmDeleteJob = null, busy = true) }
+        viewModelScope.launch {
+            val result = try {
+                repo.deleteSyncJob(serverId, job.id)
+                TaskResult(UiText.res(R.string.access_sync_job_deleted), null, ok = true)
+            } catch (e: ApiException) {
+                TaskResult(e.toUiText(), null, ok = false)
+            }
+            ui.update { it.copy(busy = false, result = result) }
+            load()
         }
     }
 

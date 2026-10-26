@@ -1860,6 +1860,24 @@
     <string name="access_sync_preview">Preview</string>
     <string name="access_sync_started">Syncing %1$s</string>
     <string name="access_sync_dry_started">Previewing the sync of %1$s</string>
+    <string name="access_sync_jobs">Scheduled sync</string>
+    <string name="access_sync_jobs_empty">No scheduled syncs: the directory is only read when you sync by hand.</string>
+    <string name="access_sync_job_add">Add scheduled sync</string>
+    <string name="access_sync_job_title">Scheduled sync</string>
+    <string name="access_sync_job_id">ID</string>
+    <string name="access_sync_job_realm">Realm</string>
+    <string name="access_sync_job_of">%1$s syncs %2$s.</string>
+    <string name="access_sync_job_schedule">Schedule</string>
+    <string name="access_sync_job_schedule_hint">As in the web interface: 02:00 (every day), sun 02:00, mon..fri 06:00, 0/6:00 (every six hours)</string>
+    <string name="access_sync_job_enabled">Enabled</string>
+    <string name="access_sync_job_comment">Comment</string>
+    <string name="access_sync_job_next">next %1$s</string>
+    <string name="access_sync_job_off">Off</string>
+    <string name="access_sync_job_added">Scheduled sync added</string>
+    <string name="access_sync_job_saved">Scheduled sync saved</string>
+    <string name="access_sync_job_deleted">Scheduled sync deleted</string>
+    <string name="access_sync_job_delete_title">Delete scheduled sync %1$s?</string>
+    <string name="access_sync_job_delete_body">The realm is no longer synced on its own; you can still sync it by hand.</string>
     <!-- Datacenter → Ceph (M6) -->
     <string name="ceph_title">Ceph</string>
     <string name="ceph_read_from">Read through %1$s</string>

@@ -1020,6 +1020,25 @@ interface PveApi {
     @POST("access/domains/{realm}/sync")
     suspend fun syncRealm(@Path("realm") realm: String, @FieldMap params: Map<String, String>): ApiEnvelope<String>
 
+    // ---- scheduled realm sync (M9)
+
+    @GET("cluster/jobs/realm-sync")
+    suspend fun realmSyncJobs(): ApiEnvelope<List<JsonObject>>
+
+    @GET("cluster/jobs/realm-sync/{id}")
+    suspend fun realmSyncJob(@Path("id") id: String): ApiEnvelope<JsonObject>
+
+    @FormUrlEncoded
+    @POST("cluster/jobs/realm-sync/{id}")
+    suspend fun createRealmSyncJob(@Path("id") id: String, @FieldMap params: Map<String, String>): ApiEnvelope<JsonElement>
+
+    @FormUrlEncoded
+    @PUT("cluster/jobs/realm-sync/{id}")
+    suspend fun updateRealmSyncJob(@Path("id") id: String, @FieldMap params: Map<String, String>): ApiEnvelope<JsonElement>
+
+    @DELETE("cluster/jobs/realm-sync/{id}")
+    suspend fun deleteRealmSyncJob(@Path("id") id: String): ApiEnvelope<JsonElement>
+
     @GET("access/tfa")
     suspend fun tfa(): ApiEnvelope<JsonElement>
 

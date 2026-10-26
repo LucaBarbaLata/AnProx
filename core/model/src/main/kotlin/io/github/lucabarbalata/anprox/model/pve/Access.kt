@@ -481,6 +481,82 @@ data class RealmSync(
     }
 }
 
+/**
+ * A scheduled directory sync (`/cluster/jobs/realm-sync`), written from pve-access-control's
+ * `PVE/API2/Jobs/RealmSync.pm`. [lastRun] and [nextRun] are epoch seconds.
+ */
+data class RealmSyncJob(
+    val id: String,
+    val realm: String,
+    val schedule: String,
+    val enabled: Boolean = true,
+    val comment: String? = null,
+    val sync: RealmSync = RealmSync(dryRun = false),
+    val lastRun: Long? = null,
+    val nextRun: Long? = null,
+) {
+    companion object {
+        fun fromJson(o: JsonObject): RealmSyncJob = RealmSyncJob(
+            id = o.str("id").orEmpty(),
+            realm = o.str("realm").orEmpty(),
+            schedule = o.str("schedule").orEmpty(),
+            enabled = o.bool("enabled", default = true),
+            comment = o.str("comment"),
+            sync = RealmSync(
+                scope = o.str("scope") ?: "both",
+                enableNew = o.bool("enable-new", default = true),
+                removeVanished = o.str("remove-vanished")?.split(';', ',')?.map { it.trim() }?.filter { it.isNotEmpty() && it != "none" }?.toSet().orEmpty(),
+                dryRun = false,
+            ),
+            lastRun = o.long("last-run"),
+            nextRun = o.long("next-run"),
+        )
+    }
+}
+
+/** Adding or changing a scheduled sync; the [realm] is fixed once the job exists. */
+data class RealmSyncJobForm(
+    val id: String = "",
+    val realm: String = "",
+    val schedule: String = SCHEDULE_PRESETS.first(),
+    val enabled: Boolean = true,
+    val comment: String = "",
+    val sync: RealmSync = RealmSync(dryRun = false),
+) {
+    enum class Problem { ID, REALM, SCHEDULE }
+
+    fun problem(): Problem? = when {
+        !ID.matches(id.trim()) -> Problem.ID
+        realm.isBlank() -> Problem.REALM
+        schedule.isBlank() -> Problem.SCHEDULE
+        else -> null
+    }
+
+    /**
+     * `POST /cluster/jobs/realm-sync/{id}` ([create], with the realm) or `PUT …/{id}`. Unlike most
+     * of Proxmox's settings, these jobs take no digest: the update schema leaves it out.
+     */
+    fun params(create: Boolean): Map<String, String> = buildMap {
+        if (create) put("realm", realm)
+        put("schedule", schedule.trim())
+        put("enabled", if (enabled) "1" else "0")
+        put("scope", sync.scope)
+        put("enable-new", if (sync.enableNew) "1" else "0")
+        put("remove-vanished", sync.removeVanished.sorted().joinToString(";").ifEmpty { "none" })
+        if (comment.isNotBlank()) put("comment", comment.trim()) else if (!create) put("delete", "comment")
+    }
+
+    companion object {
+        /** Proxmox's `pve-configid`. */
+        private val ID = Regex("^[A-Za-z][A-Za-z0-9_-]+$")
+
+        /** Daily at 02:00, weekly on Sunday, every six hours. */
+        val SCHEDULE_PRESETS = listOf("02:00", "sun 02:00", "0/6:00")
+
+        fun from(job: RealmSyncJob) = RealmSyncJobForm(job.id, job.realm, job.schedule, job.enabled, job.comment.orEmpty(), job.sync)
+    }
+}
+
 /** A second factor of a user (`GET /access/tfa`). */
 data class TfaEntry(
     val id: String,
