@@ -7,6 +7,7 @@ import io.github.lucabarbalata.anprox.data.datacenter.CephRepository
 import io.github.lucabarbalata.anprox.data.datacenter.ClusterRepository
 import io.github.lucabarbalata.anprox.data.datacenter.FirewallRepository
 import io.github.lucabarbalata.anprox.data.datacenter.HaRepository
+import io.github.lucabarbalata.anprox.data.datacenter.MetricServerRepository
 import io.github.lucabarbalata.anprox.data.datacenter.NotificationRepository
 import io.github.lucabarbalata.anprox.data.datacenter.PoolRepository
 import io.github.lucabarbalata.anprox.data.datacenter.ReplicationRepository
@@ -271,6 +272,15 @@ class RealServerSmokeTest {
             check("${t.type} target ${t.name}: settings") { notify.settings(id, type, t.name).form.type }
         }
         check("notification matchers") { notify.matchers(id) }
+        val metricRepo = MetricServerRepository(hub)
+        val metricServers = try {
+            metricRepo.servers(id).also { println("  ✓ metric servers: ${it.size} item(s)") }
+        } catch (e: ApiException) {
+            failures += "metric servers: ${e.message}"
+            println("  ✗ metric servers: ${e::class.simpleName}: ${e.message}")
+            emptyList()
+        }
+        metricServers.forEach { m -> check("${m.type} metric server ${m.id}: settings") { metricRepo.settings(id, m.id).form.type } }
         check("notification fields and values") { notify.fieldValues(id) }
 
         println(if (failures.isEmpty()) "All checks passed." else "Failed:\n" + failures.joinToString("\n") { "  $it" })

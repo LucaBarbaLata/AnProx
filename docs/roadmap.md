@@ -241,7 +241,8 @@ single Proxmox VE node without Ceph and a Backup Server in a VM on it.
 - ✅ Certificates: a node's certificates, a custom one, ACME orders and renewals with the node's domains, the cluster's ACME accounts and DNS plugins.
 - ✅ Notifications: targets (sendmail, SMTP, Gotify, webhooks) and matchers, with a test send.
 - ✅ Backup Server access control: users, API tokens, permissions, built-in roles, second factors, through the M7 screens.
-- Remaining endpoints from [api-coverage.md](api-coverage.md): metric servers,
+- ✅ Metric servers: InfluxDB, Graphite and OpenTelemetry.
+- Remaining endpoints from [api-coverage.md](api-coverage.md): scheduled realm sync jobs,
   PCI/USB/directory mappings, advanced hardware (passthrough,
   NUMA, CPU flags), guest config history, cluster join/create.
 - ✅ Accessibility pass from a code audit (WCAG 2.1 AA): 48 dp targets, errors read out, labels

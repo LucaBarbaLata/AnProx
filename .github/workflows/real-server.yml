@@ -75,7 +75,7 @@ jobs:
           status=0
           ./gradlew --stacktrace -Panprox.jvmOnly=true :core:data:test --tests '*RealServer*' -i > real-server.log 2>&1 || status=$?
           # The checks' own lines, then the result of each test.
-          grep -E '^ +(✓|✗|–) |^ +[(|]|^ +(Working on|Dashboard|Node|Storage|Guests|Datacenter|VM|Container|Firewall|SDN|Users and groups|Notifications|Certificates|Leftovers|Cleaning up|Backup Server|Datastore|All |Failed)|RealServer.* (PASSED|FAILED|SKIPPED)|^ +[a-zA-Z].*: (ApiException|IllegalState|Serialization)' real-server.log || true
+          grep -E '^ +(✓|✗|–) |^ +[(|]|^ +(Working on|Dashboard|Node|Storage|Guests|Datacenter|VM|Container|Firewall|SDN|Users and groups|Notifications|Metric servers|Certificates|Leftovers|Cleaning up|Backup Server|Datastore|All |Failed)|RealServer.* (PASSED|FAILED|SKIPPED)|^ +[a-zA-Z].*: (ApiException|IllegalState|Serialization)' real-server.log || true
           # The VM's screen as the app's VNC console saw it (only firmware text: the test VM boots from
           # its empty disk alone). Decode with: base64 -d > vm-screen.png
           if [ -f core/data/build/real-server/vm-screen.png ]; then

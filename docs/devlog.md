@@ -145,6 +145,15 @@ Not done yet: moving focus to a form's result, announcing the console's state, w
 chips (`FlowRow` isn't used in the app yet), fixed-width names on the HA and storage screens,
 and a TalkBack run on a device.
 
+**Metric servers.** Written from pve-manager's `PVE/API2/Cluster/MetricServer.pm` and the plugins
+in `PVE/Status/`. One form covers the three kinds; each kind accepts only its own options (the
+mock refuses others, as Proxmox's section config does), emptied fields go in `delete`, and a field
+is never set and deleted at once. Proxmox tries an enabled HTTP or TCP server when it is saved
+and refuses the change if it can't reach it, so the editor stays open with the reason.
+OpenTelemetry's headers and resource attributes are base64-encoded JSON; the app shows them as
+`Name: value` and `key=value` lines. The write test's `writeEverything` hit the JVM's 64 KB
+method limit again, so its access and metric steps moved into their own functions.
+
 **Dependencies.** The five Dependabot pull requests (Gradle 8.14.6, Bouncy Castle 1.86, JSch
 2.28.8, MINA SSHD 2.20.0, JUnit 5.14.4) had passed CI on their own; none touches an ADR 0002 pin.
 They went in as one commit on the branch, which closes them.

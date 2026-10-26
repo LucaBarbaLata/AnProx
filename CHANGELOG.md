@@ -7,6 +7,12 @@ All notable changes to AnProx are documented here. The format follows
 ## [Unreleased]
 
 ### Added
+- **Metric servers** (Datacenter → Metric servers): send Proxmox VE's node, guest and storage
+  metrics to InfluxDB (UDP, or HTTP/HTTPS with organization, bucket and token), Graphite (UDP or
+  TCP) or OpenTelemetry. Add, change, switch off or delete them; the InfluxDB token is never shown
+  again and kept unless typed. Proxmox tries an HTTP or TCP server when it is saved; if it can't
+  reach it, the form stays open with the reason.
+
 - **Backup Server users and permissions** (Manage Backup Server → Users and permissions): the
   same screens as for Proxmox VE. Users of the `pam` and `pbs` realms (create, edit, password,
   delete), API tokens (the secret is shown once), permissions (a role on `/datastore/store1`,

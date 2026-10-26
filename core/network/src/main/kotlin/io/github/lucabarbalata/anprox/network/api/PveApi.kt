@@ -32,6 +32,7 @@ import io.github.lucabarbalata.anprox.model.pve.IpSetEntry
 import io.github.lucabarbalata.anprox.model.pve.LvmThinPool
 import io.github.lucabarbalata.anprox.model.pve.LvmVolumeGroup
 import io.github.lucabarbalata.anprox.model.pve.LxcInterface
+import io.github.lucabarbalata.anprox.model.pve.MetricServer
 import io.github.lucabarbalata.anprox.model.pve.MigrationCheck
 import io.github.lucabarbalata.anprox.model.pve.NfsExport
 import io.github.lucabarbalata.anprox.model.pve.NodeDisk
@@ -1232,6 +1233,25 @@ interface PveApi {
 
     @DELETE("cluster/acme/plugins/{id}")
     suspend fun deleteAcmePlugin(@Path("id") id: String): ApiEnvelope<JsonElement>
+
+    // ---- external metric servers (M9)
+
+    @GET("cluster/metrics/server")
+    suspend fun metricServers(): ApiEnvelope<List<MetricServer>>
+
+    @GET("cluster/metrics/server/{id}")
+    suspend fun metricServer(@Path("id") id: String): ApiEnvelope<JsonObject>
+
+    @FormUrlEncoded
+    @POST("cluster/metrics/server/{id}")
+    suspend fun createMetricServer(@Path("id") id: String, @FieldMap params: Map<String, String>): ApiEnvelope<JsonElement>
+
+    @FormUrlEncoded
+    @PUT("cluster/metrics/server/{id}")
+    suspend fun updateMetricServer(@Path("id") id: String, @FieldMap params: Map<String, String>): ApiEnvelope<JsonElement>
+
+    @DELETE("cluster/metrics/server/{id}")
+    suspend fun deleteMetricServer(@Path("id") id: String): ApiEnvelope<JsonElement>
 
     @GET("cluster/acme/challenge-schema")
     suspend fun acmeChallengeSchema(): ApiEnvelope<List<JsonObject>>

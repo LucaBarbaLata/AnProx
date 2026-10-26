@@ -299,6 +299,7 @@ class MockState(
 
     /** Notification targets and matchers (M9). */
     internal val notifications = MockNotifications()
+    internal val metrics = MockMetrics()
 
     /** Test hook: the targets that were sent a test notification, oldest first. */
     fun notificationsTested(): List<String> = synchronized(notifications) { notifications.tested.toList() }

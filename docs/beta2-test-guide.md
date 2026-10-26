@@ -82,6 +82,14 @@ Tick each line, or note what happened instead.
 3. **Add matcher**: send `error` notifications of type `vzdump` to a target → the web UI shows
    the same matcher. Delete it again.
 
+### A4. Metric servers, new after beta.2
+1. Datacenter → **Metric servers** lists the same servers as the web UI's Datacenter → Metric
+   Server.
+2. **Add metric server** → InfluxDB, ID `anprox-test`, server `127.0.0.1`, port `8089`, UDP,
+   **Switched off** → **Save** → it appears in the web UI, switched off. Delete it again.
+3. (If you run InfluxDB or Graphite somewhere) add one with HTTP or TCP and a wrong address: the
+   form stays open and says why Proxmox couldn't reach it.
+
 ### A. Network card (guest agent)
 1. Start the test VM, open it. Tap **Network**: you see the OS name and its IP addresses
    (no `127.0.0.1` or `fe80::` noise).

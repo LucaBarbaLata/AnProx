@@ -1153,6 +1153,24 @@ def notification_targets():
     back()
 
 
+@step("Datacenter: metric servers - the InfluxDB one, add a Graphite server")
+def metric_servers():
+    tap("Overview")
+    tap_node(scroll_to("Datacenter", exact=True))
+    tap_node(scroll_to("Metric servers", exact=True))
+    find("influx.home.lan", timeout=30)              # the mock's InfluxDB server, in its row's subtitle
+    tap("Add metric server")
+    tap("Graphite")                                  # port 2003 and UDP come with it
+    fill("ID", "carbon", fallback_index=0)
+    fill("Server (name or IP address)", "graphite.lan", fallback_index=1)
+    tap("Save", pick="lowest")
+    find("Metric server added", timeout=20)
+    find("carbon", timeout=10)
+    screenshot("13o-metric-servers")
+    back()                                           # to Datacenter
+    back()
+
+
 @step("Backup Server: a datastore's backups, a container backup's files, a prune preview, its permissions, run a sync job")
 def backup_server():
     tap("Overview")
@@ -1382,7 +1400,7 @@ def main():
     try:
         for s in (launch, add_pve, add_pbs, resources, performance, agent, guest_start, snapshots, backups,
                   options, hardware, console, vm_console, cloud_init, bulk, clone_migrate, tasks, create_vm, alerts,
-                  backup_jobs, storage, storage_setup, firewall, high_availability, replication, pools, permissions, ceph, sdn, notification_targets, backup_server, node_admin, certificates, ssh,
+                  backup_jobs, storage, storage_setup, firewall, high_availability, replication, pools, permissions, ceph, sdn, notification_targets, metric_servers, backup_server, node_admin, certificates, ssh,
                   light_theme, openid):
             s()
         ok = True

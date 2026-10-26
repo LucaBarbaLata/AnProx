@@ -185,7 +185,7 @@ private fun targetTypeLabel(type: NotifyTargetType): String = stringResource(
 
 /** A row that opens its editor, with its other actions in a ⋮ menu. */
 @Composable
-private fun EntryRow(title: String, subtitle: String, enabled: Boolean, onClick: () -> Unit, actions: List<Pair<String, () -> Unit>>) {
+internal fun EntryRow(title: String, subtitle: String, enabled: Boolean, onClick: () -> Unit, actions: List<Pair<String, () -> Unit>>) {
     val c = AnProxTheme.colors
     var menu by remember { mutableStateOf(false) }
     Row(

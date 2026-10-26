@@ -8,6 +8,7 @@ import io.github.lucabarbalata.anprox.data.datacenter.BackupJobRepository
 import io.github.lucabarbalata.anprox.data.datacenter.ClusterRepository
 import io.github.lucabarbalata.anprox.data.datacenter.FirewallRepository
 import io.github.lucabarbalata.anprox.data.datacenter.HaRepository
+import io.github.lucabarbalata.anprox.data.datacenter.MetricServerRepository
 import io.github.lucabarbalata.anprox.data.datacenter.NotificationRepository
 import io.github.lucabarbalata.anprox.data.datacenter.PoolRepository
 import io.github.lucabarbalata.anprox.data.datacenter.SdnRepository
@@ -48,6 +49,7 @@ import io.github.lucabarbalata.anprox.model.pve.FirewallScope
 import io.github.lucabarbalata.anprox.model.pve.GuestType
 import io.github.lucabarbalata.anprox.model.pve.HaResourceForm
 import io.github.lucabarbalata.anprox.model.pve.HaState
+import io.github.lucabarbalata.anprox.model.pve.MetricServerForm
 import io.github.lucabarbalata.anprox.model.pve.NetworkInterfaceForm
 import io.github.lucabarbalata.anprox.model.pve.NewContainer
 import io.github.lucabarbalata.anprox.model.pve.NewVm
@@ -194,6 +196,7 @@ class RealServerWriteTest {
         val consoles = ConsoleRepository(hub)
         val notify = NotificationRepository(hub)
         val certs = CertificateRepository(hub)
+        val metrics = MetricServerRepository(hub)
 
         suspend fun clusterState() = snapshots.fetch(hub.server(id)!!) as PveSnapshot
         /** Waits for a task; a failed one is reported with the end of its log, which says why. */
@@ -344,7 +347,7 @@ class RealServerWriteTest {
         } catch (_: ApiException) {
             // No SDN on this server.
         }
-        removeLeftovers(notify, certs, id, node)
+        removeLeftovers(notify, certs, metrics, id, node)
 
         val bridge = hardware.bridges(id, node).firstOrNull()?.iface ?: "vmbr0"
         val vmStorage = guests.diskStorages(id, node, GuestType.QEMU).firstOrNull()?.storage ?: error("no storage for VM disks on $node")
@@ -715,37 +718,10 @@ class RealServerWriteTest {
             }
 
             notificationSteps(notify, id)
+            metricServerSteps(metrics, id)
             certificateSteps(certs, id, node, insecure)
 
-            println("Users and groups")
-            val userMade = step("group and user: create") {
-                access.createGroup(id, PREFIX, "AnProx write test")
-                access.createUser(id, UserForm(name = PREFIX, realm = "pve", password = TEST_PASSWORD, confirmPassword = TEST_PASSWORD, groups = setOf(PREFIX)))
-                expect(access.users(id).any { it.id == "$PREFIX@pve" }, "the new user")
-            }
-            if (userMade != null) {
-                step("role and permission for the group, then remove them") {
-                    access.createRole(id, PREFIX, setOf("VM.Audit", "Datastore.Audit"))
-                    access.addAcl(id, AclForm(path = "/vms", subject = AclSubject.GROUP, ugid = PREFIX, role = PREFIX))
-                    val entry = access.acl(id).firstOrNull { it.ugid == PREFIX && it.path == "/vms" } ?: error("the new permission is not listed")
-                    access.removeAcl(id, entry)
-                    access.deleteRole(id, PREFIX)
-                    expect(access.roles(id).none { it.id == PREFIX }, "the role to be gone")
-                }
-                step("API token: create, then delete") {
-                    access.createToken(id, "$PREFIX@pve", TokenForm(id = "ci", comment = PREFIX))
-                    expect(access.tokens(id, "$PREFIX@pve").any { it.id == "ci" || it.id.endsWith("!ci") }, "the new token")
-                    access.deleteToken(id, "$PREFIX@pve", "ci")
-                }
-                step("change the test user's password") {
-                    access.changePassword(id, "$PREFIX@pve", "AnProx-test-2027!", yourPassword = password)
-                }
-                step("delete the user and the group") {
-                    access.deleteUser(id, "$PREFIX@pve")
-                    access.deleteGroup(id, PREFIX)
-                    expect(access.users(id).none { it.id == "$PREFIX@pve" }, "the user to be gone")
-                }
-            }
+            accessSteps(access, id, password)
         } finally {
             println("Cleaning up")
             created.reversed().forEach { ref -> step("delete ${ref.type.apiName} ${ref.vmid}") { remove(ref) } }
@@ -758,6 +734,54 @@ class RealServerWriteTest {
 
         println(if (failures.isEmpty()) "All steps passed." else "Failed:\n" + failures.joinToString("\n") { "  $it" })
         assertTrue(failures.isEmpty(), failures.joinToString("\n"))
+    }
+
+    /** A group and user, a role and permission for the group, an API token, a new password; all removed again. */
+    private suspend fun accessSteps(access: AccessRepository, id: String, password: String) {
+        println("Users and groups")
+        val userMade = step("group and user: create") {
+            access.createGroup(id, PREFIX, "AnProx write test")
+            access.createUser(id, UserForm(name = PREFIX, realm = "pve", password = TEST_PASSWORD, confirmPassword = TEST_PASSWORD, groups = setOf(PREFIX)))
+            expect(access.users(id).any { it.id == "$PREFIX@pve" }, "the new user")
+        }
+        if (userMade != null) {
+            step("role and permission for the group, then remove them") {
+                access.createRole(id, PREFIX, setOf("VM.Audit", "Datastore.Audit"))
+                access.addAcl(id, AclForm(path = "/vms", subject = AclSubject.GROUP, ugid = PREFIX, role = PREFIX))
+                val entry = access.acl(id).firstOrNull { it.ugid == PREFIX && it.path == "/vms" } ?: error("the new permission is not listed")
+                access.removeAcl(id, entry)
+                access.deleteRole(id, PREFIX)
+                expect(access.roles(id).none { it.id == PREFIX }, "the role to be gone")
+            }
+            step("API token: create, then delete") {
+                access.createToken(id, "$PREFIX@pve", TokenForm(id = "ci", comment = PREFIX))
+                expect(access.tokens(id, "$PREFIX@pve").any { it.id == "ci" || it.id.endsWith("!ci") }, "the new token")
+                access.deleteToken(id, "$PREFIX@pve", "ci")
+            }
+            step("change the test user's password") {
+                access.changePassword(id, "$PREFIX@pve", "AnProx-test-2027!", yourPassword = password)
+            }
+            step("delete the user and the group") {
+                access.deleteUser(id, "$PREFIX@pve")
+                access.deleteGroup(id, PREFIX)
+                expect(access.users(id).none { it.id == "$PREFIX@pve" }, "the user to be gone")
+            }
+        }
+    }
+
+    /** A metric server, switched off so the server never sends to it: added, changed, deleted. */
+    private suspend fun metricServerSteps(metrics: MetricServerRepository, id: String) {
+        println("Metric servers")
+        step("InfluxDB metric server (switched off): add, change, delete") {
+            metrics.create(id, MetricServerForm(id = PREFIX, server = "127.0.0.1", port = "8089", disabled = true))
+            val settings = metrics.settings(id, PREFIX)
+            expect(settings.form.server == "127.0.0.1" && settings.form.protocol == "udp" && settings.form.disabled, "the server as added, got ${settings.form}")
+            metrics.update(id, settings.form.copy(mtu = "1400"), settings.digest)
+            expect(metrics.settings(id, PREFIX).form.mtu == "1400", "the new MTU")
+            expect(metrics.servers(id).first { it.id == PREFIX }.disable, "the server still switched off")
+            metrics.delete(id, PREFIX)
+            expect(metrics.servers(id).none { it.id == PREFIX }, "the server to be gone")
+        }
     }
 
     /** Notification targets and a matcher, all `anprox-test…`; nothing is sent anywhere real. */
@@ -862,7 +886,8 @@ class RealServerWriteTest {
     }
 
     /** What an earlier run's notification and certificate steps may have left. */
-    private suspend fun removeLeftovers(notify: NotificationRepository, certs: CertificateRepository, id: String, node: String) {
+    private suspend fun removeLeftovers(notify: NotificationRepository, certs: CertificateRepository, metrics: MetricServerRepository, id: String, node: String) {
+        if (metrics.servers(id).any { it.id == PREFIX }) step("remove metric server $PREFIX") { metrics.delete(id, PREFIX) }
         // Notification matchers first: a target a matcher still names can't be deleted.
         notify.matchers(id).filter { it.name.startsWith(PREFIX) }.forEach { m -> step("remove notification matcher ${m.name}") { notify.deleteMatcher(id, m.name) } }
         notify.targets(id).filter { it.name.startsWith(PREFIX) }.forEach { t -> step("remove notification target ${t.name}") { notify.deleteTarget(id, t) } }

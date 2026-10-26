@@ -14,6 +14,7 @@ import io.github.lucabarbalata.anprox.data.datacenter.CephRepository
 import io.github.lucabarbalata.anprox.data.datacenter.ClusterRepository
 import io.github.lucabarbalata.anprox.data.datacenter.FirewallRepository
 import io.github.lucabarbalata.anprox.data.datacenter.HaRepository
+import io.github.lucabarbalata.anprox.data.datacenter.MetricServerRepository
 import io.github.lucabarbalata.anprox.data.datacenter.NotificationRepository
 import io.github.lucabarbalata.anprox.data.datacenter.PoolRepository
 import io.github.lucabarbalata.anprox.data.datacenter.ReplicationRepository
@@ -83,6 +84,7 @@ import io.github.lucabarbalata.anprox.ui.datacenter.BackupJobEditorViewModel
 import io.github.lucabarbalata.anprox.ui.datacenter.BackupJobsViewModel
 import io.github.lucabarbalata.anprox.ui.datacenter.ClusterLogViewModel
 import io.github.lucabarbalata.anprox.ui.datacenter.DatacenterOptionsViewModel
+import io.github.lucabarbalata.anprox.ui.datacenter.MetricServersViewModel
 import io.github.lucabarbalata.anprox.ui.datacenter.NotificationsViewModel
 import io.github.lucabarbalata.anprox.ui.datacenter.FirewallLogViewModel
 import io.github.lucabarbalata.anprox.ui.datacenter.FirewallViewModel
@@ -191,6 +193,7 @@ val appModule = module {
     single { NodeAdminRepository(get()) }
     single { CertificateRepository(get()) }
     single { NotificationRepository(get()) }
+    single { MetricServerRepository(get()) }
     single { FavouriteRepository(get(), get()) }
 
     // Background alerts
@@ -244,6 +247,7 @@ val appModule = module {
     viewModel { (serverId: String, node: String) -> CertificatesViewModel(serverId, node, get(), get()) }
     viewModel { (serverId: String) -> AcmeViewModel(serverId, get(), get()) }
     viewModel { (serverId: String) -> NotificationsViewModel(serverId, get()) }
+    viewModel { (serverId: String) -> MetricServersViewModel(serverId, get()) }
     viewModel { (serverId: String, node: String) -> NetworkViewModel(serverId, node, get(), get()) }
     viewModel { (serverId: String, node: String) -> DisksViewModel(serverId, node, get(), get()) }
     viewModel { TasksViewModel(get()) }

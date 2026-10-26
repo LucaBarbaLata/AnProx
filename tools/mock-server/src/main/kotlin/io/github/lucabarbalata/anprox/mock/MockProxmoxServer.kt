@@ -584,6 +584,41 @@ class MockProxmoxServer(
     }
 
     /** Notification targets and matchers (M9). Array parameters arrive as repeated keys. */
+    private fun Route.metrics() {
+        val m = state.metrics
+        suspend fun ApplicationCall.writer(): MockState.Session? {
+            val s = authed() ?: return null
+            if (state.isReadOnly(s.user)) {
+                fail(403, "Permission check failed (/, Sys.Modify)")
+                return null
+            }
+            return s
+        }
+        suspend fun ApplicationCall.done(error: String?) = if (error != null) fail(400, error) else ok(JsonNull)
+        suspend fun ApplicationCall.form(): Map<String, String> = receiveParameters().let { p -> p.names().associateWith { p[it].orEmpty() } }
+
+        get("cluster/metrics/server") {
+            call.authed() ?: return@get
+            call.ok(m.list())
+        }
+        get("cluster/metrics/server/{id}") {
+            call.authed() ?: return@get
+            call.ok(m.get(call.parameters["id"]!!) ?: return@get call.fail(500, "no such server '${call.parameters["id"]}'"))
+        }
+        post("cluster/metrics/server/{id}") {
+            call.writer() ?: return@post
+            call.done(m.create(call.parameters["id"]!!, call.form()))
+        }
+        put("cluster/metrics/server/{id}") {
+            call.writer() ?: return@put
+            call.done(m.update(call.parameters["id"]!!, call.form()))
+        }
+        delete("cluster/metrics/server/{id}") {
+            call.writer() ?: return@delete
+            call.done(m.delete(call.parameters["id"]!!))
+        }
+    }
+
     private fun Route.notifications() {
         val n = state.notifications
         suspend fun ApplicationCall.multi(): Map<String, List<String>> = receiveParameters().let { p -> p.names().associateWith { p.getAll(it).orEmpty() } }
@@ -775,6 +810,7 @@ class MockProxmoxServer(
         sdn()
         certificates()
         notifications()
+        metrics()
         get("cluster/status") {
             call.authed() ?: return@get
             call.ok(state.clusterStatus())

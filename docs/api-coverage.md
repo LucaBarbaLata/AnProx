@@ -59,7 +59,7 @@ Code: `core/network/src/main/kotlin/.../network/api/` (`AccessApi`, `PveApi`, `P
 | `/cluster/ceph/flags` (+ `/{flag}`) | OSD map flags (noout for maintenance, …) | ✅ M6 (`metadata`, `health-mute`, `restart-bulk` 🗓 M9) |
 | `/cluster/mapping/{pci,usb,dir}` | Resource mappings | 🗓 M9 |
 | `/cluster/notifications/{targets,endpoints/{sendmail,smtp,gotify,webhook},matchers,matcher-field-values}` | Targets of every kind (add, change with the digest, delete, send a test; secrets kept unless retyped), matchers (targets, severities, fields, calendar, mode, invert) | ✅ M9 |
-| `/cluster/metrics/*` | External metric servers | 🗓 M9 |
+| `/cluster/metrics/server` (+ `/{id}`) | External metric servers: InfluxDB (UDP, or HTTP(S) with organization, bucket and token), Graphite (UDP or TCP, path) and OpenTelemetry (headers, resource attributes, compression); add, change, switch off, delete | ✅ M9 (`/cluster/metrics/export` 🗓 later) |
 | `/cluster/acme/{account,directories,meta,plugins,challenge-schema}` | ACME accounts (register with the CA's terms and external account binding, deactivate), DNS challenge plugins (add, change with the digest, delete; credentials base64-encoded as Proxmox stores them) | ✅ M9 (`tos`, updating an account's contact 🗓) |
 | `/cluster/config/*` | Create/join cluster, corosync | 🗓 M9 |
 | `GET /cluster/jobs/schedule-analyze` | Next runs of a calendar event (backup job preview) | ✅ |
